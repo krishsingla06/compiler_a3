@@ -1,0 +1,1042 @@
+%{
+#include <bits/stdc++.h>
+#include<iomanip>
+using namespace std;
+
+/* Make sure yylex is visible as a C function */
+extern "C" int yylex(void);
+extern FILE* yyin;
+extern int yylineno;
+
+static void yyerror(const char* s) {
+    cerr << "Parse error at line " << yylineno << ": " << s << "\n";
+}
+
+%}
+
+%code requires {
+    #include <bits/stdc++.h>
+    using namespace std;
+    
+    // Structured type information
+    struct TypeInfo {
+        bool isStatic;
+        bool isConst;
+        string baseType;        // int, char, float, void, bool, struct_name, etc.
+        bool isPointer;
+        int pointerCount;
+        bool isReference;
+        bool isConstPointer;    // const after pointer (like int * const)
+        bool isArray;
+        vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
+        
+        TypeInfo() : isStatic(false), isConst(false), baseType(""), 
+                     isPointer(false), pointerCount(0), isReference(false), 
+                     isConstPointer(false), isArray(false) {}
+        
+        string toString() const {
+            string result = "";
+            if (isStatic) result += "static ";
+            if (isConst) result += "const ";
+            result += baseType;
+            for (int i = 0; i < pointerCount; i++) {
+                result += "*";
+            }
+            if (isReference) result += "&";
+            if (isConstPointer) result += " const";
+            if (isArray) {
+                for (int size : arrayDimensions) {
+                    result += "[";
+                    if (size >= 0) result += to_string(size);
+                    result += "]";
+                }
+            }
+            return result;
+        }
+    };
+
+    // Declarator information - combines identifier with type modifiers
+    struct DeclaratorInfo {
+        string name;            // variable name
+        bool isPointer;
+        int pointerCount;
+        bool isReference;
+        bool isConstPointer;
+        bool isArray;
+        vector<int> arrayDimensions;
+        string initValue;       // initialization value if any
+        
+        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0), 
+                          isReference(false), isConstPointer(false), 
+                          isArray(false), initValue("") {}
+    };
+
+    // Symbol table entry structure
+    struct SymbolEntry {
+        string name;
+        TypeInfo type;
+        int line;
+        int scope_level;
+        string initialValue;    // Store initialization value if any
+        bool isInitialized;
+        
+        SymbolEntry() : line(0), scope_level(0), initialValue(""), isInitialized(false) {}
+    };
+}
+
+%code {
+    // Stack of symbol tables for different scopes
+    vector<map<string, SymbolEntry>> scope_stack;
+    int current_scope_level = 0;
+
+    // Function declarations for scope management
+    void enter_scope();
+    void exit_scope();
+    void insert_symbol(const string& name, const TypeInfo& type, const string& initValue = "");
+    bool lookup_symbol(const string& name, SymbolEntry& entry);
+    bool lookup_symbol_current_scope(const string& name);
+    void check_variable_declaration(const string& name);
+}
+
+/* Declare value types */
+%union {
+    int ival;       /* integer literals */
+    string* sval;     /* identifiers */
+    float fval;     /* float literals */
+	bool bval;     /* boolean literals */
+	char cval;      /* char literals */
+	vector<string>* strlist; /* list of strings */
+	TypeInfo* typeinfo; /* structured type information */
+	DeclaratorInfo* declinfo; /* declarator information */
+	vector<DeclaratorInfo*>* decllist; /* list of declarators */
+}
+
+
+/* Token declarations: include tokens referenced later in the grammar */
+%token INT FLOAT CHAR VOID BOOL IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF TYPEDEF STATIC GOTO
+%token CLASS PUBLIC PRIVATE PROTECTED
+%token NULL_LITERAL
+%token INCREMENT DECREMENT
+%token ARROW LEFT_SHIFT RIGHT_SHIFT
+%token LOGICAL_AND LOGICAL_OR EQ NEQ LE GE
+%token PLUS MINUS STAR DIVIDE MOD ASSIGN LT GT LOGICAL_NOT BIT_AND BIT_OR BIT_XOR BIT_NOT DOT
+%token MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
+%token COLON SEMICOLON COMMA LBRACE RBRACE LPAREN RPAREN LBRACKET RBRACKET
+%token STRUCT RETURN 
+%token <sval> IDENTIFIER
+%token <ival> INT_LITERAL BOOLEAN_LITERAL
+%token <fval> FLOAT_LITERAL
+%token <sval> STRING_LITERAL CHAR_LITERAL
+%token TYPE_NAME ENUM UNION
+%token INVALID
+%token ELLIPSIS
+%token CONST 
+%type <declinfo> direct_declarator
+%type<strlist> identifier_list
+%type<typeinfo> return_types
+%type<typeinfo> declaration_specifiers
+%type<typeinfo> type_specifier
+%type<decllist> init_declarator_list
+%type<declinfo> init_declarator
+%type<declinfo> declarator
+%type<sval> fun_declarator
+%type<sval> fun_direct_declarator
+%type<typeinfo> type_qualifier
+%type<strlist> type_qualifier_list
+%type<typeinfo> storage_class_specifier
+%type<strlist> declaration_list
+%type <typeinfo> pointer
+%type<sval> struct_or_union_specifier
+%type<sval> struct_or_union
+%type<sval> class_declaration
+%type<sval> class_body
+%type<sval> class_member
+%type<sval> enumerator
+%type<strlist> enumerator_list
+%type<sval> struct_declarator
+%type<strlist> struct_declarator_list
+%type<strlist> specifier_qualifier_list
+%type<ival> constant_expression
+%type<sval> primary_expression
+%type<sval> postfix_expression
+%type<sval> unary_expression
+%type<sval> cast_expression
+%type<sval> multiplicative_expression
+%type<sval> additive_expression
+%type<sval> shift_expression
+%type<sval> relational_expression
+%type<sval> equality_expression
+%type<sval> and_expression
+%type<sval> exclusive_or_expression
+%type<sval> inclusive_or_expression
+%type<sval> logical_and_expression
+%type<sval> logical_or_expression
+%type<sval> conditional_expression
+%type<sval> assignment_expression
+%type<sval> expression
+%type<sval> initializer
+%type<strlist> initializer_list
+%type<sval> assignment_operator
+%type<sval> unary_operator
+%type<strlist> argument_expression_list
+%type<sval> type_name
+%type<sval> enum_specifier
+
+
+
+%%
+start
+	: global_declaration                        /* e.g., int x; */ 
+	| start global_declaration                   /* e.g., int x; float y; */
+    ;
+
+
+
+
+
+
+//---------------------------------------- Declarations --------------------------------------------------
+
+global_declaration
+	: function_definition                        
+	| declaration                                	
+	| class_declaration 							 
+    ;
+
+function_definition
+	: return_types fun_declarator compound_statement               /* e.g., int f() { ... } */  
+	| return_types fun_declarator SEMICOLON				/* e.g., int f(); */
+	;
+
+declaration
+	: return_types SEMICOLON { delete $1; }                                   /* e.g., extern int; (rare)*/ 
+	| return_types init_declarator_list SEMICOLON {
+		// Combine base type with each declarator's type information
+		for (DeclaratorInfo* declInfo : *$2) {
+			TypeInfo combinedType = *$1;  // Start with base type
+			
+			// Add declarator-specific type information
+			combinedType.isPointer = declInfo->isPointer;
+			combinedType.pointerCount = declInfo->pointerCount;
+			combinedType.isReference = declInfo->isReference;
+			combinedType.isConstPointer = declInfo->isConstPointer;
+			combinedType.isArray = declInfo->isArray;
+			combinedType.arrayDimensions = declInfo->arrayDimensions;
+			
+			insert_symbol(declInfo->name, combinedType, declInfo->initValue);
+			delete declInfo;
+		}
+		delete $1;
+		delete $2;
+	}              /* e.g., int a = 5, b; int *p[10]; */   
+	//| constructor_call SEMICOLON;	
+    ;
+
+
+
+
+
+
+//------------------------------------------- Return types --------------------------------------------------
+
+return_types 
+	: declaration_specifiers { $$ = $1; }
+	;
+
+declaration_specifiers
+	: type_specifier { $$ = $1; }                                             /* e.g., int */
+	| STATIC type_specifier { 
+		$$ = $2;
+		$$->isStatic = true;
+	}                                     /* e.g., static int */
+	| CONST type_specifier { 
+		$$ = $2;
+		$$->isConst = true;
+	}                                      /* e.g., const int */
+	| STATIC CONST type_specifier { 
+		$$ = $3;
+		$$->isStatic = true;
+		$$->isConst = true;
+	}                           /* e.g., static const int */
+	;
+
+type_specifier
+    : VOID { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "void"; 
+    }
+    | CHAR { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "char"; 
+    }
+    | INT { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "int"; 
+    }
+    | BOOL { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "bool"; 
+    }
+    | FLOAT { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "float"; 
+    }
+    | struct_or_union_specifier { 
+        $$ = new TypeInfo(); 
+        $$->baseType = *$1;
+        delete $1;
+    }
+    | enum_specifier { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "enum"; 
+    }
+    ;
+
+/*
+deleted for some reason
+    | TYPE_NAME { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "type_name"; 
+    }
+
+storage_class_specifier
+	: TYPEDEF { 
+		$$ = new TypeInfo(); 
+		// typedef is not stored as a regular type modifier
+	}                                             
+	| STATIC { 
+		$$ = new TypeInfo(); 
+		$$->isStatic = true; 
+	}                                                    
+	;
+
+type_qualifier_list
+	: type_qualifier                                                   
+	| type_qualifier_list type_qualifier                                
+	;
+*/
+
+
+// --------------- Redundant -----------------------------------------------------------------------------------
+
+
+type_qualifier
+	: CONST { 
+		$$ = new TypeInfo(); 
+		$$->isConst = true; 
+	}                                                             /* const */
+	;
+
+
+// ------------------------------------------------------------------------------------------------------
+
+
+
+
+
+//-------------------------------------------------- Declarators --------------------------------------------------
+
+init_declarator_list					// a=3,b=&x,c,*d=x,&y=NULL
+    : init_declarator { 
+        $$ = new vector<DeclaratorInfo*>();
+        $$->push_back($1);
+    }
+    | init_declarator_list COMMA init_declarator {
+        $$ = $1;
+        $$->push_back($3);
+    }
+    ;
+
+
+init_declarator
+	: declarator { $$ = $1; }                                                  /* e.g., x */ 
+	| declarator ASSIGN initializer { 
+		$$ = $1;
+		$$->initValue = "initialized";  // For now, just mark as initialized
+	}                                 /* e.g., x = 5 */ 
+	;
+
+
+declarator
+	: pointer direct_declarator {                                 /* e.g., *p or int *p */ 
+		$$ = $2;
+		// Combine pointer info with declarator info
+		$$->isPointer = $1->isPointer || $$->isPointer;
+		$$->pointerCount += $1->pointerCount;
+		$$->isReference = $1->isReference || $$->isReference;
+		$$->isConstPointer = $1->isConstPointer || $$->isConstPointer;
+		delete $1;
+	}
+	| direct_declarator {                                         /* e.g., x */ 
+		$$ = $1;
+	}
+	;
+
+
+direct_declarator
+	: IDENTIFIER {                                                 /* e.g., x */  
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		delete $1;
+	}
+	| direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */
+		$$ = $1;
+		$$->isArray = true;
+		$$->arrayDimensions.push_back($3);  // Direct integer literal
+	}
+	| direct_declarator LBRACKET RBRACKET {                        /* e.g., arr[] */
+		$$ = $1;
+		$$->isArray = true;
+		$$->arrayDimensions.push_back(-1);  // -1 indicates unknown size
+	}
+	;
+
+/*
+I removed it from direct_declarator bcoz it seems Redundant to me
+| LPAREN declarator RPAREN {                                   
+		$$ = $2;
+	}
+
+and 
+direct_declarator LBRACKET constant_expression RBRACKET this also
+out grammar will only have [int literal]
+*/
+
+
+fun_declarator
+  	: pointer fun_direct_declarator
+	| fun_direct_declarator 
+	;
+
+
+fun_direct_declarator
+	: IDENTIFIER LPAREN parameter_list RPAREN          		/* e.g., f(int a, float b) */ 
+	| IDENTIFIER LPAREN RPAREN                               /* e.g., f() (function with unspecified params) */
+	| IDENTIFIER LPAREN parameter_type_list RPAREN                              /* e.g., (int,int) */
+	;
+
+
+//------------------------ It will be used in compound statements - that means start of compound statement will be definitions list only -----------------------------
+declaration_list
+	: declaration                                                          
+	| declaration_list declaration       
+	| /* empty */   // added baad mei                                   
+	;
+
+
+
+
+//--------------------------------- Initializers -> RHS of assignment expressions -----------------------------------------------------
+
+initializer
+	: assignment_expression                                               /* e.g., x = 5 {} - So basically simple RHS in assignment expression*/
+	| LBRACE initializer_list RBRACE                                       /* e.g., {1,2,3} or {{1,2},{4,6}} - For arrays */
+	| LBRACE initializer_list COMMA RBRACE                                 /* e.g., {1,2,} */
+	;
+
+initializer_list
+	: initializer                                                         /* e.g., 1 */
+	| initializer_list COMMA initializer                                   /* e.g., 1, 2 */
+	;
+
+
+
+
+
+//-------------------------------------------- Useless - Previously used in K&R syntax -> int foo(a,b,c){ ... } -----------------------------------------------------
+
+identifier_list
+	: IDENTIFIER                                                         /* e.g., a */
+	| identifier_list COMMA IDENTIFIER                                    /* e.g., a, b */
+	;
+
+
+
+
+//----------------------------- Function Declarations mei param list - int foo(int a, float b) -----------------------------------------------------
+
+parameter_type_list
+ 	: parameter_list                                                     /* e.g., int a, float b */
+ 	| parameter_list COMMA ELLIPSIS                                     /* e.g., int a, ... */
+	;
+
+parameter_list
+	: parameter_declaration                                              /* e.g., int a */
+	| parameter_list COMMA parameter_declaration                          /* e.g., int a, float b */
+	;
+
+parameter_declaration
+	: return_types declarator                                             /* e.g., int x */ 
+	;
+
+
+
+
+
+
+
+// ----------------------------- Classes and Objects -----------------------------------------------------
+class_declaration
+    : CLASS IDENTIFIER opt_base_clause LBRACE class_body RBRACE SEMICOLON 
+    ;
+
+opt_base_clause
+    : /* empty */
+	| COLON base_specifier_list
+    ;
+
+base_specifier_list
+    : base_specifier
+    | base_specifier_list COMMA base_specifier
+    ;
+
+base_specifier
+    : opt_access_specifier IDENTIFIER
+    ;
+
+opt_access_specifier
+    : /* empty */
+    | PUBLIC
+    | PROTECTED
+    | PRIVATE
+    ;
+
+class_body
+    : /* empty */
+    | class_body member_declaration
+    ;
+
+member_declaration
+    : declaration
+    | statement_list
+    | function_definition
+    | access_label
+    | class_declaration   /* nested class */
+	| constructor_declaration
+	| destructor_declaration
+    ;
+
+constructor_declaration
+	: IDENTIFIER LPAREN parameter_list RPAREN compound_statement 
+	;
+constructor_call :
+  CLASS IDENTIFIER IDENTIFIER LPAREN argument_expression_list RPAREN 
+  ;
+
+destructor_declaration
+	: BIT_NOT IDENTIFIER LPAREN RPAREN compound_statement
+	;
+
+access_label
+    : PUBLIC COLON
+    | PROTECTED COLON
+    | PRIVATE COLON
+    ;
+
+
+
+
+
+
+
+//------------------------ Simply expressions - used in RHS of initializers -----------------------------------------------------
+
+primary_expression
+    : IDENTIFIER { 
+        check_variable_declaration(*$1);
+        $$ = $1; 
+    }                                        
+    | INT_LITERAL { 
+        $$ = new string(to_string($1));
+    }
+    | FLOAT_LITERAL { 
+        $$ = new string(to_string($1));
+    }
+    | CHAR_LITERAL { 
+        $$ = $1;
+    }
+    | STRING_LITERAL { 
+        $$ = $1;
+    }
+	| NULL_LITERAL { 
+        $$ = new string("NULL");
+    }
+	| BOOLEAN_LITERAL { 
+        $$ = new string(to_string($1));
+    }
+    | LPAREN expression RPAREN { 
+        $$ = $2;
+    }
+    ;
+
+postfix_expression
+	: primary_expression { $$ = $1; }                                          /* e.g., x */
+	| postfix_expression LBRACKET expression RBRACKET { $$ = $1; }               /* e.g., arr[i] */
+	| postfix_expression LPAREN RPAREN { $$ = $1; }                              /* e.g., func() */
+	| postfix_expression LPAREN argument_expression_list RPAREN { $$ = $1; }       /* e.g., func(a,b) */
+	| postfix_expression DOT IDENTIFIER { $$ = $1; }                              /* e.g., obj.field */
+	| postfix_expression ARROW IDENTIFIER { $$ = $1; }                            /* e.g., ptr->field */
+	| postfix_expression INCREMENT { $$ = $1; }                                       /* e.g., x++ */
+	| postfix_expression DECREMENT { $$ = $1; }                                       /* e.g., x-- */
+	;
+
+argument_expression_list
+	: assignment_expression                                         /* e.g., x */
+	| argument_expression_list COMMA assignment_expression           /* e.g., x, y */
+	;
+
+unary_expression
+	: postfix_expression                                             /* e.g., x */
+	| INCREMENT unary_expression                                         /* e.g., ++x */
+	| DECREMENT unary_expression                                         /* e.g., --x */
+	| unary_operator cast_expression                                   /* e.g., -y or &z */
+	| SIZEOF unary_expression                                          /* e.g., sizeof x */
+	| SIZEOF LPAREN type_name RPAREN                                     /* e.g., sizeof(int) */
+	;
+
+unary_operator
+	: BIT_AND                                                             /* e.g., &x */
+	| STAR                                                             /* e.g., *p */
+	| PLUS                                                             /* e.g., +x */
+	| MINUS                                                             /* e.g., -x */
+	| BIT_NOT                                                             /* e.g., ~mask */
+	| LOGICAL_NOT                                                             /* e.g., !flag */
+	;
+
+cast_expression
+	: unary_expression { $$ = $1; }                                                /* e.g., x */
+	| LPAREN type_name RPAREN cast_expression { $$ = $4; }                           /* e.g., (int) x */
+	;
+
+multiplicative_expression
+	: cast_expression { $$ = $1; }                                                 /* e.g., a */
+	| multiplicative_expression STAR cast_expression { $$ = $1; }                      /* e.g., a * b */
+	| multiplicative_expression DIVIDE cast_expression { $$ = $1; }                      /* e.g., a / b */
+	| multiplicative_expression MOD cast_expression { $$ = $1; }                      /* e.g., a % b */
+	;
+
+additive_expression
+	: multiplicative_expression { $$ = $1; }                                        /* e.g., a */
+	| additive_expression PLUS multiplicative_expression { $$ = $1; }                  /* e.g., a + b */
+	| additive_expression MINUS multiplicative_expression { $$ = $1; }                  /* e.g., a - b */
+	;
+
+shift_expression
+	: additive_expression { $$ = $1; }                                               /* e.g., a */
+	| shift_expression LEFT_SHIFT additive_expression { $$ = $1; }                        /* e.g., a << b */
+	| shift_expression RIGHT_SHIFT additive_expression { $$ = $1; }                       /* e.g., a >> b */
+	;
+
+relational_expression
+	: shift_expression { $$ = $1; }                                                  /* e.g., a */
+	| relational_expression LT shift_expression { $$ = $1; }                           /* e.g., a < b */
+	| relational_expression GT shift_expression { $$ = $1; }                           /* e.g., a > b */
+	| relational_expression LE shift_expression { $$ = $1; }                          /* e.g., a <= b */
+	| relational_expression GE shift_expression { $$ = $1; }                          /* e.g., a >= b */
+	;
+
+equality_expression
+	: relational_expression { $$ = $1; }                                             /* e.g., a */
+	| equality_expression EQ relational_expression { $$ = $1; }                      /* e.g., a == b */
+	| equality_expression NEQ relational_expression { $$ = $1; }                      /* e.g., a != b */
+	;
+
+and_expression
+	: equality_expression { $$ = $1; }                                               /* e.g., a */
+	| and_expression BIT_AND equality_expression { $$ = $1; }                                /* e.g., a & b */
+	;
+
+exclusive_or_expression
+	: and_expression { $$ = $1; }                                                    /* e.g., a */
+	| exclusive_or_expression BIT_XOR and_expression { $$ = $1; }                           /* e.g., a ^ b */
+	;
+
+inclusive_or_expression
+	: exclusive_or_expression { $$ = $1; }                                           /* e.g., a */
+	| inclusive_or_expression BIT_OR exclusive_or_expression { $$ = $1; }                   /* e.g., a | b */
+	;
+
+logical_and_expression
+	: inclusive_or_expression { $$ = $1; }                                           /* e.g., a */
+	| logical_and_expression LOGICAL_AND inclusive_or_expression { $$ = $1; }                  /* e.g., a && b */
+	;
+
+logical_or_expression
+	: logical_and_expression                                            /* e.g., a */
+	| logical_or_expression LOGICAL_OR logical_and_expression                     /* e.g., a || b */
+	;
+
+conditional_expression
+	: logical_or_expression                                             /* e.g., x */ 
+	;
+
+assignment_expression
+	: conditional_expression                                            /* e.g., x */
+	| unary_expression assignment_operator assignment_expression            /* e.g., x = y or x += y */
+	;
+
+assignment_operator
+	: ASSIGN                                                            /* = */
+	| MUL_ASSIGN                                                        /* *= */
+	| DIV_ASSIGN                                                        /* /= */
+	| MOD_ASSIGN                                                        /* %= */
+	| ADD_ASSIGN                                                        /* += */
+	| SUB_ASSIGN                                                        /* -= */
+	| LEFT_ASSIGN                                                       /* <<= */
+	| RIGHT_ASSIGN                                                      /* >>= */
+	| AND_ASSIGN                                                        /* &= */
+	| XOR_ASSIGN                                                        /* ^= */
+	| OR_ASSIGN                                                         /* |= */
+	;
+
+expression
+	: assignment_expression                                             /* e.g., x = 1 */
+	| expression COMMA assignment_expression                               /* e.g., x = 1, y = 2 */
+	;
+
+constant_expression
+	: conditional_expression { $$ = 0; }                           /* e.g., (1+2) - For now, return 0 */
+	;
+
+
+
+
+
+// -------------------------------------------- Structs and Enums -----------------------------------------------------
+
+struct_or_union_specifier
+	: struct_or_union IDENTIFIER LBRACE struct_declaration_list RBRACE { 
+		$$ = new string(*$1 + " " + *$2);
+		delete $1; delete $2;
+	}   /* e.g., struct S { int x; };*/  
+	| struct_or_union IDENTIFIER { 
+		$$ = new string(*$1 + " " + *$2);
+		delete $1; delete $2;
+	}                                           /* e.g., struct S */ 
+	;
+
+struct_or_union
+	: STRUCT { $$ = new string("struct"); }                                                            /* struct */
+	| UNION { $$ = new string("union"); }                                                             /* union */	
+	| CLASS { $$ = new string("class"); }													 						 						
+	;
+
+struct_declaration_list
+	: struct_declaration                                               /* e.g., int x; */
+	| struct_declaration_list struct_declaration                         /* e.g., int x; float y; */
+	;
+
+struct_declaration
+	: specifier_qualifier_list struct_declarator_list SEMICOLON         /* e.g., int x, *p; */ 
+	;
+
+specifier_qualifier_list
+	: type_specifier specifier_qualifier_list                            /* e.g., int const */
+	| type_specifier                                                     /* e.g., int */
+	| type_qualifier specifier_qualifier_list                            /* e.g., const volatile */
+	| type_qualifier                                                     /* e.g., const */
+	;
+
+struct_declarator_list
+	: struct_declarator                                                 /* e.g., x */ 
+	| struct_declarator_list COMMA struct_declarator                      /* e.g., x, y */
+	;
+
+struct_declarator
+	: declarator { $$ = new string($1->name); delete $1; }                /* e.g., x */ 
+	| COLON constant_expression { $$ = new string("bitfield"); }          /* e.g., :3 (bit-field) */
+	| declarator COLON constant_expression { $$ = new string($1->name); delete $1; }  /* e.g., x:3 */ 
+	;
+
+enum_specifier
+	: ENUM LBRACE enumerator_list RBRACE                                 /* e.g., enum { A, B } */
+	| ENUM IDENTIFIER LBRACE enumerator_list RBRACE                      /* e.g., enum E { A, B } */
+	| ENUM IDENTIFIER                                                     /* e.g., enum E */
+	;
+
+enumerator_list
+	: enumerator                                                        /* e.g., A */ 
+	| enumerator_list COMMA enumerator                                    /* e.g., A, B */ 
+	;
+
+enumerator
+	: IDENTIFIER                                                        /* e.g., A */ 
+	| IDENTIFIER ASSIGN constant_expression                               /* e.g., A = 5 */ 
+	;
+
+
+
+
+
+
+//---------------------------------------- Pointers --------------------------------------------------
+// pointer with const only at the end - e.g., int*, int** const
+
+pointer
+    : STAR {                                   /* e.g., * */
+        $$ = new TypeInfo();
+        $$->isPointer = true;
+        $$->pointerCount = 1;
+    }
+    | STAR CONST {                            /* e.g., * const */
+        $$ = new TypeInfo();
+        $$->isPointer = true;
+        $$->pointerCount = 1;
+        $$->isConstPointer = true;
+    }
+    | STAR pointer {                          /* e.g., **, ***, etc. */
+        $$ = $2;
+        $$->pointerCount++;
+    }
+	| BIT_AND {                               /* e.g., & (reference) */
+        $$ = new TypeInfo();
+        $$->isReference = true;
+    }
+    ;
+
+
+
+
+//---------------------------------------- Only used in sizeof(int) and casting int x = (int) f_y; --------------------------------------------------
+type_name
+	: specifier_qualifier_list                                           /* e.g., const int */
+	;
+
+
+
+//---------------------------------------- Statements --------------------------------------------------
+
+
+statement
+	: labeled_statement                                                    /* e.g., label: stmt */
+	| compound_statement                                                   /* e.g., { ... } */
+	| expression_statement                                                 /* e.g., x = 1; */
+	| selection_statement                                                  /* e.g., if(expr) stmt */
+	| iteration_statement                                                  /* e.g., while(expr) stmt */
+	| jump_statement                                                        /* e.g., return 0; */
+	| error SEMICOLON { 
+		yyerror("Invalid statement, skipping to next ';'"); 
+		yyerrok; 
+	}
+	;
+
+
+labeled_statement
+	: IDENTIFIER COLON statement                                            /* e.g., label: stmt */
+	| CASE constant_expression COLON statement                              /* e.g., case 1: stmt */
+	| DEFAULT COLON statement                                               /* e.g., default: stmt */
+	;
+
+compound_statement
+	//: LBRACE { enter_scope(); } RBRACE { exit_scope(); }                                                        /* e.g., {} */
+	//| LBRACE { enter_scope(); } statement_list RBRACE { exit_scope(); }                                         /* e.g., { stmt; } */
+	//| LBRACE { enter_scope(); } declaration_list RBRACE { exit_scope(); }                                       /* e.g., { int a; } */
+	: LBRACE { enter_scope(); } declaration_list statement_list RBRACE { exit_scope(); }                        /* e.g., { int a; stmt; } */
+	;
+
+statement_list
+	: statement                                                            /* e.g., stmt */
+	| statement_list statement                                               /* e.g., stmt; stmt; */
+	| /* empty */   // added baad mei                                                /* e.g., (empty) */
+	;
+
+expression_statement
+	: SEMICOLON                                                             /* e.g., ; (empty statement) */
+	| expression SEMICOLON                                                  /* e.g., x = 1; */
+	;
+
+selection_statement
+	: IF LPAREN expression RPAREN statement                                 /* e.g., if (x) stmt */
+	| IF LPAREN expression RPAREN statement ELSE statement                   /* e.g., if (x) stmt else stmt */
+	| SWITCH LPAREN expression RPAREN statement                              /* e.g., switch (x) { ... } */
+	;
+
+iteration_statement
+	: WHILE LPAREN expression RPAREN statement                               /* e.g., while (cond) stmt */
+	| UNTIL LPAREN expression RPAREN statement                               /* e.g., while (cond) stmt */
+	| DO statement WHILE LPAREN expression RPAREN SEMICOLON                  /* e.g., do { } while(cond); */
+	| FOR LPAREN expression_statement expression_statement RPAREN statement   /* e.g., for (init; cond; ) stmt */
+	| FOR LPAREN expression_statement expression_statement expression RPAREN statement /* e.g., for (init; cond; incr) stmt */
+	;
+
+jump_statement
+	: GOTO IDENTIFIER SEMICOLON                                              /* e.g., goto label; */
+	| CONTINUE SEMICOLON                                                     /* e.g., continue; */
+	| BREAK SEMICOLON                                                        /* e.g., break; */
+	| RETURN SEMICOLON                                                       /* e.g., return; */
+	| RETURN expression SEMICOLON                                            /* e.g., return x; */
+	;
+
+%%
+
+void enter_scope() {
+    current_scope_level++;
+    scope_stack.push_back(map<string, SymbolEntry>());
+    cout << "Entering scope level " << current_scope_level << "\n";
+}
+
+void exit_scope() {
+    if (!scope_stack.empty()) {
+        cout << "Exiting scope level " << current_scope_level << "\n";
+        // Display symbols being destroyed
+        if (!scope_stack.back().empty()) {
+            cout << "Destroying symbols from scope " << current_scope_level << ":\n";
+            for (const auto& entry : scope_stack.back()) {
+                cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")\n";
+            }
+        }
+        scope_stack.pop_back();
+        current_scope_level--;
+    }
+}
+
+void insert_symbol(const string& name, const TypeInfo& type, const string& initValue) {
+    if (scope_stack.empty()) {
+        // Global scope - create initial scope
+        enter_scope();
+    }
+    
+    // Check if symbol already exists in current scope
+    if (scope_stack.back().find(name) != scope_stack.back().end()) {
+        cerr << "Error at line " << yylineno << ": Variable '" << name 
+             << "' already declared in current scope\n";
+        return;
+    }
+    
+    SymbolEntry entry;
+    entry.name = name;
+    entry.type = type;
+    entry.line = yylineno;
+    entry.scope_level = current_scope_level;
+    entry.initialValue = initValue;
+    entry.isInitialized = !initValue.empty();
+    
+    scope_stack.back()[name] = entry;
+    
+    cout << "Inserted symbol: " << name << " (" << type.toString() << ")";
+    if (entry.isInitialized) {
+        cout << " = " << initValue;
+    }
+    cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
+}
+
+bool lookup_symbol(const string& name, SymbolEntry& entry) {
+    // Search from current scope to global scope
+    for (int i = scope_stack.size() - 1; i >= 0; i--) {
+        auto it = scope_stack[i].find(name);
+        if (it != scope_stack[i].end()) {
+            entry = it->second;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool lookup_symbol_current_scope(const string& name) {
+    if (scope_stack.empty()) return false;
+    return scope_stack.back().find(name) != scope_stack.back().end();
+}
+
+void check_variable_declaration(const string& name) {
+    SymbolEntry entry;
+    if (!lookup_symbol(name, entry)) {
+        cerr << "Error at line " << yylineno << ": Variable '" << name 
+             << "' used but not declared\n";
+    } else {
+        cout << "Variable '" << name << "' found: declared as " 
+             << entry.type.toString() << " at line " << entry.line 
+             << " in scope " << entry.scope_level;
+        if (entry.isInitialized) {
+            cout << " (initialized with: " << entry.initialValue << ")";
+        }
+        cout << "\n";
+    }
+}
+
+void displaySymbolTable() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                   SYMBOL TABLE                                         |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (scope_stack.empty()) {
+        cout << "| No active scopes                                                                    |\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+        return;
+    }
+    
+    for (int i = 0; i < scope_stack.size(); i++) {
+        cout << "\n+- SCOPE LEVEL " << (i + 1) << " ";
+        cout << string(70 - to_string(i + 1).length(), '-') << "+\n";
+        
+        if (scope_stack[i].empty()) {
+            cout << "| (empty scope)                                                                       |\n";
+            cout << "+-----------------------------------------------------------------------------------------+\n";
+            continue;
+        }
+        
+        // Table header
+        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
+        cout << "| Identifier  | Type                    | Line | Scope | Initialized | Value       |\n";
+        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
+        
+        // Table content
+        for (const auto& entry : scope_stack[i]) {
+            string name = entry.second.name;
+            string type = entry.second.type.toString();
+            string line = to_string(entry.second.line);
+            string scope = to_string(entry.second.scope_level);
+            string initialized = entry.second.isInitialized ? "Yes" : "No";
+            string value = entry.second.initialValue;
+            
+            // Truncate long strings
+            if (name.length() > 11) name = name.substr(0, 8) + "...";
+            if (type.length() > 23) type = type.substr(0, 20) + "...";
+            if (value.length() > 11) value = value.substr(0, 8) + "...";
+            
+            cout << "| " << left << setw(11) << name
+                 << " | " << left << setw(23) << type
+                 << " | " << right << setw(4) << line
+                 << " | " << right << setw(5) << scope
+                 << " | " << left << setw(11) << initialized
+                 << " | " << left << setw(11) << value << " |\n";
+        }
+        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
+    }
+}
+
+
+
+int main(int argc, char** argv) {
+    
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
+		return 1;
+	}
+	
+	FILE* f = fopen(argv[1], "r");
+	if (!f) {
+		perror("fopen");
+		return 1;
+	}
+
+	yyin = f;
+	cout << "Starting parser...\n";
+	
+	// Initialize global scope
+	enter_scope();
+	
+	int res = yyparse();
+	cout << "yyparse() returned " << res << "\n";
+	
+	// Display the new scope-based symbol table
+	displaySymbolTable();
+	
+	// Clean up all remaining scopes
+	while (!scope_stack.empty()) {
+		exit_scope();
+	}
+	
+	fclose(f);
+	return res;
+}
