@@ -6,8 +6,8 @@ int main() {
     int y;        // Another global scope variable
     
     {             // New scope begins
-        int z;    // Local scope variable
-        x = 5;    // Using global variable (should be found)
+        char z;    // Local scope variable
+        x = y;    // Using global variable (should be found)
     }             // Local scope ends, z should be destroyed
     
     y = 10;       // Using global variable (should be found)

@@ -1,0 +1,63 @@
+
+// ----------------------------- Classes and Objects -----------------------------------------------------
+
+/*
+class_declaration
+    : CLASS IDENTIFIER opt_base_clause LBRACE class_body RBRACE SEMICOLON 
+    ;
+
+opt_base_clause
+    :
+	| COLON base_specifier_list
+    ;
+
+base_specifier_list
+    : base_specifier
+    | base_specifier_list COMMA base_specifier
+    ;
+
+base_specifier
+    : opt_access_specifier IDENTIFIER
+    ;
+
+opt_access_specifier
+    : 
+    | PUBLIC
+    | PROTECTED
+    | PRIVATE
+    ;
+
+class_body
+    :
+    | class_body member_declaration
+    ;
+
+member_declaration
+    : declaration
+    | statement_list
+    | function_definition
+    | access_label
+    | class_declaration  
+	| constructor_declaration
+	| destructor_declaration
+    ;
+
+constructor_declaration
+	: IDENTIFIER LPAREN parameter_list RPAREN compound_statement 
+	;
+constructor_call :
+  CLASS IDENTIFIER IDENTIFIER LPAREN argument_expression_list RPAREN 
+  ;
+
+destructor_declaration
+	: BIT_NOT IDENTIFIER LPAREN RPAREN compound_statement
+	;
+
+access_label
+    : PUBLIC COLON
+    | PROTECTED COLON
+    | PRIVATE COLON
+    ;
+
+
+*/

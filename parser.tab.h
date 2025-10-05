@@ -61,10 +61,11 @@ extern int yydebug;
         bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
+        string value;           // Store the actual value for expressions/literals
         
         TypeInfo() : isStatic(false), isConst(false), baseType(""), 
                      isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false) {}
+                     isConstPointer(false), isArray(false), value("") {}
         
         string toString() const {
             string result = "";
@@ -97,10 +98,11 @@ extern int yydebug;
         bool isArray;
         vector<int> arrayDimensions;
         string initValue;       // initialization value if any
+        TypeInfo* initType;     // type information of the initializer
         
         DeclaratorInfo() : name(""), isPointer(false), pointerCount(0), 
                           isReference(false), isConstPointer(false), 
-                          isArray(false), initValue("") {}
+                          isArray(false), initValue(""), initType(nullptr) {}
     };
 
     // Symbol table entry structure
@@ -115,7 +117,7 @@ extern int yydebug;
         SymbolEntry() : line(0), scope_level(0), initialValue(""), isInitialized(false) {}
     };
 
-#line 119 "parser.tab.h"
+#line 121 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -146,69 +148,65 @@ extern int yydebug;
     TYPEDEF = 275,                 /* TYPEDEF  */
     STATIC = 276,                  /* STATIC  */
     GOTO = 277,                    /* GOTO  */
-    CLASS = 278,                   /* CLASS  */
-    PUBLIC = 279,                  /* PUBLIC  */
-    PRIVATE = 280,                 /* PRIVATE  */
-    PROTECTED = 281,               /* PROTECTED  */
-    NULL_LITERAL = 282,            /* NULL_LITERAL  */
-    INCREMENT = 283,               /* INCREMENT  */
-    DECREMENT = 284,               /* DECREMENT  */
-    ARROW = 285,                   /* ARROW  */
-    LEFT_SHIFT = 286,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 287,             /* RIGHT_SHIFT  */
-    LOGICAL_AND = 288,             /* LOGICAL_AND  */
-    LOGICAL_OR = 289,              /* LOGICAL_OR  */
-    EQ = 290,                      /* EQ  */
-    NEQ = 291,                     /* NEQ  */
-    LE = 292,                      /* LE  */
-    GE = 293,                      /* GE  */
-    PLUS = 294,                    /* PLUS  */
-    MINUS = 295,                   /* MINUS  */
-    STAR = 296,                    /* STAR  */
-    DIVIDE = 297,                  /* DIVIDE  */
-    MOD = 298,                     /* MOD  */
-    ASSIGN = 299,                  /* ASSIGN  */
-    LT = 300,                      /* LT  */
-    GT = 301,                      /* GT  */
-    LOGICAL_NOT = 302,             /* LOGICAL_NOT  */
-    BIT_AND = 303,                 /* BIT_AND  */
-    BIT_OR = 304,                  /* BIT_OR  */
-    BIT_XOR = 305,                 /* BIT_XOR  */
-    BIT_NOT = 306,                 /* BIT_NOT  */
-    DOT = 307,                     /* DOT  */
-    MUL_ASSIGN = 308,              /* MUL_ASSIGN  */
-    DIV_ASSIGN = 309,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 310,              /* MOD_ASSIGN  */
-    ADD_ASSIGN = 311,              /* ADD_ASSIGN  */
-    SUB_ASSIGN = 312,              /* SUB_ASSIGN  */
-    LEFT_ASSIGN = 313,             /* LEFT_ASSIGN  */
-    RIGHT_ASSIGN = 314,            /* RIGHT_ASSIGN  */
-    AND_ASSIGN = 315,              /* AND_ASSIGN  */
-    XOR_ASSIGN = 316,              /* XOR_ASSIGN  */
-    OR_ASSIGN = 317,               /* OR_ASSIGN  */
-    COLON = 318,                   /* COLON  */
-    SEMICOLON = 319,               /* SEMICOLON  */
-    COMMA = 320,                   /* COMMA  */
-    LBRACE = 321,                  /* LBRACE  */
-    RBRACE = 322,                  /* RBRACE  */
-    LPAREN = 323,                  /* LPAREN  */
-    RPAREN = 324,                  /* RPAREN  */
-    LBRACKET = 325,                /* LBRACKET  */
-    RBRACKET = 326,                /* RBRACKET  */
-    STRUCT = 327,                  /* STRUCT  */
-    RETURN = 328,                  /* RETURN  */
-    IDENTIFIER = 329,              /* IDENTIFIER  */
-    INT_LITERAL = 330,             /* INT_LITERAL  */
-    BOOLEAN_LITERAL = 331,         /* BOOLEAN_LITERAL  */
-    FLOAT_LITERAL = 332,           /* FLOAT_LITERAL  */
-    STRING_LITERAL = 333,          /* STRING_LITERAL  */
-    CHAR_LITERAL = 334,            /* CHAR_LITERAL  */
-    TYPE_NAME = 335,               /* TYPE_NAME  */
-    ENUM = 336,                    /* ENUM  */
-    UNION = 337,                   /* UNION  */
-    INVALID = 338,                 /* INVALID  */
-    ELLIPSIS = 339,                /* ELLIPSIS  */
-    CONST = 340                    /* CONST  */
+    NULL_LITERAL = 278,            /* NULL_LITERAL  */
+    INCREMENT = 279,               /* INCREMENT  */
+    DECREMENT = 280,               /* DECREMENT  */
+    ARROW = 281,                   /* ARROW  */
+    LEFT_SHIFT = 282,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 283,             /* RIGHT_SHIFT  */
+    LOGICAL_AND = 284,             /* LOGICAL_AND  */
+    LOGICAL_OR = 285,              /* LOGICAL_OR  */
+    EQ = 286,                      /* EQ  */
+    NEQ = 287,                     /* NEQ  */
+    LE = 288,                      /* LE  */
+    GE = 289,                      /* GE  */
+    PLUS = 290,                    /* PLUS  */
+    MINUS = 291,                   /* MINUS  */
+    STAR = 292,                    /* STAR  */
+    DIVIDE = 293,                  /* DIVIDE  */
+    MOD = 294,                     /* MOD  */
+    ASSIGN = 295,                  /* ASSIGN  */
+    LT = 296,                      /* LT  */
+    GT = 297,                      /* GT  */
+    LOGICAL_NOT = 298,             /* LOGICAL_NOT  */
+    BIT_AND = 299,                 /* BIT_AND  */
+    BIT_OR = 300,                  /* BIT_OR  */
+    BIT_XOR = 301,                 /* BIT_XOR  */
+    BIT_NOT = 302,                 /* BIT_NOT  */
+    DOT = 303,                     /* DOT  */
+    MUL_ASSIGN = 304,              /* MUL_ASSIGN  */
+    DIV_ASSIGN = 305,              /* DIV_ASSIGN  */
+    MOD_ASSIGN = 306,              /* MOD_ASSIGN  */
+    ADD_ASSIGN = 307,              /* ADD_ASSIGN  */
+    SUB_ASSIGN = 308,              /* SUB_ASSIGN  */
+    LEFT_ASSIGN = 309,             /* LEFT_ASSIGN  */
+    RIGHT_ASSIGN = 310,            /* RIGHT_ASSIGN  */
+    AND_ASSIGN = 311,              /* AND_ASSIGN  */
+    XOR_ASSIGN = 312,              /* XOR_ASSIGN  */
+    OR_ASSIGN = 313,               /* OR_ASSIGN  */
+    COLON = 314,                   /* COLON  */
+    SEMICOLON = 315,               /* SEMICOLON  */
+    COMMA = 316,                   /* COMMA  */
+    LBRACE = 317,                  /* LBRACE  */
+    RBRACE = 318,                  /* RBRACE  */
+    LPAREN = 319,                  /* LPAREN  */
+    RPAREN = 320,                  /* RPAREN  */
+    LBRACKET = 321,                /* LBRACKET  */
+    RBRACKET = 322,                /* RBRACKET  */
+    STRUCT = 323,                  /* STRUCT  */
+    RETURN = 324,                  /* RETURN  */
+    IDENTIFIER = 325,              /* IDENTIFIER  */
+    INT_LITERAL = 326,             /* INT_LITERAL  */
+    BOOLEAN_LITERAL = 327,         /* BOOLEAN_LITERAL  */
+    FLOAT_LITERAL = 328,           /* FLOAT_LITERAL  */
+    STRING_LITERAL = 329,          /* STRING_LITERAL  */
+    CHAR_LITERAL = 330,            /* CHAR_LITERAL  */
+    TYPE_NAME = 331,               /* TYPE_NAME  */
+    ENUM = 332,                    /* ENUM  */
+    UNION = 333,                   /* UNION  */
+    INVALID = 334,                 /* INVALID  */
+    ELLIPSIS = 335,                /* ELLIPSIS  */
+    CONST = 336                    /* CONST  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -217,7 +215,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 102 "parser.y"
+#line 111 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -229,7 +227,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 233 "parser.tab.h"
+#line 231 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -29,10 +29,11 @@ static void yyerror(const char* s) {
         bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
+        string value;           // Store the actual value for expressions/literals
         
         TypeInfo() : isStatic(false), isConst(false), baseType(""), 
                      isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false) {}
+                     isConstPointer(false), isArray(false), value("") {}
         
         string toString() const {
             string result = "";
@@ -65,10 +66,11 @@ static void yyerror(const char* s) {
         bool isArray;
         vector<int> arrayDimensions;
         string initValue;       // initialization value if any
+        TypeInfo* initType;     // type information of the initializer
         
         DeclaratorInfo() : name(""), isPointer(false), pointerCount(0), 
                           isReference(false), isConstPointer(false), 
-                          isArray(false), initValue("") {}
+                          isArray(false), initValue(""), initType(nullptr) {}
     };
 
     // Symbol table entry structure
@@ -96,6 +98,13 @@ static void yyerror(const char* s) {
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
+    TypeInfo* lookup_typeinfo_by_name(const string& name);
+    
+    // Type checking functions
+    bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
+    TypeInfo* get_expression_type(const string& expr_value);
+    bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
+    bool check_literal_type(const string& value, const string& expected_base_type);
 }
 
 /* Declare value types */
@@ -114,7 +123,7 @@ static void yyerror(const char* s) {
 
 /* Token declarations: include tokens referenced later in the grammar */
 %token INT FLOAT CHAR VOID BOOL IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF TYPEDEF STATIC GOTO
-%token CLASS PUBLIC PRIVATE PROTECTED
+//%token CLASS PUBLIC PRIVATE PROTECTED
 %token NULL_LITERAL
 %token INCREMENT DECREMENT
 %token ARROW LEFT_SHIFT RIGHT_SHIFT
@@ -148,33 +157,33 @@ static void yyerror(const char* s) {
 %type <typeinfo> pointer
 %type<sval> struct_or_union_specifier
 %type<sval> struct_or_union
-%type<sval> class_declaration
-%type<sval> class_body
-%type<sval> class_member
+//%type<sval> class_declaration
+//%type<sval> class_body
+//%type<sval> class_member
 %type<sval> enumerator
 %type<strlist> enumerator_list
 %type<sval> struct_declarator
 %type<strlist> struct_declarator_list
 %type<strlist> specifier_qualifier_list
 %type<ival> constant_expression
-%type<sval> primary_expression
-%type<sval> postfix_expression
-%type<sval> unary_expression
-%type<sval> cast_expression
-%type<sval> multiplicative_expression
-%type<sval> additive_expression
-%type<sval> shift_expression
-%type<sval> relational_expression
-%type<sval> equality_expression
-%type<sval> and_expression
-%type<sval> exclusive_or_expression
-%type<sval> inclusive_or_expression
-%type<sval> logical_and_expression
-%type<sval> logical_or_expression
-%type<sval> conditional_expression
-%type<sval> assignment_expression
-%type<sval> expression
-%type<sval> initializer
+%type<typeinfo> primary_expression
+%type<typeinfo> postfix_expression
+%type<typeinfo> unary_expression
+%type<typeinfo> cast_expression
+%type<typeinfo> multiplicative_expression
+%type<typeinfo> additive_expression
+%type<typeinfo> shift_expression
+%type<typeinfo> relational_expression
+%type<typeinfo> equality_expression
+%type<typeinfo> and_expression
+%type<typeinfo> exclusive_or_expression
+%type<typeinfo> inclusive_or_expression
+%type<typeinfo> logical_and_expression
+%type<typeinfo> logical_or_expression
+%type<typeinfo> conditional_expression
+%type<typeinfo> assignment_expression
+%type<typeinfo> expression
+%type<typeinfo> initializer
 %type<strlist> initializer_list
 %type<sval> assignment_operator
 %type<sval> unary_operator
@@ -200,7 +209,7 @@ start
 global_declaration
 	: function_definition                        
 	| declaration                                	
-	| class_declaration 							 
+	//| class_declaration 							 
     ;
 
 function_definition
@@ -222,14 +231,21 @@ declaration
 			combinedType.isConstPointer = declInfo->isConstPointer;
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
-			
+			// Insert into symbol table
 			insert_symbol(declInfo->name, combinedType, declInfo->initValue);
+			// For initialization compatibility check
+			if (declInfo->initType) {
+				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
+					yyerror(("Type mismatch in initialization of variable " + declInfo->name).c_str());
+				}
+				delete declInfo->initType;
+			}
 			delete declInfo;
 		}
 		delete $1;
 		delete $2;
-	}              /* e.g., int a = 5, b; int *p[10]; */   
-	//| constructor_call SEMICOLON;	
+	}                                 /* e.g., int x, *p = NULL, arr[10] = {0}; */
+
     ;
 
 
@@ -353,6 +369,7 @@ init_declarator
 	| declarator ASSIGN initializer { 
 		$$ = $1;
 		$$->initValue = "initialized";  // For now, just mark as initialized
+		$$->initType = $3;  // Store the initializer's type for later checking
 	}                                 /* e.g., x = 5 */ 
 	;
 
@@ -429,9 +446,19 @@ declaration_list
 //--------------------------------- Initializers -> RHS of assignment expressions -----------------------------------------------------
 
 initializer
-	: assignment_expression                                               /* e.g., x = 5 {} - So basically simple RHS in assignment expression*/
-	| LBRACE initializer_list RBRACE                                       /* e.g., {1,2,3} or {{1,2},{4,6}} - For arrays */
-	| LBRACE initializer_list COMMA RBRACE                                 /* e.g., {1,2,} */
+	: assignment_expression { $$ = $1; }                                               /* e.g., x = 5 {} - So basically simple RHS in assignment expression*/
+	| LBRACE initializer_list RBRACE { 
+		// For array initializers, create a placeholder type
+		$$ = new TypeInfo();
+		$$->baseType = "array_init";
+		$$->value = "array_initializer";
+	}                                       /* e.g., {1,2,3} or {{1,2},{4,6}} - For arrays */
+	| LBRACE initializer_list COMMA RBRACE { 
+		// For array initializers with trailing comma
+		$$ = new TypeInfo();
+		$$->baseType = "array_init";
+		$$->value = "array_initializer";
+	}                                 /* e.g., {1,2,} */
 	;
 
 initializer_list
@@ -470,114 +497,68 @@ parameter_declaration
 	;
 
 
-
-
-
-
-
-// ----------------------------- Classes and Objects -----------------------------------------------------
-class_declaration
-    : CLASS IDENTIFIER opt_base_clause LBRACE class_body RBRACE SEMICOLON 
-    ;
-
-opt_base_clause
-    : /* empty */
-	| COLON base_specifier_list
-    ;
-
-base_specifier_list
-    : base_specifier
-    | base_specifier_list COMMA base_specifier
-    ;
-
-base_specifier
-    : opt_access_specifier IDENTIFIER
-    ;
-
-opt_access_specifier
-    : /* empty */
-    | PUBLIC
-    | PROTECTED
-    | PRIVATE
-    ;
-
-class_body
-    : /* empty */
-    | class_body member_declaration
-    ;
-
-member_declaration
-    : declaration
-    | statement_list
-    | function_definition
-    | access_label
-    | class_declaration   /* nested class */
-	| constructor_declaration
-	| destructor_declaration
-    ;
-
-constructor_declaration
-	: IDENTIFIER LPAREN parameter_list RPAREN compound_statement 
-	;
-constructor_call :
-  CLASS IDENTIFIER IDENTIFIER LPAREN argument_expression_list RPAREN 
-  ;
-
-destructor_declaration
-	: BIT_NOT IDENTIFIER LPAREN RPAREN compound_statement
-	;
-
-access_label
-    : PUBLIC COLON
-    | PROTECTED COLON
-    | PRIVATE COLON
-    ;
-
-
-
-
-
-
-
 //------------------------ Simply expressions - used in RHS of initializers -----------------------------------------------------
 
 primary_expression
     : IDENTIFIER { 
         check_variable_declaration(*$1);
-        $$ = $1; 
+        SymbolEntry entry;
+        if (lookup_symbol(*$1, entry)) {
+            $$ = new TypeInfo(entry.type);  // Copy type from symbol table
+            $$->value = *$1;  // Store identifier name as value
+        } else {
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            $$->value = *$1;
+        }
+        delete $1;
     }                                        
     | INT_LITERAL { 
-        $$ = new string(to_string($1));
+        $$ = new TypeInfo();
+        $$->baseType = "int";
+        $$->value = to_string($1);
     }
     | FLOAT_LITERAL { 
-        $$ = new string(to_string($1));
+        $$ = new TypeInfo();
+        $$->baseType = "float";
+        $$->value = to_string($1);
     }
     | CHAR_LITERAL { 
-        $$ = $1;
+        $$ = new TypeInfo();
+        $$->baseType = "char";
+        $$->value = *$1;
+        delete $1;
     }
     | STRING_LITERAL { 
-        $$ = $1;
+        $$ = new TypeInfo();
+        $$->baseType = "string";
+        $$->value = *$1;
+        delete $1;
     }
 	| NULL_LITERAL { 
-        $$ = new string("NULL");
+        $$ = new TypeInfo();
+        $$->baseType = "null";
+        $$->value = "NULL";
     }
 	| BOOLEAN_LITERAL { 
-        $$ = new string(to_string($1));
+        $$ = new TypeInfo();
+        $$->baseType = "bool";
+        $$->value = to_string($1);
     }
     | LPAREN expression RPAREN { 
-        $$ = $2;
+        $$ = $2;  // Pass through the expression type
     }
     ;
 
 postfix_expression
-	: primary_expression { $$ = $1; }                                          /* e.g., x */
-	| postfix_expression LBRACKET expression RBRACKET { $$ = $1; }               /* e.g., arr[i] */
-	| postfix_expression LPAREN RPAREN { $$ = $1; }                              /* e.g., func() */
-	| postfix_expression LPAREN argument_expression_list RPAREN { $$ = $1; }       /* e.g., func(a,b) */
-	| postfix_expression DOT IDENTIFIER { $$ = $1; }                              /* e.g., obj.field */
-	| postfix_expression ARROW IDENTIFIER { $$ = $1; }                            /* e.g., ptr->field */
-	| postfix_expression INCREMENT { $$ = $1; }                                       /* e.g., x++ */
-	| postfix_expression DECREMENT { $$ = $1; }                                       /* e.g., x-- */
+	: primary_expression                                      /* e.g., x */
+	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */
+	| postfix_expression LPAREN RPAREN                               /* e.g., func() */
+	| postfix_expression LPAREN argument_expression_list RPAREN      /* e.g., func(a,b) */
+	| postfix_expression DOT IDENTIFIER                            /* e.g., obj.field */
+	| postfix_expression ARROW IDENTIFIER                             /* e.g., ptr->field */
+	| postfix_expression INCREMENT                                  /* e.g., x++ */
+	| postfix_expression DECREMENT                                 /* e.g., x-- */
 	;
 
 argument_expression_list
@@ -587,11 +568,11 @@ argument_expression_list
 
 unary_expression
 	: postfix_expression                                             /* e.g., x */
-	| INCREMENT unary_expression                                         /* e.g., ++x */
-	| DECREMENT unary_expression                                         /* e.g., --x */
-	| unary_operator cast_expression                                   /* e.g., -y or &z */
-	| SIZEOF unary_expression                                          /* e.g., sizeof x */
-	| SIZEOF LPAREN type_name RPAREN                                     /* e.g., sizeof(int) */
+	| INCREMENT unary_expression                                        /* e.g., ++x */
+	| DECREMENT unary_expression                                       /* e.g., --x */
+	| unary_operator cast_expression                                /* e.g., -y or &z */
+	| SIZEOF unary_expression                                       /* e.g., sizeof x */
+	| SIZEOF LPAREN type_name RPAREN                                 /* e.g., sizeof(int) */
 	;
 
 unary_operator
@@ -604,75 +585,84 @@ unary_operator
 	;
 
 cast_expression
-	: unary_expression { $$ = $1; }                                                /* e.g., x */
-	| LPAREN type_name RPAREN cast_expression { $$ = $4; }                           /* e.g., (int) x */
+	: unary_expression                                              /* e.g., x */
+	| LPAREN type_name RPAREN cast_expression                         /* e.g., (int) x */
 	;
 
 multiplicative_expression
-	: cast_expression { $$ = $1; }                                                 /* e.g., a */
-	| multiplicative_expression STAR cast_expression { $$ = $1; }                      /* e.g., a * b */
-	| multiplicative_expression DIVIDE cast_expression { $$ = $1; }                      /* e.g., a / b */
-	| multiplicative_expression MOD cast_expression { $$ = $1; }                      /* e.g., a % b */
+	: cast_expression                                               /* e.g., a */
+	| multiplicative_expression STAR cast_expression                     /* e.g., a * b */
+	| multiplicative_expression DIVIDE cast_expression                   /* e.g., a / b */
+	| multiplicative_expression MOD cast_expression                    /* e.g., a % b */
 	;
 
 additive_expression
-	: multiplicative_expression { $$ = $1; }                                        /* e.g., a */
-	| additive_expression PLUS multiplicative_expression { $$ = $1; }                  /* e.g., a + b */
-	| additive_expression MINUS multiplicative_expression { $$ = $1; }                  /* e.g., a - b */
+	: multiplicative_expression                                   /* e.g., a */
+	| additive_expression PLUS multiplicative_expression                  /* e.g., a + b */
+	| additive_expression MINUS multiplicative_expression                /* e.g., a - b */
 	;
 
 shift_expression
-	: additive_expression { $$ = $1; }                                               /* e.g., a */
-	| shift_expression LEFT_SHIFT additive_expression { $$ = $1; }                        /* e.g., a << b */
-	| shift_expression RIGHT_SHIFT additive_expression { $$ = $1; }                       /* e.g., a >> b */
+	: additive_expression                                             /* e.g., a */
+	| shift_expression LEFT_SHIFT additive_expression                     /* e.g., a << b */
+	| shift_expression RIGHT_SHIFT additive_expression                     /* e.g., a >> b */
 	;
 
 relational_expression
-	: shift_expression { $$ = $1; }                                                  /* e.g., a */
-	| relational_expression LT shift_expression { $$ = $1; }                           /* e.g., a < b */
-	| relational_expression GT shift_expression { $$ = $1; }                           /* e.g., a > b */
-	| relational_expression LE shift_expression { $$ = $1; }                          /* e.g., a <= b */
-	| relational_expression GE shift_expression { $$ = $1; }                          /* e.g., a >= b */
+	: shift_expression { /*$$ = $1;*/ }                                                  /* e.g., a */
+	| relational_expression LT shift_expression                            /* e.g., a < b */
+	| relational_expression GT shift_expression                            /* e.g., a > b */
+	| relational_expression LE shift_expression                           /* e.g., a <= b */
+	| relational_expression GE shift_expression                           /* e.g., a >= b */
 	;
 
 equality_expression
-	: relational_expression { $$ = $1; }                                             /* e.g., a */
-	| equality_expression EQ relational_expression { $$ = $1; }                      /* e.g., a == b */
-	| equality_expression NEQ relational_expression { $$ = $1; }                      /* e.g., a != b */
+	: relational_expression                                            /* e.g., a */
+	| equality_expression EQ relational_expression                  /* e.g., a == b */
+	| equality_expression NEQ relational_expression                     /* e.g., a != b */
 	;
 
 and_expression
-	: equality_expression { $$ = $1; }                                               /* e.g., a */
-	| and_expression BIT_AND equality_expression { $$ = $1; }                                /* e.g., a & b */
+	: equality_expression                                          /* e.g., a */
+	| and_expression BIT_AND equality_expression                               /* e.g., a & b */
 	;
 
 exclusive_or_expression
-	: and_expression { $$ = $1; }                                                    /* e.g., a */
-	| exclusive_or_expression BIT_XOR and_expression { $$ = $1; }                           /* e.g., a ^ b */
+	: and_expression                                              /* e.g., a */
+	| exclusive_or_expression BIT_XOR and_expression                          /* e.g., a ^ b */
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression { $$ = $1; }                                           /* e.g., a */
-	| inclusive_or_expression BIT_OR exclusive_or_expression { $$ = $1; }                   /* e.g., a | b */
+	: exclusive_or_expression                                      /* e.g., a */
+	| inclusive_or_expression BIT_OR exclusive_or_expression                    /* e.g., a | b */
 	;
 
 logical_and_expression
-	: inclusive_or_expression { $$ = $1; }                                           /* e.g., a */
-	| logical_and_expression LOGICAL_AND inclusive_or_expression { $$ = $1; }                  /* e.g., a && b */
+	: inclusive_or_expression                                /* e.g., a */
+	| logical_and_expression LOGICAL_AND inclusive_or_expression                 /* e.g., a && b */
 	;
 
 logical_or_expression
-	: logical_and_expression                                            /* e.g., a */
-	| logical_or_expression LOGICAL_OR logical_and_expression                     /* e.g., a || b */
+	: logical_and_expression                                      /* e.g., a */
+	| logical_or_expression LOGICAL_OR logical_and_expression                   /* e.g., a || b */
 	;
 
 conditional_expression
-	: logical_or_expression                                             /* e.g., x */ 
+	: logical_or_expression                                            /* e.g., x */ 
 	;
 
 assignment_expression
-	: conditional_expression                                            /* e.g., x */
-	| unary_expression assignment_operator assignment_expression            /* e.g., x = y or x += y */
+	: conditional_expression { /*$$ = $1;*/ }                                            /* e.g., x */
+	| unary_expression assignment_operator assignment_expression { 
+		// Type checking for assignment
+		// for now consider lhs is only identifier , so get its type from symbol table
+		TypeInfo* lhs_type = $1;
+		TypeInfo* rhs_type = $3;
+		if (!check_initialization_compatibility(*lhs_type, *rhs_type)) {
+			yyerror("Type mismatch in assignment");
+		}
+		$$ = rhs_type;  // Result type is the RHS type
+	}                                 /* e.g., x += 5 */
 	;
 
 assignment_operator
@@ -690,12 +680,12 @@ assignment_operator
 	;
 
 expression
-	: assignment_expression                                             /* e.g., x = 1 */
-	| expression COMMA assignment_expression                               /* e.g., x = 1, y = 2 */
+	: assignment_expression { /*$$ = $1;*/ }                                             /* e.g., x = 1 */
+	| expression COMMA assignment_expression { /*$$ = $1; delete $3;*/ }                               /* e.g., x = 1, y = 2 */
 	;
 
 constant_expression
-	: conditional_expression { $$ = 0; }                           /* e.g., (1+2) - For now, return 0 */
+	: conditional_expression { /*$$ = $1;*/ }                           /* e.g., (1+2) - For now, return 0 */
 	;
 
 
@@ -718,7 +708,7 @@ struct_or_union_specifier
 struct_or_union
 	: STRUCT { $$ = new string("struct"); }                                                            /* struct */
 	| UNION { $$ = new string("union"); }                                                             /* union */	
-	| CLASS { $$ = new string("class"); }													 						 						
+	//| CLASS { $$ = new string("class"); }													 						 						
 	;
 
 struct_declaration_list
@@ -937,6 +927,7 @@ bool lookup_symbol_current_scope(const string& name) {
     return scope_stack.back().find(name) != scope_stack.back().end();
 }
 
+
 void check_variable_declaration(const string& name) {
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
@@ -953,56 +944,80 @@ void check_variable_declaration(const string& name) {
     }
 }
 
-void displaySymbolTable() {
-    cout << "\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
-    cout << "|                                   SYMBOL TABLE                                         |\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
+void displaySymbolTable(){
+	cout << "\nCurrent Symbol Table:\n";
+	for (int i = 0; i < scope_stack.size(); i++) {
+		cout << "Scope Level " << i << ":\n";
+		for (const auto& entry : scope_stack[i]) {
+			cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")";
+			if (entry.second.isInitialized) {
+				cout << " = " << entry.second.initialValue;
+			}
+			cout << " [Declared at line " << entry.second.line << "]\n";
+		}
+	}
+	cout << "End of Symbol Table\n\n";
+}
+
+// Type checking functions
+bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
+    // Check base types match (ignoring const/static as requested)
+    if (left_type.baseType != right_type.baseType) return false;
     
-    if (scope_stack.empty()) {
-        cout << "| No active scopes                                                                    |\n";
-        cout << "+-----------------------------------------------------------------------------------------+\n";
-        return;
+    // Check pointer compatibility 
+    if (left_type.pointerCount != right_type.pointerCount) return false;
+    
+    // Check array dimensions if both are arrays
+    if (left_type.arrayDimensions.size() != right_type.arrayDimensions.size()) return false;
+    
+    // For arrays, check each dimension (for direct assignment compatibility)
+    for (size_t i = 0; i < left_type.arrayDimensions.size(); i++) {
+        if (left_type.arrayDimensions[i] != right_type.arrayDimensions[i]) return false;
     }
     
-    for (int i = 0; i < scope_stack.size(); i++) {
-        cout << "\n+- SCOPE LEVEL " << (i + 1) << " ";
-        cout << string(70 - to_string(i + 1).length(), '-') << "+\n";
-        
-        if (scope_stack[i].empty()) {
-            cout << "| (empty scope)                                                                       |\n";
-            cout << "+-----------------------------------------------------------------------------------------+\n";
-            continue;
+    return true;
+}
+
+TypeInfo* get_expression_type(const string& identifier) {
+    // Search for the identifier in the symbol table from current scope up
+    for (int i = scope_stack.size() - 1; i >= 0; i--) {
+        auto it = scope_stack[i].find(identifier);
+        if (it != scope_stack[i].end()) {
+            return &(it->second.type);
         }
-        
-        // Table header
-        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
-        cout << "| Identifier  | Type                    | Line | Scope | Initialized | Value       |\n";
-        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
-        
-        // Table content
-        for (const auto& entry : scope_stack[i]) {
-            string name = entry.second.name;
-            string type = entry.second.type.toString();
-            string line = to_string(entry.second.line);
-            string scope = to_string(entry.second.scope_level);
-            string initialized = entry.second.isInitialized ? "Yes" : "No";
-            string value = entry.second.initialValue;
-            
-            // Truncate long strings
-            if (name.length() > 11) name = name.substr(0, 8) + "...";
-            if (type.length() > 23) type = type.substr(0, 20) + "...";
-            if (value.length() > 11) value = value.substr(0, 8) + "...";
-            
-            cout << "| " << left << setw(11) << name
-                 << " | " << left << setw(23) << type
-                 << " | " << right << setw(4) << line
-                 << " | " << right << setw(5) << scope
-                 << " | " << left << setw(11) << initialized
-                 << " | " << left << setw(11) << value << " |\n";
-        }
-        cout << "+-------------+-------------------------+------+-------+-------------+-------------+\n";
     }
+    return nullptr; // Not found
+}
+
+bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
+    // For primary expressions (as requested), check basic compatibility
+    return types_compatible(var_type, init_type);
+}
+
+bool check_literal_type(const string& value, const string& expected_base_type) {
+    if (expected_base_type == "int") {
+        // Check if value is an integer literal
+        for (char c : value) {
+            if (!isdigit(c) && c != '-' && c != '+') return false;
+        }
+        return true;
+    } else if (expected_base_type == "float") {
+        // Check if value is a float literal
+        bool has_dot = false;
+        for (char c : value) {
+            if (c == '.') {
+                if (has_dot) return false; // Multiple dots
+                has_dot = true;
+            } else if (!isdigit(c) && c != '-' && c != '+') {
+                return false;
+            }
+        }
+        return true;
+    } else if (expected_base_type == "char") {
+        // Check if value is a character literal
+        return value.length() >= 3 && value[0] == '\'' && value[value.length()-1] == '\'';
+    }
+    return false;
 }
 
 

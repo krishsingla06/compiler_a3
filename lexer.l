@@ -32,7 +32,7 @@ static char* mystrdup(const char* s) {
 
 
 %%
-[ \t\r\n]+ { /* Ignore whitespace */ }
+[ \t\r\n]+ { /* Ignore whitespace  Alos i removed class,public,private,protected*/ }
 
 [/][/][^\n]* { /* Single line comment - matches // followed by any ASCII except newline */ }
 
@@ -62,10 +62,7 @@ static char* mystrdup(const char* s) {
 "struct"                            { return STRUCT; }
 "union"                             { return UNION; }
 "enum"                              { return ENUM; }
-"class"                             { return CLASS; }
-"public"                            { return PUBLIC; }
-"private"                           { return PRIVATE; }
-"protected"                         { return PROTECTED; }
+
 
 "++"                                { return INCREMENT; }
 "--"                                { return DECREMENT; }
