@@ -56,6 +56,72 @@ static void yyerror(const char* s) {
         }
     };
 
+    // Scope context with per-scope value storage
+    struct ScopeContext {
+        map<string, struct SymbolEntry> symbols;
+        vector<uint8_t> value_storage;
+        size_t next_offset;
+        int scope_level;
+        
+        ScopeContext(int level) : next_offset(0), scope_level(level) {}
+        
+        // Get size of a type in bytes
+        size_t getTypeSize(const TypeInfo& type) {
+            if (type.isPointer) {
+                return sizeof(void*);  // Pointer size
+            }
+            
+            if (type.isArray) {
+                size_t element_size = getBaseTypeSize(type.baseType);
+                size_t total_elements = 1;
+                for (int dim : type.arrayDimensions) {
+                    if (dim > 0) total_elements *= dim;
+                }
+                return element_size * total_elements;
+            }
+            
+            return getBaseTypeSize(type.baseType);
+        }
+        
+        size_t getBaseTypeSize(const string& baseType) {
+            if (baseType == "int") return sizeof(int);
+            if (baseType == "float") return sizeof(float);
+            if (baseType == "char") return sizeof(char);
+            if (baseType == "bool") return sizeof(bool);
+            if (baseType == "double") return sizeof(double);
+            return 1; // Default for unknown types
+        }
+        
+        // Always allocate space, initialize with zeros if no value provided
+        size_t allocateVariable(const TypeInfo& type, const void* init_value = nullptr) {
+            size_t size = getTypeSize(type);
+            size_t offset = next_offset;
+            
+            // Resize storage to accommodate new variable
+            value_storage.resize(offset + size);
+            
+            if (init_value) {
+                // Copy provided initial value
+                memcpy(&value_storage[offset], init_value, size);
+            } else {
+                // Initialize with zeros
+                memset(&value_storage[offset], 0, size);
+            }
+            
+            next_offset += size;
+            return offset;
+        }
+        
+        // Retrieve value from this scope's storage
+        template<typename T>
+        T getValue(size_t offset) const {
+            if (offset + sizeof(T) <= value_storage.size()) {
+                return *reinterpret_cast<const T*>(&value_storage[offset]);
+            }
+            throw runtime_error("Invalid offset or corrupted storage");
+        }
+    };
+
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
         string name;            // variable name
@@ -79,16 +145,18 @@ static void yyerror(const char* s) {
         TypeInfo type;
         int line;
         int scope_level;
-        string initialValue;    // Store initialization value if any
-        bool isInitialized;
+        size_t value_offset;        // Always valid - every variable has storage
+        size_t value_size;          // Always > 0 - size of allocated storage
+        bool isInitialized;         // true = has explicit initial value, false = zeros
         
-        SymbolEntry() : line(0), scope_level(0), initialValue(""), isInitialized(false) {}
+        SymbolEntry() : line(0), scope_level(0), value_offset(0), 
+                       value_size(0), isInitialized(false) {}
     };
 }
 
 %code {
-    // Stack of symbol tables for different scopes
-    vector<map<string, SymbolEntry>> scope_stack;
+    // Stack of scope contexts for different scopes
+    vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
 
     // Function declarations for scope management
@@ -99,6 +167,7 @@ static void yyerror(const char* s) {
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
     TypeInfo* lookup_typeinfo_by_name(const string& name);
+    void* parseInitialValue(const TypeInfo& type, const string& initValue);
     
     // Type checking functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
@@ -231,15 +300,21 @@ declaration
 			combinedType.isConstPointer = declInfo->isConstPointer;
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
-			// Insert into symbol table
-			insert_symbol(declInfo->name, combinedType, declInfo->initValue);
-			// For initialization compatibility check
-			if (declInfo->initType) {
+			
+			// Extract initial value from TypeInfo if present
+			string initValue = "";
+			if (declInfo->initType != nullptr) {
+				initValue = declInfo->initType->value;
+				
+				// Type check initialization
 				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
 					yyerror(("Type mismatch in initialization of variable " + declInfo->name).c_str());
 				}
 				delete declInfo->initType;
 			}
+			
+			// Insert into symbol table with value storage
+			insert_symbol(declInfo->name, combinedType, initValue);
 			delete declInfo;
 		}
 		delete $1;
@@ -368,7 +443,6 @@ init_declarator
 	: declarator { $$ = $1; }                                                  /* e.g., x */ 
 	| declarator ASSIGN initializer { 
 		$$ = $1;
-		$$->initValue = "initialized";  // For now, just mark as initialized
 		$$->initType = $3;  // Store the initializer's type for later checking
 	}                                 /* e.g., x = 5 */ 
 	;
@@ -861,33 +935,56 @@ jump_statement
 
 void enter_scope() {
     current_scope_level++;
-    scope_stack.push_back(map<string, SymbolEntry>());
+    scope_stack.emplace_back(current_scope_level);
     cout << "Entering scope level " << current_scope_level << "\n";
 }
 
 void exit_scope() {
     if (!scope_stack.empty()) {
-        cout << "Exiting scope level " << current_scope_level << "\n";
+        auto& current_scope = scope_stack.back();
+        cout << "Exiting scope level " << current_scope_level 
+             << " (freeing " << current_scope.value_storage.size() 
+             << " bytes of value storage)\n";
+        
         // Display symbols being destroyed
-        if (!scope_stack.back().empty()) {
+        if (!current_scope.symbols.empty()) {
             cout << "Destroying symbols from scope " << current_scope_level << ":\n";
-            for (const auto& entry : scope_stack.back()) {
+            for (const auto& entry : current_scope.symbols) {
                 cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")\n";
             }
         }
-        scope_stack.pop_back();
+        
+        scope_stack.pop_back();  // Automatically frees the scope's value storage
         current_scope_level--;
     }
 }
 
+void* parseInitialValue(const TypeInfo& type, const string& initValue) {
+    if (type.baseType == "int") {
+        int* val = new int(stoi(initValue));
+        return val;
+    } else if (type.baseType == "float") {
+        float* val = new float(stof(initValue));
+        return val;
+    } else if (type.baseType == "char") {
+        char* val = new char(initValue.length() > 2 ? initValue[1] : initValue[0]);  // Extract from 'c' format or direct char
+        return val;
+    } else if (type.baseType == "bool") {
+        bool* val = new bool(initValue == "true" || initValue == "1");
+        return val;
+    }
+    return nullptr;
+}
+
 void insert_symbol(const string& name, const TypeInfo& type, const string& initValue) {
     if (scope_stack.empty()) {
-        // Global scope - create initial scope
         enter_scope();
     }
     
-    // Check if symbol already exists in current scope
-    if (scope_stack.back().find(name) != scope_stack.back().end()) {
+    auto& current_scope = scope_stack.back();
+    
+    // Check for redeclaration
+    if (current_scope.symbols.find(name) != current_scope.symbols.end()) {
         cerr << "Error at line " << yylineno << ": Variable '" << name 
              << "' already declared in current scope\n";
         return;
@@ -898,14 +995,34 @@ void insert_symbol(const string& name, const TypeInfo& type, const string& initV
     entry.type = type;
     entry.line = yylineno;
     entry.scope_level = current_scope_level;
-    entry.initialValue = initValue;
     entry.isInitialized = !initValue.empty();
     
-    scope_stack.back()[name] = entry;
+    // ALWAYS allocate storage space
+    if (entry.isInitialized) {
+        // Parse and store the initial value
+        void* parsed_value = parseInitialValue(type, initValue);
+        if (parsed_value) {
+            entry.value_offset = current_scope.allocateVariable(type, parsed_value);
+            free(parsed_value);  // Clean up temporary storage
+        } else {
+            // Fallback to zeros if parsing failed
+            entry.value_offset = current_scope.allocateVariable(type, nullptr);
+        }
+    } else {
+        // Allocate with zeros
+        entry.value_offset = current_scope.allocateVariable(type, nullptr);
+    }
     
-    cout << "Inserted symbol: " << name << " (" << type.toString() << ")";
+    entry.value_size = current_scope.getTypeSize(type);
+    current_scope.symbols[name] = entry;
+    
+    cout << "Allocated variable: " << name << " (" << type.toString() 
+         << ") at offset " << entry.value_offset 
+         << ", size " << entry.value_size << " bytes";
     if (entry.isInitialized) {
         cout << " = " << initValue;
+    } else {
+        cout << " (initialized to zeros)";
     }
     cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
 }
@@ -913,8 +1030,8 @@ void insert_symbol(const string& name, const TypeInfo& type, const string& initV
 bool lookup_symbol(const string& name, SymbolEntry& entry) {
     // Search from current scope to global scope
     for (int i = scope_stack.size() - 1; i >= 0; i--) {
-        auto it = scope_stack[i].find(name);
-        if (it != scope_stack[i].end()) {
+        auto it = scope_stack[i].symbols.find(name);
+        if (it != scope_stack[i].symbols.end()) {
             entry = it->second;
             return true;
         }
@@ -924,7 +1041,7 @@ bool lookup_symbol(const string& name, SymbolEntry& entry) {
 
 bool lookup_symbol_current_scope(const string& name) {
     if (scope_stack.empty()) return false;
-    return scope_stack.back().find(name) != scope_stack.back().end();
+    return scope_stack.back().symbols.find(name) != scope_stack.back().symbols.end();
 }
 
 
@@ -938,25 +1055,88 @@ void check_variable_declaration(const string& name) {
              << entry.type.toString() << " at line " << entry.line 
              << " in scope " << entry.scope_level;
         if (entry.isInitialized) {
-            cout << " (initialized with: " << entry.initialValue << ")";
+            cout << " (initialized)";
+        } else {
+            cout << " (default zeros)";
         }
-        cout << "\n";
+        cout << " [Offset: " << entry.value_offset 
+             << ", Size: " << entry.value_size << " bytes]\n";
     }
 }
 
-void displaySymbolTable(){
-	cout << "\nCurrent Symbol Table:\n";
-	for (int i = 0; i < scope_stack.size(); i++) {
-		cout << "Scope Level " << i << ":\n";
-		for (const auto& entry : scope_stack[i]) {
-			cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")";
-			if (entry.second.isInitialized) {
-				cout << " = " << entry.second.initialValue;
-			}
-			cout << " [Declared at line " << entry.second.line << "]\n";
-		}
-	}
-	cout << "End of Symbol Table\n\n";
+void displayVariableValue(const SymbolEntry& entry, const ScopeContext& scope) {
+    cout << "  - " << entry.name << " (" << entry.type.toString() << ") ";
+    
+    try {
+        if (entry.type.baseType == "int") {
+            int val = scope.getValue<int>(entry.value_offset);
+            cout << "= " << val;
+            if (!entry.isInitialized && val == 0) cout << " (default)";
+            cout << " [Dec: " << val << ", Hex: 0x" << hex << val << dec << "]";
+            
+        } else if (entry.type.baseType == "float") {
+            float val = scope.getValue<float>(entry.value_offset);
+            cout << "= " << val;
+            if (!entry.isInitialized && val == 0.0f) cout << " (default)";
+            
+        } else if (entry.type.baseType == "char") {
+            char val = scope.getValue<char>(entry.value_offset);
+            cout << "= ";
+            if (val >= 32 && val <= 126) {
+                cout << "'" << val << "'";
+            } else {
+                cout << "'\\x" << hex << (int)(unsigned char)val << dec << "'";
+            }
+            if (!entry.isInitialized && val == '\0') cout << " (default)";
+            cout << " [ASCII: " << (int)(unsigned char)val << "]";
+            
+        } else if (entry.type.baseType == "bool") {
+            bool val = scope.getValue<bool>(entry.value_offset);
+            cout << "= " << (val ? "true" : "false");
+            if (!entry.isInitialized && !val) cout << " (default)";
+        } else {
+            cout << "= <unsupported type>";
+        }
+    } catch (const exception& e) {
+        cout << "= <error reading value: " << e.what() << ">";
+    }
+    
+    cout << " [Offset: " << entry.value_offset 
+         << ", Size: " << entry.value_size << " bytes]\n";
+}
+
+void displaySymbolTable() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                            SYMBOL TABLE WITH VALUE STORAGE                            |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (scope_stack.empty()) {
+        cout << "| No active scopes                                                                    |\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+        return;
+    }
+    
+    for (int i = 0; i < scope_stack.size(); i++) {
+        auto& scope = scope_stack[i];
+        cout << "\n+- SCOPE LEVEL " << scope.scope_level << " ";
+        cout << string(55 - to_string(scope.scope_level).length(), '-') << "+\n";
+        cout << "| Storage: " << scope.value_storage.size() << " bytes, Next offset: " << scope.next_offset << string(50, ' ') << "|\n";
+        
+        if (scope.symbols.empty()) {
+            cout << "| (empty scope)                                                                       |\n";
+            cout << "+-----------------------------------------------------------------------------------------+\n";
+            continue;
+        }
+        
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+        
+        // Display variables with their values
+        for (const auto& entry : scope.symbols) {
+            displayVariableValue(entry.second, scope);
+        }
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+    }
 }
 
 // Type checking functions
@@ -981,9 +1161,21 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
 TypeInfo* get_expression_type(const string& identifier) {
     // Search for the identifier in the symbol table from current scope up
     for (int i = scope_stack.size() - 1; i >= 0; i--) {
-        auto it = scope_stack[i].find(identifier);
-        if (it != scope_stack[i].end()) {
+        auto it = scope_stack[i].symbols.find(identifier);
+        if (it != scope_stack[i].symbols.end()) {
             return &(it->second.type);
+        }
+    }
+    return nullptr; // Not found
+}
+
+TypeInfo* lookup_typeinfo_by_name(const string& name) {
+    // Search from current scope to global scope for a matching identifier name
+    for (int i = scope_stack.size() - 1; i >= 0; i--) {
+        for (auto& entry : scope_stack[i].symbols) {
+            if (entry.second.name == name) {
+                return &(entry.second.type);
+            }
         }
     }
     return nullptr; // Not found

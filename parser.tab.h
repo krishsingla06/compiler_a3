@@ -88,6 +88,72 @@ extern int yydebug;
         }
     };
 
+    // Scope context with per-scope value storage
+    struct ScopeContext {
+        map<string, struct SymbolEntry> symbols;
+        vector<uint8_t> value_storage;
+        size_t next_offset;
+        int scope_level;
+        
+        ScopeContext(int level) : next_offset(0), scope_level(level) {}
+        
+        // Get size of a type in bytes
+        size_t getTypeSize(const TypeInfo& type) {
+            if (type.isPointer) {
+                return sizeof(void*);  // Pointer size
+            }
+            
+            if (type.isArray) {
+                size_t element_size = getBaseTypeSize(type.baseType);
+                size_t total_elements = 1;
+                for (int dim : type.arrayDimensions) {
+                    if (dim > 0) total_elements *= dim;
+                }
+                return element_size * total_elements;
+            }
+            
+            return getBaseTypeSize(type.baseType);
+        }
+        
+        size_t getBaseTypeSize(const string& baseType) {
+            if (baseType == "int") return sizeof(int);
+            if (baseType == "float") return sizeof(float);
+            if (baseType == "char") return sizeof(char);
+            if (baseType == "bool") return sizeof(bool);
+            if (baseType == "double") return sizeof(double);
+            return 1; // Default for unknown types
+        }
+        
+        // Always allocate space, initialize with zeros if no value provided
+        size_t allocateVariable(const TypeInfo& type, const void* init_value = nullptr) {
+            size_t size = getTypeSize(type);
+            size_t offset = next_offset;
+            
+            // Resize storage to accommodate new variable
+            value_storage.resize(offset + size);
+            
+            if (init_value) {
+                // Copy provided initial value
+                memcpy(&value_storage[offset], init_value, size);
+            } else {
+                // Initialize with zeros
+                memset(&value_storage[offset], 0, size);
+            }
+            
+            next_offset += size;
+            return offset;
+        }
+        
+        // Retrieve value from this scope's storage
+        template<typename T>
+        T getValue(size_t offset) const {
+            if (offset + sizeof(T) <= value_storage.size()) {
+                return *reinterpret_cast<const T*>(&value_storage[offset]);
+            }
+            throw runtime_error("Invalid offset or corrupted storage");
+        }
+    };
+
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
         string name;            // variable name
@@ -111,13 +177,15 @@ extern int yydebug;
         TypeInfo type;
         int line;
         int scope_level;
-        string initialValue;    // Store initialization value if any
-        bool isInitialized;
+        size_t value_offset;        // Always valid - every variable has storage
+        size_t value_size;          // Always > 0 - size of allocated storage
+        bool isInitialized;         // true = has explicit initial value, false = zeros
         
-        SymbolEntry() : line(0), scope_level(0), initialValue(""), isInitialized(false) {}
+        SymbolEntry() : line(0), scope_level(0), value_offset(0), 
+                       value_size(0), isInitialized(false) {}
     };
 
-#line 121 "parser.tab.h"
+#line 189 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -215,7 +283,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 111 "parser.y"
+#line 180 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -227,7 +295,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 231 "parser.tab.h"
+#line 299 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

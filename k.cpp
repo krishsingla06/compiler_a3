@@ -3,11 +3,10 @@
 
 int main() {
     int x =4,y=99;
-    int p = x;
+    int p = 3;
     int f = 4;
-    int* ptr;
-    int *xx=ptr;
-    int arr[0];
+    char c = 'c';
+    float z = 9.9;
     
     return 0;
 }
