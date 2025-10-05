@@ -61,11 +61,73 @@ extern int yydebug;
         bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
-        string value;           // Store the actual value for expressions/literals
+        
+        // Native value storage
+        union {
+            int int_value;
+            float float_value;
+            char char_value;
+            bool bool_value;
+        } native_value;
+        
+        string* string_value;   // Separate for heap-allocated strings
+        bool has_native_value;
+        string value;           // Keep for identifiers/expressions
         
         TypeInfo() : isStatic(false), isConst(false), baseType(""), 
                      isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false), value("") {}
+                     isConstPointer(false), isArray(false), string_value(nullptr),
+                     has_native_value(false), value("") {
+            // Initialize union to zero
+            native_value.int_value = 0;
+        }
+        
+        // Value setters
+        void setIntValue(int val) { 
+            native_value.int_value = val; 
+            has_native_value = true; 
+        }
+        void setFloatValue(float val) { 
+            native_value.float_value = val; 
+            has_native_value = true; 
+        }
+        void setCharValue(char val) { 
+            native_value.char_value = val; 
+            has_native_value = true; 
+        }
+        void setBoolValue(bool val) { 
+            native_value.bool_value = val; 
+            has_native_value = true; 
+        }
+        void setStringValue(const string& val) { 
+            if (string_value) delete string_value;
+            string_value = new string(val); 
+            has_native_value = true; 
+        }
+        
+        // Value getters
+        int getIntValue() const { return native_value.int_value; }
+        float getFloatValue() const { return native_value.float_value; }
+        char getCharValue() const { return native_value.char_value; }
+        bool getBoolValue() const { return native_value.bool_value; }
+        string getStringValue() const { 
+            return string_value ? *string_value : ""; 
+        }
+        
+        // Destructor
+        ~TypeInfo() {
+            if (string_value) delete string_value;
+        }
+        
+        // Copy constructor
+        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic), isConst(other.isConst),
+                     baseType(other.baseType), isPointer(other.isPointer), 
+                     pointerCount(other.pointerCount), isReference(other.isReference),
+                     isConstPointer(other.isConstPointer), isArray(other.isArray),
+                     arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                     has_native_value(other.has_native_value), value(other.value) {
+            string_value = other.string_value ? new string(*other.string_value) : nullptr;
+        }
         
         string toString() const {
             string result = "";
@@ -185,7 +247,7 @@ extern int yydebug;
                        value_size(0), isInitialized(false) {}
     };
 
-#line 189 "parser.tab.h"
+#line 251 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -283,7 +345,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 180 "parser.y"
+#line 243 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -295,7 +357,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 299 "parser.tab.h"
+#line 361 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

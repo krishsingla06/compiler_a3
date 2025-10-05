@@ -29,11 +29,73 @@ static void yyerror(const char* s) {
         bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
-        string value;           // Store the actual value for expressions/literals
+        
+        // Native value storage
+        union {
+            int int_value;
+            float float_value;
+            char char_value;
+            bool bool_value;
+        } native_value;
+        
+        string* string_value;   // Separate for heap-allocated strings
+        bool has_native_value;
+        string value;           // Keep for identifiers/expressions
         
         TypeInfo() : isStatic(false), isConst(false), baseType(""), 
                      isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false), value("") {}
+                     isConstPointer(false), isArray(false), string_value(nullptr),
+                     has_native_value(false), value("") {
+            // Initialize union to zero
+            native_value.int_value = 0;
+        }
+        
+        // Value setters
+        void setIntValue(int val) { 
+            native_value.int_value = val; 
+            has_native_value = true; 
+        }
+        void setFloatValue(float val) { 
+            native_value.float_value = val; 
+            has_native_value = true; 
+        }
+        void setCharValue(char val) { 
+            native_value.char_value = val; 
+            has_native_value = true; 
+        }
+        void setBoolValue(bool val) { 
+            native_value.bool_value = val; 
+            has_native_value = true; 
+        }
+        void setStringValue(const string& val) { 
+            if (string_value) delete string_value;
+            string_value = new string(val); 
+            has_native_value = true; 
+        }
+        
+        // Value getters
+        int getIntValue() const { return native_value.int_value; }
+        float getFloatValue() const { return native_value.float_value; }
+        char getCharValue() const { return native_value.char_value; }
+        bool getBoolValue() const { return native_value.bool_value; }
+        string getStringValue() const { 
+            return string_value ? *string_value : ""; 
+        }
+        
+        // Destructor
+        ~TypeInfo() {
+            if (string_value) delete string_value;
+        }
+        
+        // Copy constructor
+        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic), isConst(other.isConst),
+                     baseType(other.baseType), isPointer(other.isPointer), 
+                     pointerCount(other.pointerCount), isReference(other.isReference),
+                     isConstPointer(other.isConstPointer), isArray(other.isArray),
+                     arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                     has_native_value(other.has_native_value), value(other.value) {
+            string_value = other.string_value ? new string(*other.string_value) : nullptr;
+        }
         
         string toString() const {
             string result = "";
@@ -162,12 +224,13 @@ static void yyerror(const char* s) {
     // Function declarations for scope management
     void enter_scope();
     void exit_scope();
-    void insert_symbol(const string& name, const TypeInfo& type, const string& initValue = "");
+    void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
     TypeInfo* lookup_typeinfo_by_name(const string& name);
-    void* parseInitialValue(const TypeInfo& type, const string& initValue);
+    void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType);
+    void* parseInitialValue(const TypeInfo& type, const TypeInfo& initType);
     
     // Type checking functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
@@ -301,20 +364,20 @@ declaration
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
 			
-			// Extract initial value from TypeInfo if present
-			string initValue = "";
+			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
-				initValue = declInfo->initType->value;
-				
-				// Type check initialization
 				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
 					yyerror(("Type mismatch in initialization of variable " + declInfo->name).c_str());
 				}
-				delete declInfo->initType;
 			}
 			
-			// Insert into symbol table with value storage
-			insert_symbol(declInfo->name, combinedType, initValue);
+			// Insert into symbol table with native value storage
+			insert_symbol(declInfo->name, combinedType, declInfo->initType);
+			
+			// Clean up initType after insertion
+			if (declInfo->initType != nullptr) {
+				delete declInfo->initType;
+			}
 			delete declInfo;
 		}
 		delete $1;
@@ -580,6 +643,37 @@ primary_expression
         if (lookup_symbol(*$1, entry)) {
             $$ = new TypeInfo(entry.type);  // Copy type from symbol table
             $$->value = *$1;  // Store identifier name as value
+            
+            // Copy the stored value from the scope's value storage
+            if (entry.isInitialized && !scope_stack.empty()) {
+                // Find the scope that contains this symbol
+                for (auto& scope : scope_stack) {
+                    if (scope.scope_level == entry.scope_level) {
+                        // Copy the stored value based on type
+                        if (entry.type.baseType == "int") {
+                            int stored_val = scope.getValue<int>(entry.value_offset);
+                            $$->setIntValue(stored_val);
+                        } else if (entry.type.baseType == "float") {
+                            float stored_val = scope.getValue<float>(entry.value_offset);
+                            $$->setFloatValue(stored_val);
+                        } else if (entry.type.baseType == "char") {
+                            char stored_val = scope.getValue<char>(entry.value_offset);
+                            $$->setCharValue(stored_val);
+                        } else if (entry.type.baseType == "bool") {
+                            bool stored_val = scope.getValue<bool>(entry.value_offset);
+                            $$->setBoolValue(stored_val);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            //cout<<"MEOW : Found variable:  " << *$1 << " of type " << $$->toString() << " and value offset " << entry.value_offset;
+            if ($$->has_native_value) {
+                cout << " with stored value: ";
+                displayNativeValue(*$$, *$$);
+            }
+            cout << "\n";
         } else {
             $$ = new TypeInfo();
             $$->baseType = "error";
@@ -590,34 +684,34 @@ primary_expression
     | INT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "int";
-        $$->value = to_string($1);
+        $$->setIntValue($1);  // Direct native assignment!
     }
     | FLOAT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "float";
-        $$->value = to_string($1);
+        $$->setFloatValue($1);  // Direct native assignment!
     }
     | CHAR_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "char";
-        $$->value = *$1;
+        $$->setCharValue((*$1)[1]);  // Extract char from 'c' format directly
         delete $1;
     }
     | STRING_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "string";
-        $$->value = *$1;
+        $$->setStringValue(*$1);  // Direct string assignment!
         delete $1;
     }
 	| NULL_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "null";
-        $$->value = "NULL";
+        $$->setIntValue(0);  // NULL as integer 0
     }
 	| BOOLEAN_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "bool";
-        $$->value = to_string($1);
+        $$->setBoolValue($1);  // Direct boolean assignment!
     }
     | LPAREN expression RPAREN { 
         $$ = $2;  // Pass through the expression type
@@ -959,24 +1053,61 @@ void exit_scope() {
     }
 }
 
-void* parseInitialValue(const TypeInfo& type, const string& initValue) {
+void* parseInitialValue(const TypeInfo& type, const TypeInfo& initType) {
+    if (!initType.has_native_value) return nullptr;
+    
     if (type.baseType == "int") {
-        int* val = new int(stoi(initValue));
+        int* val = new int(initType.getIntValue());
         return val;
     } else if (type.baseType == "float") {
-        float* val = new float(stof(initValue));
+        float* val = new float(initType.getFloatValue());
         return val;
     } else if (type.baseType == "char") {
-        char* val = new char(initValue.length() > 2 ? initValue[1] : initValue[0]);  // Extract from 'c' format or direct char
+        char* val = new char(initType.getCharValue());
         return val;
     } else if (type.baseType == "bool") {
-        bool* val = new bool(initValue == "true" || initValue == "1");
+        bool* val = new bool(initType.getBoolValue());
+        return val;
+    } else if (type.baseType == "string") {
+        string str = initType.getStringValue();
+        char* val = new char[str.length() + 1];
+        strcpy(val, str.c_str());
         return val;
     }
     return nullptr;
 }
 
-void insert_symbol(const string& name, const TypeInfo& type, const string& initValue) {
+void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType) {
+    if (!valueType.has_native_value) {
+        cout << "(no value)";
+        return;
+    }
+    
+    if (type.baseType == "int") {
+        cout << valueType.getIntValue();
+    } else if (type.baseType == "float") {
+        cout << valueType.getFloatValue();
+    } else if (type.baseType == "char") {
+        cout << "'" << valueType.getCharValue() << "'";
+    } else if (type.baseType == "bool") {
+        cout << (valueType.getBoolValue() ? "true" : "false");
+    } else if (type.baseType == "string") {
+        cout << "\"" << valueType.getStringValue() << "\"";
+    }
+}
+
+void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
+	//cout<<"BHAOW : Inserting variable:  " << name << " of type " << type.toString() << "\n";
+	//print init type if not null
+	
+	//cout<<"BHAOW : Init type:  "<< (initType ? initType->toString() : "null") << "\n";
+	//print value of init type if not null and has native value
+	if (initType && initType->has_native_value) {
+		//cout<<"BHAOW : Init value:  ";
+		displayNativeValue(type, *initType);
+		cout<<"\n";
+	}
+
     if (scope_stack.empty()) {
         enter_scope();
     }
@@ -995,17 +1126,22 @@ void insert_symbol(const string& name, const TypeInfo& type, const string& initV
     entry.type = type;
     entry.line = yylineno;
     entry.scope_level = current_scope_level;
-    entry.isInitialized = !initValue.empty();
-    
+    entry.isInitialized = ((initType != nullptr) && (initType->has_native_value));
+	
     // ALWAYS allocate storage space
     if (entry.isInitialized) {
-        // Parse and store the initial value
-        void* parsed_value = parseInitialValue(type, initValue);
+		//cout<<"INITIALIZED\n";
+        // Parse and store the initial value using native types
+        void* parsed_value = parseInitialValue(type, *initType);
         if (parsed_value) {
             entry.value_offset = current_scope.allocateVariable(type, parsed_value);
-            free(parsed_value);  // Clean up temporary storage
+            // Free temporary storage based on type
+            if (type.baseType == "string") {
+                delete[] (char*)parsed_value;
+            } else {
+                delete parsed_value;
+            }
         } else {
-            // Fallback to zeros if parsing failed
             entry.value_offset = current_scope.allocateVariable(type, nullptr);
         }
     } else {
@@ -1020,7 +1156,8 @@ void insert_symbol(const string& name, const TypeInfo& type, const string& initV
          << ") at offset " << entry.value_offset 
          << ", size " << entry.value_size << " bytes";
     if (entry.isInitialized) {
-        cout << " = " << initValue;
+        cout << " = ";
+        displayNativeValue(type, *initType);
     } else {
         cout << " (initialized to zeros)";
     }
@@ -1046,6 +1183,7 @@ bool lookup_symbol_current_scope(const string& name) {
 
 
 void check_variable_declaration(const string& name) {
+	//cout<<"MEOW : Searching for variable:  " << name << "\n";
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
         cerr << "Error at line " << yylineno << ": Variable '" << name 

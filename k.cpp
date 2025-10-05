@@ -3,6 +3,7 @@
 
 int main() {
     int x =4,y=99;
+    int haha = x;
     int p = 3;
     int f = 4;
     char c = 'c';
