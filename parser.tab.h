@@ -55,9 +55,8 @@ extern int yydebug;
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
-        int pointerCount;
         bool isArray;
-        vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
+        int arraySize;
         
         // Native value storage
         union {
@@ -72,7 +71,7 @@ extern int yydebug;
         string value;           // Keep for identifiers/expressions
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), pointerCount(0), 
+                     isPointer(false), arraySize(0),
                     isArray(false), string_value(nullptr),
                      has_native_value(false), value("") {
             // Initialize union to zero
@@ -114,8 +113,8 @@ extern int yydebug;
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
-                    pointerCount(other.pointerCount), isArray(other.isArray),
-                    arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                    isArray(other.isArray),
+                    arraySize(other.arraySize), native_value(other.native_value),
                     has_native_value(other.has_native_value), value(other.value) {
             string_value = other.string_value ? new string(*other.string_value) : nullptr;
         }
@@ -124,15 +123,11 @@ extern int yydebug;
             string result = "";
             if (isStatic) result += "static ";
             result += baseType;
-            for (int i = 0; i < pointerCount; i++) {
-                result += "*";
+            if( isPointer ) {
+                result+="*";
             }
             if (isArray) {
-                for (int size : arrayDimensions) {
-                    result += "[";
-                    if (size >= 0) result += to_string(size);
-                    result += "]";
-                }
+                result += "[" + to_string(arraySize) + "]";
             }
             return result;
         }
@@ -155,11 +150,7 @@ extern int yydebug;
             
             if (type.isArray) {
                 size_t element_size = getBaseTypeSize(type.baseType);
-                size_t total_elements = 1;
-                for (int dim : type.arrayDimensions) {
-                    if (dim > 0) total_elements *= dim;
-                }
-                return element_size * total_elements;
+                return element_size * type.arraySize;
             }
             
             return getBaseTypeSize(type.baseType);
@@ -206,14 +197,13 @@ extern int yydebug;
     struct DeclaratorInfo {
         string name;            // variable name
         bool isPointer;
-        int pointerCount;
         bool isArray;
-        vector<int> arrayDimensions;
+        int arraySize;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
-        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0),  
-                          isArray(false), initValue(""), initType(nullptr) {}
+        DeclaratorInfo() : name(""), isPointer(false), 
+                          isArray(false), initValue(""), initType(nullptr), arraySize(0) {}
     };
 
     // Symbol table entry structure
@@ -230,7 +220,7 @@ extern int yydebug;
                        value_size(0), isInitialized(false) {}
     };
 
-#line 234 "parser.tab.h"
+#line 224 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -310,7 +300,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 226 "parser.y"
+#line 216 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -318,10 +308,11 @@ union YYSTYPE
 	char cval;      /* char literals */
 	vector<string>* strlist; /* list of strings */
 	TypeInfo* typeinfo; /* structured type information */
+    vector<TypeInfo>* typelist; /* list of type information */
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 325 "parser.tab.h"
+#line 316 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

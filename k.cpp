@@ -8,6 +8,8 @@ int main() {
     int f = 4;
     char c = 'c';
     float z = 9.9;
+    int *ptr;
+    int arr[8] = {1,2,5,5,6};
     
     return 0;
 }

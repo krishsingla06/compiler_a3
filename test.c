@@ -7,8 +7,9 @@ int foo(int arr[50],int n){
 }
 
 int main(){
-    int x = 0;
-    int y=!(x)+4;
-    printf("y=%d\n",y);
+    int a=5;
+    int b=10;
+    int c=15;
+    int arr[3] = {a,b,c};
     return 0;
 }

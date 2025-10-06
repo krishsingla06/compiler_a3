@@ -179,3 +179,44 @@ specifier_list
         $$ = new TypeInfo(); 
         $$->baseType = "enum"; 
     }
+
+    /*
+| direct_declarator LBRACKET RBRACKET {                       
+		$$ = $1;
+		$$->isArray = true;
+		$$->arrayDimensions.push_back(-1);  // -1 indicates unknown size
+	}
+*/
+
+
+{
+        // Type checking for array access
+        TypeInfo* baseType = $1;
+        TypeInfo* indexType = $3;
+        if (!baseType->isArray) {
+            yyerror("Type error: Attempting to index a non-array type");
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            return;
+        }
+        if (indexType->baseType != "int") {
+            yyerror("Type error: Array index must be of integer type");
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            return;
+        }
+        // Resulting type is the base type of the array, removing one dimension
+        $$ = new TypeInfo(*baseType);
+        if (!$$->arrayDimensions.empty()) {
+            $$->arrayDimensions.erase($$->arrayDimensions.begin());
+            if ($$->arrayDimensions.empty()) {
+                $$->isArray = false; // No more array dimensions
+            }
+        } else {
+            $$->isArray = false; // Safety check
+        }
+        // Value is now an indexed expression
+        $$->value = baseType->value + "[" + indexType->value + "]";
+        delete $1;
+        delete $3;
+    }

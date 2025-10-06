@@ -8,6 +8,8 @@ add another function which checks every entry and then checks type
     int arr[-6]; - it is stage2 error not stage3
      int arr[.6];
 
+     int arr[0]={} handle karna rehta hai
+
 // CASTING TO INT* YA FIRR SIZEOF(INT*) IS NOT ALLOWED TILL NOW
 
 function can only return basetype or pointer, not array, also not in C

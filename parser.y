@@ -23,9 +23,8 @@ static void yyerror(const char* s) {
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
-        int pointerCount;
         bool isArray;
-        vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
+        int arraySize;
         
         // Native value storage
         union {
@@ -40,7 +39,7 @@ static void yyerror(const char* s) {
         string value;           // Keep for identifiers/expressions
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), pointerCount(0), 
+                     isPointer(false), arraySize(0),
                     isArray(false), string_value(nullptr),
                      has_native_value(false), value("") {
             // Initialize union to zero
@@ -82,8 +81,8 @@ static void yyerror(const char* s) {
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
-                    pointerCount(other.pointerCount), isArray(other.isArray),
-                    arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                    isArray(other.isArray),
+                    arraySize(other.arraySize), native_value(other.native_value),
                     has_native_value(other.has_native_value), value(other.value) {
             string_value = other.string_value ? new string(*other.string_value) : nullptr;
         }
@@ -92,15 +91,11 @@ static void yyerror(const char* s) {
             string result = "";
             if (isStatic) result += "static ";
             result += baseType;
-            for (int i = 0; i < pointerCount; i++) {
-                result += "*";
+            if( isPointer ) {
+                result+="*";
             }
             if (isArray) {
-                for (int size : arrayDimensions) {
-                    result += "[";
-                    if (size >= 0) result += to_string(size);
-                    result += "]";
-                }
+                result += "[" + to_string(arraySize) + "]";
             }
             return result;
         }
@@ -123,11 +118,7 @@ static void yyerror(const char* s) {
             
             if (type.isArray) {
                 size_t element_size = getBaseTypeSize(type.baseType);
-                size_t total_elements = 1;
-                for (int dim : type.arrayDimensions) {
-                    if (dim > 0) total_elements *= dim;
-                }
-                return element_size * total_elements;
+                return element_size * type.arraySize;
             }
             
             return getBaseTypeSize(type.baseType);
@@ -174,14 +165,13 @@ static void yyerror(const char* s) {
     struct DeclaratorInfo {
         string name;            // variable name
         bool isPointer;
-        int pointerCount;
         bool isArray;
-        vector<int> arrayDimensions;
+        int arraySize;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
-        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0),  
-                          isArray(false), initValue(""), initType(nullptr) {}
+        DeclaratorInfo() : name(""), isPointer(false), 
+                          isArray(false), initValue(""), initType(nullptr), arraySize(0) {}
     };
 
     // Symbol table entry structure
@@ -326,9 +316,8 @@ declaration
 			
 			// Add declarator-specific type information
 			combinedType.isPointer = declInfo->isPointer;
-			combinedType.pointerCount = declInfo->pointerCount;
 			combinedType.isArray = declInfo->isArray;
-			combinedType.arrayDimensions = declInfo->arrayDimensions;
+			combinedType.arraySize = declInfo->arraySize;
 			
 			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
@@ -366,7 +355,6 @@ declaration_specifiers
 	}                                     /* e.g., static int */
 	;
     
-
 type_specifier
     : VOID { 
         $$ = new TypeInfo(); 
@@ -391,10 +379,6 @@ type_specifier
     }
 
     ;
-
-
-
-
 
 //-------------------------------------------------- Declarators --------------------------------------------------
 
@@ -424,8 +408,7 @@ declarator
 	: pointer direct_declarator {                                 /* e.g., *p or int *p */ 
 		$$ = $2;
 		// Combine pointer info with declarator info
-		$$->isPointer = $1->isPointer || $$->isPointer;
-		$$->pointerCount += $1->pointerCount;
+		$$->isPointer = 1;
 		delete $1;
 	}
 	| direct_declarator {                                         /* e.g., x */ 
@@ -440,18 +423,13 @@ direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
-	| direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */
-		$$ = $1;
-		$$->isArray = true;
-		$$->arrayDimensions.push_back($3);  // Direct integer literal
-	}
-	| direct_declarator LBRACKET RBRACKET {                        /* e.g., arr[] */
-		$$ = $1;
-		$$->isArray = true;
-		$$->arrayDimensions.push_back(-1);  // -1 indicates unknown size
-	}
-	;
-
+	| IDENTIFIER LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */ //Single dimensional array only
+		$$ = new DeclaratorInfo();
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->arraySize = $3;
+        delete $1;
+    }
 
 fun_declarator
   	: pointer fun_direct_declarator
@@ -494,9 +472,16 @@ initializer
 	;
 
 initializer_list
-	: initializer                                                         /* e.g., 1 */
-	| initializer_list COMMA initializer                                   /* e.g., 1, 2 */
+	: assignment_expression                                                         /* e.g., 1 */
+	| initializer_list COMMA assignment_expression                                   /* e.g., 1, 2 */
 	;
+
+/*
+initializer_list
+	: initializer                                                      
+	| initializer_list COMMA initializer                                  
+	;
+*/
 
 
 parameter_list
@@ -519,9 +504,8 @@ parameter_declaration
         
         // Add declarator-specific type information
         combinedType->isPointer = $2->isPointer;
-        combinedType->pointerCount = $2->pointerCount;
         combinedType->isArray = $2->isArray;
-        combinedType->arrayDimensions = $2->arrayDimensions;
+        combinedType->arraySize = $2->arraySize;
         
         // Insert parameter into symbol table
         insert_symbol($2->name, *combinedType);
@@ -535,8 +519,7 @@ parameter_declarator
 	: pointer parameter_direct_declarator {                                 /* e.g., *p or int *p */ 
 		$$ = $2;
 		// Combine pointer info with declarator info
-		$$->isPointer = $1->isPointer || $$->isPointer;
-		$$->pointerCount += $1->pointerCount;
+		$$->isPointer = 1;
 		delete $1;
 	}
 	| parameter_direct_declarator {                                         /* e.g., x */ 
@@ -632,38 +615,7 @@ primary_expression
 
 postfix_expression
 	: primary_expression                                      /* e.g., x */
-	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */{
-        // Type checking for array access
-        TypeInfo* baseType = $1;
-        TypeInfo* indexType = $3;
-        if (!baseType->isArray) {
-            yyerror("Type error: Attempting to index a non-array type");
-            $$ = new TypeInfo();
-            $$->baseType = "error";
-            return;
-        }
-        if (indexType->baseType != "int") {
-            yyerror("Type error: Array index must be of integer type");
-            $$ = new TypeInfo();
-            $$->baseType = "error";
-            return;
-        }
-        // Resulting type is the base type of the array, removing one dimension
-        $$ = new TypeInfo(*baseType);
-        if (!$$->arrayDimensions.empty()) {
-            $$->arrayDimensions.erase($$->arrayDimensions.begin());
-            if ($$->arrayDimensions.empty()) {
-                $$->isArray = false; // No more array dimensions
-            }
-        } else {
-            $$->isArray = false; // Safety check
-        }
-        // Value is now an indexed expression
-        $$->value = baseType->value + "[" + indexType->value + "]";
-        delete $1;
-        delete $3;
-    }
-
+	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */
 	| postfix_expression LPAREN RPAREN                               /* e.g., func() */
 	| postfix_expression LPAREN argument_expression_list RPAREN      /* e.g., func(a,b) */
 	| postfix_expression DOT IDENTIFIER                            /* e.g., obj.field */
@@ -840,14 +792,14 @@ pointer
     : STAR {                                   /* e.g., * */
         $$ = new TypeInfo();
         $$->isPointer = true;
-        $$->pointerCount = 1;
-    }
-    | STAR pointer {                          /* e.g., **, ***, etc. */
-        $$ = $2;
-        $$->pointerCount++;
     }
 	
     ;
+
+/*STAR pointer {                         
+        $$ = $2;
+        $$->pointerCount++;
+    }*/
 
 
 //---------------------------------------- Statements --------------------------------------------------
@@ -1159,19 +1111,18 @@ void displaySymbolTable() {
 
 // Type checking functions
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
-    // Check base types match (ignoring const/static as requested)
+    // Check base types match (ignoring static as requested)
     if (left_type.baseType != right_type.baseType) return false;
     
     // Check pointer compatibility 
-    if (left_type.pointerCount != right_type.pointerCount) return false;
+    if(left_type.isPointer != right_type.isPointer) return false;
     
+
+    if(left_type.isArray != right_type.isArray) return false;
+
     // Check array dimensions if both are arrays
-    if (left_type.arrayDimensions.size() != right_type.arrayDimensions.size()) return false;
+    if (left_type.arraySize != right_type.arraySize) return false;
     
-    // For arrays, check each dimension (for direct assignment compatibility)
-    for (size_t i = 0; i < left_type.arrayDimensions.size(); i++) {
-        if (left_type.arrayDimensions[i] != right_type.arrayDimensions[i]) return false;
-    }
     
     return true;
 }
