@@ -18,74 +18,24 @@ static void yyerror(const char* s) {
     #include <bits/stdc++.h>
     using namespace std;
     
-    // Structured type information - contains isConst, isPointer, baseType, etc.
+    // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
         bool isArray;
         int arraySize;
-        
-        // Native value storage
-        union {
-            int int_value;
-            float float_value;
-            char char_value;
-            //KRISH - add here ig a byte for int* ptr = &x
-        } native_value;
-        
-        string* string_value;   // Separate for heap-allocated strings
-        bool has_native_value;
-        string value;           // Keep for identifiers/expressions
+        string identifier;      // For expressions that reference variables
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), arraySize(0),
-                    isArray(false), string_value(nullptr),
-                     has_native_value(false), value("") {
-            // Initialize union to zero
-            native_value.int_value = 0;
-        }
-        
-        // Value setters
-        void setIntValue(int val) { 
-            native_value.int_value = val; 
-            has_native_value = true; 
-        }
-        void setFloatValue(float val) { 
-            native_value.float_value = val; 
-            has_native_value = true; 
-        }
-        void setCharValue(char val) { 
-            native_value.char_value = val; 
-            has_native_value = true; 
-        }
-        void setStringValue(const string& val) { 
-            if (string_value) delete string_value;
-            string_value = new string(val); 
-            has_native_value = true; 
-        }
-        
-        // Value getters
-        int getIntValue() const { return native_value.int_value; }
-        float getFloatValue() const { return native_value.float_value; }
-        char getCharValue() const { return native_value.char_value; }
-        string getStringValue() const { 
-            return string_value ? *string_value : ""; 
-        }
-        
-        // Destructor
-        ~TypeInfo() {
-            if (string_value) delete string_value;
-        }
+                     isPointer(false), isArray(false), 
+                     arraySize(0), identifier("") {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
-                    isArray(other.isArray),
-                    arraySize(other.arraySize), native_value(other.native_value),
-                    has_native_value(other.has_native_value), value(other.value) {
-            string_value = other.string_value ? new string(*other.string_value) : nullptr;
-        }
+                    isArray(other.isArray), arraySize(other.arraySize),
+                    identifier(other.identifier) {}
         
         string toString() const {
             string result = "";
@@ -101,64 +51,12 @@ static void yyerror(const char* s) {
         }
     };
 
-    // Scope context with per-scope value storage
+    // Scope context for semantic checking
     struct ScopeContext {
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
-        vector<uint8_t> value_storage; // raw byte storage for variable values
-        size_t next_offset;
         int scope_level;
         
-        ScopeContext(int level) : next_offset(0), scope_level(level) {}
-        
-        // Get size of a type in bytes
-        size_t getTypeSize(const TypeInfo& type) {
-            if (type.isPointer) {
-                return sizeof(void*);  // Pointer size
-            }
-            
-            if (type.isArray) {
-                size_t element_size = getBaseTypeSize(type.baseType);
-                return element_size * type.arraySize;
-            }
-            
-            return getBaseTypeSize(type.baseType);
-        }
-        
-        size_t getBaseTypeSize(const string& baseType) {
-            if (baseType == "int") return sizeof(int);
-            if (baseType == "float") return sizeof(float);
-            if (baseType == "char") return sizeof(char);
-            return 1; // Default for unknown types
-        }
-        
-        // Always allocate space, initialize with zeros if no value provided
-        size_t allocateVariable(const TypeInfo& type, const void* init_value = nullptr) {
-            size_t size = getTypeSize(type);
-            size_t offset = next_offset;
-            
-            // Resize storage to accommodate new variable
-            value_storage.resize(offset + size);
-            
-            if (init_value) {
-                // Copy provided initial value
-                memcpy(&value_storage[offset], init_value, size);
-            } else {
-                // Initialize with zeros
-                memset(&value_storage[offset], 0, size);
-            }
-            
-            next_offset += size;
-            return offset;
-        }
-        
-        // Retrieve value from this scope's storage
-        template<typename T>
-        T getValue(size_t offset) const {
-            if (offset + sizeof(T) <= value_storage.size()) {
-                return *reinterpret_cast<const T*>(&value_storage[offset]);
-            }
-            throw runtime_error("Invalid offset or corrupted storage");
-        }
+        ScopeContext(int level) : scope_level(level) {}
     };
 
     // Declarator information - combines identifier with type modifiers
@@ -180,12 +78,8 @@ static void yyerror(const char* s) {
         TypeInfo type;
         int line;
         int scope_level;
-        size_t value_offset;        // Always valid - every variable has storage
-        size_t value_size;          // Always > 0 - size of allocated storage
-        bool isInitialized;         // true = has explicit initial value, false = zeros
         
-        SymbolEntry() : line(0), scope_level(0), value_offset(0), 
-                       value_size(0), isInitialized(false) {}
+        SymbolEntry() : line(0), scope_level(0) {}
     };
 }
 
@@ -202,8 +96,6 @@ static void yyerror(const char* s) {
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
     TypeInfo* lookup_typeinfo_by_name(const string& name);
-    void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType);
-    void* parseInitialValue(const TypeInfo& type, const TypeInfo& initType);
     
     // Type checking functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
@@ -461,13 +353,11 @@ initializer
 		// For array initializers, create a placeholder type
 		$$ = new TypeInfo();
 		$$->baseType = "array_init";
-		$$->value = "array_initializer";
 	}                                       /* e.g., {1,2,3} or {{1,2},{4,6}} - For arrays */
 	| LBRACE initializer_list COMMA RBRACE { 
 		// For array initializers with trailing comma
 		$$ = new TypeInfo();
 		$$->baseType = "array_init";
-		$$->value = "array_initializer";
 	}                                 /* e.g., {1,2,} */
 	;
 
@@ -475,13 +365,6 @@ initializer_list
 	: assignment_expression                                                         /* e.g., 1 */
 	| initializer_list COMMA assignment_expression                                   /* e.g., 1, 2 */
 	;
-
-/*
-initializer_list
-	: initializer                                                      
-	| initializer_list COMMA initializer                                  
-	;
-*/
 
 
 parameter_list
@@ -545,68 +428,37 @@ primary_expression
         SymbolEntry entry;
         if (lookup_symbol(*$1, entry)) {
             $$ = new TypeInfo(entry.type);  // Copy type from symbol table
-            $$->value = *$1;  // Store identifier name as value
+            $$->identifier = *$1;  // Store identifier name
             
-            // Copy the stored value from the scope's value storage
-            if (entry.isInitialized && !scope_stack.empty()) {
-                // Find the scope that contains this symbol
-                for (auto& scope : scope_stack) {
-                    if (scope.scope_level == entry.scope_level) {
-                        // Copy the stored value based on type
-                        if (entry.type.baseType == "int") {
-                            int stored_val = scope.getValue<int>(entry.value_offset);
-                            $$->setIntValue(stored_val);
-                        } else if (entry.type.baseType == "float") {
-                            float stored_val = scope.getValue<float>(entry.value_offset);
-                            $$->setFloatValue(stored_val);
-                        } else if (entry.type.baseType == "char") {
-                            char stored_val = scope.getValue<char>(entry.value_offset);
-                            $$->setCharValue(stored_val);
-                        } 
-                        break;
-                    }
-                }
-            }
-            
-            //cout<<"MEOW : Found variable:  " << *$1 << " of type " << $$->toString() << " and value offset " << entry.value_offset;
-            if ($$->has_native_value) {
-                cout << " with stored value: ";
-                displayNativeValue(*$$, *$$);
-            }
-            cout << "\n";
+            cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
         } else {
             $$ = new TypeInfo();
             $$->baseType = "error";
-            $$->value = *$1;
+            $$->identifier = *$1;
         }
         delete $1;
     }                                        
     | INT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "int";
-        $$->setIntValue($1);  // Direct native assignment!
     }
     | FLOAT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "float";
-        $$->setFloatValue($1);  // Direct native assignment!
     }
     | CHAR_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "char";
-        $$->setCharValue((*$1)[1]);  // Extract char from 'c' format directly
         delete $1;
     }
     | STRING_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "string";
-        $$->setStringValue(*$1);  // Direct string assignment!
         delete $1;
     }
 	| NULL_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "null";
-        $$->setIntValue(0);  // NULL as integer 0
     }
     | LPAREN expression RPAREN { 
         $$ = $2;  // Pass through the expression type
@@ -786,7 +638,6 @@ struct_declarator
 
 //---------------------------------------- Pointers --------------------------------------------------
 
-//KRISH : Still multi dimensional pointers and arrays are not basic feature
 
 pointer
     : STAR {                                   /* e.g., * */
@@ -878,9 +729,7 @@ void displaySymbolTable();
 void exit_scope() {
     if (!scope_stack.empty()) {
         auto& current_scope = scope_stack.back();
-        cout << "Exiting scope level " << current_scope_level 
-             << " (freeing " << current_scope.value_storage.size() 
-             << " bytes of value storage)\n";
+        cout << "Exiting scope level " << current_scope_level << "\n";
         
         displaySymbolTable(); // Display current symbol table before destruction
         
@@ -892,57 +741,12 @@ void exit_scope() {
             }
         }
         
-        scope_stack.pop_back();  // Automatically frees the scope's value storage
+        scope_stack.pop_back();
         current_scope_level--;
     }
 }
 
-void* parseInitialValue(const TypeInfo& type, const TypeInfo& initType) {
-    if (!initType.has_native_value) return nullptr;
-    
-    if (type.baseType == "int") {
-        int* val = new int(initType.getIntValue());
-        return val;
-    } else if (type.baseType == "float") {
-        float* val = new float(initType.getFloatValue());
-        return val;
-    } else if (type.baseType == "char") {
-        char* val = new char(initType.getCharValue());
-        return val;
-    } else if (type.baseType == "string") {
-        string str = initType.getStringValue();
-        char* val = new char[str.length() + 1];
-        strcpy(val, str.c_str());
-        return val;
-    }
-    return nullptr;
-}
-
-void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType) {
-    if (!valueType.has_native_value) {
-        cout << "(no value)";
-        return;
-    }
-    
-    if (type.baseType == "int") {
-        cout << valueType.getIntValue();
-    } else if (type.baseType == "float") {
-        cout << valueType.getFloatValue();
-    } else if (type.baseType == "char") {
-        cout << "'" << valueType.getCharValue() << "'";
-    } else if (type.baseType == "string") {
-        cout << "\"" << valueType.getStringValue() << "\"";
-    }
-}
-
-// Write nhi kar raha hai storage mei, bas allocate kar raha hai
 void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
-
-	if (initType && initType->has_native_value) { // Vese agar type hai toh value bhi hogi hii
-		displayNativeValue(type, *initType);
-		cout<<"\n";
-	}
-
     if (scope_stack.empty()) {
         enter_scope();
     }
@@ -961,41 +765,19 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
     entry.type = type;
     entry.line = yylineno;
     entry.scope_level = current_scope_level;
-    entry.isInitialized = ((initType != nullptr) && (initType->has_native_value));
-	
-    // ALWAYS allocate storage space
-    if (entry.isInitialized) {
-		//cout<<"INITIALIZED\n";
-        // Parse and store the initial value using native types
-        void* parsed_value = parseInitialValue(type, *initType);
-        if (parsed_value) {
-            entry.value_offset = current_scope.allocateVariable(type, parsed_value);
-            // Free temporary storage based on type
-            if (type.baseType == "string") {
-                delete[] (char*)parsed_value;
-            } else {
-                delete parsed_value;
-            }
-        } else {
-            // KRISH
-            entry.value_offset = current_scope.allocateVariable(type, nullptr);
+    
+    // Type check initialization if present
+    if (initType != nullptr) {
+        if (!check_initialization_compatibility(type, *initType)) {
+            cerr << "Error at line " << yylineno << ": Type mismatch in initialization of variable '" << name << "'\n";
         }
-    } else {
-        // Allocate with zeros
-        entry.value_offset = current_scope.allocateVariable(type, nullptr);
     }
     
-    entry.value_size = current_scope.getTypeSize(type);
     current_scope.symbols[name] = entry;
     
-    cout << "Allocated variable: " << name << " (" << type.toString() 
-         << ") at offset " << entry.value_offset 
-         << ", size " << entry.value_size << " bytes";
-    if (entry.isInitialized) {
-        cout << " = ";
-        displayNativeValue(type, *initType);
-    } else {
-        cout << " (initialized to zeros)";
+    cout << "Declared variable: " << name << " (" << type.toString() << ")";
+    if (initType != nullptr) {
+        cout << " with initializer of type " << initType->toString();
     }
     cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
 }
@@ -1019,7 +801,6 @@ bool lookup_symbol_current_scope(const string& name) {
 
 
 void check_variable_declaration(const string& name) {
-	//cout<<"MEOW : Searching for variable:  " << name << "\n";
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
         cerr << "Error at line " << yylineno << ": Variable '" << name 
@@ -1027,58 +808,14 @@ void check_variable_declaration(const string& name) {
     } else {
         cout << "Variable '" << name << "' found: declared as " 
              << entry.type.toString() << " at line " << entry.line 
-             << " in scope " << entry.scope_level;
-        if (entry.isInitialized) {
-            cout << " (initialized)";
-        } else {
-            cout << " (default zeros)";
-        }
-        cout << " [Offset: " << entry.value_offset 
-             << ", Size: " << entry.value_size << " bytes]\n";
+             << " in scope " << entry.scope_level << "\n";
     }
-}
-
-void displayVariableValue(const SymbolEntry& entry, const ScopeContext& scope) {
-    cout << "  - " << entry.name << " (" << entry.type.toString() << ") ";
-    
-    try {
-        if (entry.type.baseType == "int") {
-            int val = scope.getValue<int>(entry.value_offset);
-            cout << "= " << val;
-            if (!entry.isInitialized && val == 0) cout << " (default)";
-            cout << " [Dec: " << val << ", Hex: 0x" << hex << val << dec << "]";
-            
-        } else if (entry.type.baseType == "float") {
-            float val = scope.getValue<float>(entry.value_offset);
-            cout << "= " << val;
-            if (!entry.isInitialized && val == 0.0f) cout << " (default)";
-            
-        } else if (entry.type.baseType == "char") {
-            char val = scope.getValue<char>(entry.value_offset);
-            cout << "= ";
-            if (val >= 32 && val <= 126) {
-                cout << "'" << val << "'";
-            } else {
-                cout << "'\\x" << hex << (int)(unsigned char)val << dec << "'";
-            }
-            if (!entry.isInitialized && val == '\0') cout << " (default)";
-            cout << " [ASCII: " << (int)(unsigned char)val << "]";
-            
-        } else {
-            cout << "= <unsupported type>";
-        }
-    } catch (const exception& e) {
-        cout << "= <error reading value: " << e.what() << ">";
-    }
-    
-    cout << " [Offset: " << entry.value_offset 
-         << ", Size: " << entry.value_size << " bytes]\n";
 }
 
 void displaySymbolTable() {
     cout << "\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
-    cout << "|                            SYMBOL TABLE WITH VALUE STORAGE                            |\n";
+    cout << "|                                    SYMBOL TABLE                                        |\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
     
     if (scope_stack.empty()) {
@@ -1091,7 +828,6 @@ void displaySymbolTable() {
         auto& scope = scope_stack[i];
         cout << "\n+- SCOPE LEVEL " << scope.scope_level << " ";
         cout << string(55 - to_string(scope.scope_level).length(), '-') << "+\n";
-        cout << "| Storage: " << scope.value_storage.size() << " bytes, Next offset: " << scope.next_offset << string(50, ' ') << "|\n";
         
         if (scope.symbols.empty()) {
             cout << "| (empty scope)                                                                       |\n";
@@ -1101,9 +837,10 @@ void displaySymbolTable() {
         
         cout << "+-----------------------------------------------------------------------------------------+\n";
         
-        // Display variables with their values
+        // Display variables with their type information
         for (const auto& entry : scope.symbols) {
-            displayVariableValue(entry.second, scope);
+            cout << "  - " << entry.second.name << " (" << entry.second.type.toString() 
+                 << ") declared at line " << entry.second.line << "\n";
         }
         cout << "+-----------------------------------------------------------------------------------------+\n";
     }

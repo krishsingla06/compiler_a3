@@ -50,74 +50,24 @@ extern int yydebug;
     #include <bits/stdc++.h>
     using namespace std;
     
-    // Structured type information - contains isConst, isPointer, baseType, etc.
+    // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
         bool isArray;
         int arraySize;
-        
-        // Native value storage
-        union {
-            int int_value;
-            float float_value;
-            char char_value;
-            //KRISH - add here ig a byte for int* ptr = &x
-        } native_value;
-        
-        string* string_value;   // Separate for heap-allocated strings
-        bool has_native_value;
-        string value;           // Keep for identifiers/expressions
+        string identifier;      // For expressions that reference variables
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), arraySize(0),
-                    isArray(false), string_value(nullptr),
-                     has_native_value(false), value("") {
-            // Initialize union to zero
-            native_value.int_value = 0;
-        }
-        
-        // Value setters
-        void setIntValue(int val) { 
-            native_value.int_value = val; 
-            has_native_value = true; 
-        }
-        void setFloatValue(float val) { 
-            native_value.float_value = val; 
-            has_native_value = true; 
-        }
-        void setCharValue(char val) { 
-            native_value.char_value = val; 
-            has_native_value = true; 
-        }
-        void setStringValue(const string& val) { 
-            if (string_value) delete string_value;
-            string_value = new string(val); 
-            has_native_value = true; 
-        }
-        
-        // Value getters
-        int getIntValue() const { return native_value.int_value; }
-        float getFloatValue() const { return native_value.float_value; }
-        char getCharValue() const { return native_value.char_value; }
-        string getStringValue() const { 
-            return string_value ? *string_value : ""; 
-        }
-        
-        // Destructor
-        ~TypeInfo() {
-            if (string_value) delete string_value;
-        }
+                     isPointer(false), isArray(false), 
+                     arraySize(0), identifier("") {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
-                    isArray(other.isArray),
-                    arraySize(other.arraySize), native_value(other.native_value),
-                    has_native_value(other.has_native_value), value(other.value) {
-            string_value = other.string_value ? new string(*other.string_value) : nullptr;
-        }
+                    isArray(other.isArray), arraySize(other.arraySize),
+                    identifier(other.identifier) {}
         
         string toString() const {
             string result = "";
@@ -133,64 +83,12 @@ extern int yydebug;
         }
     };
 
-    // Scope context with per-scope value storage
+    // Scope context for semantic checking
     struct ScopeContext {
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
-        vector<uint8_t> value_storage; // raw byte storage for variable values
-        size_t next_offset;
         int scope_level;
         
-        ScopeContext(int level) : next_offset(0), scope_level(level) {}
-        
-        // Get size of a type in bytes
-        size_t getTypeSize(const TypeInfo& type) {
-            if (type.isPointer) {
-                return sizeof(void*);  // Pointer size
-            }
-            
-            if (type.isArray) {
-                size_t element_size = getBaseTypeSize(type.baseType);
-                return element_size * type.arraySize;
-            }
-            
-            return getBaseTypeSize(type.baseType);
-        }
-        
-        size_t getBaseTypeSize(const string& baseType) {
-            if (baseType == "int") return sizeof(int);
-            if (baseType == "float") return sizeof(float);
-            if (baseType == "char") return sizeof(char);
-            return 1; // Default for unknown types
-        }
-        
-        // Always allocate space, initialize with zeros if no value provided
-        size_t allocateVariable(const TypeInfo& type, const void* init_value = nullptr) {
-            size_t size = getTypeSize(type);
-            size_t offset = next_offset;
-            
-            // Resize storage to accommodate new variable
-            value_storage.resize(offset + size);
-            
-            if (init_value) {
-                // Copy provided initial value
-                memcpy(&value_storage[offset], init_value, size);
-            } else {
-                // Initialize with zeros
-                memset(&value_storage[offset], 0, size);
-            }
-            
-            next_offset += size;
-            return offset;
-        }
-        
-        // Retrieve value from this scope's storage
-        template<typename T>
-        T getValue(size_t offset) const {
-            if (offset + sizeof(T) <= value_storage.size()) {
-                return *reinterpret_cast<const T*>(&value_storage[offset]);
-            }
-            throw runtime_error("Invalid offset or corrupted storage");
-        }
+        ScopeContext(int level) : scope_level(level) {}
     };
 
     // Declarator information - combines identifier with type modifiers
@@ -212,15 +110,11 @@ extern int yydebug;
         TypeInfo type;
         int line;
         int scope_level;
-        size_t value_offset;        // Always valid - every variable has storage
-        size_t value_size;          // Always > 0 - size of allocated storage
-        bool isInitialized;         // true = has explicit initial value, false = zeros
         
-        SymbolEntry() : line(0), scope_level(0), value_offset(0), 
-                       value_size(0), isInitialized(false) {}
+        SymbolEntry() : line(0), scope_level(0) {}
     };
 
-#line 224 "parser.tab.h"
+#line 118 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -300,7 +194,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 216 "parser.y"
+#line 108 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -312,7 +206,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 316 "parser.tab.h"
+#line 210 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
