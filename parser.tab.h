@@ -50,7 +50,7 @@ extern int yydebug;
     #include <bits/stdc++.h>
     using namespace std;
     
-    // Structured type information
+    // Structured type information - contains isConst, isPointer, baseType, etc.
     struct TypeInfo {
         bool isStatic;
         bool isConst;
@@ -68,6 +68,7 @@ extern int yydebug;
             float float_value;
             char char_value;
             bool bool_value;
+            //KRISH - add here ig a byte for int* ptr = &x
         } native_value;
         
         string* string_value;   // Separate for heap-allocated strings
@@ -152,8 +153,8 @@ extern int yydebug;
 
     // Scope context with per-scope value storage
     struct ScopeContext {
-        map<string, struct SymbolEntry> symbols;
-        vector<uint8_t> value_storage;
+        map<string, struct SymbolEntry> symbols; // symbol table for this scope
+        vector<uint8_t> value_storage; // raw byte storage for variable values
         size_t next_offset;
         int scope_level;
         
@@ -247,7 +248,7 @@ extern int yydebug;
                        value_size(0), isInitialized(false) {}
     };
 
-#line 251 "parser.tab.h"
+#line 252 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -345,7 +346,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 243 "parser.y"
+#line 244 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -357,7 +358,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 361 "parser.tab.h"
+#line 362 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

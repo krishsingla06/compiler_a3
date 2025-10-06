@@ -18,7 +18,7 @@ static void yyerror(const char* s) {
     #include <bits/stdc++.h>
     using namespace std;
     
-    // Structured type information
+    // Structured type information - contains isConst, isPointer, baseType, etc.
     struct TypeInfo {
         bool isStatic;
         bool isConst;
@@ -36,6 +36,7 @@ static void yyerror(const char* s) {
             float float_value;
             char char_value;
             bool bool_value;
+            //KRISH - add here ig a byte for int* ptr = &x
         } native_value;
         
         string* string_value;   // Separate for heap-allocated strings
@@ -120,8 +121,8 @@ static void yyerror(const char* s) {
 
     // Scope context with per-scope value storage
     struct ScopeContext {
-        map<string, struct SymbolEntry> symbols;
-        vector<uint8_t> value_storage;
+        map<string, struct SymbolEntry> symbols; // symbol table for this scope
+        vector<uint8_t> value_storage; // raw byte storage for variable values
         size_t next_offset;
         int scope_level;
         
@@ -331,11 +332,6 @@ start
 	| start global_declaration                   /* e.g., int x; float y; */
     ;
 
-
-
-
-
-
 //---------------------------------------- Declarations --------------------------------------------------
 
 global_declaration
@@ -385,11 +381,6 @@ declaration
 	}                                 /* e.g., int x, *p = NULL, arr[10] = {0}; */
 
     ;
-
-
-
-
-
 
 //------------------------------------------- Return types --------------------------------------------------
 
@@ -511,6 +502,7 @@ init_declarator
 	;
 
 
+// ACTUALLY POINTER IS NOT ONLY pointer BUT IT ALSO CONTAINS REFERENCES, CONST POINTERS.
 declarator
 	: pointer direct_declarator {                                 /* e.g., *p or int *p */ 
 		$$ = $2;
@@ -583,8 +575,8 @@ declaration_list
 //--------------------------------- Initializers -> RHS of assignment expressions -----------------------------------------------------
 
 initializer
-	: assignment_expression { $$ = $1; }                                               /* e.g., x = 5 {} - So basically simple RHS in assignment expression*/
-	| LBRACE initializer_list RBRACE { 
+	: assignment_expression { $$ = $1; }  //Basically any expression                                            
+	| LBRACE initializer_list RBRACE {  //KRISH - pending alloca
 		// For array initializers, create a placeholder type
 		$$ = new TypeInfo();
 		$$->baseType = "array_init";
@@ -930,6 +922,8 @@ enumerator
 //---------------------------------------- Pointers --------------------------------------------------
 // pointer with const only at the end - e.g., int*, int** const
 
+// KRISH - pointer and ref and const dekhna hai , ref hata hii hai Vese
+
 pointer
     : STAR {                                   /* e.g., * */
         $$ = new TypeInfo();
@@ -952,14 +946,10 @@ pointer
     }
     ;
 
-
-
-
 //---------------------------------------- Only used in sizeof(int) and casting int x = (int) f_y; --------------------------------------------------
 type_name
 	: specifier_qualifier_list                                           /* e.g., const int */
 	;
-
 
 
 //---------------------------------------- Statements --------------------------------------------------
@@ -1033,12 +1023,16 @@ void enter_scope() {
     cout << "Entering scope level " << current_scope_level << "\n";
 }
 
+void displaySymbolTable();
+
 void exit_scope() {
     if (!scope_stack.empty()) {
         auto& current_scope = scope_stack.back();
         cout << "Exiting scope level " << current_scope_level 
              << " (freeing " << current_scope.value_storage.size() 
              << " bytes of value storage)\n";
+        
+        displaySymbolTable(); // Display current symbol table before destruction
         
         // Display symbols being destroyed
         if (!current_scope.symbols.empty()) {
@@ -1096,14 +1090,10 @@ void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType) {
     }
 }
 
+// Write nhi kar raha hai storage mei, bas allocate kar raha hai
 void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
-	//cout<<"BHAOW : Inserting variable:  " << name << " of type " << type.toString() << "\n";
-	//print init type if not null
-	
-	//cout<<"BHAOW : Init type:  "<< (initType ? initType->toString() : "null") << "\n";
-	//print value of init type if not null and has native value
-	if (initType && initType->has_native_value) {
-		//cout<<"BHAOW : Init value:  ";
+
+	if (initType && initType->has_native_value) { // Vese agar type hai toh value bhi hogi hii
 		displayNativeValue(type, *initType);
 		cout<<"\n";
 	}
@@ -1142,6 +1132,7 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
                 delete parsed_value;
             }
         } else {
+            // KRISH
             entry.value_offset = current_scope.allocateVariable(type, nullptr);
         }
     } else {
