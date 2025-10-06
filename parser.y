@@ -21,12 +21,9 @@ static void yyerror(const char* s) {
     // Structured type information - contains isConst, isPointer, baseType, etc.
     struct TypeInfo {
         bool isStatic;
-        bool isConst;
-        string baseType;        // int, char, float, void, bool, struct_name, etc.
+        string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
         int pointerCount;
-        bool isReference;
-        bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
         
@@ -35,7 +32,6 @@ static void yyerror(const char* s) {
             int int_value;
             float float_value;
             char char_value;
-            bool bool_value;
             //KRISH - add here ig a byte for int* ptr = &x
         } native_value;
         
@@ -43,9 +39,9 @@ static void yyerror(const char* s) {
         bool has_native_value;
         string value;           // Keep for identifiers/expressions
         
-        TypeInfo() : isStatic(false), isConst(false), baseType(""), 
-                     isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false), string_value(nullptr),
+        TypeInfo() : isStatic(false), baseType(""), 
+                     isPointer(false), pointerCount(0), 
+                    isArray(false), string_value(nullptr),
                      has_native_value(false), value("") {
             // Initialize union to zero
             native_value.int_value = 0;
@@ -64,10 +60,6 @@ static void yyerror(const char* s) {
             native_value.char_value = val; 
             has_native_value = true; 
         }
-        void setBoolValue(bool val) { 
-            native_value.bool_value = val; 
-            has_native_value = true; 
-        }
         void setStringValue(const string& val) { 
             if (string_value) delete string_value;
             string_value = new string(val); 
@@ -78,7 +70,6 @@ static void yyerror(const char* s) {
         int getIntValue() const { return native_value.int_value; }
         float getFloatValue() const { return native_value.float_value; }
         char getCharValue() const { return native_value.char_value; }
-        bool getBoolValue() const { return native_value.bool_value; }
         string getStringValue() const { 
             return string_value ? *string_value : ""; 
         }
@@ -89,25 +80,21 @@ static void yyerror(const char* s) {
         }
         
         // Copy constructor
-        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic), isConst(other.isConst),
-                     baseType(other.baseType), isPointer(other.isPointer), 
-                     pointerCount(other.pointerCount), isReference(other.isReference),
-                     isConstPointer(other.isConstPointer), isArray(other.isArray),
-                     arrayDimensions(other.arrayDimensions), native_value(other.native_value),
-                     has_native_value(other.has_native_value), value(other.value) {
+        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
+                    baseType(other.baseType), isPointer(other.isPointer), 
+                    pointerCount(other.pointerCount), isArray(other.isArray),
+                    arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                    has_native_value(other.has_native_value), value(other.value) {
             string_value = other.string_value ? new string(*other.string_value) : nullptr;
         }
         
         string toString() const {
             string result = "";
             if (isStatic) result += "static ";
-            if (isConst) result += "const ";
             result += baseType;
             for (int i = 0; i < pointerCount; i++) {
                 result += "*";
             }
-            if (isReference) result += "&";
-            if (isConstPointer) result += " const";
             if (isArray) {
                 for (int size : arrayDimensions) {
                     result += "[";
@@ -150,8 +137,6 @@ static void yyerror(const char* s) {
             if (baseType == "int") return sizeof(int);
             if (baseType == "float") return sizeof(float);
             if (baseType == "char") return sizeof(char);
-            if (baseType == "bool") return sizeof(bool);
-            if (baseType == "double") return sizeof(double);
             return 1; // Default for unknown types
         }
         
@@ -190,15 +175,12 @@ static void yyerror(const char* s) {
         string name;            // variable name
         bool isPointer;
         int pointerCount;
-        bool isReference;
-        bool isConstPointer;
         bool isArray;
         vector<int> arrayDimensions;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
-        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0), 
-                          isReference(false), isConstPointer(false), 
+        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0),  
                           isArray(false), initValue(""), initType(nullptr) {}
     };
 
@@ -245,59 +227,50 @@ static void yyerror(const char* s) {
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
     float fval;     /* float literals */
-	bool bval;     /* boolean literals */
 	char cval;      /* char literals */
 	vector<string>* strlist; /* list of strings */
 	TypeInfo* typeinfo; /* structured type information */
+    vector<TypeInfo>* typelist; /* list of type information */
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 }
 
 
-/* Token declarations: include tokens referenced later in the grammar */
-%token INT FLOAT CHAR VOID BOOL IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF TYPEDEF STATIC GOTO
-//%token CLASS PUBLIC PRIVATE PROTECTED
-%token NULL_LITERAL
+%token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO
+
+%token NULL_LITERAL INVALID
 %token INCREMENT DECREMENT
 %token ARROW LEFT_SHIFT RIGHT_SHIFT
 %token LOGICAL_AND LOGICAL_OR EQ NEQ LE GE
 %token PLUS MINUS STAR DIVIDE MOD ASSIGN LT GT LOGICAL_NOT BIT_AND BIT_OR BIT_XOR BIT_NOT DOT
-%token MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
 %token COLON SEMICOLON COMMA LBRACE RBRACE LPAREN RPAREN LBRACKET RBRACKET
 %token STRUCT RETURN 
 %token <sval> IDENTIFIER
-%token <ival> INT_LITERAL BOOLEAN_LITERAL
+%token <ival> INT_LITERAL 
 %token <fval> FLOAT_LITERAL
 %token <sval> STRING_LITERAL CHAR_LITERAL
-%token TYPE_NAME ENUM UNION
-%token INVALID
-%token ELLIPSIS
-%token CONST 
 %type <declinfo> direct_declarator
-%type<strlist> identifier_list
 %type<typeinfo> return_types
 %type<typeinfo> declaration_specifiers
 %type<typeinfo> type_specifier
 %type<decllist> init_declarator_list
 %type<declinfo> init_declarator
 %type<declinfo> declarator
-%type<sval> fun_declarator
-%type<sval> fun_direct_declarator
-%type<typeinfo> type_qualifier
-%type<strlist> type_qualifier_list
-%type<typeinfo> storage_class_specifier
+%type<declinfo> fun_declarator
+%type<declinfo> fun_direct_declarator
+
+%type<typeinfo> parameter_declaration
+%type<declinfo> parameter_declarator
+%type<declinfo> parameter_direct_declarator
+
+
 %type<strlist> declaration_list
 %type <typeinfo> pointer
-%type<sval> struct_or_union_specifier
-%type<sval> struct_or_union
-//%type<sval> class_declaration
-//%type<sval> class_body
-//%type<sval> class_member
-%type<sval> enumerator
-%type<strlist> enumerator_list
+%type<sval> struct_specifier
+%type<sval> struct
+
 %type<sval> struct_declarator
 %type<strlist> struct_declarator_list
-%type<strlist> specifier_qualifier_list
 %type<ival> constant_expression
 %type<typeinfo> primary_expression
 %type<typeinfo> postfix_expression
@@ -317,12 +290,12 @@ static void yyerror(const char* s) {
 %type<typeinfo> assignment_expression
 %type<typeinfo> expression
 %type<typeinfo> initializer
-%type<strlist> initializer_list
+%type<strlist> initializer_list // ignore it for now
 %type<sval> assignment_operator
 %type<sval> unary_operator
 %type<strlist> argument_expression_list
-%type<sval> type_name
-%type<sval> enum_specifier
+%type<typelist> parameter_list
+
 
 
 
@@ -337,7 +310,6 @@ start
 global_declaration
 	: function_definition                        
 	| declaration                                	
-	//| class_declaration 							 
     ;
 
 function_definition
@@ -355,8 +327,6 @@ declaration
 			// Add declarator-specific type information
 			combinedType.isPointer = declInfo->isPointer;
 			combinedType.pointerCount = declInfo->pointerCount;
-			combinedType.isReference = declInfo->isReference;
-			combinedType.isConstPointer = declInfo->isConstPointer;
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
 			
@@ -394,16 +364,8 @@ declaration_specifiers
 		$$ = $2;
 		$$->isStatic = true;
 	}                                     /* e.g., static int */
-	| CONST type_specifier { 
-		$$ = $2;
-		$$->isConst = true;
-	}                                      /* e.g., const int */
-	| STATIC CONST type_specifier { 
-		$$ = $3;
-		$$->isStatic = true;
-		$$->isConst = true;
-	}                           /* e.g., static const int */
 	;
+    
 
 type_specifier
     : VOID { 
@@ -418,62 +380,17 @@ type_specifier
         $$ = new TypeInfo(); 
         $$->baseType = "int"; 
     }
-    | BOOL { 
-        $$ = new TypeInfo(); 
-        $$->baseType = "bool"; 
-    }
     | FLOAT { 
         $$ = new TypeInfo(); 
         $$->baseType = "float"; 
     }
-    | struct_or_union_specifier { 
+    | struct_specifier { 
         $$ = new TypeInfo(); 
         $$->baseType = *$1;
         delete $1;
     }
-    | enum_specifier { 
-        $$ = new TypeInfo(); 
-        $$->baseType = "enum"; 
-    }
+
     ;
-
-/*
-deleted for some reason
-    | TYPE_NAME { 
-        $$ = new TypeInfo(); 
-        $$->baseType = "type_name"; 
-    }
-
-storage_class_specifier
-	: TYPEDEF { 
-		$$ = new TypeInfo(); 
-		// typedef is not stored as a regular type modifier
-	}                                             
-	| STATIC { 
-		$$ = new TypeInfo(); 
-		$$->isStatic = true; 
-	}                                                    
-	;
-
-type_qualifier_list
-	: type_qualifier                                                   
-	| type_qualifier_list type_qualifier                                
-	;
-*/
-
-
-// --------------- Redundant -----------------------------------------------------------------------------------
-
-
-type_qualifier
-	: CONST { 
-		$$ = new TypeInfo(); 
-		$$->isConst = true; 
-	}                                                             /* const */
-	;
-
-
-// ------------------------------------------------------------------------------------------------------
 
 
 
@@ -502,15 +419,13 @@ init_declarator
 	;
 
 
-// ACTUALLY POINTER IS NOT ONLY pointer BUT IT ALSO CONTAINS REFERENCES, CONST POINTERS.
+// ACTUALLY POINTER IS ONLY pointer -> ****
 declarator
 	: pointer direct_declarator {                                 /* e.g., *p or int *p */ 
 		$$ = $2;
 		// Combine pointer info with declarator info
 		$$->isPointer = $1->isPointer || $$->isPointer;
 		$$->pointerCount += $1->pointerCount;
-		$$->isReference = $1->isReference || $$->isReference;
-		$$->isConstPointer = $1->isConstPointer || $$->isConstPointer;
 		delete $1;
 	}
 	| direct_declarator {                                         /* e.g., x */ 
@@ -537,17 +452,6 @@ direct_declarator
 	}
 	;
 
-/*
-I removed it from direct_declarator bcoz it seems Redundant to me
-| LPAREN declarator RPAREN {                                   
-		$$ = $2;
-	}
-
-and 
-direct_declarator LBRACKET constant_expression RBRACKET this also
-out grammar will only have [int literal]
-*/
-
 
 fun_declarator
   	: pointer fun_direct_declarator
@@ -555,10 +459,9 @@ fun_declarator
 	;
 
 
-fun_direct_declarator
+fun_direct_declarator // KRISH - heirarchy mei yahan se upar upar walon ka kuch karna hai, maybe ek naya table hii banalu, with functions name along with their return types and params
 	: IDENTIFIER LPAREN parameter_list RPAREN          		/* e.g., f(int a, float b) */ 
 	| IDENTIFIER LPAREN RPAREN                               /* e.g., f() (function with unspecified params) */
-	| IDENTIFIER LPAREN parameter_type_list RPAREN                              /* e.g., (int,int) */
 	;
 
 
@@ -596,33 +499,58 @@ initializer_list
 	;
 
 
-
-
-
-//-------------------------------------------- Useless - Previously used in K&R syntax -> int foo(a,b,c){ ... } -----------------------------------------------------
-
-identifier_list
-	: IDENTIFIER                                                         /* e.g., a */
-	| identifier_list COMMA IDENTIFIER                                    /* e.g., a, b */
-	;
-
-
-
-
-//----------------------------- Function Declarations mei param list - int foo(int a, float b) -----------------------------------------------------
-
-parameter_type_list
- 	: parameter_list                                                     /* e.g., int a, float b */
- 	| parameter_list COMMA ELLIPSIS                                     /* e.g., int a, ... */
-	;
-
 parameter_list
-	: parameter_declaration                                              /* e.g., int a */
-	| parameter_list COMMA parameter_declaration                          /* e.g., int a, float b */
+	: parameter_declaration                                              /* e.g., int a */{
+        $$ = new vector<TypeInfo>();
+        $$->push_back(*$1);
+        delete $1;
+    }
+	| parameter_list COMMA parameter_declaration                          /* e.g., int a, float b */{
+        $$ = $1;
+        $$->push_back(*$3);
+        delete $3;
+    }
 	;
 
 parameter_declaration
-	: return_types declarator                                             /* e.g., int x */ 
+	: return_types parameter_declarator                                             /* e.g., int x */ {
+        // Combine base type with declarator-specific type info
+        TypeInfo* combinedType = new TypeInfo(*$1);  // Start with base type
+        
+        // Add declarator-specific type information
+        combinedType->isPointer = $2->isPointer;
+        combinedType->pointerCount = $2->pointerCount;
+        combinedType->isArray = $2->isArray;
+        combinedType->arrayDimensions = $2->arrayDimensions;
+        
+        // Insert parameter into symbol table
+        insert_symbol($2->name, *combinedType);
+        $$ = combinedType; // KRISH : LETS SEE KUCH DELETE KARNA THA YA NHI DK
+        delete $1;
+        delete $2;
+    }
+    ;
+
+parameter_declarator
+	: pointer parameter_direct_declarator {                                 /* e.g., *p or int *p */ 
+		$$ = $2;
+		// Combine pointer info with declarator info
+		$$->isPointer = $1->isPointer || $$->isPointer;
+		$$->pointerCount += $1->pointerCount;
+		delete $1;
+	}
+	| parameter_direct_declarator {                                         /* e.g., x */ 
+		$$ = $1;
+	}
+	;
+
+
+parameter_direct_declarator
+	: IDENTIFIER {                                                 /* e.g., x */  
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		delete $1;
+	}
 	;
 
 
@@ -651,10 +579,7 @@ primary_expression
                         } else if (entry.type.baseType == "char") {
                             char stored_val = scope.getValue<char>(entry.value_offset);
                             $$->setCharValue(stored_val);
-                        } else if (entry.type.baseType == "bool") {
-                            bool stored_val = scope.getValue<bool>(entry.value_offset);
-                            $$->setBoolValue(stored_val);
-                        }
+                        } 
                         break;
                     }
                 }
@@ -700,11 +625,6 @@ primary_expression
         $$->baseType = "null";
         $$->setIntValue(0);  // NULL as integer 0
     }
-	| BOOLEAN_LITERAL { 
-        $$ = new TypeInfo();
-        $$->baseType = "bool";
-        $$->setBoolValue($1);  // Direct boolean assignment!
-    }
     | LPAREN expression RPAREN { 
         $$ = $2;  // Pass through the expression type
     }
@@ -712,7 +632,38 @@ primary_expression
 
 postfix_expression
 	: primary_expression                                      /* e.g., x */
-	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */
+	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */{
+        // Type checking for array access
+        TypeInfo* baseType = $1;
+        TypeInfo* indexType = $3;
+        if (!baseType->isArray) {
+            yyerror("Type error: Attempting to index a non-array type");
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            return;
+        }
+        if (indexType->baseType != "int") {
+            yyerror("Type error: Array index must be of integer type");
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            return;
+        }
+        // Resulting type is the base type of the array, removing one dimension
+        $$ = new TypeInfo(*baseType);
+        if (!$$->arrayDimensions.empty()) {
+            $$->arrayDimensions.erase($$->arrayDimensions.begin());
+            if ($$->arrayDimensions.empty()) {
+                $$->isArray = false; // No more array dimensions
+            }
+        } else {
+            $$->isArray = false; // Safety check
+        }
+        // Value is now an indexed expression
+        $$->value = baseType->value + "[" + indexType->value + "]";
+        delete $1;
+        delete $3;
+    }
+
 	| postfix_expression LPAREN RPAREN                               /* e.g., func() */
 	| postfix_expression LPAREN argument_expression_list RPAREN      /* e.g., func(a,b) */
 	| postfix_expression DOT IDENTIFIER                            /* e.g., obj.field */
@@ -732,21 +683,21 @@ unary_expression
 	| DECREMENT unary_expression                                       /* e.g., --x */
 	| unary_operator cast_expression                                /* e.g., -y or &z */
 	| SIZEOF unary_expression                                       /* e.g., sizeof x */
-	| SIZEOF LPAREN type_name RPAREN                                 /* e.g., sizeof(int) */
+	| SIZEOF LPAREN type_specifier RPAREN                                 /* e.g., sizeof(int) */
 	;
 
 unary_operator
-	: BIT_AND                                                             /* e.g., &x */
-	| STAR                                                             /* e.g., *p */
-	| PLUS                                                             /* e.g., +x */
-	| MINUS                                                             /* e.g., -x */
-	| BIT_NOT                                                             /* e.g., ~mask */
-	| LOGICAL_NOT                                                             /* e.g., !flag */
+	: BIT_AND                                                    {   $$ = new string("&"); }                                   /* e.g., &x */
+	| STAR                                                             {   $$ = new string("*"); }                                   /* e.g., *p */
+	| PLUS                                                             {   $$ = new string("+"); }                                   /* e.g., +x */
+	| MINUS                                                             {   $$ = new string("-"); }                                   /* e.g., -x */
+	| BIT_NOT                                                             {   $$ = new string("~"); }                                   /* e.g., ~x */
+	| LOGICAL_NOT                                                            {   $$ = new string("!"); }                                   /* e.g., !x */
 	;
 
 cast_expression
 	: unary_expression                                              /* e.g., x */
-	| LPAREN type_name RPAREN cast_expression                         /* e.g., (int) x */
+	| LPAREN type_specifier RPAREN cast_expression                         /* e.g., (int) x */
 	;
 
 multiplicative_expression
@@ -827,16 +778,6 @@ assignment_expression
 
 assignment_operator
 	: ASSIGN                                                            /* = */
-	| MUL_ASSIGN                                                        /* *= */
-	| DIV_ASSIGN                                                        /* /= */
-	| MOD_ASSIGN                                                        /* %= */
-	| ADD_ASSIGN                                                        /* += */
-	| SUB_ASSIGN                                                        /* -= */
-	| LEFT_ASSIGN                                                       /* <<= */
-	| RIGHT_ASSIGN                                                      /* >>= */
-	| AND_ASSIGN                                                        /* &= */
-	| XOR_ASSIGN                                                        /* ^= */
-	| OR_ASSIGN                                                         /* |= */
 	;
 
 expression
@@ -854,21 +795,19 @@ constant_expression
 
 // -------------------------------------------- Structs and Enums -----------------------------------------------------
 
-struct_or_union_specifier
-	: struct_or_union IDENTIFIER LBRACE struct_declaration_list RBRACE { 
+struct_specifier
+	: struct IDENTIFIER LBRACE struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
 		$$ = new string(*$1 + " " + *$2);
 		delete $1; delete $2;
 	}   /* e.g., struct S { int x; };*/  
-	| struct_or_union IDENTIFIER { 
+	| struct IDENTIFIER { 
 		$$ = new string(*$1 + " " + *$2);
 		delete $1; delete $2;
 	}                                           /* e.g., struct S */ 
 	;
 
-struct_or_union
-	: STRUCT { $$ = new string("struct"); }                                                            /* struct */
-	| UNION { $$ = new string("union"); }                                                             /* union */	
-	//| CLASS { $$ = new string("class"); }													 						 						
+struct
+	: STRUCT { $$ = new string("struct"); }                                                            /* struct */											 						 						
 	;
 
 struct_declaration_list
@@ -876,15 +815,9 @@ struct_declaration_list
 	| struct_declaration_list struct_declaration                         /* e.g., int x; float y; */
 	;
 
+// NO STATIC WAS ALLOWED IN C STRUCTS
 struct_declaration
-	: specifier_qualifier_list struct_declarator_list SEMICOLON         /* e.g., int x, *p; */ 
-	;
-
-specifier_qualifier_list
-	: type_specifier specifier_qualifier_list                            /* e.g., int const */
-	| type_specifier                                                     /* e.g., int */
-	| type_qualifier specifier_qualifier_list                            /* e.g., const volatile */
-	| type_qualifier                                                     /* e.g., const */
+	: type_specifier struct_declarator_list SEMICOLON         /* e.g., int x, *p; */ 
 	;
 
 struct_declarator_list
@@ -894,35 +827,14 @@ struct_declarator_list
 
 struct_declarator
 	: declarator { $$ = new string($1->name); delete $1; }                /* e.g., x */ 
-	| COLON constant_expression { $$ = new string("bitfield"); }          /* e.g., :3 (bit-field) */
-	| declarator COLON constant_expression { $$ = new string($1->name); delete $1; }  /* e.g., x:3 */ 
 	;
-
-enum_specifier
-	: ENUM LBRACE enumerator_list RBRACE                                 /* e.g., enum { A, B } */
-	| ENUM IDENTIFIER LBRACE enumerator_list RBRACE                      /* e.g., enum E { A, B } */
-	| ENUM IDENTIFIER                                                     /* e.g., enum E */
-	;
-
-enumerator_list
-	: enumerator                                                        /* e.g., A */ 
-	| enumerator_list COMMA enumerator                                    /* e.g., A, B */ 
-	;
-
-enumerator
-	: IDENTIFIER                                                        /* e.g., A */ 
-	| IDENTIFIER ASSIGN constant_expression                               /* e.g., A = 5 */ 
-	;
-
-
 
 
 
 
 //---------------------------------------- Pointers --------------------------------------------------
-// pointer with const only at the end - e.g., int*, int** const
 
-// KRISH - pointer and ref and const dekhna hai , ref hata hii hai Vese
+//KRISH : Still multi dimensional pointers and arrays are not basic feature
 
 pointer
     : STAR {                                   /* e.g., * */
@@ -930,26 +842,12 @@ pointer
         $$->isPointer = true;
         $$->pointerCount = 1;
     }
-    | STAR CONST {                            /* e.g., * const */
-        $$ = new TypeInfo();
-        $$->isPointer = true;
-        $$->pointerCount = 1;
-        $$->isConstPointer = true;
-    }
     | STAR pointer {                          /* e.g., **, ***, etc. */
         $$ = $2;
         $$->pointerCount++;
     }
-	| BIT_AND {                               /* e.g., & (reference) */
-        $$ = new TypeInfo();
-        $$->isReference = true;
-    }
+	
     ;
-
-//---------------------------------------- Only used in sizeof(int) and casting int x = (int) f_y; --------------------------------------------------
-type_name
-	: specifier_qualifier_list                                           /* e.g., const int */
-	;
 
 
 //---------------------------------------- Statements --------------------------------------------------
@@ -1059,9 +957,6 @@ void* parseInitialValue(const TypeInfo& type, const TypeInfo& initType) {
     } else if (type.baseType == "char") {
         char* val = new char(initType.getCharValue());
         return val;
-    } else if (type.baseType == "bool") {
-        bool* val = new bool(initType.getBoolValue());
-        return val;
     } else if (type.baseType == "string") {
         string str = initType.getStringValue();
         char* val = new char[str.length() + 1];
@@ -1083,8 +978,6 @@ void displayNativeValue(const TypeInfo& type, const TypeInfo& valueType) {
         cout << valueType.getFloatValue();
     } else if (type.baseType == "char") {
         cout << "'" << valueType.getCharValue() << "'";
-    } else if (type.baseType == "bool") {
-        cout << (valueType.getBoolValue() ? "true" : "false");
     } else if (type.baseType == "string") {
         cout << "\"" << valueType.getStringValue() << "\"";
     }
@@ -1219,10 +1112,6 @@ void displayVariableValue(const SymbolEntry& entry, const ScopeContext& scope) {
             if (!entry.isInitialized && val == '\0') cout << " (default)";
             cout << " [ASCII: " << (int)(unsigned char)val << "]";
             
-        } else if (entry.type.baseType == "bool") {
-            bool val = scope.getValue<bool>(entry.value_offset);
-            cout << "= " << (val ? "true" : "false");
-            if (!entry.isInitialized && !val) cout << " (default)";
         } else {
             cout << "= <unsupported type>";
         }

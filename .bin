@@ -61,3 +61,121 @@ access_label
 
 
 */
+
+
+/*
+deleted for some reason
+    | TYPE_NAME { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "type_name"; 
+    }
+
+storage_class_specifier
+	: TYPEDEF { 
+		$$ = new TypeInfo(); 
+		// typedef is not stored as a regular type modifier
+	}                                          
+	| STATIC { 
+		$$ = new TypeInfo(); 
+		$$->isStatic = true; 
+	}                                                    
+	;
+
+type_qualifier_list
+	: type_qualifier                                                   
+	| type_qualifier_list type_qualifier                                
+	;
+*/
+
+
+// --------------- Redundant -----------------------------------------------------------------------------------
+
+
+type_qualifier
+	: CONST { 
+		$$ = new TypeInfo(); 
+		$$->isConst = true; 
+	}                                                            
+	;
+
+
+// ------------------------------------------------------------------------------------------------------
+
+| BIT_AND {                               /* e.g., & (reference) */
+        $$ = new TypeInfo();
+        $$->isReference = true;
+    }
+
+    | STAR CONST {                            /* e.g., * const */
+        $$ = new TypeInfo();
+        $$->isPointer = true;
+        $$->pointerCount = 1;
+        $$->isConstPointer = true;
+    }
+
+    /*
+Removed const keyword
+| CONST type_specifier { 
+		$$ = $2;
+		$$->isConst = true;
+	}                                      /* e.g., const int */
+	| STATIC CONST type_specifier { 
+		$$ = $3;
+		$$->isStatic = true;
+		$$->isConst = true;
+	}                           /* e.g., static const int */
+*/
+
+
+/*
+I removed it from direct_declarator bcoz it seems Redundant to me
+| LPAREN declarator RPAREN {                                   
+		$$ = $2;
+	}
+
+and 
+direct_declarator LBRACKET constant_expression RBRACKET this also
+out grammar will only have [int literal]
+*/
+
+    | BOOL { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "bool"; 
+    }
+
+    //-------------------------------------------- Useless - Previously used in K&R syntax -> int foo(a,b,c){ ... } -----------------------------------------------------
+
+identifier_list
+	: IDENTIFIER                                                         /* e.g., a */
+	| identifier_list COMMA IDENTIFIER                                    /* e.g., a, b */
+	;
+
+
+enum_specifier
+	: ENUM LBRACE enumerator_list RBRACE                                 /* e.g., enum { A, B } */
+	| ENUM IDENTIFIER LBRACE enumerator_list RBRACE                      /* e.g., enum E { A, B } */
+	| ENUM IDENTIFIER                                                     /* e.g., enum E */
+	;
+
+enumerator_list
+	: enumerator                                                        /* e.g., A */ 
+	| enumerator_list COMMA enumerator                                    /* e.g., A, B */ 
+	;
+
+enumerator
+	: IDENTIFIER                                                        /* e.g., A */ 
+	| IDENTIFIER ASSIGN constant_expression                               /* e.g., A = 5 */ 
+	;
+
+
+specifier_list
+	: type_specifier specifier_list                            /* e.g., int const */
+	| type_specifier                                                     /* e.g., int */
+	;
+
+	| COLON constant_expression { $$ = new string("bitfield"); }          /* e.g., :3 (bit-field) */
+	| declarator COLON constant_expression { $$ = new string($1->name); delete $1; }  /* e.g., x:3 */ 
+        | enum_specifier { 
+        $$ = new TypeInfo(); 
+        $$->baseType = "enum"; 
+    }

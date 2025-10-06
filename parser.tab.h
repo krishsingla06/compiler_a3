@@ -53,12 +53,9 @@ extern int yydebug;
     // Structured type information - contains isConst, isPointer, baseType, etc.
     struct TypeInfo {
         bool isStatic;
-        bool isConst;
-        string baseType;        // int, char, float, void, bool, struct_name, etc.
+        string baseType;        // int, char, float, void, struct_name, etc.
         bool isPointer;
         int pointerCount;
-        bool isReference;
-        bool isConstPointer;    // const after pointer (like int * const)
         bool isArray;
         vector<int> arrayDimensions;  // stores size of each dimension, -1 for unknown size
         
@@ -67,7 +64,6 @@ extern int yydebug;
             int int_value;
             float float_value;
             char char_value;
-            bool bool_value;
             //KRISH - add here ig a byte for int* ptr = &x
         } native_value;
         
@@ -75,9 +71,9 @@ extern int yydebug;
         bool has_native_value;
         string value;           // Keep for identifiers/expressions
         
-        TypeInfo() : isStatic(false), isConst(false), baseType(""), 
-                     isPointer(false), pointerCount(0), isReference(false), 
-                     isConstPointer(false), isArray(false), string_value(nullptr),
+        TypeInfo() : isStatic(false), baseType(""), 
+                     isPointer(false), pointerCount(0), 
+                    isArray(false), string_value(nullptr),
                      has_native_value(false), value("") {
             // Initialize union to zero
             native_value.int_value = 0;
@@ -96,10 +92,6 @@ extern int yydebug;
             native_value.char_value = val; 
             has_native_value = true; 
         }
-        void setBoolValue(bool val) { 
-            native_value.bool_value = val; 
-            has_native_value = true; 
-        }
         void setStringValue(const string& val) { 
             if (string_value) delete string_value;
             string_value = new string(val); 
@@ -110,7 +102,6 @@ extern int yydebug;
         int getIntValue() const { return native_value.int_value; }
         float getFloatValue() const { return native_value.float_value; }
         char getCharValue() const { return native_value.char_value; }
-        bool getBoolValue() const { return native_value.bool_value; }
         string getStringValue() const { 
             return string_value ? *string_value : ""; 
         }
@@ -121,25 +112,21 @@ extern int yydebug;
         }
         
         // Copy constructor
-        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic), isConst(other.isConst),
-                     baseType(other.baseType), isPointer(other.isPointer), 
-                     pointerCount(other.pointerCount), isReference(other.isReference),
-                     isConstPointer(other.isConstPointer), isArray(other.isArray),
-                     arrayDimensions(other.arrayDimensions), native_value(other.native_value),
-                     has_native_value(other.has_native_value), value(other.value) {
+        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
+                    baseType(other.baseType), isPointer(other.isPointer), 
+                    pointerCount(other.pointerCount), isArray(other.isArray),
+                    arrayDimensions(other.arrayDimensions), native_value(other.native_value),
+                    has_native_value(other.has_native_value), value(other.value) {
             string_value = other.string_value ? new string(*other.string_value) : nullptr;
         }
         
         string toString() const {
             string result = "";
             if (isStatic) result += "static ";
-            if (isConst) result += "const ";
             result += baseType;
             for (int i = 0; i < pointerCount; i++) {
                 result += "*";
             }
-            if (isReference) result += "&";
-            if (isConstPointer) result += " const";
             if (isArray) {
                 for (int size : arrayDimensions) {
                     result += "[";
@@ -182,8 +169,6 @@ extern int yydebug;
             if (baseType == "int") return sizeof(int);
             if (baseType == "float") return sizeof(float);
             if (baseType == "char") return sizeof(char);
-            if (baseType == "bool") return sizeof(bool);
-            if (baseType == "double") return sizeof(double);
             return 1; // Default for unknown types
         }
         
@@ -222,15 +207,12 @@ extern int yydebug;
         string name;            // variable name
         bool isPointer;
         int pointerCount;
-        bool isReference;
-        bool isConstPointer;
         bool isArray;
         vector<int> arrayDimensions;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
-        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0), 
-                          isReference(false), isConstPointer(false), 
+        DeclaratorInfo() : name(""), isPointer(false), pointerCount(0),  
                           isArray(false), initValue(""), initType(nullptr) {}
     };
 
@@ -248,7 +230,7 @@ extern int yydebug;
                        value_size(0), isInitialized(false) {}
     };
 
-#line 252 "parser.tab.h"
+#line 234 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -263,81 +245,63 @@ extern int yydebug;
     FLOAT = 259,                   /* FLOAT  */
     CHAR = 260,                    /* CHAR  */
     VOID = 261,                    /* VOID  */
-    BOOL = 262,                    /* BOOL  */
-    IF = 263,                      /* IF  */
-    ELSE = 264,                    /* ELSE  */
-    FOR = 265,                     /* FOR  */
-    WHILE = 266,                   /* WHILE  */
-    DO = 267,                      /* DO  */
-    UNTIL = 268,                   /* UNTIL  */
-    BREAK = 269,                   /* BREAK  */
-    CONTINUE = 270,                /* CONTINUE  */
-    SWITCH = 271,                  /* SWITCH  */
-    CASE = 272,                    /* CASE  */
-    DEFAULT = 273,                 /* DEFAULT  */
-    SIZEOF = 274,                  /* SIZEOF  */
-    TYPEDEF = 275,                 /* TYPEDEF  */
-    STATIC = 276,                  /* STATIC  */
-    GOTO = 277,                    /* GOTO  */
-    NULL_LITERAL = 278,            /* NULL_LITERAL  */
-    INCREMENT = 279,               /* INCREMENT  */
-    DECREMENT = 280,               /* DECREMENT  */
-    ARROW = 281,                   /* ARROW  */
-    LEFT_SHIFT = 282,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 283,             /* RIGHT_SHIFT  */
-    LOGICAL_AND = 284,             /* LOGICAL_AND  */
-    LOGICAL_OR = 285,              /* LOGICAL_OR  */
-    EQ = 286,                      /* EQ  */
-    NEQ = 287,                     /* NEQ  */
-    LE = 288,                      /* LE  */
-    GE = 289,                      /* GE  */
-    PLUS = 290,                    /* PLUS  */
-    MINUS = 291,                   /* MINUS  */
-    STAR = 292,                    /* STAR  */
-    DIVIDE = 293,                  /* DIVIDE  */
-    MOD = 294,                     /* MOD  */
-    ASSIGN = 295,                  /* ASSIGN  */
-    LT = 296,                      /* LT  */
-    GT = 297,                      /* GT  */
-    LOGICAL_NOT = 298,             /* LOGICAL_NOT  */
-    BIT_AND = 299,                 /* BIT_AND  */
-    BIT_OR = 300,                  /* BIT_OR  */
-    BIT_XOR = 301,                 /* BIT_XOR  */
-    BIT_NOT = 302,                 /* BIT_NOT  */
-    DOT = 303,                     /* DOT  */
-    MUL_ASSIGN = 304,              /* MUL_ASSIGN  */
-    DIV_ASSIGN = 305,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 306,              /* MOD_ASSIGN  */
-    ADD_ASSIGN = 307,              /* ADD_ASSIGN  */
-    SUB_ASSIGN = 308,              /* SUB_ASSIGN  */
-    LEFT_ASSIGN = 309,             /* LEFT_ASSIGN  */
-    RIGHT_ASSIGN = 310,            /* RIGHT_ASSIGN  */
-    AND_ASSIGN = 311,              /* AND_ASSIGN  */
-    XOR_ASSIGN = 312,              /* XOR_ASSIGN  */
-    OR_ASSIGN = 313,               /* OR_ASSIGN  */
-    COLON = 314,                   /* COLON  */
-    SEMICOLON = 315,               /* SEMICOLON  */
-    COMMA = 316,                   /* COMMA  */
-    LBRACE = 317,                  /* LBRACE  */
-    RBRACE = 318,                  /* RBRACE  */
-    LPAREN = 319,                  /* LPAREN  */
-    RPAREN = 320,                  /* RPAREN  */
-    LBRACKET = 321,                /* LBRACKET  */
-    RBRACKET = 322,                /* RBRACKET  */
-    STRUCT = 323,                  /* STRUCT  */
-    RETURN = 324,                  /* RETURN  */
-    IDENTIFIER = 325,              /* IDENTIFIER  */
-    INT_LITERAL = 326,             /* INT_LITERAL  */
-    BOOLEAN_LITERAL = 327,         /* BOOLEAN_LITERAL  */
-    FLOAT_LITERAL = 328,           /* FLOAT_LITERAL  */
-    STRING_LITERAL = 329,          /* STRING_LITERAL  */
-    CHAR_LITERAL = 330,            /* CHAR_LITERAL  */
-    TYPE_NAME = 331,               /* TYPE_NAME  */
-    ENUM = 332,                    /* ENUM  */
-    UNION = 333,                   /* UNION  */
-    INVALID = 334,                 /* INVALID  */
-    ELLIPSIS = 335,                /* ELLIPSIS  */
-    CONST = 336                    /* CONST  */
+    IF = 262,                      /* IF  */
+    ELSE = 263,                    /* ELSE  */
+    FOR = 264,                     /* FOR  */
+    WHILE = 265,                   /* WHILE  */
+    DO = 266,                      /* DO  */
+    UNTIL = 267,                   /* UNTIL  */
+    BREAK = 268,                   /* BREAK  */
+    CONTINUE = 269,                /* CONTINUE  */
+    SWITCH = 270,                  /* SWITCH  */
+    CASE = 271,                    /* CASE  */
+    DEFAULT = 272,                 /* DEFAULT  */
+    SIZEOF = 273,                  /* SIZEOF  */
+    STATIC = 274,                  /* STATIC  */
+    GOTO = 275,                    /* GOTO  */
+    NULL_LITERAL = 276,            /* NULL_LITERAL  */
+    INVALID = 277,                 /* INVALID  */
+    INCREMENT = 278,               /* INCREMENT  */
+    DECREMENT = 279,               /* DECREMENT  */
+    ARROW = 280,                   /* ARROW  */
+    LEFT_SHIFT = 281,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 282,             /* RIGHT_SHIFT  */
+    LOGICAL_AND = 283,             /* LOGICAL_AND  */
+    LOGICAL_OR = 284,              /* LOGICAL_OR  */
+    EQ = 285,                      /* EQ  */
+    NEQ = 286,                     /* NEQ  */
+    LE = 287,                      /* LE  */
+    GE = 288,                      /* GE  */
+    PLUS = 289,                    /* PLUS  */
+    MINUS = 290,                   /* MINUS  */
+    STAR = 291,                    /* STAR  */
+    DIVIDE = 292,                  /* DIVIDE  */
+    MOD = 293,                     /* MOD  */
+    ASSIGN = 294,                  /* ASSIGN  */
+    LT = 295,                      /* LT  */
+    GT = 296,                      /* GT  */
+    LOGICAL_NOT = 297,             /* LOGICAL_NOT  */
+    BIT_AND = 298,                 /* BIT_AND  */
+    BIT_OR = 299,                  /* BIT_OR  */
+    BIT_XOR = 300,                 /* BIT_XOR  */
+    BIT_NOT = 301,                 /* BIT_NOT  */
+    DOT = 302,                     /* DOT  */
+    COLON = 303,                   /* COLON  */
+    SEMICOLON = 304,               /* SEMICOLON  */
+    COMMA = 305,                   /* COMMA  */
+    LBRACE = 306,                  /* LBRACE  */
+    RBRACE = 307,                  /* RBRACE  */
+    LPAREN = 308,                  /* LPAREN  */
+    RPAREN = 309,                  /* RPAREN  */
+    LBRACKET = 310,                /* LBRACKET  */
+    RBRACKET = 311,                /* RBRACKET  */
+    STRUCT = 312,                  /* STRUCT  */
+    RETURN = 313,                  /* RETURN  */
+    IDENTIFIER = 314,              /* IDENTIFIER  */
+    INT_LITERAL = 315,             /* INT_LITERAL  */
+    FLOAT_LITERAL = 316,           /* FLOAT_LITERAL  */
+    STRING_LITERAL = 317,          /* STRING_LITERAL  */
+    CHAR_LITERAL = 318             /* CHAR_LITERAL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -346,19 +310,18 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 244 "parser.y"
+#line 226 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
     float fval;     /* float literals */
-	bool bval;     /* boolean literals */
 	char cval;      /* char literals */
 	vector<string>* strlist; /* list of strings */
 	TypeInfo* typeinfo; /* structured type information */
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 362 "parser.tab.h"
+#line 325 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

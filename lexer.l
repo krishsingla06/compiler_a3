@@ -39,7 +39,6 @@ static char* mystrdup(const char* s) {
 "int"                               { return INT; }
 "char"                              { return CHAR; }
 "float"                             { return FLOAT; }
-"bool"                              { return BOOL; }
 "void"                              { return VOID; }
 
 "return"                            { return RETURN; }
@@ -56,12 +55,8 @@ static char* mystrdup(const char* s) {
 "case"                              { return CASE; }
 "default"                           { return DEFAULT; }
 "sizeof"                            { return SIZEOF; }
-"typedef"                           { return TYPEDEF; }
 "static"                            { return STATIC; }
-"const"                           { return CONST; }
 "struct"                            { return STRUCT; }
-"union"                             { return UNION; }
-"enum"                              { return ENUM; }
 
 
 "++"                                { return INCREMENT; }
@@ -76,16 +71,6 @@ static char* mystrdup(const char* s) {
 "<="                                { return LE; }
 ">="                                { return GE; }
 
-"*="                                { return MUL_ASSIGN; }
-"/="                                { return DIV_ASSIGN; }
-"%="                                { return MOD_ASSIGN; }
-"+="                                { return ADD_ASSIGN; }
-"-="                                { return SUB_ASSIGN; }
-"<<="                               { return LEFT_ASSIGN; }
-">>="                               { return RIGHT_ASSIGN; }
-"&="                                { return AND_ASSIGN; }
-"^="                                { return XOR_ASSIGN; }
-"|="                                { return OR_ASSIGN; }
 "+"                                 { return PLUS; }
 "-"                                 { return MINUS; }
 "*"                                 { return STAR; }
@@ -109,7 +94,6 @@ static char* mystrdup(const char* s) {
 ")"                                 { return RPAREN; }
 "["                                 { return LBRACKET; }
 "]"                                 { return RBRACKET; }
-"..."                               { return ELLIPSIS; }
 
 [0-9]*[.][0-9]*   {yylval.fval = atof(yytext);  return FLOAT_LITERAL; }
 
@@ -119,7 +103,6 @@ static char* mystrdup(const char* s) {
 
 ["].*["]   {yylval.sval = new std::string(yytext); return STRING_LITERAL; }
 
-"true" | "false"    { yylval.ival = (strcmp(yytext,"true")==0); return BOOLEAN_LITERAL; }
 "NULL"    { return NULL_LITERAL; }
 
 [a-zA-Z_][a-zA-Z0-9_]*  {yylval.sval = new std::string(yytext); return IDENTIFIER; }
