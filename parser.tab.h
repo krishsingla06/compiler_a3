@@ -58,16 +58,17 @@ extern int yydebug;
         bool isArray;
         int arraySize;
         string identifier;      // For expressions that reference variables
+        bool isLiteral;         // True for literals, false for variables/expressions
         
         TypeInfo() : isStatic(false), baseType(""), 
                      isPointer(false), isArray(false), 
-                     arraySize(0), identifier("") {}
+                     arraySize(0), identifier(""), isLiteral(false) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
                     isArray(other.isArray), arraySize(other.arraySize),
-                    identifier(other.identifier) {}
+                    identifier(other.identifier), isLiteral(other.isLiteral) {}
         
         string toString() const {
             string result = "";
@@ -114,7 +115,7 @@ extern int yydebug;
         SymbolEntry() : line(0), scope_level(0) {}
     };
 
-#line 118 "parser.tab.h"
+#line 119 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -194,7 +195,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 108 "parser.y"
+#line 116 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -206,7 +207,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 210 "parser.tab.h"
+#line 211 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

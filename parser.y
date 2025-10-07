@@ -26,16 +26,17 @@ static void yyerror(const char* s) {
         bool isArray;
         int arraySize;
         string identifier;      // For expressions that reference variables
+        bool isLiteral;         // True for literals, false for variables/expressions
         
         TypeInfo() : isStatic(false), baseType(""), 
                      isPointer(false), isArray(false), 
-                     arraySize(0), identifier("") {}
+                     arraySize(0), identifier(""), isLiteral(false) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), isPointer(other.isPointer), 
                     isArray(other.isArray), arraySize(other.arraySize),
-                    identifier(other.identifier) {}
+                    identifier(other.identifier), isLiteral(other.isLiteral) {}
         
         string toString() const {
             string result = "";
@@ -95,13 +96,20 @@ static void yyerror(const char* s) {
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
-    TypeInfo* lookup_typeinfo_by_name(const string& name);
     
-    // Type checking functions
+    // Type checking and promotion functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
-    TypeInfo* get_expression_type(const string& expr_value);
     bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
-    bool check_literal_type(const string& value, const string& expected_base_type);
+    TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right);
+    bool is_numeric_type(const string& type);
+    bool is_integer_type(const string& type);
+    bool is_lvalue(const TypeInfo& expr);
+    bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to);
+    bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to);
+    TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, const string& op);
+    TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op);
+    void type_error(const string& message);
+    void type_warning(const string& message);
 }
 
 /* Declare value types */
@@ -158,6 +166,7 @@ static void yyerror(const char* s) {
 %type<typeinfo> postfix_expression
 %type<typeinfo> unary_expression
 %type<typeinfo> cast_expression
+%type<typeinfo> cast_type_specifier
 %type<typeinfo> multiplicative_expression
 %type<typeinfo> additive_expression
 %type<typeinfo> shift_expression
@@ -172,8 +181,7 @@ static void yyerror(const char* s) {
 %type<typeinfo> assignment_expression
 %type<typeinfo> expression
 %type<typeinfo> initializer
-%type<strlist> initializer_list // ignore it for now
-%type<sval> assignment_operator
+%type<typeinfo> initializer_list // ignore it for now
 %type<sval> unary_operator
 %type<strlist> argument_expression_list
 %type<typelist> parameter_list
@@ -272,6 +280,16 @@ type_specifier
 
     ;
 
+cast_type_specifier
+    : type_specifier {
+        $$ = $1;  // Just a base type like int, float, etc.
+    }
+    | type_specifier STAR {
+        $$ = $1;
+        $$->isPointer = true;  // Pointer type like int*, float*, etc.
+    }
+    ;
+
 //-------------------------------------------------- Declarators --------------------------------------------------
 
 init_declarator_list					// a=3,b=&x,c,*d=x,&y=NULL
@@ -351,19 +369,46 @@ initializer
 	: assignment_expression { $$ = $1; }  //Basically any expression                                            
 	| LBRACE initializer_list RBRACE {  //KRISH - pending alloca
 		// For array initializers, create a placeholder type
-		$$ = new TypeInfo();
-		$$->baseType = "array_init";
+		$$ = $2;
+        $$->isArray = true;
 	}                                       /* e.g., {1,2,3} or {{1,2},{4,6}} - For arrays */
 	| LBRACE initializer_list COMMA RBRACE { 
 		// For array initializers with trailing comma
-		$$ = new TypeInfo();
-		$$->baseType = "array_init";
+        $$ = $2;
+        $$->isArray = true;
 	}                                 /* e.g., {1,2,} */
 	;
 
 initializer_list
-	: assignment_expression                                                         /* e.g., 1 */
-	| initializer_list COMMA assignment_expression                                   /* e.g., 1, 2 */
+	: assignment_expression                                                         /* e.g., 1 */{
+        $$ = new TypeInfo();
+        $$->baseType = $1->baseType;
+        //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
+        if( $1->isArray || $1->isPointer || $1->baseType=="string" || $1->baseType=="void" ){
+            yyerror("Array initializer can only contain primitive types");
+        }
+        $$->arraySize = 1; // Single element
+        delete $1;
+    }
+	| initializer_list COMMA assignment_expression                                   /* e.g., 1, 2 */{
+        $$ = $1;
+        //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
+        if( $3->isArray || $3->isPointer || $3->baseType=="string" || $3->baseType=="void" ){
+            yyerror("Array initializer can only contain primitive types");
+        }
+        // Base type is max of both that is if one is int andd one is float ,then overall is float
+        if( $$->baseType=="float" || $3->baseType=="float" ){
+            $$->baseType="float";
+        }
+        else if( $$->baseType=="int" || $3->baseType=="int" ){
+            $$->baseType="int";
+        }
+        else if( $$->baseType=="char" || $3->baseType=="char" ){
+            $$->baseType="char";
+        }
+        $$->arraySize += 1; // Increment array size
+        delete $3;
+    }
 	;
 
 
@@ -429,51 +474,109 @@ primary_expression
         if (lookup_symbol(*$1, entry)) {
             $$ = new TypeInfo(entry.type);  // Copy type from symbol table
             $$->identifier = *$1;  // Store identifier name
-            
+            $$->isLiteral = false;
             cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
         } else {
             $$ = new TypeInfo();
             $$->baseType = "error";
             $$->identifier = *$1;
+            type_error("Undefined variable: " + *$1);
         }
         delete $1;
     }                                        
     | INT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "int";
+        $$->isLiteral = true;
+        cout << "Integer literal: " << $1 << " (type: int)\n";
     }
     | FLOAT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "float";
+        $$->isLiteral = true;
+        cout << "Float literal: " << $1 << " (type: float)\n";
     }
     | CHAR_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "char";
+        $$->isLiteral = true;
+        cout << "Char literal: " << *$1 << " (type: char)\n";
         delete $1;
     }
     | STRING_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "string";
+        $$->isLiteral = true;
+        cout << "String literal: " << *$1 << " (type: string)\n";
         delete $1;
     }
 	| NULL_LITERAL { 
         $$ = new TypeInfo();
-        $$->baseType = "null";
+        $$->baseType = "void";
+        $$->isPointer = true;  // NULL is a void pointer
+        $$->isLiteral = true;
+        cout << "NULL literal (type: void*)\n";
     }
     | LPAREN expression RPAREN { 
         $$ = $2;  // Pass through the expression type
     }
+    
     ;
 
 postfix_expression
-	: primary_expression                                      /* e.g., x */
-	| postfix_expression LBRACKET expression RBRACKET              /* e.g., arr[i] */
-	| postfix_expression LPAREN RPAREN                               /* e.g., func() */
-	| postfix_expression LPAREN argument_expression_list RPAREN      /* e.g., func(a,b) */
-	| postfix_expression DOT IDENTIFIER                            /* e.g., obj.field */
-	| postfix_expression ARROW IDENTIFIER                             /* e.g., ptr->field */
-	| postfix_expression INCREMENT                                  /* e.g., x++ */
-	| postfix_expression DECREMENT                                 /* e.g., x-- */
+	: primary_expression { $$ = $1; }                                      /* e.g., x */
+	| postfix_expression LBRACKET expression RBRACKET {              /* e.g., arr[i] */
+		// Array subscripting: arr[i] or ptr[i]
+		TypeInfo* base = $1;
+		TypeInfo* index = $3;
+		
+		// Check if base is array or pointer
+		if (!base->isArray && !base->isPointer) {
+			type_error("Subscript operator [] can only be applied to arrays or pointers");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else if (!is_integer_type(index->baseType)) {
+			type_error("Array index must be an integer type, got " + index->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else {
+			// Result is the base type without array/pointer modifier
+			$$ = new TypeInfo(*base);
+			$$->isArray = false;
+			$$->isPointer = false;
+			$$->arraySize = 0;
+			$$->isLiteral = false;
+			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << $$->toString() << "\n";
+		}
+		delete $1; delete $3;
+	}
+	| postfix_expression LPAREN RPAREN {                               /* e.g., func() */
+		// Function call with no arguments - skip for now as requested
+		$$ = $1;
+	}
+	| postfix_expression LPAREN argument_expression_list RPAREN {      /* e.g., func(a,b) */
+		// Function call with arguments - skip for now as requested
+		$$ = $1;
+		delete $3;
+	}
+	| postfix_expression DOT IDENTIFIER {                            /* e.g., obj.field */
+		// Struct member access - skip for now as requested
+		$$ = $1;
+		delete $3;
+	}
+	| postfix_expression ARROW IDENTIFIER {                             /* e.g., ptr->field */
+		// Struct pointer member access - skip for now as requested
+		$$ = $1;
+		delete $3;
+	}
+	| postfix_expression INCREMENT {                                  /* e.g., x++ */
+		$$ = perform_unary_operation(*$1, "++");
+		delete $1;
+	}
+	| postfix_expression DECREMENT {                                 /* e.g., x-- */
+		$$ = perform_unary_operation(*$1, "--");
+		delete $1;
+	}
 	;
 
 argument_expression_list
@@ -482,12 +585,33 @@ argument_expression_list
 	;
 
 unary_expression
-	: postfix_expression                                             /* e.g., x */
-	| INCREMENT unary_expression                                        /* e.g., ++x */
-	| DECREMENT unary_expression                                       /* e.g., --x */
-	| unary_operator cast_expression                                /* e.g., -y or &z */
-	| SIZEOF unary_expression                                       /* e.g., sizeof x */
-	| SIZEOF LPAREN type_specifier RPAREN                                 /* e.g., sizeof(int) */
+	: postfix_expression { $$ = $1; }
+	| INCREMENT unary_expression { 
+		$$ = perform_unary_operation(*$2, "++");
+		delete $2;
+	}
+	| DECREMENT unary_expression { 
+		$$ = perform_unary_operation(*$2, "--");
+		delete $2;
+	}
+	| unary_operator cast_expression { 
+		$$ = perform_unary_operation(*$2, *$1);
+		delete $1; delete $2;
+	}
+	| SIZEOF unary_expression { 
+		$$ = new TypeInfo();
+		$$->baseType = "int";  // sizeof always returns int
+		$$->isLiteral = true;
+		cout << "sizeof operation result type: int\n";
+		delete $2;
+	}
+	| SIZEOF LPAREN type_specifier RPAREN { 
+		$$ = new TypeInfo();
+		$$->baseType = "int";  // sizeof always returns int
+		$$->isLiteral = true;
+		cout << "sizeof(" << $3->toString() << ") result type: int\n";
+		delete $3;
+	}
 	;
 
 unary_operator
@@ -500,66 +624,189 @@ unary_operator
 	;
 
 cast_expression
-	: unary_expression                                              /* e.g., x */
-	| LPAREN type_specifier RPAREN cast_expression                         /* e.g., (int) x */
+	: unary_expression { $$ = $1; }                                              /* e.g., x */
+	| LPAREN cast_type_specifier RPAREN cast_expression {                         /* e.g., (int) x, (int*) x */
+		TypeInfo* target_type = $2;
+		TypeInfo* source_type = $4;
+		
+		// Type casting validation
+		if (source_type->baseType == "error") {
+			$$ = source_type;
+		} else if (is_numeric_type(target_type->baseType) && is_numeric_type(source_type->baseType) 
+		           && !target_type->isPointer && !target_type->isArray 
+		           && !source_type->isPointer && !source_type->isArray) {
+			// Numeric type casting is allowed (but not between pointers/arrays and numerics)
+			$$ = new TypeInfo(*target_type);
+			$$->isLiteral = source_type->isLiteral;
+			cout << "Cast: (" << target_type->toString() << ")" << source_type->toString() << " -> " << $$->toString() << "\n";
+		} else if (target_type->baseType == "void" && target_type->isPointer && !target_type->isArray) {
+			// Casting to void* is allowed from any pointer type
+			if (source_type->isPointer && !source_type->isArray) {
+				$$ = new TypeInfo(*target_type);
+				$$->isLiteral = false;
+				cout << "Cast to void*: " << source_type->toString() << " -> " << $$->toString() << "\n";
+			} else {
+				type_error("Cannot cast non-pointer type " + source_type->toString() + " to void*");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			}
+		} else if (source_type->isPointer && target_type->isPointer 
+		           && !source_type->isArray && !target_type->isArray) {
+			// Pointer to pointer casting (excluding arrays)
+			$$ = new TypeInfo(*target_type);
+			$$->isLiteral = false;
+			cout << "Pointer cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
+		} else if ((source_type->isPointer || source_type->isArray) && is_numeric_type(target_type->baseType) && !target_type->isPointer && !target_type->isArray) {
+			// Pointer/array to integer cast (for address arithmetic, but warn)
+			type_warning("Casting pointer/array " + source_type->toString() + " to numeric type " + target_type->toString());
+			$$ = new TypeInfo(*target_type);
+			$$->isLiteral = false;
+			cout << "Pointer-to-numeric cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
+		} else if (is_numeric_type(source_type->baseType) && !source_type->isPointer && !source_type->isArray && target_type->isPointer && !target_type->isArray) {
+			// Integer to pointer cast (dangerous but allowed with warning)
+			type_warning("Casting numeric type " + source_type->toString() + " to pointer " + target_type->toString());
+			$$ = new TypeInfo(*target_type);
+			$$->isLiteral = false;
+			cout << "Numeric-to-pointer cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
+		} else {
+			type_error("Invalid cast from " + source_type->toString() + " to " + target_type->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		}
+		delete $2; delete $4;
+	}
 	;
 
 multiplicative_expression
-	: cast_expression                                               /* e.g., a */
-	| multiplicative_expression STAR cast_expression                     /* e.g., a * b */
-	| multiplicative_expression DIVIDE cast_expression                   /* e.g., a / b */
-	| multiplicative_expression MOD cast_expression                    /* e.g., a % b */
+	: cast_expression { $$ = $1; }
+	| multiplicative_expression STAR cast_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "*");
+		delete $1; delete $3;
+	}
+	| multiplicative_expression DIVIDE cast_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "/");
+		delete $1; delete $3;
+	}
+	| multiplicative_expression MOD cast_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "%");
+		delete $1; delete $3;
+	}
 	;
 
 additive_expression
-	: multiplicative_expression                                   /* e.g., a */
-	| additive_expression PLUS multiplicative_expression                  /* e.g., a + b */
-	| additive_expression MINUS multiplicative_expression                /* e.g., a - b */
+	: multiplicative_expression { $$ = $1; }
+	| additive_expression PLUS multiplicative_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "+");
+		delete $1; delete $3;
+	}
+	| additive_expression MINUS multiplicative_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "-");
+		delete $1; delete $3;
+	}
 	;
 
 shift_expression
-	: additive_expression                                             /* e.g., a */
-	| shift_expression LEFT_SHIFT additive_expression                     /* e.g., a << b */
-	| shift_expression RIGHT_SHIFT additive_expression                     /* e.g., a >> b */
+	: additive_expression { $$ = $1; }                                             /* e.g., a */
+	| shift_expression LEFT_SHIFT additive_expression {                     /* e.g., a << b */
+		// Shift operations require integer types (no pointers or arrays)
+		if (!is_integer_type($1->baseType) || $1->isPointer || $1->isArray ||
+		    !is_integer_type($3->baseType) || $3->isPointer || $3->isArray) {
+			type_error("Shift operations require integer operands (not pointers or arrays). Left: " + $1->toString() + ", Right: " + $3->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else {
+			$$ = new TypeInfo(*$1);
+			if ($$->baseType == "char") $$->baseType = "int"; // Promote char to int
+			cout << "Left shift: " << $1->toString() << " << " << $3->toString() << " -> " << $$->toString() << "\n";
+		}
+		delete $1; delete $3;
+	}
+	| shift_expression RIGHT_SHIFT additive_expression {                     /* e.g., a >> b */
+		// Shift operations require integer types (no pointers or arrays)
+		if (!is_integer_type($1->baseType) || $1->isPointer || $1->isArray ||
+		    !is_integer_type($3->baseType) || $3->isPointer || $3->isArray) {
+			type_error("Shift operations require integer operands (not pointers or arrays). Left: " + $1->toString() + ", Right: " + $3->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else {
+			$$ = new TypeInfo(*$1);
+			if ($$->baseType == "char") $$->baseType = "int"; // Promote char to int
+			cout << "Right shift: " << $1->toString() << " >> " << $3->toString() << " -> " << $$->toString() << "\n";
+		}
+		delete $1; delete $3;
+	}
 	;
 
 relational_expression
-	: shift_expression { /*$$ = $1;*/ }                                                  /* e.g., a */
-	| relational_expression LT shift_expression                            /* e.g., a < b */
-	| relational_expression GT shift_expression                            /* e.g., a > b */
-	| relational_expression LE shift_expression                           /* e.g., a <= b */
-	| relational_expression GE shift_expression                           /* e.g., a >= b */
+	: shift_expression { $$ = $1; }
+	| relational_expression LT shift_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "<");
+		delete $1; delete $3;
+	}
+	| relational_expression GT shift_expression { 
+		$$ = perform_binary_operation(*$1, *$3, ">");
+		delete $1; delete $3;
+	}
+	| relational_expression LE shift_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "<=");
+		delete $1; delete $3;
+	}
+	| relational_expression GE shift_expression { 
+		$$ = perform_binary_operation(*$1, *$3, ">=");
+		delete $1; delete $3;
+	}
 	;
 
 equality_expression
-	: relational_expression                                            /* e.g., a */
-	| equality_expression EQ relational_expression                  /* e.g., a == b */
-	| equality_expression NEQ relational_expression                     /* e.g., a != b */
+	: relational_expression { $$ = $1; }
+	| equality_expression EQ relational_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "==");
+		delete $1; delete $3;
+	}
+	| equality_expression NEQ relational_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "!=");
+		delete $1; delete $3;
+	}
 	;
 
 and_expression
-	: equality_expression                                          /* e.g., a */
-	| and_expression BIT_AND equality_expression                               /* e.g., a & b */
+	: equality_expression { $$ = $1; }
+	| and_expression BIT_AND equality_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "&");
+		delete $1; delete $3;
+	}
 	;
 
 exclusive_or_expression
-	: and_expression                                              /* e.g., a */
-	| exclusive_or_expression BIT_XOR and_expression                          /* e.g., a ^ b */
+	: and_expression { $$ = $1; }
+	| exclusive_or_expression BIT_XOR and_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "^");
+		delete $1; delete $3;
+	}
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression                                      /* e.g., a */
-	| inclusive_or_expression BIT_OR exclusive_or_expression                    /* e.g., a | b */
+	: exclusive_or_expression { $$ = $1; }
+	| inclusive_or_expression BIT_OR exclusive_or_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "|");
+		delete $1; delete $3;
+	}
 	;
 
 logical_and_expression
-	: inclusive_or_expression                                /* e.g., a */
-	| logical_and_expression LOGICAL_AND inclusive_or_expression                 /* e.g., a && b */
+	: inclusive_or_expression { $$ = $1; }
+	| logical_and_expression LOGICAL_AND inclusive_or_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "&&");
+		delete $1; delete $3;
+	}
 	;
 
 logical_or_expression
-	: logical_and_expression                                      /* e.g., a */
-	| logical_or_expression LOGICAL_OR logical_and_expression                   /* e.g., a || b */
+	: logical_and_expression { $$ = $1; }
+	| logical_or_expression LOGICAL_OR logical_and_expression { 
+		$$ = perform_binary_operation(*$1, *$3, "||");
+		delete $1; delete $3;
+	}
 	;
 
 conditional_expression
@@ -567,17 +814,31 @@ conditional_expression
 	;
 
 assignment_expression
-	: conditional_expression { /*$$ = $1;*/ }                                            /* e.g., x */
+	: conditional_expression { $$ = $1; }
 	| unary_expression assignment_operator assignment_expression { 
 		// Type checking for assignment
-		// for now consider lhs is only identifier , so get its type from symbol table
 		TypeInfo* lhs_type = $1;
 		TypeInfo* rhs_type = $3;
-		if (!check_initialization_compatibility(*lhs_type, *rhs_type)) {
-			yyerror("Type mismatch in assignment");
+		
+		// Check if left-hand side is a valid lvalue
+		if (!is_lvalue(*lhs_type)) {
+			type_error("Cannot assign to " + lhs_type->toString() + " - not an lvalue");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else if (!is_implicit_conversion_allowed(*rhs_type, *lhs_type)) {
+			type_error("Cannot assign " + rhs_type->toString() + " to " + lhs_type->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else if (is_narrowing_conversion(*rhs_type, *lhs_type)) {
+			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
+			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
+		} else {
+			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 		}
-		$$ = rhs_type;  // Result type is the RHS type
-	}                                 /* e.g., x += 5 */
+		
+		cout << "Assignment: " << lhs_type->toString() << " = " << rhs_type->toString() << "\n";
+		delete $1; delete $3;
+	}
 	;
 
 assignment_operator
@@ -585,12 +846,21 @@ assignment_operator
 	;
 
 expression
-	: assignment_expression { /*$$ = $1;*/ }                                             /* e.g., x = 1 */
-	| expression COMMA assignment_expression { /*$$ = $1; delete $3;*/ }                               /* e.g., x = 1, y = 2 */
+	: assignment_expression { $$ = $1; }
+	| expression COMMA assignment_expression { 
+		// Comma operator returns the type of the right operand
+		$$ = $3;
+		delete $1;
+	}
 	;
 
 constant_expression
-	: conditional_expression { /*$$ = $1;*/ }                           /* e.g., (1+2) - For now, return 0 */
+	: conditional_expression { 
+		// For constant expressions, we need to return an integer value
+		// For now, return 0 as a placeholder
+		$$ = 0;
+		delete $1;
+	}
 	;
 
 
@@ -633,9 +903,6 @@ struct_declarator
 	: declarator { $$ = new string($1->name); delete $1; }                /* e.g., x */ 
 	;
 
-
-
-
 //---------------------------------------- Pointers --------------------------------------------------
 
 
@@ -646,12 +913,6 @@ pointer
     }
 	
     ;
-
-/*STAR pointer {                         
-        $$ = $2;
-        $$->pointerCount++;
-    }*/
-
 
 //---------------------------------------- Statements --------------------------------------------------
 
@@ -875,21 +1136,367 @@ TypeInfo* get_expression_type(const string& identifier) {
     return nullptr; // Not found
 }
 
-TypeInfo* lookup_typeinfo_by_name(const string& name) {
-    // Search from current scope to global scope for a matching identifier name
-    for (int i = scope_stack.size() - 1; i >= 0; i--) {
-        for (auto& entry : scope_stack[i].symbols) {
-            if (entry.second.name == name) {
-                return &(entry.second.type);
-            }
-        }
-    }
-    return nullptr; // Not found
-}
-
 bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
     // For primary expressions (as requested), check basic compatibility
     return types_compatible(var_type, init_type);
+}
+
+// Type checking and promotion functions implementation
+bool is_numeric_type(const string& type) {
+    return type == "int" || type == "float" || type == "char";
+}
+
+bool is_integer_type(const string& type) {
+    return type == "int" || type == "char";
+}
+
+bool is_lvalue(const TypeInfo& expr) {
+    // An lvalue is an expression that can appear on the left side of an assignment
+    
+    // Literals are not lvalues
+    if (expr.isLiteral) {
+        return false;
+    }
+    
+    // Variables (with identifiers) are lvalues
+    if (!expr.identifier.empty()) {
+        return true;
+    }
+    
+    // Dereferenced pointers are lvalues: *ptr
+    // Array subscripts are lvalues: arr[i]
+    // Structure/union members are lvalues: obj.member, ptr->member
+    // (These would need to be tracked in the grammar with additional flags)
+    
+    // For now, we consider expressions without identifiers as non-lvalues
+    // This covers most basic cases like literals, function calls, etc.
+    return false;
+}
+
+bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
+    // Allow conversions between numeric types
+    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType)) {
+        return true;
+    }
+    
+    // Allow exact type matches
+    if (types_compatible(from, to)) {
+        return true;
+    }
+    
+    // Allow NULL to pointer conversions
+    if (from.baseType == "void" && from.isPointer && to.isPointer) {
+        return true;
+    }
+    
+    return false;
+}
+
+bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
+    // float to int is narrowing
+    if (from.baseType == "float" && to.baseType == "int") {
+        return true;
+    }
+    
+    // int to char is narrowing
+    if (from.baseType == "int" && to.baseType == "char") {
+        return true;
+    }
+    
+    return false;
+}
+
+TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right) {
+    TypeInfo* result = new TypeInfo();
+    
+    // If either is float, result is float
+    if (left.baseType == "float" || right.baseType == "float") {
+        result->baseType = "float";
+        return result;
+    }
+    
+    // If either is int, result is int
+    if (left.baseType == "int" || right.baseType == "int") {
+        result->baseType = "int";
+        return result;
+    }
+    
+    // Both char, result is int (C promotion rules)
+    if (left.baseType == "char" && right.baseType == "char") {
+        result->baseType = "int";
+        return result;
+    }
+    
+    // Default to left type
+    result->baseType = left.baseType;
+    return result;
+}
+
+TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, const string& op) {
+    // Check for errors
+    if (left.baseType == "error" || right.baseType == "error") {
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "error";
+        return result;
+    }
+    
+    cout << "Binary operation: " << left.toString() << " " << op << " " << right.toString();
+    
+    // Addition and subtraction with pointer arithmetic
+    if (op == "+" || op == "-") {
+        // Case 1: Both are numeric types (regular arithmetic)
+        if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
+            !left.isPointer && !right.isPointer && !left.isArray && !right.isArray) {
+            TypeInfo* result = promote_types(left, right);
+            cout << " -> " << result->toString() << " (arithmetic)\n";
+            return result;
+        }
+        
+        // Case 2: Pointer + integer or Array + integer (only for addition)
+        if (op == "+" && ((left.isPointer || left.isArray) && is_integer_type(right.baseType))) {
+            TypeInfo* result = new TypeInfo(left);
+            result->isArray = false;  // Result is always a pointer, not array
+            result->isPointer = true;
+            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
+            return result;
+        }
+        
+        // Case 3: Integer + pointer (commutative for addition)
+        if (op == "+" && (is_integer_type(left.baseType) && (right.isPointer || right.isArray))) {
+            TypeInfo* result = new TypeInfo(right);
+            result->isArray = false;  // Result is always a pointer, not array
+            result->isPointer = true;
+            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
+            return result;
+        }
+        
+        // Case 4: Pointer - integer
+        if (op == "-" && (left.isPointer || left.isArray) && is_integer_type(right.baseType)) {
+            TypeInfo* result = new TypeInfo(left);
+            result->isArray = false;  // Result is always a pointer, not array
+            result->isPointer = true;
+            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
+            return result;
+        }
+        
+        // Case 5: Pointer - pointer (results in integer representing distance)
+        if (op == "-" && (left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+            if (left.baseType != right.baseType) {
+                type_error("Pointer subtraction requires pointers to same type");
+                TypeInfo* result = new TypeInfo();
+                result->baseType = "error";
+                return result;
+            }
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "int";  // ptrdiff_t is typically int
+            cout << " -> " << result->toString() << " (pointer difference)\n";
+            return result;
+        }
+        
+        // Case 6: Invalid pointer + pointer
+        if (op == "+" && (left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+            type_error("Cannot add two pointers");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        // Invalid arithmetic operation
+        type_error("Invalid operands for " + op + " operation");
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "error";
+        return result;
+    }
+    
+    // Multiplication, division, modulo (no pointer arithmetic allowed)
+    if (op == "*" || op == "/" || op == "%") {
+        if (!is_numeric_type(left.baseType) || !is_numeric_type(right.baseType) ||
+            left.isPointer || right.isPointer || left.isArray || right.isArray) {
+            type_error("Arithmetic operation " + op + " requires numeric operands only");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        // Modulo only works on integers
+        if (op == "%" && (left.baseType == "float" || right.baseType == "float")) {
+            type_error("Modulo operation not allowed on floating-point types");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = promote_types(left, right);
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Relational operations
+    if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=") {
+        // Allow comparison between numeric types
+        if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) &&
+            !left.isPointer && !right.isPointer && !left.isArray && !right.isArray) {
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "int";  // In C, no bool type, so relational ops return int
+            cout << " -> " << result->toString() << " (numeric comparison)\n";
+            return result;
+        }
+        
+        // Allow pointer comparisons (same type)
+        if ((left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+            if (left.baseType != right.baseType) {
+                type_warning("Comparing pointers to different types");
+            }
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "int";
+            cout << " -> " << result->toString() << " (pointer comparison)\n";
+            return result;
+        }
+        
+        type_error("Relational operation on incompatible types");
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "error";
+        return result;
+    }
+    
+    // Bitwise operations (integers only, no pointers/arrays)
+    if (op == "&" || op == "|" || op == "^") {
+        if (!is_integer_type(left.baseType) || !is_integer_type(right.baseType) ||
+            left.isPointer || right.isPointer || left.isArray || right.isArray) {
+            type_error("Bitwise operations require integer operands only");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "int";
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Logical operations
+    if (op == "&&" || op == "||") {
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "int";  // Logical operations return int in C
+        cout << " -> " << result->toString() << " (boolean as int)\n";
+        return result;
+    }
+    
+    // Unknown operation
+    type_error("Unknown binary operation: " + op);
+    TypeInfo* result = new TypeInfo();
+    result->baseType = "error";
+    return result;
+}
+
+TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
+    // Check for errors
+    if (operand.baseType == "error") {
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "error";
+        return result;
+    }
+    
+    cout << "Unary operation: " << op << operand.toString();
+    
+    // Arithmetic unary operations
+    if (op == "+" || op == "-") {
+        if (!is_numeric_type(operand.baseType)) {
+            type_error("Unary arithmetic operation on non-numeric type");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo(operand);
+        // Promote char to int for arithmetic
+        if (result->baseType == "char") {
+            result->baseType = "int";
+        }
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Increment/decrement
+    if (op == "++" || op == "--") {
+        if (!is_numeric_type(operand.baseType)) {
+            type_error("Increment/decrement operation on non-numeric type");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo(operand);
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Logical NOT
+    if (op == "!") {
+        TypeInfo* result = new TypeInfo();
+        result->baseType = "int";  // Logical NOT returns int in C
+        cout << " -> " << result->toString() << " (boolean as int)\n";
+        return result;
+    }
+    
+    // Bitwise NOT
+    if (op == "~") {
+        if (!is_numeric_type(operand.baseType)) {
+            type_error("Bitwise NOT on non-numeric type");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo(operand);
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Address-of operator
+    if (op == "&") {
+        if (operand.isLiteral) {
+            type_error("Cannot take address of literal");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo(operand);
+        result->isPointer = true;
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Dereference operator
+    if (op == "*") {
+        if (!operand.isPointer) {
+            type_error("Cannot dereference non-pointer type");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        TypeInfo* result = new TypeInfo(operand);
+        result->isPointer = false;
+        cout << " -> " << result->toString() << "\n";
+        return result;
+    }
+    
+    // Unknown operation
+    type_error("Unknown unary operation: " + op);
+    TypeInfo* result = new TypeInfo();
+    result->baseType = "error";
+    return result;
+}
+
+void type_error(const string& message) {
+    cerr << "Type Error at line " << yylineno << ": " << message << "\n";
+}
+
+void type_warning(const string& message) {
+    cout << "Type Warning at line " << yylineno << ": " << message << "\n";
 }
 
 bool check_literal_type(const string& value, const string& expected_base_type) {
