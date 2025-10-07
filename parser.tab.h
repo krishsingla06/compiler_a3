@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 17 "parser.y"
+#line 28 "parser.y"
 
     #include <bits/stdc++.h>
     using namespace std;
@@ -94,15 +94,20 @@ extern int yydebug;
 
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
-        string name;            // variable name
+        string name;            // variable/function name
         bool isPointer;
         bool isArray;
         int arraySize;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
+        // Function-specific information
+        bool isFunction;        // True if this is a function declarator
+        vector<TypeInfo>* paramTypes;  // Parameter types for functions
+        
         DeclaratorInfo() : name(""), isPointer(false), 
-                          isArray(false), initValue(""), initType(nullptr), arraySize(0) {}
+                          isArray(false), initValue(""), initType(nullptr), arraySize(0),
+                          isFunction(false), paramTypes(nullptr) {}
     };
 
     // Symbol table entry structure
@@ -114,8 +119,27 @@ extern int yydebug;
         
         SymbolEntry() : line(0), scope_level(0) {}
     };
+    
+    // Function parameter structure
+    struct FunctionParam {
+        string name;
+        TypeInfo type;
+        
+        FunctionParam(const string& n, const TypeInfo& t) : name(n), type(t) {}
+    };
+    
+    // Function symbol table entry
+    struct FunctionEntry {
+        string originalName;      // Original function name (e.g., "foo")
+        string mangledName;       // Mangled name (e.g., "foo_i_pc_f")
+        TypeInfo returnType;      // Return type
+        vector<FunctionParam> parameters;  // Parameter list
+        int line;                 // Declaration line
+        
+        FunctionEntry() : line(0) {}
+    };
 
-#line 119 "parser.tab.h"
+#line 143 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -195,7 +219,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 116 "parser.y"
+#line 171 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -207,7 +231,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 211 "parser.tab.h"
+#line 235 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

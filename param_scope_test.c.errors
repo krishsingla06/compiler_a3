@@ -1,0 +1,8 @@
+=== Parser Error Log ===
+Generated on: Oct  7 2025 08:35:14
+Input file: param_scope_test.c.errors
+========================
+
+Error at line 5: Variable 'a' already declared in current scope
+
+=== End of Error Log ===

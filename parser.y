@@ -8,8 +8,19 @@ extern "C" int yylex(void);
 extern FILE* yyin;
 extern int yylineno;
 
+// Error logging file
+static ofstream error_log;
+static string error_log_filename;
+
 static void yyerror(const char* s) {
-    cerr << "Parse error at line " << yylineno << ": " << s << "\n";
+    string error_msg = "Parse error at line " + to_string(yylineno) + ": " + string(s);
+    cerr << error_msg << "\n";
+    
+    // Also log to error file
+    if (error_log.is_open()) {
+        error_log << error_msg << "\n";
+        error_log.flush();
+    }
 }
 
 %}
@@ -62,15 +73,20 @@ static void yyerror(const char* s) {
 
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
-        string name;            // variable name
+        string name;            // variable/function name
         bool isPointer;
         bool isArray;
         int arraySize;
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
+        // Function-specific information
+        bool isFunction;        // True if this is a function declarator
+        vector<TypeInfo>* paramTypes;  // Parameter types for functions
+        
         DeclaratorInfo() : name(""), isPointer(false), 
-                          isArray(false), initValue(""), initType(nullptr), arraySize(0) {}
+                          isArray(false), initValue(""), initType(nullptr), arraySize(0),
+                          isFunction(false), paramTypes(nullptr) {}
     };
 
     // Symbol table entry structure
@@ -82,12 +98,37 @@ static void yyerror(const char* s) {
         
         SymbolEntry() : line(0), scope_level(0) {}
     };
+    
+    // Function parameter structure
+    struct FunctionParam {
+        string name;
+        TypeInfo type;
+        
+        FunctionParam(const string& n, const TypeInfo& t) : name(n), type(t) {}
+    };
+    
+    // Function symbol table entry
+    struct FunctionEntry {
+        string originalName;      // Original function name (e.g., "foo")
+        string mangledName;       // Mangled name (e.g., "foo_i_pc_f")
+        TypeInfo returnType;      // Return type
+        vector<FunctionParam> parameters;  // Parameter list
+        int line;                 // Declaration line
+        
+        FunctionEntry() : line(0) {}
+    };
 }
 
 %code {
     // Stack of scope contexts for different scopes
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
+    
+    // Function symbol table
+    map<string, FunctionEntry> function_table;
+    
+    // Current function parameter information (for proper scoping)
+    vector<pair<string, TypeInfo>> current_function_parameters;
 
     // Function declarations for scope management
     void enter_scope();
@@ -110,6 +151,20 @@ static void yyerror(const char* s) {
     TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op);
     void type_error(const string& message);
     void type_warning(const string& message);
+    
+    // Error logging functions
+    void init_error_log(const string& filename);
+    void close_error_log();
+    void log_error(const string& message);
+    
+    // Function management functions
+    string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes);
+    TypeInfo array_to_pointer_conversion(const TypeInfo& type);
+    void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
+    FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
+    bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params);
+    void display_function_table();
+    void insert_current_function_parameters();
 }
 
 /* Declare value types */
@@ -183,7 +238,7 @@ static void yyerror(const char* s) {
 %type<typeinfo> initializer
 %type<typeinfo> initializer_list // ignore it for now
 %type<sval> unary_operator
-%type<strlist> argument_expression_list
+%type<typelist> argument_expression_list
 %type<typelist> parameter_list
 
 
@@ -203,8 +258,40 @@ global_declaration
     ;
 
 function_definition
-	: return_types fun_declarator compound_statement               /* e.g., int f() { ... } */  
-	| return_types fun_declarator SEMICOLON				/* e.g., int f(); */
+	: return_types fun_declarator compound_statement {               /* e.g., int f() { ... } */
+		// Register function definition
+		TypeInfo returnType = *$1;
+		if ($2->isPointer) {
+			returnType.isPointer = true;
+		}
+		
+		if ($2->isFunction && $2->paramTypes) {
+			insert_function($2->name, returnType, *$2->paramTypes);
+			cout << "Function definition: " << $2->name << " registered\n";
+		}
+		
+		// Clean up
+		if ($2->paramTypes) delete $2->paramTypes;
+		delete $1;
+		delete $2;
+	}
+	| return_types fun_declarator SEMICOLON {				/* e.g., int f(); */
+		// Register function declaration
+		TypeInfo returnType = *$1;
+		if ($2->isPointer) {
+			returnType.isPointer = true;
+		}
+		
+		if ($2->isFunction && $2->paramTypes) {
+			insert_function($2->name, returnType, *$2->paramTypes);
+			cout << "Function declaration: " << $2->name << " registered\n";
+		}
+		
+		// Clean up
+		if ($2->paramTypes) delete $2->paramTypes;
+		delete $1;
+		delete $2;
+	}
 	;
 
 declaration
@@ -342,14 +429,35 @@ direct_declarator
     }
 
 fun_declarator
-  	: pointer fun_direct_declarator
-	| fun_direct_declarator 
+  	: pointer fun_direct_declarator {
+  		$$ = $2;
+  		$$->isPointer = true;  // Function returns a pointer
+  		delete $1;
+  	}
+	| fun_direct_declarator {
+		$$ = $1;
+	} 
 	;
 
 
-fun_direct_declarator // KRISH - heirarchy mei yahan se upar upar walon ka kuch karna hai, maybe ek naya table hii banalu, with functions name along with their return types and params
-	: IDENTIFIER LPAREN parameter_list RPAREN          		/* e.g., f(int a, float b) */ 
-	| IDENTIFIER LPAREN RPAREN                               /* e.g., f() (function with unspecified params) */
+fun_direct_declarator // Function declarator that captures parameter information
+	: IDENTIFIER LPAREN parameter_list RPAREN {          		/* e.g., f(int a, float b) */
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		$$->isFunction = true;
+		$$->paramTypes = new vector<TypeInfo>(*$3);  // Copy parameter types
+		cout << "Function declarator: " << $$->name << " with " << $$->paramTypes->size() << " parameters\n";
+		delete $1;
+		delete $3;
+	}
+	| IDENTIFIER LPAREN RPAREN {                               /* e.g., f() (function with no params) */
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		$$->isFunction = true;
+		$$->paramTypes = new vector<TypeInfo>();  // Empty parameter list
+		cout << "Function declarator: " << $$->name << " with no parameters\n";
+		delete $1;
+	}
 	;
 
 
@@ -435,9 +543,10 @@ parameter_declaration
         combinedType->isArray = $2->isArray;
         combinedType->arraySize = $2->arraySize;
         
-        // Insert parameter into symbol table
-        insert_symbol($2->name, *combinedType);
-        $$ = combinedType; // KRISH : LETS SEE KUCH DELETE KARNA THA YA NHI DK
+        // Store parameter information for later insertion into function scope
+        current_function_parameters.push_back(make_pair($2->name, *combinedType));
+        
+        $$ = combinedType;
         delete $1;
         delete $2;
     }
@@ -551,12 +660,55 @@ postfix_expression
 		delete $1; delete $3;
 	}
 	| postfix_expression LPAREN RPAREN {                               /* e.g., func() */
-		// Function call with no arguments - skip for now as requested
-		$$ = $1;
+		// Function call with no arguments
+		TypeInfo* base = $1;
+		
+		if (!base->identifier.empty()) {
+			// Try to resolve function call
+			vector<TypeInfo> emptyArgs;
+			FunctionEntry* func = lookup_function(base->identifier, emptyArgs);
+			
+			if (func) {
+				$$ = new TypeInfo(func->returnType);
+				$$->isLiteral = false;
+				cout << "Function call: " << base->identifier << "() -> " << $$->toString() << "\n";
+			} else {
+				type_error("Function '" + base->identifier + "' not found or argument mismatch");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			}
+		} else {
+			type_error("Invalid function call expression");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		}
+		delete $1;
 	}
 	| postfix_expression LPAREN argument_expression_list RPAREN {      /* e.g., func(a,b) */
-		// Function call with arguments - skip for now as requested
-		$$ = $1;
+		// Function call with arguments
+		TypeInfo* base = $1;
+		vector<TypeInfo>* argTypes = $3;
+		
+		if (!base->identifier.empty() && argTypes) {
+			// Try to resolve function call
+			FunctionEntry* func = lookup_function(base->identifier, *argTypes);
+			
+			if (func) {
+				$$ = new TypeInfo(func->returnType);
+				$$->isLiteral = false;
+				cout << "Function call: " << base->identifier << "(...) -> " << $$->toString() << "\n";
+			} else {
+				type_error("Function '" + base->identifier + "' not found or argument type mismatch");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			}
+		} else {
+			type_error("Invalid function call expression");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		}
+		
+		delete $1;
 		delete $3;
 	}
 	| postfix_expression DOT IDENTIFIER {                            /* e.g., obj.field */
@@ -580,8 +732,18 @@ postfix_expression
 	;
 
 argument_expression_list
-	: assignment_expression                                         /* e.g., x */
-	| argument_expression_list COMMA assignment_expression           /* e.g., x, y */
+	: assignment_expression {                                         /* e.g., x */
+		$$ = new vector<TypeInfo>();
+		TypeInfo argType = array_to_pointer_conversion(*$1);
+		$$->push_back(argType);
+		delete $1;
+	}
+	| argument_expression_list COMMA assignment_expression {           /* e.g., x, y */
+		$$ = $1;
+		TypeInfo argType = array_to_pointer_conversion(*$3);
+		$$->push_back(argType);
+		delete $3;
+	}
 	;
 
 unary_expression
@@ -941,7 +1103,7 @@ compound_statement
 	//: LBRACE { enter_scope(); } RBRACE { exit_scope(); }                                                        /* e.g., {} */
 	//| LBRACE { enter_scope(); } statement_list RBRACE { exit_scope(); }                                         /* e.g., { stmt; } */
 	//| LBRACE { enter_scope(); } declaration_list RBRACE { exit_scope(); }                                       /* e.g., { int a; } */
-	: LBRACE { enter_scope(); } declaration_list statement_list RBRACE { exit_scope(); }                        /* e.g., { int a; stmt; } */
+	: LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE { exit_scope(); }                        /* e.g., { int a; stmt; } */
 	;
 
 statement_list
@@ -1016,8 +1178,9 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
     
     // Check for redeclaration
     if (current_scope.symbols.find(name) != current_scope.symbols.end()) {
-        cerr << "Error at line " << yylineno << ": Variable '" << name 
-             << "' already declared in current scope\n";
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' already declared in current scope";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
         return;
     }
     
@@ -1064,8 +1227,9 @@ bool lookup_symbol_current_scope(const string& name) {
 void check_variable_declaration(const string& name) {
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
-        cerr << "Error at line " << yylineno << ": Variable '" << name 
-             << "' used but not declared\n";
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' used but not declared";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
     } else {
         cout << "Variable '" << name << "' found: declared as " 
              << entry.type.toString() << " at line " << entry.line 
@@ -1492,11 +1656,16 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
 }
 
 void type_error(const string& message) {
-    cerr << "Type Error at line " << yylineno << ": " << message << "\n";
+    string error_msg = "Type Error at line " + to_string(yylineno) + ": " + message;
+    cerr << error_msg << "\n";
+    log_error(error_msg);
 }
 
 void type_warning(const string& message) {
-    cout << "Type Warning at line " << yylineno << ": " << message << "\n";
+    string warning_msg = "Type Warning at line " + to_string(yylineno) + ": " + message;
+    cout << warning_msg << "\n";
+    // Also log warnings to error file
+    log_error(warning_msg);
 }
 
 bool check_literal_type(const string& value, const string& expected_base_type) {
@@ -1525,6 +1694,178 @@ bool check_literal_type(const string& value, const string& expected_base_type) {
     return false;
 }
 
+// Function management implementation
+string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
+    string mangledName = funcName;
+    
+    for (const TypeInfo& param : paramTypes) {
+        mangledName += "_";
+        
+        // Add base type encoding
+        if (param.baseType == "int") mangledName += "i";
+        else if (param.baseType == "char") mangledName += "c";
+        else if (param.baseType == "float") mangledName += "f";
+        else if (param.baseType == "void") mangledName += "v";
+        else mangledName += "u"; // unknown
+        
+        // Add pointer modifier
+        if (param.isPointer) mangledName += "p";
+    }
+    
+    return mangledName;
+}
+
+TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
+    TypeInfo result = type;
+    if (result.isArray) {
+        result.isArray = false;
+        result.isPointer = true;
+        result.arraySize = 0;
+        cout << "Array to pointer conversion: " << type.toString() << " -> " << result.toString() << "\n";
+    }
+    return result;
+}
+
+void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes) {
+    // Convert array parameters to pointers
+    vector<TypeInfo> convertedParams;
+    for (const TypeInfo& param : paramTypes) {
+        convertedParams.push_back(array_to_pointer_conversion(param));
+    }
+    
+    string mangledName = mangle_function_name(name, convertedParams);
+    
+    // Check if function already exists
+    if (function_table.find(mangledName) != function_table.end()) {
+        type_warning("Function " + name + " with same parameter types already declared");
+        return;
+    }
+    
+    FunctionEntry entry;
+    entry.originalName = name;
+    entry.mangledName = mangledName;
+    entry.returnType = returnType;
+    entry.line = yylineno;
+    
+    // Convert parameter types to FunctionParam objects
+    for (size_t i = 0; i < convertedParams.size(); i++) {
+        string paramName = "param" + to_string(i);
+        entry.parameters.emplace_back(paramName, convertedParams[i]);
+    }
+    
+    function_table[mangledName] = entry;
+    
+    cout << "Registered function: " << name << " as " << mangledName 
+         << " returning " << returnType.toString() << "\n";
+}
+
+FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
+    // Convert array arguments to pointers
+    vector<TypeInfo> convertedArgs;
+    for (const TypeInfo& arg : argTypes) {
+        convertedArgs.push_back(array_to_pointer_conversion(arg));
+    }
+    
+    // Try exact match first
+    string exactMangledName = mangle_function_name(name, convertedArgs);
+    auto it = function_table.find(exactMangledName);
+    if (it != function_table.end()) {
+        cout << "Found exact function match: " << exactMangledName << "\n";
+        return &(it->second);
+    }
+    
+    // Try to find compatible function with implicit conversions
+    for (auto& entry : function_table) {
+        FunctionEntry& func = entry.second;
+        if (func.originalName == name && are_parameters_compatible(convertedArgs, func.parameters)) {
+            cout << "Found compatible function: " << func.mangledName << " for " << name << "\n";
+            return &func;
+        }
+    }
+    
+    return nullptr;
+}
+
+bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params) {
+    if (argTypes.size() != params.size()) {
+        return false;
+    }
+    
+    for (size_t i = 0; i < argTypes.size(); i++) {
+        if (!is_implicit_conversion_allowed(argTypes[i], params[i].type)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void display_function_table() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                   FUNCTION TABLE                                       |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (function_table.empty()) {
+        cout << "| No functions declared                                                              |\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+        return;
+    }
+    
+    for (const auto& entry : function_table) {
+        const FunctionEntry& func = entry.second;
+        cout << "Function: " << func.originalName << " (" << func.mangledName << ")\n";
+        cout << "  Return type: " << func.returnType.toString() << "\n";
+        cout << "  Parameters: ";
+        for (const FunctionParam& param : func.parameters) {
+            cout << param.type.toString() << " ";
+        }
+        cout << "\n  Declared at line: " << func.line << "\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+    }
+}
+
+void insert_current_function_parameters() {
+    // Insert stored function parameters into the current (function body) scope
+    for (const auto& param : current_function_parameters) {
+        insert_symbol(param.first, param.second);
+        cout << "Inserted function parameter: " << param.first << " (" << param.second.toString() << ")\n";
+    }
+    // Clear the parameters after insertion
+    current_function_parameters.clear();
+}
+
+// Error logging functions implementation
+void init_error_log(const string& filename) {
+    error_log_filename = filename;
+    error_log.open(filename);
+    if (error_log.is_open()) {
+        error_log << "=== Parser Error Log ===\n";
+        error_log << "Generated on: " << __DATE__ << " " << __TIME__ << "\n";
+        error_log << "Input file: " << filename << "\n";
+        error_log << "========================\n\n";
+        error_log.flush();
+        cout << "Error log initialized: " << filename << "\n";
+    } else {
+        cerr << "Warning: Could not open error log file: " << filename << "\n";
+    }
+}
+
+void close_error_log() {
+    if (error_log.is_open()) {
+        error_log << "\n=== End of Error Log ===\n";
+        error_log.close();
+        cout << "Error log closed: " << error_log_filename << "\n";
+    }
+}
+
+void log_error(const string& message) {
+    if (error_log.is_open()) {
+        error_log << message << "\n";
+        error_log.flush();
+    }
+}
+
 
 
 int main(int argc, char** argv) {
@@ -1540,6 +1881,11 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	// Initialize error logging
+	string input_filename = string(argv[1]);
+	string error_log_name = input_filename + ".errors";
+	init_error_log(error_log_name);
+
 	yyin = f;
 	cout << "Starting parser...\n";
 	
@@ -1552,10 +1898,16 @@ int main(int argc, char** argv) {
 	// Display the new scope-based symbol table
 	displaySymbolTable();
 	
+	// Display function table
+	display_function_table();
+	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
 	}
+	
+	// Close error log
+	close_error_log();
 	
 	fclose(f);
 	return res;

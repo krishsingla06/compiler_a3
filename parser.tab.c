@@ -78,12 +78,23 @@ extern "C" int yylex(void);
 extern FILE* yyin;
 extern int yylineno;
 
+// Error logging file
+static ofstream error_log;
+static string error_log_filename;
+
 static void yyerror(const char* s) {
-    cerr << "Parse error at line " << yylineno << ": " << s << "\n";
+    string error_msg = "Parse error at line " + to_string(yylineno) + ": " + string(s);
+    cerr << error_msg << "\n";
+    
+    // Also log to error file
+    if (error_log.is_open()) {
+        error_log << error_msg << "\n";
+        error_log.flush();
+    }
 }
 
 
-#line 87 "parser.tab.c"
+#line 98 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -240,11 +251,17 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
 
 
 /* Unqualified %code blocks.  */
-#line 87 "parser.y"
+#line 122 "parser.y"
 
     // Stack of scope contexts for different scopes
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
+    
+    // Function symbol table
+    map<string, FunctionEntry> function_table;
+    
+    // Current function parameter information (for proper scoping)
+    vector<pair<string, TypeInfo>> current_function_parameters;
 
     // Function declarations for scope management
     void enter_scope();
@@ -267,8 +284,22 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
     TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op);
     void type_error(const string& message);
     void type_warning(const string& message);
+    
+    // Error logging functions
+    void init_error_log(const string& filename);
+    void close_error_log();
+    void log_error(const string& message);
+    
+    // Function management functions
+    string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes);
+    TypeInfo array_to_pointer_conversion(const TypeInfo& type);
+    void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
+    FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
+    bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params);
+    void display_function_table();
+    void insert_current_function_parameters();
 
-#line 272 "parser.tab.c"
+#line 303 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -655,22 +686,22 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   194,   194,   195,   201,   202,   206,   207,   211,   212,
-     247,   251,   252,   259,   263,   267,   271,   275,   284,   287,
-     296,   300,   308,   309,   318,   324,   331,   336,   345,   346,
-     351,   352,   358,   359,   360,   369,   370,   375,   383,   393,
-     416,   421,   429,   447,   453,   460,   471,   487,   493,   499,
-     506,   513,   520,   527,   528,   553,   557,   562,   567,   572,
-     576,   583,   584,   588,   589,   593,   597,   601,   608,   618,
-     619,   620,   621,   622,   623,   627,   628,   681,   682,   686,
-     690,   697,   698,   702,   709,   710,   724,   741,   742,   746,
-     750,   754,   761,   762,   766,   773,   774,   781,   782,   789,
-     790,   797,   798,   805,   806,   813,   817,   818,   845,   849,
-     850,   858,   873,   877,   884,   888,   889,   894,   898,   899,
-     903,   910,   921,   922,   923,   924,   925,   926,   927,   935,
-     936,   937,   944,   944,   948,   949,   950,   954,   955,   959,
-     960,   961,   965,   966,   967,   968,   969,   973,   974,   975,
-     976,   977
+       0,   249,   249,   250,   256,   257,   261,   278,   298,   299,
+     334,   338,   339,   346,   350,   354,   358,   362,   371,   374,
+     383,   387,   395,   396,   405,   411,   418,   423,   432,   437,
+     444,   453,   466,   467,   468,   477,   478,   483,   491,   501,
+     524,   529,   537,   556,   562,   569,   580,   596,   602,   608,
+     615,   622,   629,   636,   637,   662,   687,   714,   719,   724,
+     728,   735,   741,   750,   751,   755,   759,   763,   770,   780,
+     781,   782,   783,   784,   785,   789,   790,   843,   844,   848,
+     852,   859,   860,   864,   871,   872,   886,   903,   904,   908,
+     912,   916,   923,   924,   928,   935,   936,   943,   944,   951,
+     952,   959,   960,   967,   968,   975,   979,   980,  1007,  1011,
+    1012,  1020,  1035,  1039,  1046,  1050,  1051,  1056,  1060,  1061,
+    1065,  1072,  1083,  1084,  1085,  1086,  1087,  1088,  1089,  1097,
+    1098,  1099,  1106,  1106,  1110,  1111,  1112,  1116,  1117,  1121,
+    1122,  1123,  1127,  1128,  1129,  1130,  1131,  1135,  1136,  1137,
+    1138,  1139
 };
 #endif
 
@@ -1514,14 +1545,58 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 6: /* function_definition: return_types fun_declarator compound_statement  */
+#line 261 "parser.y"
+                                                         {               /* e.g., int f() { ... } */
+		// Register function definition
+		TypeInfo returnType = *(yyvsp[-2].typeinfo);
+		if ((yyvsp[-1].declinfo)->isPointer) {
+			returnType.isPointer = true;
+		}
+		
+		if ((yyvsp[-1].declinfo)->isFunction && (yyvsp[-1].declinfo)->paramTypes) {
+			insert_function((yyvsp[-1].declinfo)->name, returnType, *(yyvsp[-1].declinfo)->paramTypes);
+			cout << "Function definition: " << (yyvsp[-1].declinfo)->name << " registered\n";
+		}
+		
+		// Clean up
+		if ((yyvsp[-1].declinfo)->paramTypes) delete (yyvsp[-1].declinfo)->paramTypes;
+		delete (yyvsp[-2].typeinfo);
+		delete (yyvsp[-1].declinfo);
+	}
+#line 1568 "parser.tab.c"
+    break;
+
+  case 7: /* function_definition: return_types fun_declarator SEMICOLON  */
+#line 278 "parser.y"
+                                                {				/* e.g., int f(); */
+		// Register function declaration
+		TypeInfo returnType = *(yyvsp[-2].typeinfo);
+		if ((yyvsp[-1].declinfo)->isPointer) {
+			returnType.isPointer = true;
+		}
+		
+		if ((yyvsp[-1].declinfo)->isFunction && (yyvsp[-1].declinfo)->paramTypes) {
+			insert_function((yyvsp[-1].declinfo)->name, returnType, *(yyvsp[-1].declinfo)->paramTypes);
+			cout << "Function declaration: " << (yyvsp[-1].declinfo)->name << " registered\n";
+		}
+		
+		// Clean up
+		if ((yyvsp[-1].declinfo)->paramTypes) delete (yyvsp[-1].declinfo)->paramTypes;
+		delete (yyvsp[-2].typeinfo);
+		delete (yyvsp[-1].declinfo);
+	}
+#line 1590 "parser.tab.c"
+    break;
+
   case 8: /* declaration: return_types SEMICOLON  */
-#line 211 "parser.y"
+#line 298 "parser.y"
                                  { delete (yyvsp[-1].typeinfo); }
-#line 1521 "parser.tab.c"
+#line 1596 "parser.tab.c"
     break;
 
   case 9: /* declaration: return_types init_declarator_list SEMICOLON  */
-#line 212 "parser.y"
+#line 299 "parser.y"
                                                       {
 		// Combine base type with each declarator's type information
 		for (DeclaratorInfo* declInfo : *(yyvsp[-1].decllist)) {
@@ -1551,157 +1626,157 @@ yyreduce:
 		delete (yyvsp[-2].typeinfo);
 		delete (yyvsp[-1].decllist);
 	}
-#line 1555 "parser.tab.c"
+#line 1630 "parser.tab.c"
     break;
 
   case 10: /* return_types: declaration_specifiers  */
-#line 247 "parser.y"
+#line 334 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1561 "parser.tab.c"
+#line 1636 "parser.tab.c"
     break;
 
   case 11: /* declaration_specifiers: type_specifier  */
-#line 251 "parser.y"
+#line 338 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1567 "parser.tab.c"
+#line 1642 "parser.tab.c"
     break;
 
   case 12: /* declaration_specifiers: STATIC type_specifier  */
-#line 252 "parser.y"
+#line 339 "parser.y"
                                 { 
 		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 		(yyval.typeinfo)->isStatic = true;
 	}
-#line 1576 "parser.tab.c"
+#line 1651 "parser.tab.c"
     break;
 
   case 13: /* type_specifier: VOID  */
-#line 259 "parser.y"
+#line 346 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "void"; 
     }
-#line 1585 "parser.tab.c"
+#line 1660 "parser.tab.c"
     break;
 
   case 14: /* type_specifier: CHAR  */
-#line 263 "parser.y"
+#line 350 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "char"; 
     }
-#line 1594 "parser.tab.c"
+#line 1669 "parser.tab.c"
     break;
 
   case 15: /* type_specifier: INT  */
-#line 267 "parser.y"
+#line 354 "parser.y"
           { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "int"; 
     }
-#line 1603 "parser.tab.c"
+#line 1678 "parser.tab.c"
     break;
 
   case 16: /* type_specifier: FLOAT  */
-#line 271 "parser.y"
+#line 358 "parser.y"
             { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "float"; 
     }
-#line 1612 "parser.tab.c"
+#line 1687 "parser.tab.c"
     break;
 
   case 17: /* type_specifier: struct_specifier  */
-#line 275 "parser.y"
+#line 362 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = *(yyvsp[0].sval);
         delete (yyvsp[0].sval);
     }
-#line 1622 "parser.tab.c"
+#line 1697 "parser.tab.c"
     break;
 
   case 18: /* cast_type_specifier: type_specifier  */
-#line 284 "parser.y"
+#line 371 "parser.y"
                      {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);  // Just a base type like int, float, etc.
     }
-#line 1630 "parser.tab.c"
+#line 1705 "parser.tab.c"
     break;
 
   case 19: /* cast_type_specifier: type_specifier STAR  */
-#line 287 "parser.y"
+#line 374 "parser.y"
                           {
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);
         (yyval.typeinfo)->isPointer = true;  // Pointer type like int*, float*, etc.
     }
-#line 1639 "parser.tab.c"
+#line 1714 "parser.tab.c"
     break;
 
   case 20: /* init_declarator_list: init_declarator  */
-#line 296 "parser.y"
+#line 383 "parser.y"
                       { 
         (yyval.decllist) = new vector<DeclaratorInfo*>();
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1648 "parser.tab.c"
+#line 1723 "parser.tab.c"
     break;
 
   case 21: /* init_declarator_list: init_declarator_list COMMA init_declarator  */
-#line 300 "parser.y"
+#line 387 "parser.y"
                                                  {
         (yyval.decllist) = (yyvsp[-2].decllist);
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1657 "parser.tab.c"
+#line 1732 "parser.tab.c"
     break;
 
   case 22: /* init_declarator: declarator  */
-#line 308 "parser.y"
+#line 395 "parser.y"
                      { (yyval.declinfo) = (yyvsp[0].declinfo); }
-#line 1663 "parser.tab.c"
+#line 1738 "parser.tab.c"
     break;
 
   case 23: /* init_declarator: declarator ASSIGN initializer  */
-#line 309 "parser.y"
+#line 396 "parser.y"
                                         { 
 		(yyval.declinfo) = (yyvsp[-2].declinfo);
 		(yyval.declinfo)->initType = (yyvsp[0].typeinfo);  // Store the initializer's type for later checking
 	}
-#line 1672 "parser.tab.c"
+#line 1747 "parser.tab.c"
     break;
 
   case 24: /* declarator: pointer direct_declarator  */
-#line 318 "parser.y"
+#line 405 "parser.y"
                                     {                                 /* e.g., *p or int *p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Combine pointer info with declarator info
 		(yyval.declinfo)->isPointer = 1;
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 1683 "parser.tab.c"
+#line 1758 "parser.tab.c"
     break;
 
   case 25: /* declarator: direct_declarator  */
-#line 324 "parser.y"
+#line 411 "parser.y"
                             {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1691 "parser.tab.c"
+#line 1766 "parser.tab.c"
     break;
 
   case 26: /* direct_declarator: IDENTIFIER  */
-#line 331 "parser.y"
+#line 418 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 1701 "parser.tab.c"
+#line 1776 "parser.tab.c"
     break;
 
   case 27: /* direct_declarator: IDENTIFIER LBRACKET INT_LITERAL RBRACKET  */
-#line 336 "parser.y"
+#line 423 "parser.y"
                                                    {     /* e.g., arr[10] */ //Single dimensional array only
 		(yyval.declinfo) = new DeclaratorInfo();
         (yyval.declinfo)->name = *(yyvsp[-3].sval);
@@ -1709,37 +1784,82 @@ yyreduce:
         (yyval.declinfo)->arraySize = (yyvsp[-1].ival);
         delete (yyvsp[-3].sval);
     }
-#line 1713 "parser.tab.c"
+#line 1788 "parser.tab.c"
+    break;
+
+  case 28: /* fun_declarator: pointer fun_direct_declarator  */
+#line 432 "parser.y"
+                                        {
+  		(yyval.declinfo) = (yyvsp[0].declinfo);
+  		(yyval.declinfo)->isPointer = true;  // Function returns a pointer
+  		delete (yyvsp[-1].typeinfo);
+  	}
+#line 1798 "parser.tab.c"
+    break;
+
+  case 29: /* fun_declarator: fun_direct_declarator  */
+#line 437 "parser.y"
+                                {
+		(yyval.declinfo) = (yyvsp[0].declinfo);
+	}
+#line 1806 "parser.tab.c"
+    break;
+
+  case 30: /* fun_direct_declarator: IDENTIFIER LPAREN parameter_list RPAREN  */
+#line 444 "parser.y"
+                                                  {          		/* e.g., f(int a, float b) */
+		(yyval.declinfo) = new DeclaratorInfo();
+		(yyval.declinfo)->name = *(yyvsp[-3].sval);
+		(yyval.declinfo)->isFunction = true;
+		(yyval.declinfo)->paramTypes = new vector<TypeInfo>(*(yyvsp[-1].typelist));  // Copy parameter types
+		cout << "Function declarator: " << (yyval.declinfo)->name << " with " << (yyval.declinfo)->paramTypes->size() << " parameters\n";
+		delete (yyvsp[-3].sval);
+		delete (yyvsp[-1].typelist);
+	}
+#line 1820 "parser.tab.c"
+    break;
+
+  case 31: /* fun_direct_declarator: IDENTIFIER LPAREN RPAREN  */
+#line 453 "parser.y"
+                                   {                               /* e.g., f() (function with no params) */
+		(yyval.declinfo) = new DeclaratorInfo();
+		(yyval.declinfo)->name = *(yyvsp[-2].sval);
+		(yyval.declinfo)->isFunction = true;
+		(yyval.declinfo)->paramTypes = new vector<TypeInfo>();  // Empty parameter list
+		cout << "Function declarator: " << (yyval.declinfo)->name << " with no parameters\n";
+		delete (yyvsp[-2].sval);
+	}
+#line 1833 "parser.tab.c"
     break;
 
   case 35: /* initializer: assignment_expression  */
-#line 369 "parser.y"
+#line 477 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1719 "parser.tab.c"
+#line 1839 "parser.tab.c"
     break;
 
   case 36: /* initializer: LBRACE initializer_list RBRACE  */
-#line 370 "parser.y"
+#line 478 "parser.y"
                                          {  //KRISH - pending alloca
 		// For array initializers, create a placeholder type
 		(yyval.typeinfo) = (yyvsp[-1].typeinfo);
         (yyval.typeinfo)->isArray = true;
 	}
-#line 1729 "parser.tab.c"
+#line 1849 "parser.tab.c"
     break;
 
   case 37: /* initializer: LBRACE initializer_list COMMA RBRACE  */
-#line 375 "parser.y"
+#line 483 "parser.y"
                                                { 
 		// For array initializers with trailing comma
         (yyval.typeinfo) = (yyvsp[-2].typeinfo);
         (yyval.typeinfo)->isArray = true;
 	}
-#line 1739 "parser.tab.c"
+#line 1859 "parser.tab.c"
     break;
 
   case 38: /* initializer_list: assignment_expression  */
-#line 383 "parser.y"
+#line 491 "parser.y"
                                                                                                      {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = (yyvsp[0].typeinfo)->baseType;
@@ -1750,11 +1870,11 @@ yyreduce:
         (yyval.typeinfo)->arraySize = 1; // Single element
         delete (yyvsp[0].typeinfo);
     }
-#line 1754 "parser.tab.c"
+#line 1874 "parser.tab.c"
     break;
 
   case 39: /* initializer_list: initializer_list COMMA assignment_expression  */
-#line 393 "parser.y"
+#line 501 "parser.y"
                                                                                                          {
         (yyval.typeinfo) = (yyvsp[-2].typeinfo);
         //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
@@ -1774,31 +1894,31 @@ yyreduce:
         (yyval.typeinfo)->arraySize += 1; // Increment array size
         delete (yyvsp[0].typeinfo);
     }
-#line 1778 "parser.tab.c"
+#line 1898 "parser.tab.c"
     break;
 
   case 40: /* parameter_list: parameter_declaration  */
-#line 416 "parser.y"
+#line 524 "parser.y"
                                                                                               {
         (yyval.typelist) = new vector<TypeInfo>();
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 1788 "parser.tab.c"
+#line 1908 "parser.tab.c"
     break;
 
   case 41: /* parameter_list: parameter_list COMMA parameter_declaration  */
-#line 421 "parser.y"
+#line 529 "parser.y"
                                                                                                         {
         (yyval.typelist) = (yyvsp[-2].typelist);
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 1798 "parser.tab.c"
+#line 1918 "parser.tab.c"
     break;
 
   case 42: /* parameter_declaration: return_types parameter_declarator  */
-#line 429 "parser.y"
+#line 537 "parser.y"
                                                                                                           {
         // Combine base type with declarator-specific type info
         TypeInfo* combinedType = new TypeInfo(*(yyvsp[-1].typeinfo));  // Start with base type
@@ -1808,46 +1928,47 @@ yyreduce:
         combinedType->isArray = (yyvsp[0].declinfo)->isArray;
         combinedType->arraySize = (yyvsp[0].declinfo)->arraySize;
         
-        // Insert parameter into symbol table
-        insert_symbol((yyvsp[0].declinfo)->name, *combinedType);
-        (yyval.typeinfo) = combinedType; // KRISH : LETS SEE KUCH DELETE KARNA THA YA NHI DK
+        // Store parameter information for later insertion into function scope
+        current_function_parameters.push_back(make_pair((yyvsp[0].declinfo)->name, *combinedType));
+        
+        (yyval.typeinfo) = combinedType;
         delete (yyvsp[-1].typeinfo);
         delete (yyvsp[0].declinfo);
     }
-#line 1818 "parser.tab.c"
+#line 1939 "parser.tab.c"
     break;
 
   case 43: /* parameter_declarator: pointer parameter_direct_declarator  */
-#line 447 "parser.y"
+#line 556 "parser.y"
                                               {                                 /* e.g., *p or int *p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Combine pointer info with declarator info
 		(yyval.declinfo)->isPointer = 1;
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 1829 "parser.tab.c"
+#line 1950 "parser.tab.c"
     break;
 
   case 44: /* parameter_declarator: parameter_direct_declarator  */
-#line 453 "parser.y"
+#line 562 "parser.y"
                                       {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1837 "parser.tab.c"
+#line 1958 "parser.tab.c"
     break;
 
   case 45: /* parameter_direct_declarator: IDENTIFIER  */
-#line 460 "parser.y"
+#line 569 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 1847 "parser.tab.c"
+#line 1968 "parser.tab.c"
     break;
 
   case 46: /* primary_expression: IDENTIFIER  */
-#line 471 "parser.y"
+#line 580 "parser.y"
                  { 
         check_variable_declaration(*(yyvsp[0].sval));
         SymbolEntry entry;
@@ -1864,33 +1985,33 @@ yyreduce:
         }
         delete (yyvsp[0].sval);
     }
-#line 1868 "parser.tab.c"
+#line 1989 "parser.tab.c"
     break;
 
   case 47: /* primary_expression: INT_LITERAL  */
-#line 487 "parser.y"
+#line 596 "parser.y"
                   { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "int";
         (yyval.typeinfo)->isLiteral = true;
         cout << "Integer literal: " << (yyvsp[0].ival) << " (type: int)\n";
     }
-#line 1879 "parser.tab.c"
+#line 2000 "parser.tab.c"
     break;
 
   case 48: /* primary_expression: FLOAT_LITERAL  */
-#line 493 "parser.y"
+#line 602 "parser.y"
                     { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "float";
         (yyval.typeinfo)->isLiteral = true;
         cout << "Float literal: " << (yyvsp[0].fval) << " (type: float)\n";
     }
-#line 1890 "parser.tab.c"
+#line 2011 "parser.tab.c"
     break;
 
   case 49: /* primary_expression: CHAR_LITERAL  */
-#line 499 "parser.y"
+#line 608 "parser.y"
                    { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "char";
@@ -1898,11 +2019,11 @@ yyreduce:
         cout << "Char literal: " << *(yyvsp[0].sval) << " (type: char)\n";
         delete (yyvsp[0].sval);
     }
-#line 1902 "parser.tab.c"
+#line 2023 "parser.tab.c"
     break;
 
   case 50: /* primary_expression: STRING_LITERAL  */
-#line 506 "parser.y"
+#line 615 "parser.y"
                      { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "string";
@@ -1910,11 +2031,11 @@ yyreduce:
         cout << "String literal: " << *(yyvsp[0].sval) << " (type: string)\n";
         delete (yyvsp[0].sval);
     }
-#line 1914 "parser.tab.c"
+#line 2035 "parser.tab.c"
     break;
 
   case 51: /* primary_expression: NULL_LITERAL  */
-#line 513 "parser.y"
+#line 622 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -1922,25 +2043,25 @@ yyreduce:
         (yyval.typeinfo)->isLiteral = true;
         cout << "NULL literal (type: void*)\n";
     }
-#line 1926 "parser.tab.c"
+#line 2047 "parser.tab.c"
     break;
 
   case 52: /* primary_expression: LPAREN expression RPAREN  */
-#line 520 "parser.y"
+#line 629 "parser.y"
                                { 
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);  // Pass through the expression type
     }
-#line 1934 "parser.tab.c"
+#line 2055 "parser.tab.c"
     break;
 
   case 53: /* postfix_expression: primary_expression  */
-#line 527 "parser.y"
+#line 636 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1940 "parser.tab.c"
+#line 2061 "parser.tab.c"
     break;
 
   case 54: /* postfix_expression: postfix_expression LBRACKET expression RBRACKET  */
-#line 528 "parser.y"
+#line 637 "parser.y"
                                                           {              /* e.g., arr[i] */
 		// Array subscripting: arr[i] or ptr[i]
 		TypeInfo* base = (yyvsp[-3].typeinfo);
@@ -1966,101 +2087,166 @@ yyreduce:
 		}
 		delete (yyvsp[-3].typeinfo); delete (yyvsp[-1].typeinfo);
 	}
-#line 1970 "parser.tab.c"
+#line 2091 "parser.tab.c"
     break;
 
   case 55: /* postfix_expression: postfix_expression LPAREN RPAREN  */
-#line 553 "parser.y"
+#line 662 "parser.y"
                                            {                               /* e.g., func() */
-		// Function call with no arguments - skip for now as requested
-		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
+		// Function call with no arguments
+		TypeInfo* base = (yyvsp[-2].typeinfo);
+		
+		if (!base->identifier.empty()) {
+			// Try to resolve function call
+			vector<TypeInfo> emptyArgs;
+			FunctionEntry* func = lookup_function(base->identifier, emptyArgs);
+			
+			if (func) {
+				(yyval.typeinfo) = new TypeInfo(func->returnType);
+				(yyval.typeinfo)->isLiteral = false;
+				cout << "Function call: " << base->identifier << "() -> " << (yyval.typeinfo)->toString() << "\n";
+			} else {
+				type_error("Function '" + base->identifier + "' not found or argument mismatch");
+				(yyval.typeinfo) = new TypeInfo();
+				(yyval.typeinfo)->baseType = "error";
+			}
+		} else {
+			type_error("Invalid function call expression");
+			(yyval.typeinfo) = new TypeInfo();
+			(yyval.typeinfo)->baseType = "error";
+		}
+		delete (yyvsp[-2].typeinfo);
 	}
-#line 1979 "parser.tab.c"
+#line 2121 "parser.tab.c"
     break;
 
   case 56: /* postfix_expression: postfix_expression LPAREN argument_expression_list RPAREN  */
-#line 557 "parser.y"
+#line 687 "parser.y"
                                                                     {      /* e.g., func(a,b) */
-		// Function call with arguments - skip for now as requested
-		(yyval.typeinfo) = (yyvsp[-3].typeinfo);
-		delete (yyvsp[-1].strlist);
+		// Function call with arguments
+		TypeInfo* base = (yyvsp[-3].typeinfo);
+		vector<TypeInfo>* argTypes = (yyvsp[-1].typelist);
+		
+		if (!base->identifier.empty() && argTypes) {
+			// Try to resolve function call
+			FunctionEntry* func = lookup_function(base->identifier, *argTypes);
+			
+			if (func) {
+				(yyval.typeinfo) = new TypeInfo(func->returnType);
+				(yyval.typeinfo)->isLiteral = false;
+				cout << "Function call: " << base->identifier << "(...) -> " << (yyval.typeinfo)->toString() << "\n";
+			} else {
+				type_error("Function '" + base->identifier + "' not found or argument type mismatch");
+				(yyval.typeinfo) = new TypeInfo();
+				(yyval.typeinfo)->baseType = "error";
+			}
+		} else {
+			type_error("Invalid function call expression");
+			(yyval.typeinfo) = new TypeInfo();
+			(yyval.typeinfo)->baseType = "error";
+		}
+		
+		delete (yyvsp[-3].typeinfo);
+		delete (yyvsp[-1].typelist);
 	}
-#line 1989 "parser.tab.c"
+#line 2153 "parser.tab.c"
     break;
 
   case 57: /* postfix_expression: postfix_expression DOT IDENTIFIER  */
-#line 562 "parser.y"
+#line 714 "parser.y"
                                             {                            /* e.g., obj.field */
 		// Struct member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 1999 "parser.tab.c"
+#line 2163 "parser.tab.c"
     break;
 
   case 58: /* postfix_expression: postfix_expression ARROW IDENTIFIER  */
-#line 567 "parser.y"
+#line 719 "parser.y"
                                               {                             /* e.g., ptr->field */
 		// Struct pointer member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 2009 "parser.tab.c"
+#line 2173 "parser.tab.c"
     break;
 
   case 59: /* postfix_expression: postfix_expression INCREMENT  */
-#line 572 "parser.y"
+#line 724 "parser.y"
                                        {                                  /* e.g., x++ */
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "++");
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2018 "parser.tab.c"
+#line 2182 "parser.tab.c"
     break;
 
   case 60: /* postfix_expression: postfix_expression DECREMENT  */
-#line 576 "parser.y"
+#line 728 "parser.y"
                                        {                                 /* e.g., x-- */
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "--");
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2027 "parser.tab.c"
+#line 2191 "parser.tab.c"
+    break;
+
+  case 61: /* argument_expression_list: assignment_expression  */
+#line 735 "parser.y"
+                                {                                         /* e.g., x */
+		(yyval.typelist) = new vector<TypeInfo>();
+		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
+		(yyval.typelist)->push_back(argType);
+		delete (yyvsp[0].typeinfo);
+	}
+#line 2202 "parser.tab.c"
+    break;
+
+  case 62: /* argument_expression_list: argument_expression_list COMMA assignment_expression  */
+#line 741 "parser.y"
+                                                               {           /* e.g., x, y */
+		(yyval.typelist) = (yyvsp[-2].typelist);
+		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
+		(yyval.typelist)->push_back(argType);
+		delete (yyvsp[0].typeinfo);
+	}
+#line 2213 "parser.tab.c"
     break;
 
   case 63: /* unary_expression: postfix_expression  */
-#line 588 "parser.y"
+#line 750 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2033 "parser.tab.c"
+#line 2219 "parser.tab.c"
     break;
 
   case 64: /* unary_expression: INCREMENT unary_expression  */
-#line 589 "parser.y"
+#line 751 "parser.y"
                                      { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "++");
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2042 "parser.tab.c"
+#line 2228 "parser.tab.c"
     break;
 
   case 65: /* unary_expression: DECREMENT unary_expression  */
-#line 593 "parser.y"
+#line 755 "parser.y"
                                      { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "--");
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2051 "parser.tab.c"
+#line 2237 "parser.tab.c"
     break;
 
   case 66: /* unary_expression: unary_operator cast_expression  */
-#line 597 "parser.y"
+#line 759 "parser.y"
                                          { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), *(yyvsp[-1].sval));
 		delete (yyvsp[-1].sval); delete (yyvsp[0].typeinfo);
 	}
-#line 2060 "parser.tab.c"
+#line 2246 "parser.tab.c"
     break;
 
   case 67: /* unary_expression: SIZEOF unary_expression  */
-#line 601 "parser.y"
+#line 763 "parser.y"
                                   { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2068,11 +2254,11 @@ yyreduce:
 		cout << "sizeof operation result type: int\n";
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2072 "parser.tab.c"
+#line 2258 "parser.tab.c"
     break;
 
   case 68: /* unary_expression: SIZEOF LPAREN type_specifier RPAREN  */
-#line 608 "parser.y"
+#line 770 "parser.y"
                                               { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2080,53 +2266,53 @@ yyreduce:
 		cout << "sizeof(" << (yyvsp[-1].typeinfo)->toString() << ") result type: int\n";
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2084 "parser.tab.c"
+#line 2270 "parser.tab.c"
     break;
 
   case 69: /* unary_operator: BIT_AND  */
-#line 618 "parser.y"
+#line 780 "parser.y"
                                                                      {   (yyval.sval) = new string("&"); }
-#line 2090 "parser.tab.c"
+#line 2276 "parser.tab.c"
     break;
 
   case 70: /* unary_operator: STAR  */
-#line 619 "parser.y"
+#line 781 "parser.y"
                                                                            {   (yyval.sval) = new string("*"); }
-#line 2096 "parser.tab.c"
+#line 2282 "parser.tab.c"
     break;
 
   case 71: /* unary_operator: PLUS  */
-#line 620 "parser.y"
+#line 782 "parser.y"
                                                                            {   (yyval.sval) = new string("+"); }
-#line 2102 "parser.tab.c"
+#line 2288 "parser.tab.c"
     break;
 
   case 72: /* unary_operator: MINUS  */
-#line 621 "parser.y"
+#line 783 "parser.y"
                                                                             {   (yyval.sval) = new string("-"); }
-#line 2108 "parser.tab.c"
+#line 2294 "parser.tab.c"
     break;
 
   case 73: /* unary_operator: BIT_NOT  */
-#line 622 "parser.y"
+#line 784 "parser.y"
                                                                               {   (yyval.sval) = new string("~"); }
-#line 2114 "parser.tab.c"
+#line 2300 "parser.tab.c"
     break;
 
   case 74: /* unary_operator: LOGICAL_NOT  */
-#line 623 "parser.y"
+#line 785 "parser.y"
                                                                                  {   (yyval.sval) = new string("!"); }
-#line 2120 "parser.tab.c"
+#line 2306 "parser.tab.c"
     break;
 
   case 75: /* cast_expression: unary_expression  */
-#line 627 "parser.y"
+#line 789 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2126 "parser.tab.c"
+#line 2312 "parser.tab.c"
     break;
 
   case 76: /* cast_expression: LPAREN cast_type_specifier RPAREN cast_expression  */
-#line 628 "parser.y"
+#line 790 "parser.y"
                                                             {                         /* e.g., (int) x, (int*) x */
 		TypeInfo* target_type = (yyvsp[-2].typeinfo);
 		TypeInfo* source_type = (yyvsp[0].typeinfo);
@@ -2177,74 +2363,74 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2181 "parser.tab.c"
+#line 2367 "parser.tab.c"
     break;
 
   case 77: /* multiplicative_expression: cast_expression  */
-#line 681 "parser.y"
+#line 843 "parser.y"
                           { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2187 "parser.tab.c"
+#line 2373 "parser.tab.c"
     break;
 
   case 78: /* multiplicative_expression: multiplicative_expression STAR cast_expression  */
-#line 682 "parser.y"
+#line 844 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "*");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2196 "parser.tab.c"
+#line 2382 "parser.tab.c"
     break;
 
   case 79: /* multiplicative_expression: multiplicative_expression DIVIDE cast_expression  */
-#line 686 "parser.y"
+#line 848 "parser.y"
                                                            { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "/");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2205 "parser.tab.c"
+#line 2391 "parser.tab.c"
     break;
 
   case 80: /* multiplicative_expression: multiplicative_expression MOD cast_expression  */
-#line 690 "parser.y"
+#line 852 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "%");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2214 "parser.tab.c"
+#line 2400 "parser.tab.c"
     break;
 
   case 81: /* additive_expression: multiplicative_expression  */
-#line 697 "parser.y"
+#line 859 "parser.y"
                                     { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2220 "parser.tab.c"
+#line 2406 "parser.tab.c"
     break;
 
   case 82: /* additive_expression: additive_expression PLUS multiplicative_expression  */
-#line 698 "parser.y"
+#line 860 "parser.y"
                                                              { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "+");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2229 "parser.tab.c"
+#line 2415 "parser.tab.c"
     break;
 
   case 83: /* additive_expression: additive_expression MINUS multiplicative_expression  */
-#line 702 "parser.y"
+#line 864 "parser.y"
                                                               { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "-");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2238 "parser.tab.c"
+#line 2424 "parser.tab.c"
     break;
 
   case 84: /* shift_expression: additive_expression  */
-#line 709 "parser.y"
+#line 871 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2244 "parser.tab.c"
+#line 2430 "parser.tab.c"
     break;
 
   case 85: /* shift_expression: shift_expression LEFT_SHIFT additive_expression  */
-#line 710 "parser.y"
+#line 872 "parser.y"
                                                           {                     /* e.g., a << b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->isPointer || (yyvsp[-2].typeinfo)->isArray ||
@@ -2259,11 +2445,11 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2263 "parser.tab.c"
+#line 2449 "parser.tab.c"
     break;
 
   case 86: /* shift_expression: shift_expression RIGHT_SHIFT additive_expression  */
-#line 724 "parser.y"
+#line 886 "parser.y"
                                                            {                     /* e.g., a >> b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->isPointer || (yyvsp[-2].typeinfo)->isArray ||
@@ -2278,158 +2464,158 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2282 "parser.tab.c"
+#line 2468 "parser.tab.c"
     break;
 
   case 87: /* relational_expression: shift_expression  */
-#line 741 "parser.y"
+#line 903 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2288 "parser.tab.c"
+#line 2474 "parser.tab.c"
     break;
 
   case 88: /* relational_expression: relational_expression LT shift_expression  */
-#line 742 "parser.y"
+#line 904 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2297 "parser.tab.c"
+#line 2483 "parser.tab.c"
     break;
 
   case 89: /* relational_expression: relational_expression GT shift_expression  */
-#line 746 "parser.y"
+#line 908 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2306 "parser.tab.c"
+#line 2492 "parser.tab.c"
     break;
 
   case 90: /* relational_expression: relational_expression LE shift_expression  */
-#line 750 "parser.y"
+#line 912 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2315 "parser.tab.c"
+#line 2501 "parser.tab.c"
     break;
 
   case 91: /* relational_expression: relational_expression GE shift_expression  */
-#line 754 "parser.y"
+#line 916 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2324 "parser.tab.c"
+#line 2510 "parser.tab.c"
     break;
 
   case 92: /* equality_expression: relational_expression  */
-#line 761 "parser.y"
+#line 923 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2330 "parser.tab.c"
+#line 2516 "parser.tab.c"
     break;
 
   case 93: /* equality_expression: equality_expression EQ relational_expression  */
-#line 762 "parser.y"
+#line 924 "parser.y"
                                                        { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "==");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2339 "parser.tab.c"
+#line 2525 "parser.tab.c"
     break;
 
   case 94: /* equality_expression: equality_expression NEQ relational_expression  */
-#line 766 "parser.y"
+#line 928 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "!=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2348 "parser.tab.c"
+#line 2534 "parser.tab.c"
     break;
 
   case 95: /* and_expression: equality_expression  */
-#line 773 "parser.y"
+#line 935 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2354 "parser.tab.c"
+#line 2540 "parser.tab.c"
     break;
 
   case 96: /* and_expression: and_expression BIT_AND equality_expression  */
-#line 774 "parser.y"
+#line 936 "parser.y"
                                                      { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "&");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2363 "parser.tab.c"
+#line 2549 "parser.tab.c"
     break;
 
   case 97: /* exclusive_or_expression: and_expression  */
-#line 781 "parser.y"
+#line 943 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2369 "parser.tab.c"
+#line 2555 "parser.tab.c"
     break;
 
   case 98: /* exclusive_or_expression: exclusive_or_expression BIT_XOR and_expression  */
-#line 782 "parser.y"
+#line 944 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "^");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2378 "parser.tab.c"
+#line 2564 "parser.tab.c"
     break;
 
   case 99: /* inclusive_or_expression: exclusive_or_expression  */
-#line 789 "parser.y"
+#line 951 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2384 "parser.tab.c"
+#line 2570 "parser.tab.c"
     break;
 
   case 100: /* inclusive_or_expression: inclusive_or_expression BIT_OR exclusive_or_expression  */
-#line 790 "parser.y"
+#line 952 "parser.y"
                                                                  { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "|");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2393 "parser.tab.c"
+#line 2579 "parser.tab.c"
     break;
 
   case 101: /* logical_and_expression: inclusive_or_expression  */
-#line 797 "parser.y"
+#line 959 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2399 "parser.tab.c"
+#line 2585 "parser.tab.c"
     break;
 
   case 102: /* logical_and_expression: logical_and_expression LOGICAL_AND inclusive_or_expression  */
-#line 798 "parser.y"
+#line 960 "parser.y"
                                                                      { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "&&");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2408 "parser.tab.c"
+#line 2594 "parser.tab.c"
     break;
 
   case 103: /* logical_or_expression: logical_and_expression  */
-#line 805 "parser.y"
+#line 967 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2414 "parser.tab.c"
+#line 2600 "parser.tab.c"
     break;
 
   case 104: /* logical_or_expression: logical_or_expression LOGICAL_OR logical_and_expression  */
-#line 806 "parser.y"
+#line 968 "parser.y"
                                                                   { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "||");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2423 "parser.tab.c"
+#line 2609 "parser.tab.c"
     break;
 
   case 106: /* assignment_expression: conditional_expression  */
-#line 817 "parser.y"
+#line 979 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2429 "parser.tab.c"
+#line 2615 "parser.tab.c"
     break;
 
   case 107: /* assignment_expression: unary_expression assignment_operator assignment_expression  */
-#line 818 "parser.y"
+#line 980 "parser.y"
                                                                      { 
 		// Type checking for assignment
 		TypeInfo* lhs_type = (yyvsp[-2].typeinfo);
@@ -2454,98 +2640,98 @@ yyreduce:
 		cout << "Assignment: " << lhs_type->toString() << " = " << rhs_type->toString() << "\n";
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2458 "parser.tab.c"
+#line 2644 "parser.tab.c"
     break;
 
   case 109: /* expression: assignment_expression  */
-#line 849 "parser.y"
+#line 1011 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2464 "parser.tab.c"
+#line 2650 "parser.tab.c"
     break;
 
   case 110: /* expression: expression COMMA assignment_expression  */
-#line 850 "parser.y"
+#line 1012 "parser.y"
                                                  { 
 		// Comma operator returns the type of the right operand
 		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 		delete (yyvsp[-2].typeinfo);
 	}
-#line 2474 "parser.tab.c"
+#line 2660 "parser.tab.c"
     break;
 
   case 111: /* constant_expression: conditional_expression  */
-#line 858 "parser.y"
+#line 1020 "parser.y"
                                  { 
 		// For constant expressions, we need to return an integer value
 		// For now, return 0 as a placeholder
 		(yyval.ival) = 0;
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2485 "parser.tab.c"
+#line 2671 "parser.tab.c"
     break;
 
   case 112: /* struct_specifier: struct IDENTIFIER LBRACE struct_declaration_list RBRACE  */
-#line 873 "parser.y"
+#line 1035 "parser.y"
                                                                   {  // e.g., struct S { int x; float y; };
 		(yyval.sval) = new string(*(yyvsp[-4].sval) + " " + *(yyvsp[-3].sval));
 		delete (yyvsp[-4].sval); delete (yyvsp[-3].sval);
 	}
-#line 2494 "parser.tab.c"
+#line 2680 "parser.tab.c"
     break;
 
   case 113: /* struct_specifier: struct IDENTIFIER  */
-#line 877 "parser.y"
+#line 1039 "parser.y"
                             { 
 		(yyval.sval) = new string(*(yyvsp[-1].sval) + " " + *(yyvsp[0].sval));
 		delete (yyvsp[-1].sval); delete (yyvsp[0].sval);
 	}
-#line 2503 "parser.tab.c"
+#line 2689 "parser.tab.c"
     break;
 
   case 114: /* struct: STRUCT  */
-#line 884 "parser.y"
+#line 1046 "parser.y"
                  { (yyval.sval) = new string("struct"); }
-#line 2509 "parser.tab.c"
+#line 2695 "parser.tab.c"
     break;
 
   case 120: /* struct_declarator: declarator  */
-#line 903 "parser.y"
+#line 1065 "parser.y"
                      { (yyval.sval) = new string((yyvsp[0].declinfo)->name); delete (yyvsp[0].declinfo); }
-#line 2515 "parser.tab.c"
+#line 2701 "parser.tab.c"
     break;
 
   case 121: /* pointer: STAR  */
-#line 910 "parser.y"
+#line 1072 "parser.y"
            {                                   /* e.g., * */
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->isPointer = true;
     }
-#line 2524 "parser.tab.c"
+#line 2710 "parser.tab.c"
     break;
 
   case 128: /* statement: error SEMICOLON  */
-#line 927 "parser.y"
+#line 1089 "parser.y"
                           { 
 		yyerror("Invalid statement, skipping to next ';'"); 
 		yyerrok; 
 	}
-#line 2533 "parser.tab.c"
+#line 2719 "parser.tab.c"
     break;
 
   case 132: /* $@1: %empty  */
-#line 944 "parser.y"
-                 { enter_scope(); }
-#line 2539 "parser.tab.c"
+#line 1106 "parser.y"
+                 { enter_scope(); insert_current_function_parameters(); }
+#line 2725 "parser.tab.c"
     break;
 
   case 133: /* compound_statement: LBRACE $@1 declaration_list statement_list RBRACE  */
-#line 944 "parser.y"
-                                                                           { exit_scope(); }
-#line 2545 "parser.tab.c"
+#line 1106 "parser.y"
+                                                                                                                 { exit_scope(); }
+#line 2731 "parser.tab.c"
     break;
 
 
-#line 2549 "parser.tab.c"
+#line 2735 "parser.tab.c"
 
       default: break;
     }
@@ -2738,7 +2924,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 980 "parser.y"
+#line 1142 "parser.y"
 
 
 void enter_scope() {
@@ -2778,8 +2964,9 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
     
     // Check for redeclaration
     if (current_scope.symbols.find(name) != current_scope.symbols.end()) {
-        cerr << "Error at line " << yylineno << ": Variable '" << name 
-             << "' already declared in current scope\n";
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' already declared in current scope";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
         return;
     }
     
@@ -2826,8 +3013,9 @@ bool lookup_symbol_current_scope(const string& name) {
 void check_variable_declaration(const string& name) {
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
-        cerr << "Error at line " << yylineno << ": Variable '" << name 
-             << "' used but not declared\n";
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' used but not declared";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
     } else {
         cout << "Variable '" << name << "' found: declared as " 
              << entry.type.toString() << " at line " << entry.line 
@@ -3254,11 +3442,16 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
 }
 
 void type_error(const string& message) {
-    cerr << "Type Error at line " << yylineno << ": " << message << "\n";
+    string error_msg = "Type Error at line " + to_string(yylineno) + ": " + message;
+    cerr << error_msg << "\n";
+    log_error(error_msg);
 }
 
 void type_warning(const string& message) {
-    cout << "Type Warning at line " << yylineno << ": " << message << "\n";
+    string warning_msg = "Type Warning at line " + to_string(yylineno) + ": " + message;
+    cout << warning_msg << "\n";
+    // Also log warnings to error file
+    log_error(warning_msg);
 }
 
 bool check_literal_type(const string& value, const string& expected_base_type) {
@@ -3287,6 +3480,178 @@ bool check_literal_type(const string& value, const string& expected_base_type) {
     return false;
 }
 
+// Function management implementation
+string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
+    string mangledName = funcName;
+    
+    for (const TypeInfo& param : paramTypes) {
+        mangledName += "_";
+        
+        // Add base type encoding
+        if (param.baseType == "int") mangledName += "i";
+        else if (param.baseType == "char") mangledName += "c";
+        else if (param.baseType == "float") mangledName += "f";
+        else if (param.baseType == "void") mangledName += "v";
+        else mangledName += "u"; // unknown
+        
+        // Add pointer modifier
+        if (param.isPointer) mangledName += "p";
+    }
+    
+    return mangledName;
+}
+
+TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
+    TypeInfo result = type;
+    if (result.isArray) {
+        result.isArray = false;
+        result.isPointer = true;
+        result.arraySize = 0;
+        cout << "Array to pointer conversion: " << type.toString() << " -> " << result.toString() << "\n";
+    }
+    return result;
+}
+
+void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes) {
+    // Convert array parameters to pointers
+    vector<TypeInfo> convertedParams;
+    for (const TypeInfo& param : paramTypes) {
+        convertedParams.push_back(array_to_pointer_conversion(param));
+    }
+    
+    string mangledName = mangle_function_name(name, convertedParams);
+    
+    // Check if function already exists
+    if (function_table.find(mangledName) != function_table.end()) {
+        type_warning("Function " + name + " with same parameter types already declared");
+        return;
+    }
+    
+    FunctionEntry entry;
+    entry.originalName = name;
+    entry.mangledName = mangledName;
+    entry.returnType = returnType;
+    entry.line = yylineno;
+    
+    // Convert parameter types to FunctionParam objects
+    for (size_t i = 0; i < convertedParams.size(); i++) {
+        string paramName = "param" + to_string(i);
+        entry.parameters.emplace_back(paramName, convertedParams[i]);
+    }
+    
+    function_table[mangledName] = entry;
+    
+    cout << "Registered function: " << name << " as " << mangledName 
+         << " returning " << returnType.toString() << "\n";
+}
+
+FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
+    // Convert array arguments to pointers
+    vector<TypeInfo> convertedArgs;
+    for (const TypeInfo& arg : argTypes) {
+        convertedArgs.push_back(array_to_pointer_conversion(arg));
+    }
+    
+    // Try exact match first
+    string exactMangledName = mangle_function_name(name, convertedArgs);
+    auto it = function_table.find(exactMangledName);
+    if (it != function_table.end()) {
+        cout << "Found exact function match: " << exactMangledName << "\n";
+        return &(it->second);
+    }
+    
+    // Try to find compatible function with implicit conversions
+    for (auto& entry : function_table) {
+        FunctionEntry& func = entry.second;
+        if (func.originalName == name && are_parameters_compatible(convertedArgs, func.parameters)) {
+            cout << "Found compatible function: " << func.mangledName << " for " << name << "\n";
+            return &func;
+        }
+    }
+    
+    return nullptr;
+}
+
+bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params) {
+    if (argTypes.size() != params.size()) {
+        return false;
+    }
+    
+    for (size_t i = 0; i < argTypes.size(); i++) {
+        if (!is_implicit_conversion_allowed(argTypes[i], params[i].type)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void display_function_table() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                   FUNCTION TABLE                                       |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (function_table.empty()) {
+        cout << "| No functions declared                                                              |\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+        return;
+    }
+    
+    for (const auto& entry : function_table) {
+        const FunctionEntry& func = entry.second;
+        cout << "Function: " << func.originalName << " (" << func.mangledName << ")\n";
+        cout << "  Return type: " << func.returnType.toString() << "\n";
+        cout << "  Parameters: ";
+        for (const FunctionParam& param : func.parameters) {
+            cout << param.type.toString() << " ";
+        }
+        cout << "\n  Declared at line: " << func.line << "\n";
+        cout << "+-----------------------------------------------------------------------------------------+\n";
+    }
+}
+
+void insert_current_function_parameters() {
+    // Insert stored function parameters into the current (function body) scope
+    for (const auto& param : current_function_parameters) {
+        insert_symbol(param.first, param.second);
+        cout << "Inserted function parameter: " << param.first << " (" << param.second.toString() << ")\n";
+    }
+    // Clear the parameters after insertion
+    current_function_parameters.clear();
+}
+
+// Error logging functions implementation
+void init_error_log(const string& filename) {
+    error_log_filename = filename;
+    error_log.open(filename);
+    if (error_log.is_open()) {
+        error_log << "=== Parser Error Log ===\n";
+        error_log << "Generated on: " << __DATE__ << " " << __TIME__ << "\n";
+        error_log << "Input file: " << filename << "\n";
+        error_log << "========================\n\n";
+        error_log.flush();
+        cout << "Error log initialized: " << filename << "\n";
+    } else {
+        cerr << "Warning: Could not open error log file: " << filename << "\n";
+    }
+}
+
+void close_error_log() {
+    if (error_log.is_open()) {
+        error_log << "\n=== End of Error Log ===\n";
+        error_log.close();
+        cout << "Error log closed: " << error_log_filename << "\n";
+    }
+}
+
+void log_error(const string& message) {
+    if (error_log.is_open()) {
+        error_log << message << "\n";
+        error_log.flush();
+    }
+}
+
 
 
 int main(int argc, char** argv) {
@@ -3302,6 +3667,11 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	// Initialize error logging
+	string input_filename = string(argv[1]);
+	string error_log_name = input_filename + ".errors";
+	init_error_log(error_log_name);
+
 	yyin = f;
 	cout << "Starting parser...\n";
 	
@@ -3314,10 +3684,16 @@ int main(int argc, char** argv) {
 	// Display the new scope-based symbol table
 	displaySymbolTable();
 	
+	// Display function table
+	display_function_table();
+	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
 	}
+	
+	// Close error log
+	close_error_log();
 	
 	fclose(f);
 	return res;
