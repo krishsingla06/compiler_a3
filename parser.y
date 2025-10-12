@@ -33,31 +33,48 @@ static void yyerror(const char* s) {
     struct TypeInfo {
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
-        bool isPointer;
+        int pointerLevel;       // Number of pointer levels (e.g., 1 for *, 2 for **)
         bool isArray;
-        int arraySize;
+        vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), isArray(false), 
-                     arraySize(0), identifier(""), isLiteral(false) {}
+                     pointerLevel(0), isArray(false), 
+                     arrayDimensions(), identifier(""), isLiteral(false) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
-                    baseType(other.baseType), isPointer(other.isPointer), 
-                    isArray(other.isArray), arraySize(other.arraySize),
+                    baseType(other.baseType), pointerLevel(other.pointerLevel), 
+                    isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral) {}
+        
+        // Calculate total array size (product of all dimensions)
+        int getTotalArraySize() const {
+            if (!isArray || arrayDimensions.empty()) return 0;
+            
+            int totalSize = 1;
+            for (int dim : arrayDimensions) {
+                totalSize *= dim;
+            }
+            return totalSize;
+        }
         
         string toString() const {
             string result = "";
             if (isStatic) result += "static ";
             result += baseType;
-            if( isPointer ) {
-                result+="*";
+            
+            // Add pointer asterisks
+            for (int i = 0; i < pointerLevel; i++) {
+                result += "*";
             }
+            
+            // Add array dimensions
             if (isArray) {
-                result += "[" + to_string(arraySize) + "]";
+                for (int dim : arrayDimensions) {
+                    result += "[" + to_string(dim) + "]";
+                }
             }
             return result;
         }
@@ -74,9 +91,9 @@ static void yyerror(const char* s) {
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
         string name;            // variable/function name
-        bool isPointer;
+        int pointerLevel;       // Number of pointer levels (*, **, ***, etc.)
         bool isArray;
-        int arraySize;
+        vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
@@ -84,9 +101,20 @@ static void yyerror(const char* s) {
         bool isFunction;        // True if this is a function declarator
         vector<TypeInfo>* paramTypes;  // Parameter types for functions
         
-        DeclaratorInfo() : name(""), isPointer(false), 
-                          isArray(false), initValue(""), initType(nullptr), arraySize(0),
+        DeclaratorInfo() : name(""), pointerLevel(0), 
+                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr),
                           isFunction(false), paramTypes(nullptr) {}
+                          
+        // Add a new array dimension (for multidimensional arrays)
+        void addArrayDimension(int size) {
+            isArray = true;
+            arrayDimensions.push_back(size);
+        }
+        
+        // Add a pointer level (for multi-level pointers)
+        void incrementPointerLevel() {
+            pointerLevel++;
+        }
     };
 
     // Symbol table entry structure
@@ -208,10 +236,10 @@ static void yyerror(const char* s) {
 %type<typeinfo> parameter_declaration
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
+%type<ival> pointer
 
 
 %type<strlist> declaration_list
-%type <typeinfo> pointer
 %type<sval> struct_specifier
 %type<sval> struct
 
@@ -262,9 +290,7 @@ function_definition
 	: return_types fun_declarator compound_statement {               /* e.g., int f() { ... } */
 		// Register function definition
 		TypeInfo returnType = *$1;
-		if ($2->isPointer) {
-			returnType.isPointer = true;
-		}
+		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
 		
 		if ($2->isFunction && $2->paramTypes) {
 			insert_function($2->name, returnType, *$2->paramTypes);
@@ -283,8 +309,8 @@ function_definition
 | return_types fun_declarator SEMICOLON {				
 		// Register function declaration
 		TypeInfo returnType = *$1;
-		if ($2->isPointer) {
-			returnType.isPointer = true;
+		if ($2->pointerLevel > 0) {
+			returnType.pointerLevel = $2->pointerLevel;
 		}
 		
 		if ($2->isFunction && $2->paramTypes) {
@@ -306,9 +332,9 @@ declaration
 			TypeInfo combinedType = *$1;  // Start with base type
 			
 			// Add declarator-specific type information
-			combinedType.isPointer = declInfo->isPointer;
+			combinedType.pointerLevel = declInfo->pointerLevel;
 			combinedType.isArray = declInfo->isArray;
-			combinedType.arraySize = declInfo->arraySize;
+			combinedType.arrayDimensions = declInfo->arrayDimensions;
 			
 			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
@@ -380,7 +406,7 @@ cast_type_specifier
     }
     | type_specifier STAR {
         $$ = $1;
-        $$->isPointer = true;  // Pointer type like int*, float*, etc.
+        $$->pointerLevel = 1;  // Pointer type like int*, float*, etc.
     }
     ;
 
@@ -407,13 +433,12 @@ init_declarator
 	;
 
 
-// ACTUALLY POINTER IS ONLY pointer -> ****
+// Support for multi-level pointers like *, **, ***, etc.
 declarator
-	: pointer direct_declarator {                                 /* e.g., *p or int *p */ 
+	: pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
-		// Combine pointer info with declarator info
-		$$->isPointer = 1;
-		delete $1;
+		// Add pointer levels from $1 to the declarator
+		$$->pointerLevel = $1;
 	}
 	| direct_declarator {                                         /* e.g., x */ 
 		$$ = $1;
@@ -427,19 +452,23 @@ direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
-	| IDENTIFIER LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */ //Single dimensional array only
+	| direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */ 
+		$$ = $1;
+        $$->isArray = true;
+        $$->addArrayDimension($3); // Support multidimensional arrays by adding each dimension
+    }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */ 
 		$$ = new DeclaratorInfo();
         $$->name = *$1;
         $$->isArray = true;
-        $$->arraySize = $3;
+        $$->addArrayDimension($3);
         delete $1;
     }
 
 fun_declarator
   	: pointer fun_direct_declarator {
   		$$ = $2;
-  		$$->isPointer = true;  // Function returns a pointer
-  		delete $1;
+  		$$->pointerLevel = $1;  // Function returns a pointer (possibly multi-level)
   	}
 	| fun_direct_declarator {
 		$$ = $1;
@@ -499,16 +528,17 @@ initializer_list
         $$ = new TypeInfo();
         $$->baseType = $1->baseType;
         //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
-        if( $1->isArray || $1->isPointer || $1->baseType=="string" || $1->baseType=="void" ){
+        if( $1->isArray || $1->pointerLevel > 0 || $1->baseType=="string" || $1->baseType=="void" ){
             yyerror("Array initializer can only contain primitive types");
         }
-        $$->arraySize = 1; // Single element
+        $$->isArray = true;
+        $$->arrayDimensions.push_back(1); // Single element
         delete $1;
     }
 	| initializer_list COMMA assignment_expression                                   /* e.g., 1, 2 */{
         $$ = $1;
         //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
-        if( $3->isArray || $3->isPointer || $3->baseType=="string" || $3->baseType=="void" ){
+        if( $3->isArray || $3->pointerLevel > 0 || $3->baseType=="string" || $3->baseType=="void" ){
             yyerror("Array initializer can only contain primitive types");
         }
         // Base type is max of both that is if one is int andd one is float ,then overall is float
@@ -521,7 +551,8 @@ initializer_list
         else if( $$->baseType=="char" || $3->baseType=="char" ){
             $$->baseType="char";
         }
-        $$->arraySize += 1; // Increment array size
+        $$->isArray = true;
+        $$->arrayDimensions.push_back(1); // Add another dimension
         delete $3;
     }
 	;
@@ -546,9 +577,9 @@ parameter_declaration
         TypeInfo* combinedType = new TypeInfo(*$1);  // Start with base type
         
         // Add declarator-specific type information
-        combinedType->isPointer = $2->isPointer;
+        combinedType->pointerLevel = $2->pointerLevel;
         combinedType->isArray = $2->isArray;
-        combinedType->arraySize = $2->arraySize;
+        combinedType->arrayDimensions = $2->arrayDimensions;
         
         // Store parameter information for later insertion into function scope
         current_function_parameters.push_back(make_pair($2->name, *combinedType));
@@ -560,11 +591,10 @@ parameter_declaration
     ;
 
 parameter_declarator
-	: pointer parameter_direct_declarator {                                 /* e.g., *p or int *p */ 
+	: pointer parameter_direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
-		// Combine pointer info with declarator info
-		$$->isPointer = 1;
-		delete $1;
+		// Add pointer levels to the declarator
+		$$->pointerLevel = $1;
 	}
 	| parameter_direct_declarator {                                         /* e.g., x */ 
 		$$ = $1;
@@ -578,6 +608,25 @@ parameter_direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
+	| parameter_direct_declarator LBRACKET INT_LITERAL RBRACKET {  /* e.g., arr[10] or arr[][20] */
+        $$ = $1;
+        $$->isArray = true;
+        $$->addArrayDimension($3); // Support multidimensional arrays
+    }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {                  /* e.g., arr[10] */
+        $$ = new DeclaratorInfo();
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->addArrayDimension($3);
+        delete $1;
+    }
+    | IDENTIFIER LBRACKET RBRACKET {                             /* e.g., arr[] */
+        $$ = new DeclaratorInfo();
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->addArrayDimension(0); // Zero size indicates unspecified dimension
+        delete $1;
+    }
 	;
 
 
@@ -640,7 +689,7 @@ primary_expression
 	| NULL_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "void";
-        $$->isPointer = true;  // NULL is a void pointer
+        $$->pointerLevel = 1;  // NULL is a void pointer
         $$->isLiteral = true;
         cout << "NULL literal (type: void*)\n";
     }
@@ -658,7 +707,7 @@ postfix_expression
 		TypeInfo* index = $3;
 		
 		// Check if base is array or pointer
-		if (!base->isArray && !base->isPointer) {
+		if (!base->isArray && base->pointerLevel == 0) {
 			type_error("Subscript operator [] can only be applied to arrays or pointers");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
@@ -670,8 +719,8 @@ postfix_expression
 			// Result is the base type without array/pointer modifier
 			$$ = new TypeInfo(*base);
 			$$->isArray = false;
-			$$->isPointer = false;
-			$$->arraySize = 0;
+			$$->pointerLevel = base->isArray ? 0 : base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
+			$$->arrayDimensions.clear();
 			$$->isLiteral = false;
 			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << $$->toString() << "\n";
 		}
@@ -821,15 +870,15 @@ cast_expression
 		if (source_type->baseType == "error") {
 			$$ = source_type;
 		} else if (is_numeric_type(target_type->baseType) && is_numeric_type(source_type->baseType) 
-		           && !target_type->isPointer && !target_type->isArray 
-		           && !source_type->isPointer && !source_type->isArray) {
+		           && target_type->pointerLevel == 0 && !target_type->isArray 
+		           && source_type->pointerLevel == 0 && !source_type->isArray) {
 			// Numeric type casting is allowed (but not between pointers/arrays and numerics)
 			$$ = new TypeInfo(*target_type);
 			$$->isLiteral = source_type->isLiteral;
 			cout << "Cast: (" << target_type->toString() << ")" << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if (target_type->baseType == "void" && target_type->isPointer && !target_type->isArray) {
+		} else if (target_type->baseType == "void" && target_type->pointerLevel > 0 && !target_type->isArray) {
 			// Casting to void* is allowed from any pointer type
-			if (source_type->isPointer && !source_type->isArray) {
+			if (source_type->pointerLevel > 0 && !source_type->isArray) {
 				$$ = new TypeInfo(*target_type);
 				$$->isLiteral = false;
 				cout << "Cast to void*: " << source_type->toString() << " -> " << $$->toString() << "\n";
@@ -838,19 +887,19 @@ cast_expression
 				$$ = new TypeInfo();
 				$$->baseType = "error";
 			}
-		} else if (source_type->isPointer && target_type->isPointer 
+		} else if (source_type->pointerLevel > 0 && target_type->pointerLevel > 0 
 		           && !source_type->isArray && !target_type->isArray) {
 			// Pointer to pointer casting (excluding arrays)
 			$$ = new TypeInfo(*target_type);
 			$$->isLiteral = false;
 			cout << "Pointer cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if ((source_type->isPointer || source_type->isArray) && is_numeric_type(target_type->baseType) && !target_type->isPointer && !target_type->isArray) {
+		} else if ((source_type->pointerLevel > 0 || source_type->isArray) && is_numeric_type(target_type->baseType) && target_type->pointerLevel == 0 && !target_type->isArray) {
 			// Pointer/array to integer cast (for address arithmetic, but warn)
 			type_warning("Casting pointer/array " + source_type->toString() + " to numeric type " + target_type->toString());
 			$$ = new TypeInfo(*target_type);
 			$$->isLiteral = false;
 			cout << "Pointer-to-numeric cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if (is_numeric_type(source_type->baseType) && !source_type->isPointer && !source_type->isArray && target_type->isPointer && !target_type->isArray) {
+		} else if (is_numeric_type(source_type->baseType) && source_type->pointerLevel == 0 && !source_type->isArray && target_type->pointerLevel > 0 && !target_type->isArray) {
 			// Integer to pointer cast (dangerous but allowed with warning)
 			type_warning("Casting numeric type " + source_type->toString() + " to pointer " + target_type->toString());
 			$$ = new TypeInfo(*target_type);
@@ -897,8 +946,8 @@ shift_expression
 	: additive_expression { $$ = $1; }                                             /* e.g., a */
 	| shift_expression LEFT_SHIFT additive_expression {                     /* e.g., a << b */
 		// Shift operations require integer types (no pointers or arrays)
-		if (!is_integer_type($1->baseType) || $1->isPointer || $1->isArray ||
-		    !is_integer_type($3->baseType) || $3->isPointer || $3->isArray) {
+		if (!is_integer_type($1->baseType) || $1->pointerLevel > 0 || $1->isArray ||
+		    !is_integer_type($3->baseType) || $3->pointerLevel > 0 || $3->isArray) {
 			type_error("Shift operations require integer operands (not pointers or arrays). Left: " + $1->toString() + ", Right: " + $3->toString());
 			$$ = new TypeInfo();
 			$$->baseType = "error";
@@ -911,8 +960,8 @@ shift_expression
 	}
 	| shift_expression RIGHT_SHIFT additive_expression {                     /* e.g., a >> b */
 		// Shift operations require integer types (no pointers or arrays)
-		if (!is_integer_type($1->baseType) || $1->isPointer || $1->isArray ||
-		    !is_integer_type($3->baseType) || $3->isPointer || $3->isArray) {
+		if (!is_integer_type($1->baseType) || $1->pointerLevel > 0 || $1->isArray ||
+		    !is_integer_type($3->baseType) || $3->pointerLevel > 0 || $3->isArray) {
 			type_error("Shift operations require integer operands (not pointers or arrays). Left: " + $1->toString() + ", Right: " + $3->toString());
 			$$ = new TypeInfo();
 			$$->baseType = "error";
@@ -1096,10 +1145,11 @@ struct_declarator
 
 pointer
     : STAR {                                   /* e.g., * */
-        $$ = new TypeInfo();
-        $$->isPointer = true;
+        $$ = 1;  // Return pointer level instead of TypeInfo
     }
-	
+    | STAR pointer {                           /* e.g., ** or *** etc. */
+        $$ = $2 + 1;  // Increment pointer level for each * encountered
+    }
     ;
 
 //---------------------------------------- Statements --------------------------------------------------
@@ -1306,14 +1356,25 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     if (left_type.baseType != right_type.baseType) return false;
     
     // Check pointer compatibility 
-    if(left_type.isPointer != right_type.isPointer) return false;
+    if(left_type.pointerLevel != right_type.pointerLevel) return false;
     
-
+    // Check array compatibility
     if(left_type.isArray != right_type.isArray) return false;
 
     // Check array dimensions if both are arrays
-    if (left_type.arraySize != right_type.arraySize) return false;
-    
+    if (left_type.isArray) {
+        // Must have same number of dimensions
+        if (left_type.arrayDimensions.size() != right_type.arrayDimensions.size()) return false;
+        
+        // Each dimension must match in size
+        for (size_t i = 0; i < left_type.arrayDimensions.size(); i++) {
+            // Allow matching if one dimension is unspecified (0)
+            if (left_type.arrayDimensions[i] != 0 && right_type.arrayDimensions[i] != 0 && 
+                left_type.arrayDimensions[i] != right_type.arrayDimensions[i]) {
+                return false;
+            }
+        }
+    }
     
     return true;
 }
@@ -1387,7 +1448,10 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     }
     
     // Allow conversions between numeric types but not char<->int
-    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType)) {
+    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType) && 
+        from.pointerLevel == 0 && to.pointerLevel == 0 && 
+        !from.isArray && !to.isArray) {
+        
         // Disallow char to int conversions
         if ((from.baseType == "char" && to.baseType == "int") || 
             (from.baseType == "int" && to.baseType == "char")) {
@@ -1396,25 +1460,33 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
         return true;
     }
     
-    // Allow NULL to any pointer conversion
-    if (from.baseType == "void" && from.isPointer && to.isPointer) {
+    // Allow NULL (void*) to any pointer conversion
+    if (from.baseType == "void" && from.pointerLevel > 0 && to.pointerLevel > 0) {
         return true;
     }
     
     // Allow integer literals to floating-point types
-    if (from.isLiteral && from.baseType == "int" && to.baseType == "float") {
+    if (from.isLiteral && from.baseType == "int" && to.baseType == "float" &&
+        from.pointerLevel == 0 && to.pointerLevel == 0) {
         return true;
     }
     
     // Allow array to pointer conversion (array decay)
-    if (from.isArray && to.isPointer && from.baseType == to.baseType) {
-        return true;
+    if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType) {
+        // For multidimensional arrays, we need to check that the remaining dimensions match
+        if (from.arrayDimensions.size() > 1) {
+            // Create the decayed array type for comparison
+            TypeInfo decayedType = array_to_pointer_conversion(from);
+            return types_compatible(decayedType, to);
+        }
+        // For single-dimension arrays, check if pointer level matches (array[n] -> T*)
+        return to.pointerLevel == 1;
     }
     
     // Allow pointer conversions with compatible base types
-    if (from.isPointer && to.isPointer) {
-        // Void pointer can be assigned to any pointer type
-        if (from.baseType == "void" || to.baseType == "void") {
+    if (from.pointerLevel > 0 && to.pointerLevel > 0) {
+        // Void pointer can be assigned to any pointer type with same level
+        if ((from.baseType == "void" || to.baseType == "void") && from.pointerLevel == to.pointerLevel) {
             return true;
         }
     }
@@ -1424,7 +1496,9 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
 
 bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     // float to int is narrowing (potential loss of fractional part)
-    if (from.baseType == "float" && to.baseType == "int") {
+    if (from.baseType == "float" && to.baseType == "int" && 
+        from.pointerLevel == 0 && to.pointerLevel == 0 && 
+        !from.isArray && !to.isArray) {
         return true;
     }
     
@@ -1440,12 +1514,12 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     // }
     
     // Any pointer to smaller integer type is narrowing on most platforms
-    if (from.isPointer && (to.baseType == "int" || to.baseType == "char")) {
+    if (from.pointerLevel > 0 && (to.baseType == "int" || to.baseType == "char")) {
         return true;
     }
     
     // Pointer to different pointer type (other than void*) is potentially unsafe
-    if (from.isPointer && to.isPointer && from.baseType != to.baseType && 
+    if (from.pointerLevel > 0 && to.pointerLevel > 0 && from.baseType != to.baseType && 
         from.baseType != "void" && to.baseType != "void") {
         return true;
     }
@@ -1493,41 +1567,41 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
     if (op == "+" || op == "-") {
         // Case 1: Both are numeric types (regular arithmetic)
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
-            !left.isPointer && !right.isPointer && !left.isArray && !right.isArray) {
+            left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
             TypeInfo* result = promote_types(left, right);
             cout << " -> " << result->toString() << " (arithmetic)\n";
             return result;
         }
         
         // Case 2: Pointer + integer or Array + integer (only for addition)
-        if (op == "+" && ((left.isPointer || left.isArray) && is_integer_type(right.baseType))) {
+        if (op == "+" && ((left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType))) {
             TypeInfo* result = new TypeInfo(left);
             result->isArray = false;  // Result is always a pointer, not array
-            result->isPointer = true;
+            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
         
         // Case 3: Integer + pointer (commutative for addition)
-        if (op == "+" && (is_integer_type(left.baseType) && (right.isPointer || right.isArray))) {
+        if (op == "+" && (is_integer_type(left.baseType) && (right.pointerLevel > 0 || right.isArray))) {
             TypeInfo* result = new TypeInfo(right);
             result->isArray = false;  // Result is always a pointer, not array
-            result->isPointer = true;
+            result->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
         
         // Case 4: Pointer - integer
-        if (op == "-" && (left.isPointer || left.isArray) && is_integer_type(right.baseType)) {
+        if (op == "-" && (left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType)) {
             TypeInfo* result = new TypeInfo(left);
             result->isArray = false;  // Result is always a pointer, not array
-            result->isPointer = true;
+            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
         
         // Case 5: Pointer - pointer (results in integer representing distance)
-        if (op == "-" && (left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+        if (op == "-" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             if (left.baseType != right.baseType) {
                 type_error("Pointer subtraction requires pointers to same type");
                 TypeInfo* result = new TypeInfo();
@@ -1541,7 +1615,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         }
         
         // Case 6: Invalid pointer + pointer
-        if (op == "+" && (left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+        if (op == "+" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             type_error("Cannot add two pointers");
             TypeInfo* result = new TypeInfo();
             result->baseType = "error";
@@ -1558,7 +1632,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
     // Multiplication, division, modulo (no pointer arithmetic allowed)
     if (op == "*" || op == "/" || op == "%") {
         if (!is_numeric_type(left.baseType) || !is_numeric_type(right.baseType) ||
-            left.isPointer || right.isPointer || left.isArray || right.isArray) {
+            left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Arithmetic operation " + op + " requires numeric operands only");
             TypeInfo* result = new TypeInfo();
             result->baseType = "error";
@@ -1582,7 +1656,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
     if (op == "<" || op == ">" || op == "<=" || op == ">=" || op == "==" || op == "!=") {
         // Allow comparison between numeric types
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) &&
-            !left.isPointer && !right.isPointer && !left.isArray && !right.isArray) {
+            left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
             TypeInfo* result = new TypeInfo();
             result->baseType = "int";  // In C, no bool type, so relational ops return int
             cout << " -> " << result->toString() << " (numeric comparison)\n";
@@ -1590,7 +1664,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         }
         
         // Allow pointer comparisons (same type)
-        if ((left.isPointer || left.isArray) && (right.isPointer || right.isArray)) {
+        if ((left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             if (left.baseType != right.baseType) {
                 type_warning("Comparing pointers to different types");
             }
@@ -1609,7 +1683,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
     // Bitwise operations (integers only, no pointers/arrays)
     if (op == "&" || op == "|" || op == "^") {
         if (!is_integer_type(left.baseType) || !is_integer_type(right.baseType) ||
-            left.isPointer || right.isPointer || left.isArray || right.isArray) {
+            left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Bitwise operations require integer operands only");
             TypeInfo* result = new TypeInfo();
             result->baseType = "error";
@@ -1711,14 +1785,14 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         }
         
         TypeInfo* result = new TypeInfo(operand);
-        result->isPointer = true;
+        result->pointerLevel++;
         cout << " -> " << result->toString() << "\n";
         return result;
     }
     
     // Dereference operator
     if (op == "*") {
-        if (!operand.isPointer) {
+        if (operand.pointerLevel == 0) {
             type_error("Cannot dereference non-pointer type");
             TypeInfo* result = new TypeInfo();
             result->baseType = "error";
@@ -1726,7 +1800,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         }
         
         TypeInfo* result = new TypeInfo(operand);
-        result->isPointer = false;
+        result->pointerLevel--;
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1792,7 +1866,7 @@ string mangle_function_name(const string& funcName, const vector<TypeInfo>& para
         else mangledName += "u"; // unknown
         
         // Add pointer modifier
-        if (param.isPointer) mangledName += "p";
+        if (param.pointerLevel > 0) mangledName += "p" + to_string(param.pointerLevel);
     }
     
     return mangledName;
@@ -1801,9 +1875,19 @@ string mangle_function_name(const string& funcName, const vector<TypeInfo>& para
 TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
     TypeInfo result = type;
     if (result.isArray) {
-        result.isArray = false;
-        result.isPointer = true;
-        result.arraySize = 0;
+        // For multidimensional arrays, we only decay the first dimension
+        // int[3][4][5] -> int(*)[4][5]
+        if (result.arrayDimensions.size() > 1) {
+            // Create a pointer to the remaining array dimensions
+            vector<int> remainingDimensions(result.arrayDimensions.begin() + 1, result.arrayDimensions.end());
+            result.arrayDimensions = remainingDimensions;
+            result.pointerLevel += 1;
+        } else {
+            // Simple case: array decays to pointer
+            result.isArray = false;
+            result.pointerLevel += 1;
+            result.arrayDimensions.clear();
+        }
         cout << "Array to pointer conversion: " << type.toString() << " -> " << result.toString() << "\n";
     }
     return result;
