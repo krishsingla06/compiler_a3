@@ -162,6 +162,7 @@ static void yyerror(const char* s) {
     TypeInfo array_to_pointer_conversion(const TypeInfo& type);
     void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
     FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
+    bool is_function_name(const string& name);
     bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params);
     void display_function_table();
     void insert_current_function_parameters();
@@ -275,7 +276,11 @@ function_definition
 		delete $1;
 		delete $2;
 	}
-	| return_types fun_declarator SEMICOLON {				/* e.g., int f(); */
+	
+	;
+
+/*
+| return_types fun_declarator SEMICOLON {				
 		// Register function declaration
 		TypeInfo returnType = *$1;
 		if ($2->isPointer) {
@@ -292,8 +297,7 @@ function_definition
 		delete $1;
 		delete $2;
 	}
-	;
-
+*/
 declaration
 	: return_types SEMICOLON { delete $1; }                                   /* e.g., extern int; (rare)*/ 
 	| return_types init_declarator_list SEMICOLON {
@@ -309,7 +313,11 @@ declaration
 			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
 				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
-					yyerror(("Type mismatch in initialization of variable " + declInfo->name).c_str());
+					// Issue a warning instead of error to allow compilation to continue
+					string warning_msg = "Type mismatch in initialization of variable '" + 
+						declInfo->name + "': cannot convert from " + 
+						declInfo->initType->toString() + " to " + combinedType.toString();
+					type_warning(warning_msg);
 				}
 			}
 			
@@ -325,8 +333,7 @@ declaration
 		delete $1;
 		delete $2;
 	}                                 /* e.g., int x, *p = NULL, arr[10] = {0}; */
-
-    ;
+	;
 
 //------------------------------------------- Return types --------------------------------------------------
 
@@ -580,12 +587,23 @@ primary_expression
     : IDENTIFIER { 
         check_variable_declaration(*$1);
         SymbolEntry entry;
+        // First, check if it's a variable
         if (lookup_symbol(*$1, entry)) {
             $$ = new TypeInfo(entry.type);  // Copy type from symbol table
             $$->identifier = *$1;  // Store identifier name
             $$->isLiteral = false;
             cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
-        } else {
+        } 
+        // If not a variable, check if it might be a function
+        else if (is_function_name(*$1)) {
+            $$ = new TypeInfo();
+            $$->baseType = "function";  // Mark as function type
+            $$->identifier = *$1;       // Store function name
+            $$->isLiteral = false;
+            cout << "Found function name: " << *$1 << "\n";
+        }
+        // Otherwise, it's undefined
+        else {
             $$ = new TypeInfo();
             $$->baseType = "error";
             $$->identifier = *$1;
@@ -673,7 +691,7 @@ postfix_expression
 				$$->isLiteral = false;
 				cout << "Function call: " << base->identifier << "() -> " << $$->toString() << "\n";
 			} else {
-				type_error("Function '" + base->identifier + "' not found or argument mismatch");
+				type_error("No matching function found for call to '" + base->identifier + "()'");
 				$$ = new TypeInfo();
 				$$->baseType = "error";
 			}
@@ -698,7 +716,15 @@ postfix_expression
 				$$->isLiteral = false;
 				cout << "Function call: " << base->identifier << "(...) -> " << $$->toString() << "\n";
 			} else {
-				type_error("Function '" + base->identifier + "' not found or argument type mismatch");
+				// Create a descriptive error message
+				string argTypesStr = "";
+				for (size_t i = 0; i < argTypes->size(); ++i) {
+					if (i > 0) argTypesStr += ", ";
+					argTypesStr += (*argTypes)[i].toString();
+				}
+				
+				type_error("No matching function found for call to '" + base->identifier + 
+					"(" + argTypesStr + ")'");
 				$$ = new TypeInfo();
 				$$->baseType = "error";
 			}
@@ -1227,9 +1253,12 @@ bool lookup_symbol_current_scope(const string& name) {
 void check_variable_declaration(const string& name) {
     SymbolEntry entry;
     if (!lookup_symbol(name, entry)) {
-        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' used but not declared";
-        cerr << error_msg << "\n";
-        log_error(error_msg);
+        // First check if this is a function name before reporting error
+        if (!is_function_name(name)) {
+            string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' used but not declared";
+            cerr << error_msg << "\n";
+            log_error(error_msg);
+        }
     } else {
         cout << "Variable '" << name << "' found: declared as " 
              << entry.type.toString() << " at line " << entry.line 
@@ -1301,8 +1330,22 @@ TypeInfo* get_expression_type(const string& identifier) {
 }
 
 bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
-    // For primary expressions (as requested), check basic compatibility
-    return types_compatible(var_type, init_type);
+    // First check exact type match
+    if (types_compatible(var_type, init_type)) {
+        return true;
+    }
+    
+    // If not exact match, check if implicit conversion is allowed
+    if (is_implicit_conversion_allowed(init_type, var_type)) {
+        // Warn about narrowing conversions
+        if (is_narrowing_conversion(init_type, var_type)) {
+            type_warning("Narrowing conversion from " + init_type.toString() + 
+                      " to " + var_type.toString() + " may lose precision");
+        }
+        return true;
+    }
+    
+    return false;
 }
 
 // Type checking and promotion functions implementation
@@ -1338,32 +1381,72 @@ bool is_lvalue(const TypeInfo& expr) {
 }
 
 bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
-    // Allow conversions between numeric types
-    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType)) {
-        return true;
-    }
-    
     // Allow exact type matches
     if (types_compatible(from, to)) {
         return true;
     }
     
-    // Allow NULL to pointer conversions
+    // Allow conversions between numeric types but not char<->int
+    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType)) {
+        // Disallow char to int conversions
+        if ((from.baseType == "char" && to.baseType == "int") || 
+            (from.baseType == "int" && to.baseType == "char")) {
+            return false;
+        }
+        return true;
+    }
+    
+    // Allow NULL to any pointer conversion
     if (from.baseType == "void" && from.isPointer && to.isPointer) {
         return true;
+    }
+    
+    // Allow integer literals to floating-point types
+    if (from.isLiteral && from.baseType == "int" && to.baseType == "float") {
+        return true;
+    }
+    
+    // Allow array to pointer conversion (array decay)
+    if (from.isArray && to.isPointer && from.baseType == to.baseType) {
+        return true;
+    }
+    
+    // Allow pointer conversions with compatible base types
+    if (from.isPointer && to.isPointer) {
+        // Void pointer can be assigned to any pointer type
+        if (from.baseType == "void" || to.baseType == "void") {
+            return true;
+        }
     }
     
     return false;
 }
 
 bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
-    // float to int is narrowing
+    // float to int is narrowing (potential loss of fractional part)
     if (from.baseType == "float" && to.baseType == "int") {
         return true;
     }
     
-    // int to char is narrowing
-    if (from.baseType == "int" && to.baseType == "char") {
+    // float to char is narrowing
+    if (from.baseType == "float" && to.baseType == "char") {
+        return true;
+    }
+    
+    // Note: int to char conversions are no longer allowed, so we don't need this check
+    // But we'll keep it commented for reference
+    // if (from.baseType == "int" && to.baseType == "char") {
+    //     return true;
+    // }
+    
+    // Any pointer to smaller integer type is narrowing on most platforms
+    if (from.isPointer && (to.baseType == "int" || to.baseType == "char")) {
+        return true;
+    }
+    
+    // Pointer to different pointer type (other than void*) is potentially unsafe
+    if (from.isPointer && to.isPointer && from.baseType != to.baseType && 
+        from.baseType != "void" && to.baseType != "void") {
         return true;
     }
     
@@ -1759,6 +1842,16 @@ void insert_function(const string& name, const TypeInfo& returnType, const vecto
          << " returning " << returnType.toString() << "\n";
 }
 
+// Check if a name is defined as a function
+bool is_function_name(const string& name) {
+    for (const auto& entry : function_table) {
+        if (entry.second.originalName == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
 FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
     // Convert array arguments to pointers
     vector<TypeInfo> convertedArgs;
@@ -1774,15 +1867,32 @@ FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTy
         return &(it->second);
     }
     
-    // Try to find compatible function with implicit conversions
+    // If no exact match, collect all compatible functions
+    vector<FunctionEntry*> compatibleFunctions;
+    
     for (auto& entry : function_table) {
         FunctionEntry& func = entry.second;
         if (func.originalName == name && are_parameters_compatible(convertedArgs, func.parameters)) {
+            compatibleFunctions.push_back(&func);
             cout << "Found compatible function: " << func.mangledName << " for " << name << "\n";
-            return &func;
         }
     }
     
+    // If exactly one compatible function is found, return it
+    if (compatibleFunctions.size() == 1) {
+        return compatibleFunctions[0];
+    }
+    // If multiple compatible functions are found, report ambiguity error
+    else if (compatibleFunctions.size() > 1) {
+        string errorMsg = "Ambiguous function call to '" + name + "', multiple matching overloads:";
+        for (auto* func : compatibleFunctions) {
+            errorMsg += "\n  " + func->mangledName;
+        }
+        type_error(errorMsg);
+        return nullptr;
+    }
+    
+    // No compatible functions found
     return nullptr;
 }
 
