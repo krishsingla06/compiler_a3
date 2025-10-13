@@ -38,16 +38,18 @@ static void yyerror(const char* s) {
         vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
+        bool isLvalue;          // True if the expression is an lvalue, false for temporaries
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
-                     arrayDimensions(), identifier(""), isLiteral(false) {}
+                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
-                    identifier(other.identifier), isLiteral(other.isLiteral) {}
+                    identifier(other.identifier), isLiteral(other.isLiteral),
+                    isLvalue(other.isLvalue) {}
         
         // Calculate total array size (product of all dimensions)
         int getTotalArraySize() const {
@@ -641,6 +643,7 @@ primary_expression
             $$ = new TypeInfo(entry.type);  // Copy type from symbol table
             $$->identifier = *$1;  // Store identifier name
             $$->isLiteral = false;
+            $$->isLvalue = true;   // Variables are lvalues
             cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
         } 
         // If not a variable, check if it might be a function
@@ -649,6 +652,7 @@ primary_expression
             $$->baseType = "function";  // Mark as function type
             $$->identifier = *$1;       // Store function name
             $$->isLiteral = false;
+            $$->isLvalue = false;       // Function names are not lvalues
             cout << "Found function name: " << *$1 << "\n";
         }
         // Otherwise, it's undefined
@@ -656,6 +660,7 @@ primary_expression
             $$ = new TypeInfo();
             $$->baseType = "error";
             $$->identifier = *$1;
+            $$->isLvalue = false;
             type_error("Undefined variable: " + *$1);
         }
         delete $1;
@@ -664,18 +669,21 @@ primary_expression
         $$ = new TypeInfo();
         $$->baseType = "int";
         $$->isLiteral = true;
+        $$->isLvalue = false;  // Literals are not lvalues
         cout << "Integer literal: " << $1 << " (type: int)\n";
     }
     | FLOAT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "float";
         $$->isLiteral = true;
+        $$->isLvalue = false;  // Literals are not lvalues
         cout << "Float literal: " << $1 << " (type: float)\n";
     }
     | CHAR_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "char";
         $$->isLiteral = true;
+        $$->isLvalue = false;  // Literals are not lvalues
         cout << "Char literal: " << *$1 << " (type: char)\n";
         delete $1;
     }
@@ -683,6 +691,7 @@ primary_expression
         $$ = new TypeInfo();
         $$->baseType = "string";
         $$->isLiteral = true;
+        $$->isLvalue = false;  // Literals are not lvalues (even though string literals are somewhat special in C)
         cout << "String literal: " << *$1 << " (type: string)\n";
         delete $1;
     }
@@ -691,6 +700,7 @@ primary_expression
         $$->baseType = "void";
         $$->pointerLevel = 1;  // NULL is a void pointer
         $$->isLiteral = true;
+        $$->isLvalue = false;  // NULL is not an lvalue
         cout << "NULL literal (type: void*)\n";
     }
     | LPAREN expression RPAREN { 
@@ -705,6 +715,8 @@ postfix_expression
 		// Array subscripting: arr[i] or ptr[i]
 		TypeInfo* base = $1;
 		TypeInfo* index = $3;
+
+        cout<<base->isArray<<" MEOW "<<base->pointerLevel<<"\n";
 		
 		// Check if base is array or pointer
 		if (!base->isArray && base->pointerLevel == 0) {
@@ -716,12 +728,30 @@ postfix_expression
 			$$ = new TypeInfo();
 			$$->baseType = "error";
 		} else {
-			// Result is the base type without array/pointer modifier
+			// Result is the base type but with one dimension removed
 			$$ = new TypeInfo(*base);
-			$$->isArray = false;
-			$$->pointerLevel = base->isArray ? 0 : base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
-			$$->arrayDimensions.clear();
+			
+			if (base->isArray) {
+				// Handle multidimensional arrays
+				if (base->arrayDimensions.size() > 1) {
+					// Remove only the first dimension, keep the rest
+					$$->isArray = true;
+					$$->arrayDimensions = vector<int>(base->arrayDimensions.begin() + 1, base->arrayDimensions.end());
+				} else {
+					// Single dimension array becomes base type
+					$$->isArray = false;
+					$$->arrayDimensions.clear();
+				}
+			} else {
+				// Handle pointers
+				$$->pointerLevel = base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
+				$$->isArray = false;
+				$$->arrayDimensions.clear();
+			}
+			
 			$$->isLiteral = false;
+			// Array subscript result is an lvalue if the base is an lvalue
+			$$->isLvalue = base->isLvalue;
 			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << $$->toString() << "\n";
 		}
 		delete $1; delete $3;
@@ -1071,6 +1101,7 @@ assignment_expression
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 		} else {
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
+			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
 		}
 		
 		cout << "Assignment: " << lhs_type->toString() << " = " << rhs_type->toString() << "\n";
@@ -1421,24 +1452,8 @@ bool is_integer_type(const string& type) {
 bool is_lvalue(const TypeInfo& expr) {
     // An lvalue is an expression that can appear on the left side of an assignment
     
-    // Literals are not lvalues
-    if (expr.isLiteral) {
-        return false;
-    }
-    
-    // Variables (with identifiers) are lvalues
-    if (!expr.identifier.empty()) {
-        return true;
-    }
-    
-    // Dereferenced pointers are lvalues: *ptr
-    // Array subscripts are lvalues: arr[i]
-    // Structure/union members are lvalues: obj.member, ptr->member
-    // (These would need to be tracked in the grammar with additional flags)
-    
-    // For now, we consider expressions without identifiers as non-lvalues
-    // This covers most basic cases like literals, function calls, etc.
-    return false;
+    // Use the explicit isLvalue field that we track throughout parsing
+    return expr.isLvalue;
 }
 
 bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
@@ -1529,6 +1544,7 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
 
 TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right) {
     TypeInfo* result = new TypeInfo();
+    result->isLvalue = false;  // Result of type promotion is never an lvalue
     
     // If either is float, result is float
     if (left.baseType == "float" || right.baseType == "float") {
@@ -1563,30 +1579,38 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
     
     cout << "Binary operation: " << left.toString() << " " << op << " " << right.toString();
     
+    // Note: All binary operation results are rvalues (not lvalues)
+    // Binary operations generate temporary values that cannot be assigned to
+    
     // Addition and subtraction with pointer arithmetic
     if (op == "+" || op == "-") {
         // Case 1: Both are numeric types (regular arithmetic)
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
             TypeInfo* result = promote_types(left, right);
+            result->isLvalue = false; // Result is not an lvalue
             cout << " -> " << result->toString() << " (arithmetic)\n";
             return result;
         }
         
         // Case 2: Pointer + integer or Array + integer (only for addition)
-        if (op == "+" && ((left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType))) {
+        if (op == "+" && ((left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType) && 
+                        right.pointerLevel == 0 && !right.isArray)) { // Ensure right is a plain integer
             TypeInfo* result = new TypeInfo(left);
             result->isArray = false;  // Result is always a pointer, not array
             result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            result->isLvalue = false; // Result is not an lvalue
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
         
         // Case 3: Integer + pointer (commutative for addition)
-        if (op == "+" && (is_integer_type(left.baseType) && (right.pointerLevel > 0 || right.isArray))) {
+        if (op == "+" && (is_integer_type(left.baseType) && left.pointerLevel == 0 && !left.isArray && 
+                        (right.pointerLevel > 0 || right.isArray))) { // Ensure left is a plain integer
             TypeInfo* result = new TypeInfo(right);
             result->isArray = false;  // Result is always a pointer, not array
             result->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
+            result->isLvalue = false; // Result is not an lvalue
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
@@ -1596,6 +1620,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             TypeInfo* result = new TypeInfo(left);
             result->isArray = false;  // Result is always a pointer, not array
             result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            result->isLvalue = false; // Result is not an lvalue
             cout << " -> " << result->toString() << " (pointer arithmetic)\n";
             return result;
         }
@@ -1610,6 +1635,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             }
             TypeInfo* result = new TypeInfo();
             result->baseType = "int";  // ptrdiff_t is typically int
+            result->isLvalue = false; // Result is not an lvalue
             cout << " -> " << result->toString() << " (pointer difference)\n";
             return result;
         }
@@ -1619,6 +1645,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             type_error("Cannot add two pointers");
             TypeInfo* result = new TypeInfo();
             result->baseType = "error";
+            result->isLvalue = false;
             return result;
         }
         
@@ -1659,18 +1686,50 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
             TypeInfo* result = new TypeInfo();
             result->baseType = "int";  // In C, no bool type, so relational ops return int
+            result->isLvalue = false;  // Result is not an lvalue
             cout << " -> " << result->toString() << " (numeric comparison)\n";
             return result;
         }
         
-        // Allow pointer comparisons (same type)
+        // Allow pointer comparisons
         if ((left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
+            // For == and !=, allow comparing pointers of different types with warning
             if (left.baseType != right.baseType) {
-                type_warning("Comparing pointers to different types");
+                if (op == "==" || op == "!=") {
+                    type_warning("Comparing pointers to different types");
+                } else {
+                    // For <, >, <=, >= comparisons, require same base type
+                    type_error("Relational comparison (<, >, <=, >=) between pointers to different types is not allowed");
+                    TypeInfo* result = new TypeInfo();
+                    result->baseType = "error";
+                    return result;
+                }
             }
+            
             TypeInfo* result = new TypeInfo();
             result->baseType = "int";
+            result->isLvalue = false;  // Result is not an lvalue
             cout << " -> " << result->toString() << " (pointer comparison)\n";
+            return result;
+        }
+        
+        // Allow comparison of pointer with NULL (void*)
+        if ((left.pointerLevel > 0 || left.isArray) && 
+            right.baseType == "void" && right.pointerLevel > 0) {
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "int";
+            result->isLvalue = false;
+            cout << " -> " << result->toString() << " (pointer to NULL comparison)\n";
+            return result;
+        }
+        
+        // Also allow NULL to pointer comparison (reverse order)
+        if (left.baseType == "void" && left.pointerLevel > 0 && 
+            (right.pointerLevel > 0 || right.isArray)) {
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "int";
+            result->isLvalue = false;
+            cout << " -> " << result->toString() << " (NULL to pointer comparison)\n";
             return result;
         }
         
@@ -1692,14 +1751,26 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         
         TypeInfo* result = new TypeInfo();
         result->baseType = "int";
+        result->isLvalue = false;  // Result is not an lvalue
         cout << " -> " << result->toString() << "\n";
         return result;
     }
     
     // Logical operations
     if (op == "&&" || op == "||") {
+        // Check for void type which cannot be used in logical operations
+        if (left.baseType == "void" || right.baseType == "void") {
+            type_error("Void type cannot be used in logical operations");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
+        // All other types can be converted to a truth value in C
+        // This includes pointers, arrays, and all scalar types
         TypeInfo* result = new TypeInfo();
         result->baseType = "int";  // Logical operations return int in C
+        result->isLvalue = false;  // Result is not an lvalue
         cout << " -> " << result->toString() << " (boolean as int)\n";
         return result;
     }
@@ -1735,6 +1806,8 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         if (result->baseType == "char") {
             result->baseType = "int";
         }
+        // Result of unary +/- is not an lvalue
+        result->isLvalue = false;
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1748,7 +1821,17 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
             return result;
         }
         
+        // Check if operand is an lvalue
+        if (!operand.isLvalue) {
+            type_error("Increment/decrement requires an lvalue operand");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
         TypeInfo* result = new TypeInfo(operand);
+        // Result is not an lvalue for postfix operations, but we handle both cases here
+        result->isLvalue = false;
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1757,6 +1840,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     if (op == "!") {
         TypeInfo* result = new TypeInfo();
         result->baseType = "int";  // Logical NOT returns int in C
+        result->isLvalue = false;  // Result is not an lvalue
         cout << " -> " << result->toString() << " (boolean as int)\n";
         return result;
     }
@@ -1771,6 +1855,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         }
         
         TypeInfo* result = new TypeInfo(operand);
+        result->isLvalue = false;  // Result is not an lvalue
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1784,8 +1869,17 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
             return result;
         }
         
+        // Check if operand is an lvalue
+        if (!operand.isLvalue) {
+            type_error("Cannot take address of a temporary");
+            TypeInfo* result = new TypeInfo();
+            result->baseType = "error";
+            return result;
+        }
+        
         TypeInfo* result = new TypeInfo(operand);
         result->pointerLevel++;
+        result->isLvalue = false; // Result of & operator is not an lvalue
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1801,6 +1895,8 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         
         TypeInfo* result = new TypeInfo(operand);
         result->pointerLevel--;
+        // Result of dereference is an lvalue (you can assign to *p)
+        result->isLvalue = true;
         cout << " -> " << result->toString() << "\n";
         return result;
     }
@@ -1825,31 +1921,6 @@ void type_warning(const string& message) {
     log_error(warning_msg);
 }
 
-bool check_literal_type(const string& value, const string& expected_base_type) {
-    if (expected_base_type == "int") {
-        // Check if value is an integer literal
-        for (char c : value) {
-            if (!isdigit(c) && c != '-' && c != '+') return false;
-        }
-        return true;
-    } else if (expected_base_type == "float") {
-        // Check if value is a float literal
-        bool has_dot = false;
-        for (char c : value) {
-            if (c == '.') {
-                if (has_dot) return false; // Multiple dots
-                has_dot = true;
-            } else if (!isdigit(c) && c != '-' && c != '+') {
-                return false;
-            }
-        }
-        return true;
-    } else if (expected_base_type == "char") {
-        // Check if value is a character literal
-        return value.length() >= 3 && value[0] == '\'' && value[value.length()-1] == '\'';
-    }
-    return false;
-}
 
 // Function management implementation
 string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
