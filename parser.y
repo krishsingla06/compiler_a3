@@ -456,15 +456,39 @@ direct_declarator
 	}
 	| direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */ 
 		$$ = $1;
+        if($3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
         $$->isArray = true;
         $$->addArrayDimension($3); // Support multidimensional arrays by adding each dimension
     }
     | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */ 
 		$$ = new DeclaratorInfo();
+        if( $3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
         $$->name = *$1;
         $$->isArray = true;
         $$->addArrayDimension($3);
         delete $1;
+    }| IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr['a'] */
+        // implicit conversion of char to int for array size
+        $$ = new DeclaratorInfo();
+        if( (int)$3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->addArrayDimension((int)$3);
+        delete $1;
+    }| direct_declarator LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */
+        // implicit conversion of char to int for array size
+        $$ = $1;
+        if( (int)$3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
+        $$->isArray = true;
+        $$->addArrayDimension((int)$3); // Support multidimensional arrays by adding each dimension
     }
 
 fun_declarator
@@ -610,26 +634,31 @@ parameter_direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
-	| parameter_direct_declarator LBRACKET INT_LITERAL RBRACKET {  /* e.g., arr[10] or arr[][20] */
+	;
+
+
+/*
+ I decided to remove function params like int arr[] or int arr[10] because it seems of very less use now
+| parameter_direct_declarator LBRACKET INT_LITERAL RBRACKET { 
         $$ = $1;
         $$->isArray = true;
         $$->addArrayDimension($3); // Support multidimensional arrays
     }
-    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {                  /* e.g., arr[10] */
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {                  
         $$ = new DeclaratorInfo();
         $$->name = *$1;
         $$->isArray = true;
         $$->addArrayDimension($3);
         delete $1;
     }
-    | IDENTIFIER LBRACKET RBRACKET {                             /* e.g., arr[] */
+    | IDENTIFIER LBRACKET RBRACKET {                            
         $$ = new DeclaratorInfo();
         $$->name = *$1;
         $$->isArray = true;
         $$->addArrayDimension(0); // Zero size indicates unspecified dimension
         delete $1;
     }
-	;
+*/
 
 
 //------------------------ Simply expressions - used in RHS of initializers -----------------------------------------------------
@@ -716,7 +745,7 @@ postfix_expression
 		TypeInfo* base = $1;
 		TypeInfo* index = $3;
 
-        cout<<base->isArray<<" MEOW "<<base->pointerLevel<<"\n";
+        //cout<<base->isArray<<" MEOW "<<base->pointerLevel<<"\n";
 		
 		// Check if base is array or pointer
 		if (!base->isArray && base->pointerLevel == 0) {
@@ -743,10 +772,16 @@ postfix_expression
 					$$->arrayDimensions.clear();
 				}
 			} else {
-				// Handle pointers
-				$$->pointerLevel = base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
-				$$->isArray = false;
-				$$->arrayDimensions.clear();
+				// Handle pointers - only allow one level pointers for subscript
+				if (base->pointerLevel > 1) {
+					type_error("Subscript operator [] can only be applied to single-level pointers, not multi-level pointers like " + base->toString());
+					$$->baseType = "error";
+				} else {
+					// For single-level pointers, decrement pointer level
+					$$->pointerLevel = base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
+					$$->isArray = false;
+					$$->arrayDimensions.clear();
+				}
 			}
 			
 			$$->isLiteral = false;
@@ -1462,16 +1497,12 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
         return true;
     }
     
-    // Allow conversions between numeric types but not char<->int
+    // Allow conversions between numeric types including char<->int
     if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType) && 
         from.pointerLevel == 0 && to.pointerLevel == 0 && 
         !from.isArray && !to.isArray) {
         
-        // Disallow char to int conversions
-        if ((from.baseType == "char" && to.baseType == "int") || 
-            (from.baseType == "int" && to.baseType == "char")) {
-            return false;
-        }
+        // Allow char to int conversions (removed restriction)
         return true;
     }
     
@@ -1522,11 +1553,11 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
         return true;
     }
     
-    // Note: int to char conversions are no longer allowed, so we don't need this check
-    // But we'll keep it commented for reference
-    // if (from.baseType == "int" && to.baseType == "char") {
-    //     return true;
-    // }
+    // Note: int to char conversion is now allowed but it's a narrowing conversion
+    // that may lose data, so we should warn about it
+    if (from.baseType == "int" && to.baseType == "char") {
+        return true;
+    }
     
     // Any pointer to smaller integer type is narrowing on most platforms
     if (from.pointerLevel > 0 && (to.baseType == "int" || to.baseType == "char")) {
