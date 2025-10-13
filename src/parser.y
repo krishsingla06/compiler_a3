@@ -121,7 +121,8 @@ static void yyerror(const char* s) {
 
     // Symbol table entry structure
     struct SymbolEntry {
-        string name;
+        string name;         // Original variable name
+        string mangledName;  // Mangled name for 3AC generation (v_name_funname_signature_scopenum)
         TypeInfo type;
         int line;
         int scope_level;
@@ -159,6 +160,10 @@ static void yyerror(const char* s) {
     
     // Current function parameter information (for proper scoping)
     vector<pair<string, TypeInfo>> current_function_parameters;
+    
+    // Current function context for variable name mangling
+    string current_function_name = "";
+    string current_function_signature = "";
 
     // Function declarations for scope management
     void enter_scope();
@@ -167,6 +172,9 @@ static void yyerror(const char* s) {
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
+    
+    // Variable name mangling function
+    string mangle_variable_name(const string& varName, int scopeLevel, const string& functionName = "", const string& signature = "");
     
     // Type checking and promotion functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
@@ -188,7 +196,9 @@ static void yyerror(const char* s) {
     void log_error(const string& message);
     
     // Function management functions
+    string type_code_for_mangling(const TypeInfo& type);
     string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes);
+    string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature);
     TypeInfo array_to_pointer_conversion(const TypeInfo& type);
     void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
     FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
@@ -298,6 +308,10 @@ function_definition
 			insert_function($2->name, returnType, *$2->paramTypes);
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
+		
+		// Reset the current function context after function definition completes
+		current_function_name = "";
+		current_function_signature = "";
 		
 		// Clean up
 		if ($2->paramTypes) delete $2->paramTypes;
@@ -470,26 +484,36 @@ direct_declarator
         $$->name = *$1;
         $$->isArray = true;
         $$->addArrayDimension($3);
-        delete $1;}
-    //     | IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr['a'] */
-    //     // implicit conversion of char to int for array size
-    //     $$ = new DeclaratorInfo();
-    //     if( (int)$3 <= 0 ){
-    //         yyerror("Array size must be a positive integer");
-    //     }
-    //     $$->name = *$1;
-    //     $$->isArray = true;
-    //     $$->addArrayDimension((int)$3);
-    //     delete $1;
-    // }| direct_declarator LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */
-    //     // implicit conversion of char to int for array size
-    //     $$ = $1;
-    //     if( (int)$3 <= 0 ){
-    //         yyerror("Array size must be a positive integer");
-    //     }
-    //     $$->isArray = true;
-    //     $$->addArrayDimension((int)$3); // Support multidimensional arrays by adding each dimension
-    // }
+        delete $1;
+    }| IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr['a'] */
+        // implicit conversion of char to int for array size
+        $$ = new DeclaratorInfo();
+        // Extract the character value from the string literal
+        char charValue = 0;
+        if ($3 && $3->length() >= 3) {  // Format is 'c'
+            charValue = (*$3)[1];  // Get the character between quotes
+        }
+        if (charValue <= 0) {
+            yyerror("Array size must be a positive integer");
+        }
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->addArrayDimension(static_cast<int>(charValue));
+        delete $1;
+    }| direct_declarator LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */
+        // implicit conversion of char to int for array size
+        $$ = $1;
+        // Extract the character value from the string literal
+        char charValue = 0;
+        if ($3 && $3->length() >= 3) {  // Format is 'c'
+            charValue = (*$3)[1];  // Get the character between quotes
+        }
+        if (charValue <= 0) {
+            yyerror("Array size must be a positive integer");
+        }
+        $$->isArray = true;
+        $$->addArrayDimension(static_cast<int>(charValue)); // Support multidimensional arrays by adding each dimension
+    }
 
 fun_declarator
   	: pointer fun_direct_declarator {
@@ -508,6 +532,19 @@ fun_direct_declarator // Function declarator that captures parameter information
 		$$->name = *$1;
 		$$->isFunction = true;
 		$$->paramTypes = new vector<TypeInfo>(*$3);  // Copy parameter types
+		
+		// Set current function context for variable name mangling
+		current_function_name = $$->name;
+		// Generate the function signature for variables in this function
+		current_function_signature = "";
+		for (size_t i = 0; i < $$->paramTypes->size(); i++) {
+			TypeInfo& param = (*($$->paramTypes))[i];
+			current_function_signature += type_code_for_mangling(param);
+			if (i < $$->paramTypes->size() - 1) {
+				current_function_signature += "_";
+			}
+		}
+		
 		cout << "Function declarator: " << $$->name << " with " << $$->paramTypes->size() << " parameters\n";
 		delete $1;
 		delete $3;
@@ -517,6 +554,11 @@ fun_direct_declarator // Function declarator that captures parameter information
 		$$->name = *$1;
 		$$->isFunction = true;
 		$$->paramTypes = new vector<TypeInfo>();  // Empty parameter list
+		
+		// Set current function context for variable name mangling
+		current_function_name = $$->name;
+		current_function_signature = "";  // No parameters
+		
 		cout << "Function declarator: " << $$->name << " with no parameters\n";
 		delete $1;
 	}
@@ -1332,6 +1374,13 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
     entry.line = yylineno;
     entry.scope_level = current_scope_level;
     
+    // Generate mangled name using the format v_name_funname_signature_scopenum
+    // Use the current function context if available
+    entry.mangledName = mangle_variable_name(name, current_scope_level, 
+                                            current_function_name, current_function_signature);
+                                            
+    cout << "Variable " << name << " mangled as " << entry.mangledName << "\n";
+    
     // Type check initialization if present
     if (initType != nullptr) {
         if (!check_initialization_compatibility(type, *initType)) {
@@ -1407,10 +1456,11 @@ void displaySymbolTable() {
         
         cout << "+-----------------------------------------------------------------------------------------+\n";
         
-        // Display variables with their type information
+        // Display variables with their type information and mangled names
         for (const auto& entry : scope.symbols) {
             cout << "  - " << entry.second.name << " (" << entry.second.type.toString() 
-                 << ") declared at line " << entry.second.line << "\n";
+                 << ") declared at line " << entry.second.line
+                 << " [mangled: " << entry.second.mangledName << "]" << "\n";
         }
         cout << "+-----------------------------------------------------------------------------------------+\n";
     }
@@ -1953,23 +2003,54 @@ void type_warning(const string& message) {
 }
 
 
+// Utility function to convert a type to a mangling code
+string type_code_for_mangling(const TypeInfo& type) {
+    string code = "";
+    
+    // Add base type encoding
+    if (type.baseType == "int") code += "i";
+    else if (type.baseType == "char") code += "c";
+    else if (type.baseType == "float") code += "f";
+    else if (type.baseType == "void") code += "v";
+    else code += "u"; // unknown
+    
+    // Add pointer modifier
+    if (type.pointerLevel > 0) code += "p" + to_string(type.pointerLevel);
+    
+    return code;
+}
+
 // Function management implementation
 string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
     string mangledName = funcName;
     
     for (const TypeInfo& param : paramTypes) {
-        mangledName += "_";
-        
-        // Add base type encoding
-        if (param.baseType == "int") mangledName += "i";
-        else if (param.baseType == "char") mangledName += "c";
-        else if (param.baseType == "float") mangledName += "f";
-        else if (param.baseType == "void") mangledName += "v";
-        else mangledName += "u"; // unknown
-        
-        // Add pointer modifier
-        if (param.pointerLevel > 0) mangledName += "p" + to_string(param.pointerLevel);
+        mangledName += "_" + type_code_for_mangling(param);
     }
+    
+    return mangledName;
+}
+
+// Generate a mangled name for a variable using format: v_name_funname_signature_scopenum
+string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature) {
+    string mangledName = "v_" + varName;
+    
+    // Add function name if available (non-global variable)
+    if (!currentFuncName.empty()) {
+        mangledName += "_" + currentFuncName;
+        
+        // Add function signature if available
+        if (!funcSignature.empty()) {
+            mangledName += "_" + funcSignature;
+        }
+    }
+    
+    // Add scope level
+    mangledName += "_s" + to_string(scopeLevel);
+    
+    cout << "DEBUG: Variable " << varName << " mangled as " << mangledName 
+         << " (function: " << (currentFuncName.empty() ? "global" : currentFuncName) 
+         << ", signature: " << funcSignature << ", scope: " << scopeLevel << ")\n";
     
     return mangledName;
 }
