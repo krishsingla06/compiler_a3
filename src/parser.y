@@ -470,26 +470,26 @@ direct_declarator
         $$->name = *$1;
         $$->isArray = true;
         $$->addArrayDimension($3);
-        delete $1;
-    }| IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr['a'] */
-        // implicit conversion of char to int for array size
-        $$ = new DeclaratorInfo();
-        if( (int)$3 <= 0 ){
-            yyerror("Array size must be a positive integer");
-        }
-        $$->name = *$1;
-        $$->isArray = true;
-        $$->addArrayDimension((int)$3);
-        delete $1;
-    }| direct_declarator LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */
-        // implicit conversion of char to int for array size
-        $$ = $1;
-        if( (int)$3 <= 0 ){
-            yyerror("Array size must be a positive integer");
-        }
-        $$->isArray = true;
-        $$->addArrayDimension((int)$3); // Support multidimensional arrays by adding each dimension
-    }
+        delete $1;}
+    //     | IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr['a'] */
+    //     // implicit conversion of char to int for array size
+    //     $$ = new DeclaratorInfo();
+    //     if( (int)$3 <= 0 ){
+    //         yyerror("Array size must be a positive integer");
+    //     }
+    //     $$->name = *$1;
+    //     $$->isArray = true;
+    //     $$->addArrayDimension((int)$3);
+    //     delete $1;
+    // }| direct_declarator LBRACKET CHAR_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */
+    //     // implicit conversion of char to int for array size
+    //     $$ = $1;
+    //     if( (int)$3 <= 0 ){
+    //         yyerror("Array size must be a positive integer");
+    //     }
+    //     $$->isArray = true;
+    //     $$->addArrayDimension((int)$3); // Support multidimensional arrays by adding each dimension
+    // }
 
 fun_declarator
   	: pointer fun_direct_declarator {

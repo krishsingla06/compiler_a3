@@ -54,31 +54,50 @@ extern int yydebug;
     struct TypeInfo {
         bool isStatic;
         string baseType;        // int, char, float, void, struct_name, etc.
-        bool isPointer;
+        int pointerLevel;       // Number of pointer levels (e.g., 1 for *, 2 for **)
         bool isArray;
-        int arraySize;
+        vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
+        bool isLvalue;          // True if the expression is an lvalue, false for temporaries
         
         TypeInfo() : isStatic(false), baseType(""), 
-                     isPointer(false), isArray(false), 
-                     arraySize(0), identifier(""), isLiteral(false) {}
+                     pointerLevel(0), isArray(false), 
+                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
-                    baseType(other.baseType), isPointer(other.isPointer), 
-                    isArray(other.isArray), arraySize(other.arraySize),
-                    identifier(other.identifier), isLiteral(other.isLiteral) {}
+                    baseType(other.baseType), pointerLevel(other.pointerLevel), 
+                    isArray(other.isArray), arrayDimensions(other.arrayDimensions),
+                    identifier(other.identifier), isLiteral(other.isLiteral),
+                    isLvalue(other.isLvalue) {}
+        
+        // Calculate total array size (product of all dimensions)
+        int getTotalArraySize() const {
+            if (!isArray || arrayDimensions.empty()) return 0;
+            
+            int totalSize = 1;
+            for (int dim : arrayDimensions) {
+                totalSize *= dim;
+            }
+            return totalSize;
+        }
         
         string toString() const {
             string result = "";
             if (isStatic) result += "static ";
             result += baseType;
-            if( isPointer ) {
-                result+="*";
+            
+            // Add pointer asterisks
+            for (int i = 0; i < pointerLevel; i++) {
+                result += "*";
             }
+            
+            // Add array dimensions
             if (isArray) {
-                result += "[" + to_string(arraySize) + "]";
+                for (int dim : arrayDimensions) {
+                    result += "[" + to_string(dim) + "]";
+                }
             }
             return result;
         }
@@ -95,9 +114,9 @@ extern int yydebug;
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
         string name;            // variable/function name
-        bool isPointer;
+        int pointerLevel;       // Number of pointer levels (*, **, ***, etc.)
         bool isArray;
-        int arraySize;
+        vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
         
@@ -105,9 +124,20 @@ extern int yydebug;
         bool isFunction;        // True if this is a function declarator
         vector<TypeInfo>* paramTypes;  // Parameter types for functions
         
-        DeclaratorInfo() : name(""), isPointer(false), 
-                          isArray(false), initValue(""), initType(nullptr), arraySize(0),
+        DeclaratorInfo() : name(""), pointerLevel(0), 
+                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr),
                           isFunction(false), paramTypes(nullptr) {}
+                          
+        // Add a new array dimension (for multidimensional arrays)
+        void addArrayDimension(int size) {
+            isArray = true;
+            arrayDimensions.push_back(size);
+        }
+        
+        // Add a pointer level (for multi-level pointers)
+        void incrementPointerLevel() {
+            pointerLevel++;
+        }
     };
 
     // Symbol table entry structure
@@ -139,7 +169,7 @@ extern int yydebug;
         FunctionEntry() : line(0) {}
     };
 
-#line 143 "parser.tab.h"
+#line 173 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -219,7 +249,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 171 "parser.y"
+#line 202 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -231,7 +261,7 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
 
-#line 235 "parser.tab.h"
+#line 265 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
