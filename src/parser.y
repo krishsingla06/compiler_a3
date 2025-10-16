@@ -12,7 +12,7 @@ extern int yylineno;
 static ofstream error_log;
 static string error_log_filename;
 
-static void yyerror(const char* s) {
+void yyerror(const char* s) {
     string error_msg = "Parse error at line " + to_string(yylineno) + ": " + string(s);
     cerr << error_msg << "\n";
     
@@ -27,6 +27,186 @@ static void yyerror(const char* s) {
 
 %code requires {
     #include <bits/stdc++.h>
+    //#include "tac.h"
+    //---------------------------------
+
+
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
+#include <vector>
+using namespace std;
+
+class Type;
+
+static unsigned int instruction_id = 1;
+static unsigned int temp_var_id = 1;
+static unsigned int label_id = 1;
+const int MAX_CODE_SIZE = 1e6; // Maximum number of TAC instructions
+
+//##############################################################################
+//################################## TACOperand ######################################
+//##############################################################################
+
+enum TACOperandType {
+    TAC_OPERAND_TEMP_VAR,         // Temporary variables (e.g., t1, t2)
+    TAC_OPERAND_IDENTIFIER,       // User-defined variables
+    TAC_OPERAND_CONSTANT,         // Integer or float or string constants (e.g., 42, 3.14)
+    TAC_OPERAND_LABEL,            // Jump targets (e.g., L1, L2)
+    TAC_OPERAND_POINTER,          // Pointer (e.g., int*)
+    TAC_OPERAND_TYPE,            // Type (e.g., int, float)
+    TAC_OPERAND_EMPTY,           // Empty operand (used for NOP or no operation)
+    TAC_OPERAND_STRING,          // String literal (e.g., "Hello")
+};
+class TACOperand {
+public:
+    TACOperandType type; // Type of the operand (e.g., TEMP_VAR, IDENTIFIER, CONSTANT)
+    string value;        // Value of the operand (e.g., variable name, constant value)
+
+    TACOperand() : type(TACOperandType::TAC_OPERAND_EMPTY), value("") {}
+
+    TACOperand(TACOperandType type, string value);
+};
+
+extern unordered_map<string, TACOperand* > identifiers; // Map to store identifiers and their corresponding TAC operands
+
+TACOperand* new_temp_var();
+
+TACOperand* new_empty_var();
+
+TACOperand* new_label();
+
+TACOperand* new_label(int offset);
+
+TACOperand* new_constant(string value);
+
+TACOperand* new_identifier(string value);
+
+TACOperand* new_type(string value);
+
+TACOperand* new_string(string value);
+
+//##############################################################################
+//################################## TACOperator ######################################
+//##############################################################################
+
+enum TACOperatorType {
+    // Arithmetic Operators
+    TAC_OPERATOR_ADD = 0,        // + #codegen done (add)
+    TAC_OPERATOR_SUB,        // - #codegen done (sub)
+    TAC_OPERATOR_MUL,        // * #codegen done (mul)
+    TAC_OPERATOR_DIV,        // / #codegen done (div)
+    TAC_OPERATOR_MOD,        // % #codegen done (mod)
+    TAC_OPERATOR_UMINUS,     // Unary minus (-x) #codegen done (neg)
+
+    // Relational Operators
+    TAC_OPERATOR_EQ,         // ==
+    TAC_OPERATOR_NE,         // !=
+    TAC_OPERATOR_GT,         // >
+    TAC_OPERATOR_LT,         // <
+    TAC_OPERATOR_GE,         // >=
+    TAC_OPERATOR_LE,         // <=
+
+    // Logical Operators
+    TAC_OPERATOR_AND,        // && 
+    TAC_OPERATOR_OR,         // ||
+    TAC_OPERATOR_NOT,        // ! 
+
+    // Bitwise Operators
+    TAC_OPERATOR_BIT_AND,    // & #codegen done (and)
+    TAC_OPERATOR_BIT_OR,     // | #codegen done (or)
+    TAC_OPERATOR_BIT_XOR,    // ^ #codegen done (xor)
+    TAC_OPERATOR_LEFT_SHIFT, // << // #codegen done (sllv)
+    TAC_OPERATOR_RIGHT_SHIFT,// >> // #codegen done (srlv, srav)
+    TAC_OPERATOR_BIT_NOT,    // ~ // #codegen done (not)
+
+    // // Assignment Operators
+    TAC_OPERATOR_ASSIGN,     // = #codegen done (load)
+
+    // Pointer and Memory Operators
+    TAC_OPERATOR_ADDR_OF,    // & (Address-of) #codegen done (la)
+    TAC_OPERATOR_DEREF,      // * (Dereference) #codegen done (load)
+
+    // Casting Operators
+    TAC_OPERATOR_CAST,       // Type casting (e.g., (int)x) #codegen done (cast)
+
+    // Control Flow (Branching & Jumps)
+    TAC_OPERATOR_GOTO,       // goto label
+    TAC_OPERATOR_IF_GOTO,         // if (condition) goto label
+    TAC_OPERATOR_LABEL,      // Label definition
+
+    // Function and Procedure Handling
+    TAC_OPERATOR_CALL,       // Function call
+    TAC_OPERATOR_RETURN,     // return value
+    TAC_OPERATOR_PARAM,      // Function parameter passing
+    TAC_OPERATOR_FUNC_BEGIN, // Function prologue
+    TAC_OPERATOR_FUNC_END,   // Function epilogue
+
+    // Array and Indexing Operators
+    TAC_OPERATOR_INDEX,        // Array access: T = a[i]
+    TAC_OPERATOR_INDEX_ASSIGN, // Array assignment: a[i] = T
+
+    // Miscellaneous
+    TAC_OPERATOR_NOP         // No operation
+};
+
+class TACOperator {
+public:
+    TACOperatorType type; // Type of the operator (e.g., ADD, SUB, MUL)
+    // string value;        // Value of the operator (e.g., "+", "-", "*")
+    TACOperator(); // Default constructor
+    TACOperator(TACOperatorType type);
+};
+
+
+//##############################################################################
+//################################## TACInstruction ######################################
+//##############################################################################
+
+//ok - bass label mei mere acc TACOperand* ki jagah sirf int bhi rakh stke the, i am unable to understand for now why its datatype is TACOperand*
+class TACInstruction {
+public:
+    TACOperand* label; // Unique instruction label (instruction number)
+    int flag; // if 0, then it is a normal instruction, if 1 then it is a goto instruction, if 2 then it is an if goto instruction
+    TACOperator op; // Operator (e.g., ADD, SUB)
+    TACOperand* arg1; // First operand (e.g., t1, a, 5)
+    TACOperand* arg2; // Second operand (e.g., t2, b, 10)
+    TACOperand* result; // Result operand (e.g., t3, c)
+
+    // Default constructor
+    TACInstruction() : label(nullptr), flag(0), op(TACOperator()), arg1(nullptr), arg2(nullptr), result(nullptr) {}
+    TACInstruction(TACOperator op, TACOperand* result, TACOperand* arg1, TACOperand* arg2, int flag);
+};
+
+bool is_assignment(TACInstruction* instruction);
+
+extern vector<TACInstruction*> TAC_CODE; // Array of TAC instructions
+
+TACInstruction* emit(TACOperator op, TACOperand* result, TACOperand* arg1, TACOperand* arg2, int flag); // ok
+
+void backpatch(unordered_set<TACInstruction*> list, TACOperand* label);
+
+unordered_set<TACInstruction*> merge_lists(unordered_set<TACInstruction*>& list1, unordered_set<TACInstruction*>& list2);
+
+void print_TAC_instruction(TACInstruction* instruction);
+
+void print_TAC();
+
+int give_current_instruction_number();
+
+// void remove_dead_code();
+// const char* getOperatorName(TACOperatorType op);
+
+void fix_labels_temps();
+
+//##############################################################################
+//################################## PRINT TACInstruction ######################################
+//##############################################################################
+
+string get_operand_string(TACOperand* operand);
+
+
+//------------------------------------
     using namespace std;
     
     // Type information for semantic checking and 3-address code generation
@@ -39,6 +219,16 @@ static void yyerror(const char* s) {
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
         bool isLvalue;          // True if the expression is an lvalue, false for temporaries
+
+        TACOperand* result; // Result of the expression
+        unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
+        unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
+        unordered_set<TACInstruction*> next_list; // List of next instructions (for jumps) (conditional expressions)
+        unordered_set<TACInstruction*> jump_true_list; // List of true instructions (for conditional jumps) (conditional expressions)
+        unordered_set<TACInstruction*> jump_false_list; // List of false instructions (for conditional jumps) (conditional expressions)
+        unordered_set<TACInstruction*> jump_next_list; // List of break instructions (for loops)
+        vector<TACInstruction*> code; // List of instructions for the expression
+        vector<TACInstruction*> jump_code; // List of instructions for the expression if it is part of a jump/selection/iteration statement
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
@@ -61,24 +251,25 @@ static void yyerror(const char* s) {
             }
             return totalSize;
         }
+
         
         string toString() const {
-            string result = "";
-            if (isStatic) result += "static ";
-            result += baseType;
+            string res = "";
+            if (isStatic) res += "static ";
+            res += baseType;
             
             // Add pointer asterisks
             for (int i = 0; i < pointerLevel; i++) {
-                result += "*";
+                res += "*";
             }
             
             // Add array dimensions
             if (isArray) {
                 for (int dim : arrayDimensions) {
-                    result += "[" + to_string(dim) + "]";
+                    res += "[" + to_string(dim) + "]";
                 }
             }
-            return result;
+            return res;
         }
     };
 
@@ -179,7 +370,7 @@ static void yyerror(const char* s) {
     // Type checking and promotion functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
     bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
-    TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right);
+    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right);
     bool is_numeric_type(const string& type);
     bool is_integer_type(const string& type);
     bool is_lvalue(const TypeInfo& expr);
@@ -206,6 +397,55 @@ static void yyerror(const char* s) {
     bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params);
     void display_function_table();
     void insert_current_function_parameters();
+
+    string float_to_string_conversion(float value){
+        string s = "";
+        // Use stringstream for precise control over float to string conversion
+        stringstream ss;
+        ss << fixed << setprecision(6) << value; // Set precision to 6 decimal places
+        return ss.str();
+    }
+
+    string char_to_string_conversion(char value){
+        // Convert char to string representation
+        return string(1, value);
+    }
+
+    int getSize(TypeInfo t){
+        if(t.pointerLevel > 0){
+            return 4; // assuming 32-bit pointers
+        }
+        int base_size = 0;
+        if(t.baseType == "int"){
+            base_size = 4;
+        }
+        else if(t.baseType == "char"){
+            base_size = 1;
+        }
+        else if(t.baseType == "float"){
+            base_size = 8;
+        }
+        else if(t.baseType == "void"){
+            base_size = 0; // void has no size
+        }
+        else{
+            // For struct types, we can assume a fixed size or look up the struct definition
+            // Here, we'll assume a fixed size of 16 bytes for simplicity
+            base_size = 16; // Placeholder size for structs
+        }
+        // If it's an array, multiply by the total number of elements
+        if(t.isArray){
+            int total_elements = 1;
+            for(int dim : t.arrayDimensions){
+                total_elements *= dim;
+            }
+            return base_size * total_elements;
+        }
+        return base_size;
+    }
+
+
+    
 }
 
 /* Declare value types */
@@ -219,6 +459,7 @@ static void yyerror(const char* s) {
     vector<TypeInfo>* typelist; /* list of type information */
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
+    TACOperand* opinfo; /* TAC operand information */
 }
 
 
@@ -249,7 +490,7 @@ static void yyerror(const char* s) {
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
 %type<ival> pointer
-
+%type<ival> marker
 
 %type<strlist> declaration_list
 %type<sval> struct_specifier
@@ -281,6 +522,14 @@ static void yyerror(const char* s) {
 %type<sval> unary_operator
 %type<typelist> argument_expression_list
 %type<typelist> parameter_list
+
+%type<typeinfo> statement
+%type<typeinfo> compound_statement
+%type<typeinfo> statement_list
+%type<typeinfo> selection_statement
+%type<typeinfo> iteration_statement
+%type<typeinfo> jump_statement
+
 
 
 
@@ -716,6 +965,16 @@ primary_expression
             $$->isLiteral = false;
             $$->isLvalue = true;   // Variables are lvalues
             cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
+
+            $$->result = new_identifier(entry.mangledName);
+
+            //TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+            //TACInstruction* i2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___ 
+//
+            //$$->jump_code.push_back(i1);
+            //$$->jump_code.push_back(i2);
+            //$$->jump_true_list.insert(i1);
+            //$$->jump_false_list.insert(i2);
         } 
         // If not a variable, check if it might be a function
         else if (is_function_name(*$1)) {
@@ -725,6 +984,9 @@ primary_expression
             $$->isLiteral = false;
             $$->isLvalue = false;       // Function names are not lvalues
             cout << "Found function name: " << *$1 << "\n";
+
+            $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
+            // iske baad kuch nhi karna chahiye, 
         }
         // Otherwise, it's undefined
         else {
@@ -742,6 +1004,17 @@ primary_expression
         $$->isLiteral = true;
         $$->isLvalue = false;  // Literals are not lvalues
         cout << "Integer literal: " << $1 << " (type: int)\n";
+
+        $$->result = new_constant(to_string($1));
+
+        //TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* i2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //$$->jump_code.push_back(i1);
+        //$$->jump_code.push_back(i2);
+        //$$->jump_true_list.insert(i1);
+        //$$->jump_false_list.insert(i2);
+
+
     }
     | FLOAT_LITERAL { 
         $$ = new TypeInfo();
@@ -749,6 +1022,16 @@ primary_expression
         $$->isLiteral = true;
         $$->isLvalue = false;  // Literals are not lvalues
         cout << "Float literal: " << $1 << " (type: float)\n";
+
+        string floatStr = float_to_string_conversion($1);
+        $$->result = new_constant(floatStr);
+        //TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* i2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //$$->jump_code.push_back(i1);
+        //$$->jump_code.push_back(i2);
+        //$$->jump_true_list.insert(i1);
+        //$$->jump_false_list.insert(i2);
+
     }
     | CHAR_LITERAL { 
         $$ = new TypeInfo();
@@ -756,6 +1039,15 @@ primary_expression
         $$->isLiteral = true;
         $$->isLvalue = false;  // Literals are not lvalues
         cout << "Char literal: " << *$1 << " (type: char)\n";
+
+        string charStr = char_to_string_conversion((*$1)[1]); // Extract char from string literal format 'c'
+        $$->result = new_constant(charStr);
+        //TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* i2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //$$->jump_code.push_back(i1);
+        //$$->jump_code.push_back(i2);
+        //$$->jump_true_list.insert(i1);
+        //$$->jump_false_list.insert(i2);
         delete $1;
     }
     | STRING_LITERAL { 
@@ -764,6 +1056,16 @@ primary_expression
         $$->isLiteral = true;
         $$->isLvalue = false;  // Literals are not lvalues (even though string literals are somewhat special in C)
         cout << "String literal: " << *$1 << " (type: string)\n";
+
+        $$->result = new_string(*$1);
+        //TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* i2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //$$->jump_code.push_back(i1);
+        //$$->jump_code.push_back(i2);
+        //$$->jump_true_list.insert(i1);
+        //$$->jump_false_list.insert(i2);
+
+
         delete $1;
     }
 	| NULL_LITERAL { 
@@ -830,6 +1132,35 @@ postfix_expression
 			// Array subscript result is an lvalue if the base is an lvalue
 			$$->isLvalue = base->isLvalue;
 			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << $$->toString() << "\n";
+
+            int size_of_base = getSize(*base);
+            
+            TACOperand* offset = new_temp_var();
+            TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
+
+            // base address is &base->result
+
+            TACOperand* base_addr = new_temp_var();
+            TACInstruction* i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
+
+            TACOperand* address = new_temp_var();
+            TACInstruction* i2 = emit(TAC_OPERATOR_ADD, address, base_addr, offset,0);
+            $$->result = new_temp_var();
+            TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, $$->result, address, new_empty_var(),0);
+            $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
+            $$->code.insert($$->code.end(), index->code.begin(), index->code.end());
+            $$->code.push_back(i1);
+            $$->code.push_back(i_base);
+            $$->code.push_back(i2);
+            $$->code.push_back(i3);
+
+            //$$->jump_code = $$->code;
+            //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $$->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+            //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            //$$->jump_code.push_back(j1);
+            //$$->jump_code.push_back(j2);
+            //$$->jump_true_list.insert(j1);
+            //$$->jump_false_list.insert(j2);
 		}
 		delete $1; delete $3;
 	}
@@ -908,7 +1239,7 @@ postfix_expression
 		delete $1;
 	}
 	| postfix_expression DECREMENT {                                 /* e.g., x-- */
-		$$ = perform_unary_operation(*$1, "--");
+		$$ = perform_unary_operation(*$1, "--"); 
 		delete $1;
 	}
 	;
@@ -931,7 +1262,7 @@ argument_expression_list
 unary_expression
 	: postfix_expression { $$ = $1; }
 	| INCREMENT unary_expression { 
-		$$ = perform_unary_operation(*$2, "++");
+		$$ = perform_unary_operation(*$2, "++");    
 		delete $2;
 	}
 	| DECREMENT unary_expression { 
@@ -940,7 +1271,7 @@ unary_expression
 	}
 	| unary_operator cast_expression { 
 		$$ = perform_unary_operation(*$2, *$1);
-		delete $1; delete $2;
+        delete $2;
 	}
 	| SIZEOF unary_expression { 
 		$$ = new TypeInfo();
@@ -1049,6 +1380,7 @@ additive_expression
 	}
 	;
 
+// not done yet
 shift_expression
 	: additive_expression { $$ = $1; }                                             /* e.g., a */
 	| shift_expression LEFT_SHIFT additive_expression {                     /* e.g., a << b */
@@ -1132,25 +1464,131 @@ exclusive_or_expression
 inclusive_or_expression
 	: exclusive_or_expression { $$ = $1; }
 	| inclusive_or_expression BIT_OR exclusive_or_expression { 
-		$$ = perform_binary_operation(*$1, *$3, "|");
-		delete $1; delete $3;
-	}
-	;
+		
+        $$ = perform_binary_operation(*$1, *$3, "|");
+        delete $1; delete $3;
+    }
 
 logical_and_expression
 	: inclusive_or_expression { $$ = $1; }
-	| logical_and_expression LOGICAL_AND inclusive_or_expression { 
-		$$ = perform_binary_operation(*$1, *$3, "&&");
-		delete $1; delete $3;
-	}
-	;
+	| logical_and_expression LOGICAL_AND marker { 
+        int curr = $3;
+        TACOperand* true_label = new_label(2);
+        TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, $1->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        $1->code.push_back(if_true);
+        $1->code.push_back(goto_false);
+        $1->false_list.insert(goto_false);
+    } inclusive_or_expression { 
+		// Short-circuit logical AND
+        TypeInfo* left = $1;
+        TypeInfo* right = $5;
+        
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in logical AND operation");
+        }else{
+            // okay for all other types
+            $$ = new TypeInfo();
+            $$->baseType = "int"; // Result of logical operations is int
+            $$->isLiteral = false;
+            $$->isLvalue = false;
+            cout << "Logical AND: " << left->toString() << " && " << right->toString() << " -> int\n";
+
+            
+            $$->result = new_temp_var();
+            $$->code = left->code;
+            $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
+
+
+            TACOperand* true_label = new_label(2);
+            TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, right->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+            TACOperand* false_label = new_label(3);
+            TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), false_label, new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            TACInstruction* assign_true = emit(TACOperator(TAC_OPERATOR_NOP), $$->result, new_constant("1"), new_empty_var(),0); // result = 1
+            TACOperand* end_label = new_label(2);
+            TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), end_label, new_empty_var(), new_empty_var(), 1); // goto ___
+            TACInstruction* assign_false = emit(TACOperator(TAC_OPERATOR_NOP), $$->result, new_constant("0"), new_empty_var(),0); // result = 0
+            // backpatching
+            if (!left->false_list.empty()) {
+                backpatch(left->false_list, false_label);
+            }
+            if (!right->false_list.empty()) {
+                backpatch(right->false_list, false_label);
+            }
+            $$->code.push_back(if_true);
+            $$->code.push_back(goto_false);
+            $$->code.push_back(assign_true);
+            $$->code.push_back(goto_end);
+            $$->code.push_back(assign_false);
+
+            delete left;
+            delete right;
+
+        }
+    }
+
+marker
+    : /* empty */ {
+        // Store current instruction index for backpatching
+        $$ = give_current_instruction_number();
+    }
 
 logical_or_expression
 	: logical_and_expression { $$ = $1; }
-	| logical_or_expression LOGICAL_OR logical_and_expression { 
-		$$ = perform_binary_operation(*$1, *$3, "||");
-		delete $1; delete $3;
-	}
+	| logical_or_expression LOGICAL_OR marker{
+        TACInstruction* go_true = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $1->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        $1->code.push_back(go_true);
+        $1->true_list.insert(go_true);
+    } logical_and_expression { 
+		// short circuit
+        
+        TypeInfo* left = $1;
+        TypeInfo* right = $5;
+
+
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in bitwise OR operation");
+        }else{
+            // okay for all other types
+            $$ = new TypeInfo();
+            $$->baseType = "int"; // Result of bitwise operations is int
+            $$->isLiteral = false;
+            $$->isLvalue = false;
+            cout << "Bitwise OR: " << left->toString() << " | " << right->toString() << " -> int\n";
+            $$->result = new_temp_var();
+            $$->code = left->code;
+            $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
+            TACOperand* true_label = new_label(2);
+            TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, right->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+            TACOperand* false_label = new_label(3);
+            TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), false_label, new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            TACInstruction* assign_true = emit(TACOperator(TAC_OPERATOR_NOP), $$->result, new_constant("1"), new_empty_var(),0); // result = 1
+            TACOperand* end_label = new_label(2);
+            TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), end_label, new_empty_var(), new_empty_var(), 1); // goto ___
+            TACInstruction* assign_false = emit(TACOperator(TAC_OPERATOR_NOP), $$->result, new_constant("0"), new_empty_var(),0); // result = 0
+
+            //backpatching
+            if (!left->true_list.empty()) {
+                backpatch(left->true_list, true_label);
+            }
+            if (!right->true_list.empty()) {
+                backpatch(right->true_list, true_label);
+            }
+
+            $$->code.push_back(if_true);
+            $$->code.push_back(goto_false);
+            $$->code.push_back(assign_true);
+            $$->code.push_back(goto_end);
+            $$->code.push_back(assign_false);
+
+
+            delete left;
+            delete right;
+            
+        }
+    }
 	;
 
 conditional_expression
@@ -1207,10 +1645,6 @@ constant_expression
 		delete $1;
 	}
 	;
-
-
-
-
 
 // -------------------------------------------- Structs and Enums -----------------------------------------------------
 
@@ -1298,7 +1732,17 @@ statement_list
 
 expression_statement
 	: SEMICOLON                                                             /* e.g., ; (empty statement) */
-	| expression SEMICOLON                                                  /* e.g., x = 1; */
+	| expression SEMICOLON                                                  /* e.g., x = 1; */{
+        //print the code for the expression
+        cout<<"Hell!"<<"\n";
+        if($1) {
+            for (auto& instr : $1->code) {
+                print_TAC_instruction(instr);
+            }
+            delete $1;
+        }
+
+    }
 	;
 
 selection_statement
@@ -1324,6 +1768,8 @@ jump_statement
 	;
 
 %%
+
+
 
 void enter_scope() {
     current_scope_level++;
@@ -1495,16 +1941,6 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     return true;
 }
 
-TypeInfo* get_expression_type(const string& identifier) {
-    // Search for the identifier in the symbol table from current scope up
-    for (int i = scope_stack.size() - 1; i >= 0; i--) {
-        auto it = scope_stack[i].symbols.find(identifier);
-        if (it != scope_stack[i].symbols.end()) {
-            return &(it->second.type);
-        }
-    }
-    return nullptr; // Not found
-}
 
 bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
     // First check exact type match
@@ -1527,11 +1963,11 @@ bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo
 
 // Type checking and promotion functions implementation
 bool is_numeric_type(const string& type) {
-    return type == "int" || type == "float" || type == "char";
+    return type == "int" || type == "float";
 }
 
 bool is_integer_type(const string& type) {
-    return type == "int" || type == "char";
+    return type == "int";
 }
 
 bool is_lvalue(const TypeInfo& expr) {
@@ -1623,44 +2059,86 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     return false;
 }
 
-TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right) {
-    TypeInfo* result = new TypeInfo();
-    result->isLvalue = false;  // Result of type promotion is never an lvalue
+pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right) {
     
-    // If either is float, result is float
+    
+    TypeInfo* res = new TypeInfo();
+                
+    // If either is float, res is float
     if (left.baseType == "float" || right.baseType == "float") {
-        result->baseType = "float";
-        return result;
+        
+        // If left is not float, cast it to float
+        if (left.baseType != "float" && left.baseType != "error") {
+            TACOperand* left_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left_temp, right.result}}; 
+            // abhi sirf code mei hii push karte hai, jump code ki zroorat nhi, bcoz sirf type promotion hii hai
+        }
+        
+        // If right is not float, cast it to float
+        if (right.baseType != "float" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
     
-    // If either is int, result is int
-    if (left.baseType == "int" || right.baseType == "int") {
-        result->baseType = "int";
-        return result;
+    // If either is int, res is int
+    else if (left.baseType == "int" || right.baseType == "int") {
+        res->baseType = "int";
+        
+        // If left is char, cast it to int
+        if (left.baseType == "char") {
+            TACOperand* left_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left_temp, right.result}};
+        }
+
+        
+        // If right is char, cast it to int
+        if (right.baseType == "char") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
     
-    // Both char, result is int (C promotion rules)
-    if (left.baseType == "char" && right.baseType == "char") {
-        result->baseType = "int";
-        return result;
+    // Both char, res is int (C promotion rules)
+    else if (left.baseType == "char" && right.baseType == "char") {
+        res->baseType = "int";
+        TACOperand* left_temp = new_temp_var();
+        TACOperand* right_temp = new_temp_var();
+        
+        TACInstruction* castInstr1 = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
+        TACInstruction* castInstr2 = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+        res->code.push_back(castInstr1);
+        res->code.push_back(castInstr2);
+        return {res->code, {left_temp, right_temp}};
     }
-    
     // Default to left type
-    result->baseType = left.baseType;
-    return result;
+    else {
+        res->baseType = left.baseType;
+    }
+    
+    
+    return {res->code, {left.result, right.result}};
 }
 
 TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, const string& op) {
     // Check for errors
     if (left.baseType == "error" || right.baseType == "error") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     cout << "Binary operation: " << left.toString() << " " << op << " " << right.toString();
     
-    // Note: All binary operation results are rvalues (not lvalues)
+    // Note: All binary operation ress are rvalues (not lvalues)
     // Binary operations generate temporary values that cannot be assigned to
     
     // Addition and subtraction with pointer arithmetic
@@ -1668,73 +2146,280 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // Case 1: Both are numeric types (regular arithmetic)
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
-            TypeInfo* result = promote_types(left, right);
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (arithmetic)\n";
-            return result;
+            if(left.baseType == "float" && right.baseType == "float"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+                //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+                res->code.push_back(instr);
+                //res->jump_code.push_back(instr);
+                //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); ////if res->res //goto____
+                //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); ////goto____
+                //res->jump_code.push_back(j1);
+                //res->jump_code.push_back(j2);
+                //res->jump_true_list.insert(j1);
+                //res->jump_false_list.insert(j2);
+                return res;
+            }else if(left.baseType == "int" && right.baseType == "int"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "int";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+                //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+                res->code.push_back(instr);
+                //res->jump_code.push_back(instr);
+                //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); ////if res->res //goto____
+                //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); ////goto____
+                //res->jump_code.push_back(j1);
+                //res->jump_code.push_back(j2);
+                //res->jump_true_list.insert(j1);
+                //res->jump_false_list.insert(j2);
+                return res;
+            }else if(left.baseType == "float" && right.baseType == "int"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+                //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+                
+                // Cast right int to float
+                TACOperand* castRightOp = new_temp_var();
+                TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
+                res->code.push_back(castRightInstr);
+                //res->jump_code.push_back(castRightInstr);
+
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, castRightOp, 0);
+                res->code.push_back(instr);
+                //res->jump_code.push_back(instr);
+                //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); ////if res->res //goto____
+                //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); ////goto____
+                //res->jump_code.push_back(j1);
+                //res->jump_code.push_back(j2);
+                //res->jump_true_list.insert(j1);
+                //res->jump_false_list.insert(j2);
+                return res;
+            }else if(left.baseType == "int" && right.baseType == "float"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+                //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+                
+                // Cast left int to float
+                TACOperand* castLeftOp = new_temp_var();
+                TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
+                res->code.push_back(castLeftInstr);
+                //res->jump_code.push_back(castLeftInstr);
+
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, castLeftOp, right.result, 0);
+                res->code.push_back(instr);
+                //res->jump_code.push_back(instr);
+                //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //////if res->res //goto____
+                //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); ////goto____
+                //res->jump_code.push_back(j1);
+                //res->jump_code.push_back(j2);
+                //res->jump_true_list.insert(j1);
+                //res->jump_false_list.insert(j2);
+                return res;
+            }
+            
         }
         
         // Case 2: Pointer + integer or Array + integer (only for addition)
         if (op == "+" && ((left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType) && 
                         right.pointerLevel == 0 && !right.isArray)) { // Ensure right is a plain integer
-            TypeInfo* result = new TypeInfo(left);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(left);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, left.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(scaleInstr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); ////if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); ////goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+            return res;
         }
         
         // Case 3: Integer + pointer (commutative for addition)
         if (op == "+" && (is_integer_type(left.baseType) && left.pointerLevel == 0 && !left.isArray && 
                         (right.pointerLevel > 0 || right.isArray))) { // Ensure left is a plain integer
-            TypeInfo* result = new TypeInfo(right);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(right);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, left.result, new_identifier(to_string(_size)), 0);
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, right.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(scaleInstr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
         }
         
         // Case 4: Pointer - integer
         if (op == "-" && (left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType)) {
-            TypeInfo* result = new TypeInfo(left);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(left);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(scaleInstr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
         }
         
-        // Case 5: Pointer - pointer (results in integer representing distance)
+        // Case 5: Pointer - pointer (ress in integer representing distance)
         if (op == "-" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             if (left.baseType != right.baseType) {
                 type_error("Pointer subtraction requires pointers to same type");
-                TypeInfo* result = new TypeInfo();
-                result->baseType = "error";
-                return result;
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "error";
+                return res;
             }
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";  // ptrdiff_t is typically int
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer difference)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";  // ptrdiff_t is typically int
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer difference)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
         }
         
         // Case 6: Invalid pointer + pointer
         if (op == "+" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             type_error("Cannot add two pointers");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            result->isLvalue = false;
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            res->isLvalue = false;
+            return res;
         }
         
         // Invalid arithmetic operation
         type_error("Invalid operands for " + op + " operation");
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     // Multiplication, division, modulo (no pointer arithmetic allowed)
@@ -1742,22 +2427,128 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         if (!is_numeric_type(left.baseType) || !is_numeric_type(right.baseType) ||
             left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Arithmetic operation " + op + " requires numeric operands only");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Modulo only works on integers
         if (op == "%" && (left.baseType == "float" || right.baseType == "float")) {
             type_error("Modulo operation not allowed on floating-point types");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = promote_types(left, right);
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        
+        if(left.baseType == "float" && right.baseType == "float"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
+        }else if(left.baseType == "int" && right.baseType == "int"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
+        }else if(left.baseType == "float" && right.baseType == "int"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            
+            // Cast right int to float
+            TACOperand* castRightOp = new_temp_var();
+            TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
+            res->code.push_back(castRightInstr);
+            //res->jump_code.push_back(castRightInstr);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, left.result, castRightOp, 0);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
+        }else if(left.baseType == "int" && right.baseType == "float"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            
+            // Cast left int to float
+            TACOperand* castLeftOp = new_temp_var();
+            TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
+            res->code.push_back(castLeftInstr);
+            //res->jump_code.push_back(castLeftInstr);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, castLeftOp, right.result, 0);
+            res->code.push_back(instr);
+            //res->jump_code.push_back(instr);
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+            return res;
+        }
+        //res.isLvalue = false; // res is not an lvalue
+        //return res;
     }
     
     // Relational operations
@@ -1765,59 +2556,99 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // Allow comparison between numeric types
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) &&
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";  // In C, no bool type, so relational ops return int
-            result->isLvalue = false;  // Result is not an lvalue
-            cout << " -> " << result->toString() << " (numeric comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";  // In C, no bool type, so relational ops return int
+            res->isLvalue = false;  // res is not an lvalue
+            cout << " -> " << res->toString() << " (numeric comparison)\n";
+
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+            //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
+            res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
+            //res->jump_code.insert(res->jump_code.end(), temp.first.begin(), temp.first.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op;
+            if(op == "<") t_op = TACOperator(TAC_OPERATOR_LT);
+            else if(op == "<=") t_op = TACOperator(TAC_OPERATOR_LE);
+            else if(op == ">") t_op = TACOperator(TAC_OPERATOR_GT);
+            else if(op == ">=") t_op = TACOperator(TAC_OPERATOR_GE);
+            else if(op == "==") t_op = TACOperator(TAC_OPERATOR_EQ);
+            else if(op == "!=") t_op = TACOperator(TAC_OPERATOR_NE);
+            // if left relop right then 1 else 0
+            TACOperand* labelTrue = new_label(2);
+            TACOperand* labelFalse = new_label(4);
+            TACOperand* labelEnd = new_label(5);
+
+            TACInstruction* ifgoto = emit(t_op, labelTrue, temp.second.first, temp.second.second, 2);
+            TACInstruction* gotoo = emit(t_op, labelFalse, new_empty_var(), new_empty_var(), 1);
+            TACInstruction* assignTrue = emit(TACOperator(), resultOp, new_identifier("1"), new_empty_var(), 0);
+            TACInstruction* gotoEnd = emit(TACOperator(), labelEnd, new_empty_var(), new_empty_var(), 1);
+            TACInstruction* assignFalse = emit(TACOperator(), resultOp, new_identifier("0"), new_empty_var(), 0);
+            res->code.push_back(ifgoto);
+            res->code.push_back(gotoo);
+            res->code.push_back(assignTrue);
+            res->code.push_back(gotoEnd);
+            res->code.push_back(assignFalse);
+            //res->jump_code.push_back(ifgoto);
+            //res->jump_code.push_back(gotoo);
+            //res->jump_code.push_back(assignTrue);
+            //res->jump_code.push_back(gotoEnd);
+            //res->jump_code.push_back(assignFalse);
+//
+            //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+            //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+
+            return res;
         }
         
         // Allow pointer comparisons
         if ((left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             // For == and !=, allow comparing pointers of different types with warning
             if (left.baseType != right.baseType) {
-                if (op == "==" || op == "!=") {
-                    type_warning("Comparing pointers to different types");
-                } else {
-                    // For <, >, <=, >= comparisons, require same base type
-                    type_error("Relational comparison (<, >, <=, >=) between pointers to different types is not allowed");
-                    TypeInfo* result = new TypeInfo();
-                    result->baseType = "error";
-                    return result;
-                }
+                type_error("Relational comparison (<, >, <=, >=) between pointers to different types is not allowed");
+                    TypeInfo* res = new TypeInfo();
+                    res->baseType = "error";
+                    return res;
             }
             
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;  // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;  // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer comparison)\n";
+            return res;
         }
         
         // Allow comparison of pointer with NULL (void*)
         if ((left.pointerLevel > 0 || left.isArray) && 
             right.baseType == "void" && right.pointerLevel > 0) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;
-            cout << " -> " << result->toString() << " (pointer to NULL comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;
+            cout << " -> " << res->toString() << " (pointer to NULL comparison)\n";
+            return res;
         }
         
         // Also allow NULL to pointer comparison (reverse order)
         if (left.baseType == "void" && left.pointerLevel > 0 && 
             (right.pointerLevel > 0 || right.isArray)) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;
-            cout << " -> " << result->toString() << " (NULL to pointer comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;
+            cout << " -> " << res->toString() << " (NULL to pointer comparison)\n";
+            return res;
         }
         
         type_error("Relational operation on incompatible types");
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     // Bitwise operations (integers only, no pointers/arrays)
@@ -1825,50 +2656,93 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         if (!is_integer_type(left.baseType) || !is_integer_type(right.baseType) ||
             left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Bitwise operations require integer operands only");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "int";
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+        res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+        res->code.insert(res->code.end(), right.code.begin(), right.code.end());    
+        //res->jump_code.insert(res->jump_code.end(), left.code.begin(), left.code.end());
+        //res->jump_code.insert(res->jump_code.end(), right.code.begin(), right.code.end());
+        pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
+        res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
+        //res->jump_code.insert(res->jump_code.end(), temp.first.begin(), temp.first.end());
+        TACOperand* resultOp = new_temp_var();
+        res->result = resultOp;
+        TACOperator t_op = op == "&" ? TACOperator(TAC_OPERATOR_BIT_AND) : (op == "|" ? TACOperator(TAC_OPERATOR_BIT_OR) : TACOperator(TAC_OPERATOR_BIT_XOR));
+        TACInstruction* instr = emit(t_op, resultOp, temp.second.first, temp.second.second, 0);
+        res->code.push_back(instr);
+        //res->jump_code.push_back(instr);
+        //TACInstruction* j1 = emit(TACOperator(), new_empty_var(), res->result, new_empty_var(), 2); //if res->res //goto____
+        //TACInstruction* j2 = emit(TACOperator(), new_empty_var(), new_empty_var(), new_empty_var(), 1); //goto____
+        //res->jump_code.push_back(j1);
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+        return res;
     }
-    
+
+    /*
+    // hihi
     // Logical operations
     if (op == "&&" || op == "||") {
         // Check for void type which cannot be used in logical operations
         if (left.baseType == "void" || right.baseType == "void") {
             type_error("Void type cannot be used in logical operations");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // All other types can be converted to a truth value in C
         // This includes pointers, arrays, and all scalar types
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";  // Logical operations return int in C
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << " (boolean as int)\n";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "int";  // Logical operations return int in C
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << " (boolean as int)\n";
+        res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+        res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+        
+
+        // convert them to int first
+        TACOperand* leftInt = new_temp_var();
+        if(left.baseType != "int"){
+            TACInstruction* castLeft = emit(TACOperator(TAC_OPERATOR_CAST), leftInt, left.result, new_identifier("int"), 0);
+            res->code.push_back(castLeft);
+            res->jump_code.push_back(castLeft);
+        }else{
+            leftInt = left.result;
+        }
+
+        TACOperand* rightInt = new_temp_var();
+        if(right.baseType != "int"){
+            TACInstruction* castRight = emit(TACOperator(TAC_OPERATOR_CAST), rightInt, right.result, new_identifier("int"), 0);
+            res->code.push_back(castRight);
+            res->jump_code.push_back(castRight);
+        }else{
+            rightInt = right.result;
+        }
     }
+    */
     
     // Unknown operation
     type_error("Unknown binary operation: " + op);
-    TypeInfo* result = new TypeInfo();
-    result->baseType = "error";
-    return result;
+    TypeInfo* res = new TypeInfo();
+    res->baseType = "error";
+    return res;
 }
 
 TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     // Check for errors
     if (operand.baseType == "error") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     cout << "Unary operation: " << op << operand.toString();
@@ -1877,116 +2751,288 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     if (op == "+" || op == "-") {
         if (!is_numeric_type(operand.baseType)) {
             type_error("Unary arithmetic operation on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        // Promote char to int for arithmetic
-        if (result->baseType == "char") {
-            result->baseType = "int";
+        TypeInfo* res = new TypeInfo(operand);
+        res->code = operand.code; // Copy TAC code from operand
+        //res->jump_code = operand.code; // Copy TAC code from operand
+        //res->result = new_temp_var();
+
+        TACOperator tacop;
+
+        
+        if(op == "-") tacop.type = TAC_OPERATOR_UMINUS;
+
+
+        if (res->baseType == "char") {
+            res->baseType = "int";
+            TACOperand* temp = new_temp_var();
+            TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_CAST), temp, operand.result, new_type("int"),0);
+            TACOperand* temp2 = new_temp_var();
+            res->result = temp2;    
+            TACInstruction* i2 = emit(tacop, res->result, temp, new_empty_var(),0);
+
+            res->code.push_back(i1);
+            res->code.push_back(i2);
+            //res->jump_code.push_back(i1);
+            //res->jump_code.push_back(i2);
+            //
+//
+            //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+            //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
+        }else{
+            TACOperand* temp = new_temp_var();
+            res->result = temp;    
+            TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
+            res->code.push_back(i1);
+            //res->jump_code.push_back(i1);
+//
+            //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+            //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            //res->jump_code.push_back(j1);
+            //res->jump_code.push_back(j2);
+            //res->jump_true_list.insert(j1);
+            //res->jump_false_list.insert(j2);
         }
-        // Result of unary +/- is not an lvalue
-        result->isLvalue = false;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+
+        // res of unary +/- is not an lvalue
+        res->isLvalue = false;
+        cout << " -> " << res->toString() << "\n";
+        return res;
     }
     
     // Increment/decrement
     if (op == "++" || op == "--") {
         if (!is_numeric_type(operand.baseType)) {
             type_error("Increment/decrement operation on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Check if operand is an lvalue
         if (!operand.isLvalue) {
             type_error("Increment/decrement requires an lvalue operand");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        // Result is not an lvalue for postfix operations, but we handle both cases here
-        result->isLvalue = false;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->code = operand.code; // Copy TAC code from operand
+        //res->jump_code = operand.code; // Copy TAC code from operand
+        // res is not an lvalue for postfix operations, but we handle both cases here
+        res->isLvalue = false;
+        cout << " -> " << res->toString() << "\n";
+
+        TACOperator tacop;
+        if(op == "++") tacop.type = TAC_OPERATOR_ADD;
+        else tacop.type = TAC_OPERATOR_SUB;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;    
+        TACInstruction* i1 = emit(tacop, res->result, operand.result, new_constant("1"),0);
+        TACInstruction* i2 = emit(TACOperator(), operand.result, res->result, new_empty_var(),0); // Store back to the original variable
+        res->code.push_back(i1);
+        //res->jump_code.push_back(i1);
+        res->code.push_back(i2);
+        //res->jump_code.push_back(i2);
+        //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //res->jump_code.push_back(j1);
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+        return res;
     }
     
     // Logical NOT
     if (op == "!") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";  // Logical NOT returns int in C
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << " (boolean as int)\n";
-        return result;
+
+        // Check for void type which cannot be used in logical operations
+        if (operand.baseType == "void") {
+            type_error("Void type cannot be used in logical NOT operation");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
+        // if it is
+
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "int";  // Logical NOT returns int in C
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << " (boolean as int)\n";
+
+        TACOperand* temp = new_temp_var();
+        res->result = temp;    
+        TACOperand* firstgoto = new_label(2); 
+        TACOperand* secondgoto = new_label(4);
+        TACOperand* thirdgoto = new_label(5);
+        TACInstruction* i1 = emit(TACOperator(), firstgoto, operand.result, new_empty_var(), 2); // TAC -> if P->result goto curr+3
+        TACInstruction* i2 = emit(TACOperator(), secondgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto curr+2
+        TACInstruction* i3 = emit(TACOperator(), res->result, new_constant("1"), new_empty_var(),0); // TAC -> res = 1
+        TACInstruction* i4 = emit(TACOperator(), thirdgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto ____
+        TACInstruction* i5 = emit(TACOperator(), res->result, new_constant("0"), new_empty_var(),0); // TAC -> res = 0
+
+        res->code = operand.code;
+        //res->true_list = operand.false_list;
+        //res->false_list = operand.true_list;
+        res->code.push_back(i1);
+        res->code.push_back(i2);
+        res->code.push_back(i3);
+        res->code.push_back(i4);
+        res->code.push_back(i5);
+
+        //res->jump_code = operand.code;
+        //res->jump_true_list = operand.false_list;
+        //res->jump_false_list = operand.true_list;
+        //res->jump_code.push_back(i1);
+        //res->jump_code.push_back(i2);
+        //res->jump_code.push_back(i3);
+        //res->jump_code.push_back(i4);
+        //res->jump_code.push_back(i5);
+//
+        //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //res->jump_code.push_back(j1);    
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+
+        return res;
     }
     
     // Bitwise NOT
     if (op == "~") {
+
+        // if array or pointer then give error
+
+        if (operand.pointerLevel > 0 || operand.isArray) {
+            type_error("Bitwise NOT on pointer/array type is not allowed");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
         if (!is_numeric_type(operand.baseType)) {
             type_error("Bitwise NOT on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
+        // if float then also give error
+        if (operand.baseType == "float") {
+            type_error("Bitwise NOT on floating-point type is not allowed");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+        TACOperator tacop;
+        tacop.type = TAC_OPERATOR_BIT_NOT;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
+        res->code = operand.code;
+        res->code.push_back(i1);
+        //res->jump_code = operand.code;
+        //res->jump_code.push_back(i1);
+        //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //res->jump_code.push_back(j1);
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+
+        
+        return res;
     }
     
     // Address-of operator
     if (op == "&") {
         if (operand.isLiteral) {
             type_error("Cannot take address of literal");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Check if operand is an lvalue
         if (!operand.isLvalue) {
             type_error("Cannot take address of a temporary");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->pointerLevel++;
-        result->isLvalue = false; // Result of & operator is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->pointerLevel++;
+        res->isLvalue = false; // res of & operator is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+
+        res->code = operand.code;
+        res->jump_code = operand.code;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_ADDR_OF), res->result, operand.result, new_empty_var(),0);
+        res->code.push_back(i1);
+        //res->jump_code.push_back(i1);
+        //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //res->jump_code.push_back(j1);
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+
+        return res;
     }
     
     // Dereference operator
     if (op == "*") {
         if (operand.pointerLevel == 0) {
             type_error("Cannot dereference non-pointer type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->pointerLevel--;
-        // Result of dereference is an lvalue (you can assign to *p)
-        result->isLvalue = true;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->pointerLevel--;
+        // res of dereference is an lvalue (you can assign to *p)
+        res->isLvalue = true;
+        cout << " -> " << res->toString() << "\n";
+        res->code = operand.code;
+        res->jump_code = operand.code;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_DEREF), res->result, operand.result, new_empty_var(),0);
+        res->code.push_back(i1);
+        //res->jump_code.push_back(i1);
+        //TACInstruction* j1 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), res->result, new_empty_var(), 2); // TAC -> if P->result nop ___ goto ___
+        //TACInstruction* j2 = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        //res->jump_code.push_back(j1);
+        //res->jump_code.push_back(j2);
+        //res->jump_true_list.insert(j1);
+        //res->jump_false_list.insert(j2);
+        return res;
     }
     
     // Unknown operation
     type_error("Unknown unary operation: " + op);
-    TypeInfo* result = new TypeInfo();
-    result->baseType = "error";
-    return result;
+    TypeInfo* res = new TypeInfo();
+    res->baseType = "error";
+    return res;
 }
 
 void type_error(const string& message) {
@@ -2056,24 +3102,24 @@ string mangle_variable_name(const string& varName, int scopeLevel, const string&
 }
 
 TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
-    TypeInfo result = type;
-    if (result.isArray) {
+    TypeInfo res = type;
+    if (res.isArray) {
         // For multidimensional arrays, we only decay the first dimension
         // int[3][4][5] -> int(*)[4][5]
-        if (result.arrayDimensions.size() > 1) {
+        if (res.arrayDimensions.size() > 1) {
             // Create a pointer to the remaining array dimensions
-            vector<int> remainingDimensions(result.arrayDimensions.begin() + 1, result.arrayDimensions.end());
-            result.arrayDimensions = remainingDimensions;
-            result.pointerLevel += 1;
+            vector<int> remainingDimensions(res.arrayDimensions.begin() + 1, res.arrayDimensions.end());
+            res.arrayDimensions = remainingDimensions;
+            res.pointerLevel += 1;
         } else {
             // Simple case: array decays to pointer
-            result.isArray = false;
-            result.pointerLevel += 1;
-            result.arrayDimensions.clear();
+            res.isArray = false;
+            res.pointerLevel += 1;
+            res.arrayDimensions.clear();
         }
-        cout << "Array to pointer conversion: " << type.toString() << " -> " << result.toString() << "\n";
+        cout << "Array to pointer conversion: " << type.toString() << " -> " << res.toString() << "\n";
     }
-    return result;
+    return res;
 }
 
 void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes) {
