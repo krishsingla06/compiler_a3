@@ -5,7 +5,7 @@ parser.tab.c parser.tab.h: parser.y
 	bison -d parser.y
 
 lex.yy.c: lexer.l
-	flex lexer.l
+	flex -w lexer.l
 
-a.exe: parser.tab.c lex.yy.c
-	g++ -o parser parser.tab.c lex.yy.c -lfl
+a.exe: parser.tab.c lex.yy.c tac.cpp
+	g++ -w -o parser parser.tab.c lex.yy.c tac.cpp -lfl
