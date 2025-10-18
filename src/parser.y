@@ -1771,18 +1771,7 @@ iteration_statement
         $$->code = $4->code;
         $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
         TACOperand* curr_inst = new_label(0);
-        // print $7->code
-        cout<<"----------------before backpatching----------------\n";
-        for(TACInstruction* inst : $7->code){
-            print_TAC_instruction(inst);
-        }
-
         backpatch($7->next_list, curr_inst);
-        cout<<"----------------after backpatching----------------\n";
-        for(TACInstruction* inst : $$->code){
-            print_TAC_instruction(inst);
-        }
-        cout<<"----------------------------------------\n";
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $2, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
         $$->next_list.insert($4->false_list.begin(), $4->false_list.end());
@@ -1798,24 +1787,28 @@ iteration_statement
         $$->code = $4->code;
         $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
         // at the end of the loop body, add a goto to the beginning of the loop
+        TACOperand* curr_inst = new_label(0);
+        backpatch($7->next_list, curr_inst);
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $2, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
         // next_list of the loop statement is the true_list of the condition expression
         $$->next_list = $4->true_list;
         delete $4; delete $7;
     }
-	|  DO begin_marker statement WHILE LPAREN expression RPAREN SEMICOLON{
+	|  DO begin_marker statement {
+        TACOperand* curr_inst = new_label(0);
+        backpatch($3->next_list, curr_inst);
+    } WHILE LPAREN expression RPAREN SEMICOLON{
         $$ = new TypeInfo();
         $$->code = $3->code;
-        $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
-        // if E then goto___ -> begin_marker
-        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $6->result, new_empty_var(), 2);
+        $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $7->result, new_empty_var(), 2);
         $$->code.push_back(if_inst);
         TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_end);
-        $6->false_list.insert(goto_end);
+        $7->false_list.insert(goto_end);
         // next_list of the loop statement is the false_list of the condition expression
-        $$->next_list = $6->false_list;
+        $$->next_list = $7->false_list;
 
     }                  
 	| FOR LPAREN expression_statement begin_marker expression_statement RPAREN statement   /* e.g., for (init; cond; ) stmt */
