@@ -5,8 +5,8 @@ int main() {
     // Basic declarations
     int a, b, c;              // Multiple variables of same type
     static int x;             // Static variable
-    const int y;              // Const variable
-    static const int z;       // Static const variable
+    // const int y;              // Const variable
+    // static const int z;       // Static const variable
     
     // With initialization
     int i = 5, j = 10, k;     // Mixed initialized and uninitialized

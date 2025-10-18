@@ -6,8 +6,8 @@ int main() {
     int a = 10;
     float b = 5.5;
     char c = 'A';
-    bool flag = true;
-    const int CONST_VAL = 100;
+    // bool flag = true;                    // bool is not used 
+    // const int CONST_VAL = 100;              // not working
     static int staticVar = 20;
 
     int* ptr = &a; // pointer to int

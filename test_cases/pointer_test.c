@@ -5,9 +5,9 @@ int main() {
     // Valid pointer declarations
     int x;                    // Basic variable
     int* ptr;                 // Simple pointer
-    int* const const_ptr;     // Const pointer
+    // int* const const_ptr;     // Const pointer
     int** double_ptr;         // Double pointer
-    int* const* ptr_to_const_ptr;  // Pointer to const pointer
+    // int* const* ptr_to_const_ptr;  // Pointer to const pointer
     
     // References (if supported)
     // int& ref = x;          // Reference

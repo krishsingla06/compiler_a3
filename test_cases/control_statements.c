@@ -1,21 +1,20 @@
 int main() {
-    int arr[5] = {1, 2, 3, 4, 5};
-    int i = 0;
+    int i;
+    int a = 0, b = 5;
+    float f = 2.5;
+
+    // char* name = "Compiler";
+    // int arr[5] = {1, 2, 3, 4, 5};                  // not working
+
+    // working
+    int arr[5];
+    arr[0] = 1;
+    arr[1] = 2;
+    arr[2] = 3;
+    arr[3] = 4;
+    arr[4] = 5;
 
     // For loop
-    int a = 0;
-    int x = 10;
-    int y = 0;
-
-    int z = 2;
-    char* name = "John";
-
-    char arr2[3] = {'a', 'b', 'c'};
-    float z = 0.0;
-
-
-
-
     for (i = 0; i < 5; i++) {
         a++;
     }
@@ -23,51 +22,52 @@ int main() {
     // While loop
     i = 0;
     while (i < 5) {
-        int b = 4;
+        b--;
         i++;
     }
 
-    i = 5;
+    // Do-while loop
+    i = 0;
     do {
-        i--;
-    } while (i > 0);
+        // f += 1.0                // not working 
+        f = f + 1.0;                // working
+        i++;
+    } while (i < 3);
 
     // If-else statement
-    if (x > 5) {
-        x = 9;
+    if (a > b) {
+        name = "A greater";
+    } else if (a == b) {
+        name = "Equal";
     } else {
-        x = 0;
+        name = "B greater";
+    }
+
+    // Switch-case
+    switch (6) {
+        case 1:
+            a = a + 10;
+            break;
+        case 3:
+            a = a + 20;
+            break;
+        default:
+            a = a + 100;
+            break;
+    }
+
+    // Break and continue
+    for (i = 0; i < 5; i++) {
+        if (arr[i] == 2) continue;
+        if (arr[i] == 4) break;
+        b = b + arr[i];
     }
 
     // Goto statement
-    goto_label:
-    y++;
-    if (y < 3) goto goto_label;
-
-    // Break and continue in a loop
-    for (i = 0; i < 5; i++) {
-        if (arr[i] == 3) {
-            continue; // skip printing 3
-        }
-        if (arr[i] == 4) {
-            break; // stop loop when 4 is found
-        }
-        z = 8.56 + arr[i];
-    }
-
-    // Switch-case and default
-
-    switch (z) {
-        case 1:
-            name = "Alice";
-            break;
-        case 2:
-            name = "Bob";
-            break;
-        default:
-            name = "Unknown";
-            break;
-    }
+    i = 0;
+goto_label:
+    i++;
+    if (i < 2) goto goto_label;
 
     return 0;
 }

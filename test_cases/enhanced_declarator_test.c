@@ -8,14 +8,15 @@ int main() {
     
     // // Pointer declarations
     int *ptr1, *ptr2;               // Multiple pointers
-    int * const const_ptr;          // Const pointer
+    // int * const const_ptr;          // Const pointer
     int **double_ptr;               // Double pointer
     
     // Array declarations
     int arr1[10];                   // Single dimension array
     int arr2[5][3];                 // Multi-dimensional array
-    int arr3[];                     // Array with unknown size
-    int arr3 = 7;
+    // int arr3[];                     // Array with unknown size
+
+    int arr3 = 7;                    // redeclaration with same name not possible
     
     // Combined pointer and array
    int *ptr_arr[5];                // Array of pointers

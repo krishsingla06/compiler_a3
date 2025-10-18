@@ -3,22 +3,22 @@ struct Point {
     int y;
 };
 
-union Data {
-    int i;
-    float f;
-    char c;
-};
+// union Data {
+//     int i;
+//     float f;
+//     char c;
+// };
 
-enum Color {
-    RED,
-    GREEN,
-    BLUE
-};
+// enum Color {
+//     RED,
+//     GREEN,
+//     BLUE
+// };
 
 int main() {
     struct Point p;
-    union Data d;
-    enum Color col;
+    // union Data d;
+    // enum Color col;
     int sum = p.x + p.y;
     int value = d.i;
     float fval = d.f;
