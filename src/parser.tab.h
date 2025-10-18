@@ -248,6 +248,12 @@ string get_operand_string(TACOperand* operand);
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
         unordered_set<TACInstruction*> next_list; // List of next instructions (for jumps) (conditional expressions)
         vector<TACInstruction*> code; // List of instructions for the expression
+
+        unordered_set<TACInstruction*> break_list; // List of break instructions (for loops/switch)
+        unordered_set<TACInstruction*> continue_list; // List of continue instructions (for loops)
+        //vector<TACInstruction*> return_list; // List of return instructions (for functions)
+        // we will use it in future
+
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
@@ -359,7 +365,7 @@ string get_operand_string(TACOperand* operand);
         FunctionEntry() : line(0) {}
     };
 
-#line 363 "parser.tab.h"
+#line 369 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -439,7 +445,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 452 "parser.y"
+#line 458 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -452,7 +458,7 @@ union YYSTYPE
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
 
-#line 456 "parser.tab.h"
+#line 462 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

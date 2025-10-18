@@ -303,7 +303,7 @@ string get_TAC_instruction_string(TACInstruction* instruction) {
         result += "return " + get_operand_string(instruction->result);
     }
     else if(instruction->op.type == TAC_OPERATOR_FUNC_BEGIN) {
-        result += "function " + get_operand_string(instruction->result);
+        result += "function begin : " + get_operand_string(instruction->result);
     }
     else if (instruction->op.type == TAC_OPERATOR_FUNC_END) {
         result += "end function "+ get_operand_string(instruction->result);

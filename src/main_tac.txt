@@ -1,15 +1,49 @@
 --------------------------------
 Function main TAC code:
-3: v_x_main_s2 = 0
-4: v_y_main_s2 = 5
-5: v_ptr_main_s2 = v_arr_main_s2
-6: if v_x_main_s2   goto I8
-7: goto I15
-8: #t1 = v_y_main_s2 - 1
-9: v_y_main_s2 = #t1
+1: v_i_main_s2 = 0
+2: v_j_main_s2 = 0
+3: v_sum_main_s2 = 0
+4: v_product_main_s2 = 1
+5: if v_sum_main_s2 > 20 goto I7
+6: goto I9
+7: #t1 = 1
+8: goto I10
+9: #t1 = 0
 10: if #t1   goto I12
-11: goto I15
-12: #t2 = v_x_main_s2 + v_y_main_s2
-13: v_x_main_s2 = #t2
-14: goto I8
+11: goto I25
+12: if v_product_main_s2 > 50 goto I14
+13: goto I16
+14: #t2 = 1
+15: goto I17
+16: #t2 = 0
+17: if #t2   goto I19
+18: goto I22
+19: #t3 = v_sum_main_s2 + v_product_main_s2
+20: v_sum_main_s2 = #t3
+21: goto I24
+22: #t4 = v_sum_main_s2 - v_product_main_s2
+23: v_sum_main_s2 = #t4
+24: goto I37
+25: if v_product_main_s2 > 30 goto I27
+26: goto I29
+27: #t5 = 1
+28: goto I30
+29: #t5 = 0
+30: if #t5   goto I32
+31: goto I35
+32: #t6 = v_product_main_s2 / 2
+33: v_product_main_s2 = #t6
+34: goto I37
+35: #t7 = v_product_main_s2 * 2
+36: v_product_main_s2 = #t7
+37: if v_sum_main_s2 > 100 goto I39
+38: goto I41
+39: #t8 = 1
+40: goto I42
+41: #t8 = 0
+42: if #t8   goto I44
+43: goto I46
+44: v_sum_main_s2 = 100
+45: goto 
+46: v_sum_main_s2 = 0
 --------------------------------

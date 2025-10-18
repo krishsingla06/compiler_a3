@@ -166,9 +166,6 @@ void print_TAC();
 
 int give_current_instruction_number();
 
-// void remove_dead_code();
-// const char* getOperatorName(TACOperatorType op);
-
 void fix_labels_temps();
 
 //##############################################################################

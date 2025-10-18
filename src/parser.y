@@ -3,7 +3,7 @@
 #include<iomanip>
 using namespace std;
 
-/* Make sure yylex is visible as a C functi */
+/* Make sure yylex is visible as a C function */
 extern "C" int yylex(void);
 extern FILE* yyin;
 extern int yylineno;
@@ -227,6 +227,12 @@ string get_operand_string(TACOperand* operand);
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
         unordered_set<TACInstruction*> next_list; // List of next instructions (for jumps) (conditional expressions)
         vector<TACInstruction*> code; // List of instructions for the expression
+
+        unordered_set<TACInstruction*> break_list; // List of break instructions (for loops/switch)
+        unordered_set<TACInstruction*> continue_list; // List of continue instructions (for loops)
+        //vector<TACInstruction*> return_list; // List of return instructions (for functions)
+        // we will use it in future
+
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
@@ -535,24 +541,57 @@ string get_operand_string(TACOperand* operand);
 %type<opinfo> begin_marker
 
 %type <typeinfo> declaration
-
+%type <typeinfo> marker_fun_begin
+%type <typeinfo> function_definition
+%type <typeinfo> global_declaration
+%type <typeinfo> start
 
 
 %%
 start
-	: global_declaration                        /* e.g., int x; */ 
-	| start global_declaration                   /* e.g., int x; float y; */
+	: global_declaration                        /* e.g., int x; */ {
+        $$ = $1;
+        // here write code to print $1.code to the file directly with test case file name + ".tac"  
+        string tac_filename = "Final.tac";
+        ofstream tac_file(tac_filename);
+        if (!tac_file.is_open()) {
+            cerr << "Error: Unable to open file " << tac_filename << " for writing TAC code.\n";
+        } else {
+            for (TACInstruction* instr : $1->code) {
+                tac_file << get_TAC_instruction_string(instr) << "\n";
+            }
+            tac_file.close();
+        }
+        
+    }
+	| start global_declaration                   /* e.g., int x; float y; */{
+        // Append $2.code to $1.code
+        $$ = $1;
+        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+        delete $2;
+    }
     ;
 
 //---------------------------------------- Declarations --------------------------------------------------
 
 global_declaration
-	: function_definition                        
-	| declaration                                	
+	: function_definition    {
+        $$ = $1;
+    }                    
+	| declaration     {
+        $$ = new TypeInfo();
+        // kyunki global declaration ka koi 3AC generate nahi hota
+    }                           	
     ;
 
 function_definition
-	: return_types fun_declarator compound_statement {               /* e.g., int f() { ... } */
+	: return_types fun_declarator marker_fun_begin {
+        string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>());
+        TACOperand* func_label = new_identifier(mangled_name);
+        $3 = new TypeInfo();
+        TACInstruction* func_begin_instr = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), func_label, new_empty_var(), new_empty_var(), 0);
+        $3->code.push_back(func_begin_instr);
+    } compound_statement {               /* e.g., int f() { ... } */
 		// Register function definition
 		TypeInfo returnType = *$1;
 		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
@@ -561,33 +600,26 @@ function_definition
 			insert_function($2->name, returnType, *$2->paramTypes);
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
+
+        $$ = new TypeInfo();
+        $$ = $5;
+        // add $3.code in the beginning of $$->code
+        $$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
+
+        TACOperand* func_label = new_identifier(mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>()));
+        TACInstruction* func_end_instr = emit(TACOperator(TAC_OPERATOR_FUNC_END), func_label, new_empty_var(), new_empty_var(), 0);
+        $$->code.push_back(func_end_instr);
 		
 		// Reset the current function context after function definition completes
 		current_function_name = "";
 		current_function_signature = "";
 
-        //print compound statement code
-        // Open a file for TAC output
-        string tac_filename = $2->name + "_tac.txt";
-        ofstream tac_file(tac_filename);
-        
-        if (tac_file.is_open()) {
-            tac_file << "--------------------------------\n";
-            tac_file << "Function " << $2->name << " TAC code:\n";
-            for (TACInstruction* instr : $3->code) {
-            tac_file << get_TAC_instruction_string(instr) << "\n";
-            }
-            tac_file << "--------------------------------\n";
-            tac_file.close();
-            
-            cout << "TAC code for function " << $2->name << " written to " << tac_filename << endl;
-        } else {
-            cout << "Failed to open file for TAC output: " << tac_filename << endl;
-        }
+        // Write TAC code to file
+        string tac_filename = $2->name + ".tac";
         
         // Also print to console for debugging
         cout << "Function " << $2->name << " TAC code (also written to " << tac_filename << "):\n";
-        for (TACInstruction* instr : $3->code) {
+        for (TACInstruction* instr : $5->code) {
             print_TAC_instruction(instr);
         }
 		
@@ -598,6 +630,10 @@ function_definition
 	}
 	
 	;
+
+marker_fun_begin
+    : /* empty */ ;
+
 
 declaration
 	: return_types SEMICOLON { 
@@ -1688,6 +1724,9 @@ compound_statement
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
         $$->code.insert($$->code.end(), $4->code.begin(), $4->code.end());
         $$->next_list = $4->next_list;
+        $$->break_list = $4->break_list;
+        $$->continue_list = $4->continue_list;
+
         delete $3;
         delete $4;
         exit_scope(); 
@@ -1709,8 +1748,12 @@ statement_list
 	| statement_list marker statement                                               /* e.g., stmt; stmt; */{
         $$ = new TypeInfo();
         $$->code = $1->code;
+        $$->break_list = $1->break_list;
+        $$->continue_list = $1->continue_list;
         backpatch($1->next_list, $2);
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+        $$->break_list.insert($3->break_list.begin(), $3->break_list.end());
+        $$->continue_list.insert($3->continue_list.begin(), $3->continue_list.end());
         $$->next_list = $3->next_list;
         delete $1; delete $3;
     }
@@ -1721,12 +1764,16 @@ statement_list
 
 	;
 
+
+
 expression_statement
 	: SEMICOLON                                                             /* e.g., ; (empty statement) */
 	| expression SEMICOLON                                                  /* e.g., x = 1; */{
         $$ = $1;
     }
-	;
+;
+
+
 
 selection_statement
 	: if_expression                                 /* e.g., if (x) stmt */{
@@ -1749,6 +1796,8 @@ selection_statement
         $$ = $1;
         $$->code.insert($$->code.end(), $4->code.begin(), $4->code.end());
         $$->next_list.insert($4->next_list.begin(), $4->next_list.end());
+        $$->break_list.insert($4->break_list.begin(), $4->break_list.end());
+        $$->continue_list.insert($4->continue_list.begin(), $4->continue_list.end());
         delete $4;
     }
 	| SWITCH LPAREN expression RPAREN statement                              /* e.g., switch (x) { ... } */
@@ -1763,10 +1812,19 @@ if_expression
         $3->code.push_back(goto_inst);
         $3->false_list.insert(goto_inst);
     }  statement {
-        $$ = $3;
+        $$ = new TypeInfo();
+        $$->code = $3->code;
+        $$->true_list = $3->true_list;
+        $$->false_list = $3->false_list;
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
+        $$->break_list = $6->break_list;
+        $$->continue_list = $6->continue_list;
         TACOperand* curr_inst = new_label(0);
-        backpatch($6->next_list, curr_inst);
+        //ig iski zroorat nhi hai, double jumps hii ho rhe hai
+        // don't delete below commented line yet
+        // krish
+        //backpatch($6->next_list, curr_inst);
+        delete $3;
         delete $6;
     }
 
@@ -1791,11 +1849,22 @@ iteration_statement
         $$ = new TypeInfo();
         $$->code = $4->code;
         $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
-        TACOperand* curr_inst = new_label(0);
-        backpatch($7->next_list, curr_inst);
+        
+        // seems redundant 
+        //but dont delete for now
+        // krish
+        //backpatch($7->next_list, curr_inst);
+        //TACOperand* curr_inst = new_label(0);
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $2, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
+        $$->next_list = $7->next_list;
         $$->next_list.insert($4->false_list.begin(), $4->false_list.end());
+        $$->next_list.insert($7->break_list.begin(), $7->break_list.end());
+        if(! $7->continue_list.empty()) {
+            backpatch($7->continue_list, $2);
+        }else{
+            cout<<"continue list empty\n";
+        }
         delete $4; delete $7;
     }
 	| UNTIL begin_marker LPAREN expression {
@@ -1808,28 +1877,43 @@ iteration_statement
         $$->code = $4->code;
         $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
         // at the end of the loop body, add a goto to the beginning of the loop
-        TACOperand* curr_inst = new_label(0);
-        backpatch($7->next_list, curr_inst);
+        //TACOperand* curr_inst = new_label(0);
+        //seems redundant but dont delete for now
+        // krish
+        //backpatch($7->next_list, curr_inst);
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $2, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
         // next_list of the loop statement is the true_list of the condition expression
         $$->next_list = $4->true_list;
+        $$->next_list.insert($7->next_list.begin(), $7->next_list.end());
+        $$->next_list.insert($7->break_list.begin(), $7->break_list.end());
+        if(! $7->continue_list.empty()) {
+            backpatch($7->continue_list, $2);
+        }
         delete $4; delete $7;
     }
 	|  DO begin_marker statement {
         TACOperand* curr_inst = new_label(0);
-        backpatch($3->next_list, curr_inst);
-    } WHILE LPAREN expression RPAREN SEMICOLON{
+        // seemss redundant but dont delete for now
+        // krish
+        //backpatch($3->next_list, curr_inst);
+    } WHILE LPAREN marker expression RPAREN SEMICOLON{
         $$ = new TypeInfo();
         $$->code = $3->code;
-        $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
-        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $7->result, new_empty_var(), 2);
+        $$->code.insert($$->code.end(), $8->code.begin(), $8->code.end());
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $8->result, new_empty_var(), 2);
         $$->code.push_back(if_inst);
         TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_end);
-        $7->false_list.insert(goto_end);
+        $8->false_list.insert(goto_end);
         // next_list of the loop statement is the false_list of the condition expression
-        $$->next_list = $7->false_list;
+        $$->next_list = $8->false_list;
+        $$->next_list.insert($3->next_list.begin(), $3->next_list.end());
+        $$->next_list.insert($3->break_list.begin(), $3->break_list.end());
+
+        if(! $3->continue_list.empty()) {
+            backpatch($3->continue_list, $7);
+        }
 
     }                  
 	| FOR LPAREN expression_statement begin_marker expression_statement RPAREN statement   /* e.g., for (init; cond; ) stmt */
@@ -1845,8 +1929,20 @@ begin_marker
 
 jump_statement
 	: GOTO IDENTIFIER SEMICOLON                                              /* e.g., goto label; */
-	| CONTINUE SEMICOLON                                                     /* e.g., continue; */
-	| BREAK SEMICOLON                                                        /* e.g., break; */
+	| CONTINUE SEMICOLON                                                     /* e.g., continue; */{
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        $$->code.push_back(goto_inst);
+        $$->continue_list.insert(goto_inst);
+    }
+	| BREAK SEMICOLON                                                        /* e.g., break; */{
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        $$->code.push_back(goto_inst);
+        $$->break_list.insert(goto_inst);
+    }
 	| RETURN SEMICOLON                                                       /* e.g., return; */
 	| RETURN expression SEMICOLON                                            /* e.g., return x; */
 	;
