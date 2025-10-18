@@ -264,6 +264,76 @@ void print_TAC_instruction(TACInstruction* instruction) {
     cout << endl;
 }
 
+string get_TAC_instruction_string(TACInstruction* instruction) {
+    // Similar to print_TAC_instruction but returns a string instead of printing
+    string result;
+    if(instruction->label->type == TAC_OPERAND_LABEL) result += instruction->label->value + ": "; // Print the label of the instruction
+    // **Jump Instructions**
+    if (instruction->flag == 1) {
+        result += "goto " + get_operand_string(instruction->result); // may need to change depending on emit call
+    }
+    else if (instruction->flag == 2) {  // may need to change depending on emit call
+        result += "if " + get_operand_string(instruction->arg1) + " "
+            + get_operator_string(instruction->op.type) + " "
+            + get_operand_string(instruction->arg2) + " goto "
+            + get_operand_string(instruction->result);
+    }
+    // **Function Instructions**
+    else if(instruction->op.type == TAC_OPERATOR_CAST) {
+        result += get_operand_string(instruction->result) + " = "
+                + "(" + get_operand_string(instruction->arg1) + ")"
+                + get_operand_string(instruction->arg2) ;
+    }
+    else if (instruction->op.type == TAC_OPERATOR_PARAM) {
+        result += "param " + get_operand_string(instruction->result);
+    }
+    else if (instruction->op.type == TAC_OPERATOR_CALL) {
+        if (instruction->result->value == "") {
+            // If the result is empty, it means it's a void function call
+            result += "call " + get_operand_string(instruction->arg1) + ", "
+                + get_operand_string(instruction->arg2);
+        }
+        else {
+            result += get_operand_string(instruction->result) + " = call "
+                + get_operand_string(instruction->arg1) + ", "
+                + get_operand_string(instruction->arg2);
+        }
+    }
+    else if (instruction->op.type == TAC_OPERATOR_RETURN) { // MAY NEED TO CHANGE
+        result += "return " + get_operand_string(instruction->result);
+    }
+    else if(instruction->op.type == TAC_OPERATOR_FUNC_BEGIN) {
+        result += "function " + get_operand_string(instruction->result);
+    }
+    else if (instruction->op.type == TAC_OPERATOR_FUNC_END) {
+        result += "end function "+ get_operand_string(instruction->result);
+    }
+
+    // **Assignment Cases**
+    else if (is_assignment(instruction)) {
+        if (instruction->arg2->type != TAC_OPERAND_EMPTY) {
+            // Binary operation: `x = y op z`
+            result += get_operand_string(instruction->result) + " = "
+                + get_operand_string(instruction->arg1) + " "
+                + get_operator_string(instruction->op.type) + " "
+                + get_operand_string(instruction->arg2);
+        }
+        else if (instruction->op.type != TAC_OPERATOR_NOP) {
+            // Unary operation: `x = op y`
+            result += get_operand_string(instruction->result) + " = "
+                + get_operator_string(instruction->op.type) + " "
+                + get_operand_string(instruction->arg1);
+        }
+        else {
+            // Simple assignment: `x = y`
+            result += get_operand_string(instruction->result) + " = "
+                + get_operand_string(instruction->arg1);
+        }
+    }
+    else result += "Nothing to print";
+    return result;
+}
+
 //ok
 void print_TAC() {
     cout << "===== Three-Address Code (TAC) =====" << endl;

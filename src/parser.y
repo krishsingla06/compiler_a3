@@ -3,7 +3,7 @@
 #include<iomanip>
 using namespace std;
 
-/* Make sure yylex is visible as a C function */
+/* Make sure yylex is visible as a C functi */
 extern "C" int yylex(void);
 extern FILE* yyin;
 extern int yylineno;
@@ -189,6 +189,8 @@ void backpatch(unordered_set<TACInstruction*> list, TACOperand* label);
 unordered_set<TACInstruction*> merge_lists(unordered_set<TACInstruction*>& list1, unordered_set<TACInstruction*>& list2);
 
 void print_TAC_instruction(TACInstruction* instruction);
+
+string get_TAC_instruction_string(TACInstruction* instruction); 
 
 void print_TAC();
 
@@ -565,12 +567,29 @@ function_definition
 		current_function_signature = "";
 
         //print compound statement code
-        cout<<"--------------------------------\n";
-        cout << "Function " << $2->name << " TAC code:\n";
+        // Open a file for TAC output
+        string tac_filename = $2->name + "_tac.txt";
+        ofstream tac_file(tac_filename);
+        
+        if (tac_file.is_open()) {
+            tac_file << "--------------------------------\n";
+            tac_file << "Function " << $2->name << " TAC code:\n";
+            for (TACInstruction* instr : $3->code) {
+            tac_file << get_TAC_instruction_string(instr) << "\n";
+            }
+            tac_file << "--------------------------------\n";
+            tac_file.close();
+            
+            cout << "TAC code for function " << $2->name << " written to " << tac_filename << endl;
+        } else {
+            cout << "Failed to open file for TAC output: " << tac_filename << endl;
+        }
+        
+        // Also print to console for debugging
+        cout << "Function " << $2->name << " TAC code (also written to " << tac_filename << "):\n";
         for (TACInstruction* instr : $3->code) {
             print_TAC_instruction(instr);
         }
-        cout<<"--------------------------------\n";
 		
 		// Clean up
 		if ($2->paramTypes) delete $2->paramTypes;
@@ -615,12 +634,7 @@ declaration
                     // now assign promo.second.second to declInfo->name
                     TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
                     $$->code.push_back(assignInstr);
-                    // print the code for debugging
-                    cout<<"hihi\n";
-                    cout << "Initialization code for variable '" << declInfo->name << "':\n";
-                    for (TACInstruction* instr : $$->code) {
-                        print_TAC_instruction(instr);
-                    }
+
                 }
 			}
 

@@ -160,6 +160,7 @@ void backpatch(unordered_set<TACInstruction*> list, TACOperand* label);
 unordered_set<TACInstruction*> merge_lists(unordered_set<TACInstruction*>& list1, unordered_set<TACInstruction*>& list2);
 
 void print_TAC_instruction(TACInstruction* instruction);
+string get_TAC_instruction_string(TACInstruction* instruction);
 
 void print_TAC();
 

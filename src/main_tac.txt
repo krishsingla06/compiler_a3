@@ -1,0 +1,15 @@
+--------------------------------
+Function main TAC code:
+3: v_x_main_s2 = 0
+4: v_y_main_s2 = 5
+5: v_ptr_main_s2 = v_arr_main_s2
+6: if v_x_main_s2   goto I8
+7: goto I15
+8: #t1 = v_y_main_s2 - 1
+9: v_y_main_s2 = #t1
+10: if #t1   goto I12
+11: goto I15
+12: #t2 = v_x_main_s2 + v_y_main_s2
+13: v_x_main_s2 = #t2
+14: goto I8
+--------------------------------

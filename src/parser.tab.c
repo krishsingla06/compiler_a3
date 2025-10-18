@@ -73,7 +73,7 @@
 #include<iomanip>
 using namespace std;
 
-/* Make sure yylex is visible as a C function */
+/* Make sure yylex is visible as a C functi */
 extern "C" int yylex(void);
 extern FILE* yyin;
 extern int yylineno;
@@ -82,7 +82,7 @@ extern int yylineno;
 static ofstream error_log;
 static string error_log_filename;
 
-static void yyerror(const char* s) {
+void yyerror(const char* s) {
     string error_msg = "Parse error at line " + to_string(yylineno) + ": " + string(s);
     cerr << error_msg << "\n";
     
@@ -203,55 +203,64 @@ enum yysymbol_kind_t
   YYSYMBOL_fun_direct_declarator = 78,     /* fun_direct_declarator  */
   YYSYMBOL_declaration_list = 79,          /* declaration_list  */
   YYSYMBOL_initializer = 80,               /* initializer  */
-  YYSYMBOL_initializer_list = 81,          /* initializer_list  */
-  YYSYMBOL_parameter_list = 82,            /* parameter_list  */
-  YYSYMBOL_parameter_declaration = 83,     /* parameter_declaration  */
-  YYSYMBOL_parameter_declarator = 84,      /* parameter_declarator  */
-  YYSYMBOL_parameter_direct_declarator = 85, /* parameter_direct_declarator  */
-  YYSYMBOL_primary_expression = 86,        /* primary_expression  */
-  YYSYMBOL_postfix_expression = 87,        /* postfix_expression  */
-  YYSYMBOL_argument_expression_list = 88,  /* argument_expression_list  */
-  YYSYMBOL_unary_expression = 89,          /* unary_expression  */
-  YYSYMBOL_unary_operator = 90,            /* unary_operator  */
-  YYSYMBOL_cast_expression = 91,           /* cast_expression  */
-  YYSYMBOL_multiplicative_expression = 92, /* multiplicative_expression  */
-  YYSYMBOL_additive_expression = 93,       /* additive_expression  */
-  YYSYMBOL_shift_expression = 94,          /* shift_expression  */
-  YYSYMBOL_relational_expression = 95,     /* relational_expression  */
-  YYSYMBOL_equality_expression = 96,       /* equality_expression  */
-  YYSYMBOL_and_expression = 97,            /* and_expression  */
-  YYSYMBOL_exclusive_or_expression = 98,   /* exclusive_or_expression  */
-  YYSYMBOL_inclusive_or_expression = 99,   /* inclusive_or_expression  */
-  YYSYMBOL_logical_and_expression = 100,   /* logical_and_expression  */
+  YYSYMBOL_parameter_list = 81,            /* parameter_list  */
+  YYSYMBOL_parameter_declaration = 82,     /* parameter_declaration  */
+  YYSYMBOL_parameter_declarator = 83,      /* parameter_declarator  */
+  YYSYMBOL_parameter_direct_declarator = 84, /* parameter_direct_declarator  */
+  YYSYMBOL_primary_expression = 85,        /* primary_expression  */
+  YYSYMBOL_postfix_expression = 86,        /* postfix_expression  */
+  YYSYMBOL_argument_expression_list = 87,  /* argument_expression_list  */
+  YYSYMBOL_unary_expression = 88,          /* unary_expression  */
+  YYSYMBOL_unary_operator = 89,            /* unary_operator  */
+  YYSYMBOL_cast_expression = 90,           /* cast_expression  */
+  YYSYMBOL_multiplicative_expression = 91, /* multiplicative_expression  */
+  YYSYMBOL_additive_expression = 92,       /* additive_expression  */
+  YYSYMBOL_shift_expression = 93,          /* shift_expression  */
+  YYSYMBOL_relational_expression = 94,     /* relational_expression  */
+  YYSYMBOL_equality_expression = 95,       /* equality_expression  */
+  YYSYMBOL_and_expression = 96,            /* and_expression  */
+  YYSYMBOL_exclusive_or_expression = 97,   /* exclusive_or_expression  */
+  YYSYMBOL_inclusive_or_expression = 98,   /* inclusive_or_expression  */
+  YYSYMBOL_logical_and_expression = 99,    /* logical_and_expression  */
+  YYSYMBOL_100_1 = 100,                    /* $@1  */
   YYSYMBOL_logical_or_expression = 101,    /* logical_or_expression  */
-  YYSYMBOL_conditional_expression = 102,   /* conditional_expression  */
-  YYSYMBOL_assignment_expression = 103,    /* assignment_expression  */
-  YYSYMBOL_assignment_operator = 104,      /* assignment_operator  */
-  YYSYMBOL_expression = 105,               /* expression  */
-  YYSYMBOL_constant_expression = 106,      /* constant_expression  */
-  YYSYMBOL_struct_specifier = 107,         /* struct_specifier  */
-  YYSYMBOL_struct = 108,                   /* struct  */
-  YYSYMBOL_struct_declaration_list = 109,  /* struct_declaration_list  */
-  YYSYMBOL_struct_declaration = 110,       /* struct_declaration  */
-  YYSYMBOL_struct_declarator_list = 111,   /* struct_declarator_list  */
-  YYSYMBOL_struct_declarator = 112,        /* struct_declarator  */
-  YYSYMBOL_pointer = 113,                  /* pointer  */
-  YYSYMBOL_statement = 114,                /* statement  */
-  YYSYMBOL_labeled_statement = 115,        /* labeled_statement  */
-  YYSYMBOL_compound_statement = 116,       /* compound_statement  */
-  YYSYMBOL_117_1 = 117,                    /* $@1  */
-  YYSYMBOL_statement_list = 118,           /* statement_list  */
-  YYSYMBOL_expression_statement = 119,     /* expression_statement  */
-  YYSYMBOL_selection_statement = 120,      /* selection_statement  */
-  YYSYMBOL_iteration_statement = 121,      /* iteration_statement  */
-  YYSYMBOL_jump_statement = 122            /* jump_statement  */
+  YYSYMBOL_102_2 = 102,                    /* $@2  */
+  YYSYMBOL_conditional_expression = 103,   /* conditional_expression  */
+  YYSYMBOL_assignment_expression = 104,    /* assignment_expression  */
+  YYSYMBOL_assignment_operator = 105,      /* assignment_operator  */
+  YYSYMBOL_expression = 106,               /* expression  */
+  YYSYMBOL_constant_expression = 107,      /* constant_expression  */
+  YYSYMBOL_struct_specifier = 108,         /* struct_specifier  */
+  YYSYMBOL_struct = 109,                   /* struct  */
+  YYSYMBOL_struct_declaration_list = 110,  /* struct_declaration_list  */
+  YYSYMBOL_struct_declaration = 111,       /* struct_declaration  */
+  YYSYMBOL_struct_declarator_list = 112,   /* struct_declarator_list  */
+  YYSYMBOL_struct_declarator = 113,        /* struct_declarator  */
+  YYSYMBOL_pointer = 114,                  /* pointer  */
+  YYSYMBOL_statement = 115,                /* statement  */
+  YYSYMBOL_labeled_statement = 116,        /* labeled_statement  */
+  YYSYMBOL_compound_statement = 117,       /* compound_statement  */
+  YYSYMBOL_118_3 = 118,                    /* $@3  */
+  YYSYMBOL_marker = 119,                   /* marker  */
+  YYSYMBOL_statement_list = 120,           /* statement_list  */
+  YYSYMBOL_expression_statement = 121,     /* expression_statement  */
+  YYSYMBOL_selection_statement = 122,      /* selection_statement  */
+  YYSYMBOL_123_4 = 123,                    /* $@4  */
+  YYSYMBOL_if_expression = 124,            /* if_expression  */
+  YYSYMBOL_125_5 = 125,                    /* $@5  */
+  YYSYMBOL_iteration_statement = 126,      /* iteration_statement  */
+  YYSYMBOL_127_6 = 127,                    /* $@6  */
+  YYSYMBOL_128_7 = 128,                    /* $@7  */
+  YYSYMBOL_129_8 = 129,                    /* $@8  */
+  YYSYMBOL_begin_marker = 130,             /* begin_marker  */
+  YYSYMBOL_jump_statement = 131            /* jump_statement  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
 
 
 /* Unqualified %code blocks.  */
-#line 152 "parser.y"
+#line 342 "parser.y"
 
     // Stack of scope contexts for different scopes
     vector<ScopeContext> scope_stack;
@@ -262,6 +271,10 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
     
     // Current function parameter information (for proper scoping)
     vector<pair<string, TypeInfo>> current_function_parameters;
+    
+    // Current function context for variable name mangling
+    string current_function_name = "";
+    string current_function_signature = "";
 
     // Function declarations for scope management
     void enter_scope();
@@ -271,10 +284,15 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
     
+    // Variable name mangling function
+    string mangle_variable_name(const string& varName, int scopeLevel, const string& functionName = "", const string& signature = "");
+    
     // Type checking and promotion functions
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
     bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
-    TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right);
+    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right);
+    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& from, const TypeInfo& to);
+
     bool is_numeric_type(const string& type);
     bool is_integer_type(const string& type);
     bool is_lvalue(const TypeInfo& expr);
@@ -291,7 +309,9 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
     void log_error(const string& message);
     
     // Function management functions
+    string type_code_for_mangling(const TypeInfo& type);
     string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes);
+    string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature);
     TypeInfo array_to_pointer_conversion(const TypeInfo& type);
     void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
     FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
@@ -300,7 +320,56 @@ typedef enum yysymbol_kind_t yysymbol_kind_t;
     void display_function_table();
     void insert_current_function_parameters();
 
-#line 304 "parser.tab.c"
+    string float_to_string_conversion(float value){
+        string s = "";
+        // Use stringstream for precise control over float to string conversion
+        stringstream ss;
+        ss << fixed << setprecision(6) << value; // Set precision to 6 decimal places
+        return ss.str();
+    }
+
+    string char_to_string_conversion(char value){
+        // Convert char to string representation
+        return string(1, value);
+    }
+
+    int getSize(TypeInfo t){
+        if(t.pointerLevel > 0){
+            return 4; // assuming 32-bit pointers
+        }
+        int base_size = 0;
+        if(t.baseType == "int"){
+            base_size = 4;
+        }
+        else if(t.baseType == "char"){
+            base_size = 1;
+        }
+        else if(t.baseType == "float"){
+            base_size = 8;
+        }
+        else if(t.baseType == "void"){
+            base_size = 0; // void has no size
+        }
+        else{
+            // For struct types, we can assume a fixed size or look up the struct definition
+            // Here, we'll assume a fixed size of 16 bytes for simplicity
+            base_size = 16; // Placeholder size for structs
+        }
+        // If it's an array, multiply by the total number of elements
+        if(t.isArray){
+            int total_elements = 1;
+            for(int dim : t.arrayDimensions){
+                total_elements *= dim;
+            }
+            return base_size * total_elements;
+        }
+        return base_size;
+    }
+
+
+    
+
+#line 373 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -623,16 +692,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  17
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   717
+#define YYLAST   580
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  64
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  59
+#define YYNNTS  68
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  152
+#define YYNRULES  160
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  267
+#define YYNSTATES  277
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   318
@@ -687,22 +756,23 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   280,   280,   281,   287,   288,   292,   330,   331,   369,
-     373,   374,   381,   385,   389,   393,   397,   406,   409,   418,
-     422,   430,   431,   440,   445,   452,   457,   465,   495,   499,
-     506,   515,   528,   529,   530,   539,   540,   545,   553,   564,
-     588,   593,   601,   620,   625,   632,   667,   697,   704,   711,
-     719,   727,   735,   742,   743,   794,   819,   854,   859,   864,
-     868,   875,   881,   890,   891,   895,   899,   903,   910,   920,
-     921,   922,   923,   924,   925,   929,   930,   983,   984,   988,
-     992,   999,  1000,  1004,  1011,  1012,  1026,  1043,  1044,  1048,
-    1052,  1056,  1063,  1064,  1068,  1075,  1076,  1083,  1084,  1091,
-    1092,  1099,  1100,  1107,  1108,  1115,  1119,  1120,  1148,  1152,
-    1153,  1161,  1176,  1180,  1187,  1191,  1192,  1197,  1201,  1202,
-    1206,  1213,  1216,  1225,  1226,  1227,  1228,  1229,  1230,  1231,
-    1239,  1240,  1241,  1248,  1248,  1252,  1253,  1254,  1258,  1259,
-    1263,  1264,  1265,  1269,  1270,  1271,  1272,  1273,  1277,  1278,
-    1279,  1280,  1281
+       0,   543,   543,   544,   550,   551,   555,   603,   607,   659,
+     663,   664,   671,   675,   679,   683,   687,   696,   699,   708,
+     712,   720,   721,   730,   735,   742,   747,   755,   764,   779,
+     795,   799,   806,   828,   846,   851,   857,   868,   872,   877,
+     886,   905,   910,   917,   927,   962,   973,   984,   995,  1008,
+    1016,  1023,  1024,  1097,  1122,  1157,  1162,  1167,  1171,  1178,
+    1184,  1193,  1194,  1198,  1202,  1206,  1213,  1223,  1224,  1225,
+    1226,  1227,  1228,  1232,  1233,  1286,  1287,  1291,  1295,  1302,
+    1303,  1307,  1315,  1316,  1330,  1347,  1348,  1352,  1356,  1360,
+    1367,  1368,  1372,  1379,  1380,  1387,  1388,  1395,  1396,  1403,
+    1404,  1404,  1462,  1463,  1463,  1519,  1525,  1526,  1575,  1579,
+    1580,  1592,  1600,  1604,  1611,  1615,  1616,  1620,  1624,  1625,
+    1629,  1635,  1638,  1647,  1650,  1653,  1656,  1659,  1662,  1665,
+    1673,  1674,  1675,  1679,  1679,  1698,  1704,  1709,  1717,  1725,
+    1726,  1732,  1739,  1739,  1754,  1758,  1758,  1777,  1777,  1801,
+    1801,  1819,  1819,  1835,  1836,  1840,  1847,  1848,  1849,  1850,
+    1851
 };
 #endif
 
@@ -733,21 +803,22 @@ static const char *const yytname[] =
   "cast_type_specifier", "init_declarator_list", "init_declarator",
   "declarator", "direct_declarator", "fun_declarator",
   "fun_direct_declarator", "declaration_list", "initializer",
-  "initializer_list", "parameter_list", "parameter_declaration",
-  "parameter_declarator", "parameter_direct_declarator",
-  "primary_expression", "postfix_expression", "argument_expression_list",
-  "unary_expression", "unary_operator", "cast_expression",
-  "multiplicative_expression", "additive_expression", "shift_expression",
-  "relational_expression", "equality_expression", "and_expression",
-  "exclusive_or_expression", "inclusive_or_expression",
-  "logical_and_expression", "logical_or_expression",
-  "conditional_expression", "assignment_expression", "assignment_operator",
-  "expression", "constant_expression", "struct_specifier", "struct",
+  "parameter_list", "parameter_declaration", "parameter_declarator",
+  "parameter_direct_declarator", "primary_expression",
+  "postfix_expression", "argument_expression_list", "unary_expression",
+  "unary_operator", "cast_expression", "multiplicative_expression",
+  "additive_expression", "shift_expression", "relational_expression",
+  "equality_expression", "and_expression", "exclusive_or_expression",
+  "inclusive_or_expression", "logical_and_expression", "$@1",
+  "logical_or_expression", "$@2", "conditional_expression",
+  "assignment_expression", "assignment_operator", "expression",
+  "constant_expression", "struct_specifier", "struct",
   "struct_declaration_list", "struct_declaration",
   "struct_declarator_list", "struct_declarator", "pointer", "statement",
-  "labeled_statement", "compound_statement", "$@1", "statement_list",
-  "expression_statement", "selection_statement", "iteration_statement",
-  "jump_statement", YY_NULLPTR
+  "labeled_statement", "compound_statement", "$@3", "marker",
+  "statement_list", "expression_statement", "selection_statement", "$@4",
+  "if_expression", "$@5", "iteration_statement", "$@6", "$@7", "$@8",
+  "begin_marker", "jump_statement", YY_NULLPTR
 };
 
 static const char *
@@ -757,12 +828,12 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-190)
+#define YYPACT_NINF (-188)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-138)
+#define YYTABLE_NINF (-139)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -771,33 +842,34 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-      45,  -190,  -190,  -190,  -190,   170,  -190,     5,  -190,  -190,
-    -190,   -30,  -190,  -190,  -190,   -46,  -190,  -190,  -190,    -6,
-    -190,     0,    86,  -190,    -2,    15,   -11,  -190,    21,    58,
-    -190,   159,    65,  -190,   -14,   394,    79,  -190,  -190,    15,
-    -190,   170,  -190,   -13,   -22,  -190,    60,    98,  -190,    63,
-     592,  -190,   623,   623,  -190,  -190,  -190,  -190,  -190,  -190,
-     654,   363,  -190,  -190,  -190,  -190,  -190,  -190,  -190,    18,
-     116,   654,  -190,   109,   114,   124,    72,   129,   125,   112,
-     141,   180,   165,  -190,  -190,   161,    45,   -14,   166,  -190,
-    -190,  -190,  -190,   160,    45,  -190,  -190,   363,  -190,   654,
-    -190,  -190,    56,  -190,   188,   171,  -190,     6,  -190,  -190,
-     167,   172,   425,   654,  -190,   654,  -190,  -190,   654,   654,
-     654,   654,   654,   654,   654,   654,   654,   654,   654,   654,
-     654,   654,   654,   654,   654,   654,  -190,  -190,   -15,   186,
-    -190,   117,  -190,  -190,  -190,  -190,  -190,   176,   459,  -190,
-    -190,   654,   654,  -190,  -190,  -190,  -190,     9,  -190,   -25,
-    -190,  -190,  -190,  -190,   109,   109,   114,   114,   124,   124,
-     124,   124,    72,    72,   129,   125,   112,   141,   180,   184,
-     181,   183,   187,   312,   189,   192,   202,   199,   654,   205,
-     195,  -190,   492,   207,  -190,   130,  -190,  -190,  -190,   249,
-    -190,  -190,  -190,  -190,  -190,   -14,  -190,  -190,  -190,  -190,
-    -190,   654,  -190,  -190,  -190,   654,   525,   654,   247,   654,
-    -190,  -190,   654,  -190,   220,   312,   222,  -190,   132,   312,
-    -190,  -190,  -190,  -190,  -190,    22,   525,    25,   221,    67,
-      73,   312,  -190,  -190,  -190,  -190,   312,   558,   312,   654,
-     312,   312,  -190,   267,   312,    80,  -190,    83,  -190,  -190,
-     312,  -190,   312,   227,  -190,  -190,  -190
+      43,  -188,  -188,  -188,  -188,   128,  -188,     4,  -188,  -188,
+    -188,   -17,  -188,  -188,  -188,   -37,  -188,  -188,  -188,    -2,
+    -188,    46,    19,  -188,     6,    -4,    24,  -188,    21,    53,
+    -188,    22,   -30,  -188,   -23,   455,    14,  -188,  -188,    -4,
+    -188,   128,  -188,   -20,    56,  -188,    73,    79,   107,  -188,
+     106,   486,  -188,   517,   517,  -188,  -188,  -188,  -188,  -188,
+    -188,   121,  -188,  -188,  -188,  -188,  -188,  -188,  -188,   113,
+     134,   455,  -188,    85,   124,   160,    25,   158,   133,   151,
+     154,   172,   191,  -188,  -188,   169,   175,    43,   -23,    50,
+    -188,  -188,  -188,  -188,   176,    43,  -188,  -188,  -188,   121,
+    -188,   455,  -188,  -188,   192,   182,  -188,    59,  -188,  -188,
+     178,   179,   321,   455,  -188,   455,  -188,  -188,   455,   455,
+     455,   455,   455,   455,   455,   455,   455,   455,   455,   455,
+     455,   455,   455,   455,  -188,  -188,  -188,  -188,  -188,    69,
+     198,  -188,   141,  -188,  -188,  -188,  -188,  -188,   185,  -188,
+     455,   455,  -188,  -188,  -188,  -188,    61,  -188,   -19,  -188,
+    -188,  -188,  -188,    85,    85,   124,   124,   160,   160,   160,
+     160,    25,    25,   158,   133,   151,   455,   455,   193,   190,
+     195,  -188,  -188,  -188,   196,   197,   199,   455,   205,   204,
+    -188,   355,   206,  -188,   143,  -188,  -188,  -188,   212,  -188,
+    -188,   257,  -188,  -188,  -188,   -23,  -188,  -188,  -188,   455,
+    -188,  -188,   154,   172,  -188,   455,   388,   213,   261,   214,
+    -188,  -188,   455,  -188,   221,   261,   231,  -188,   145,   261,
+    -188,  -188,   261,  -188,  -188,  -188,    66,  -188,   455,  -188,
+     455,    93,   261,  -188,  -188,  -188,  -188,  -188,   261,  -188,
+     388,    96,   273,   236,   261,  -188,  -188,   261,   421,  -188,
+     234,   235,  -188,  -188,   261,    98,   261,   455,   261,  -188,
+     261,  -188,    99,  -188,  -188,   239,  -188
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -807,53 +879,56 @@ static const yytype_uint8 yydefact[] =
 {
        0,    14,    15,    13,    12,     0,   114,     0,     2,     4,
        5,     0,     9,    10,    16,     0,    11,     1,     3,   121,
-       7,    25,     0,    19,    21,    24,     0,    29,     0,   113,
+       7,    25,     0,    19,    21,    24,     0,    31,     0,   113,
      122,     0,     0,     8,     0,     0,     0,   133,     6,    23,
-      28,     0,    31,     0,     0,    40,     0,    25,    20,     0,
-       0,    51,     0,     0,    71,    72,    70,    74,    69,    73,
-       0,     0,    46,    47,    48,    50,    49,    22,    53,    63,
-      75,     0,    77,    81,    84,    87,    92,    95,    97,    99,
-     101,   103,   105,   106,    35,     0,    34,     0,     0,   115,
-      45,    42,    44,     0,     0,    30,    27,     0,    67,     0,
-      64,    65,     0,    38,    17,     0,   109,     0,    59,    60,
-       0,     0,     0,     0,   108,     0,    75,    66,     0,     0,
+      30,     0,    33,     0,     0,    38,     0,     0,    25,    20,
+       0,     0,    49,     0,     0,    69,    70,    68,    72,    67,
+      71,     0,    44,    45,    46,    48,    47,    22,    51,    61,
+      73,     0,    75,    79,    82,    85,    90,    93,    95,    97,
+      99,   102,   105,   106,    37,     0,     0,    36,     0,     0,
+     115,    43,    40,    42,     0,     0,    32,    27,    28,     0,
+      65,     0,    62,    63,    17,     0,   109,     0,    57,    58,
+       0,     0,     0,     0,   108,     0,    73,    64,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    26,    32,     0,     0,
-     120,     0,   118,   112,   116,    43,    41,     0,     0,    36,
-      18,     0,     0,    52,    58,    57,    55,     0,    61,     0,
-     107,    78,    79,    80,    82,    83,    85,    86,    90,    91,
-      88,    89,    93,    94,    96,    98,   100,   102,   104,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,   138,     0,    46,    33,     0,   135,   123,   124,     0,
-     125,   126,   127,   128,   117,     0,    68,    37,    39,    76,
-     110,     0,    56,    54,   129,     0,     0,     0,     0,     0,
-     150,   149,     0,   111,     0,     0,     0,   151,     0,     0,
-     139,   134,   136,   119,    62,     0,     0,     0,     0,     0,
-       0,     0,   132,   148,   152,   130,     0,     0,     0,     0,
-       0,     0,   131,   140,     0,     0,   143,     0,   144,   142,
-       0,   146,     0,     0,   141,   147,   145
+       0,     0,     0,     0,   100,   103,    26,    29,    34,     0,
+       0,   120,     0,   118,   112,   116,    41,    39,     0,    18,
+       0,     0,    50,    56,    55,    53,     0,    59,     0,   107,
+      76,    77,    78,    80,    81,    83,    84,    88,    89,    86,
+      87,    91,    92,    94,    96,    98,     0,     0,     0,     0,
+       0,   155,   155,   155,     0,     0,     0,     0,     0,     0,
+     139,     0,    44,    35,     0,   136,   123,   124,   135,   125,
+     126,   141,   127,   128,   117,     0,    66,    74,   110,     0,
+      54,    52,   101,   104,   129,     0,     0,     0,     0,     0,
+     158,   157,     0,   111,     0,     0,     0,   159,     0,     0,
+     140,   134,     0,   142,   119,    60,     0,   155,     0,   151,
+       0,     0,     0,   132,   156,   160,   130,   137,     0,   145,
+       0,     0,     0,   149,     0,   131,   143,     0,     0,   147,
+       0,     0,   144,   146,     0,     0,     0,     0,     0,   153,
+       0,   148,     0,   150,   154,     0,   152
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-    -190,  -190,   270,  -190,   -82,   -28,  -190,    13,  -190,  -190,
-     244,   -85,   -16,  -190,   251,  -190,  -190,  -190,  -190,   193,
-    -190,   196,  -190,  -190,  -190,   -36,  -190,   -51,    62,    88,
-      16,    85,   149,   150,   148,   152,   153,  -190,   102,   -34,
-    -190,   -61,  -190,  -190,  -190,  -190,   206,  -190,    91,    -4,
-    -122,  -190,   271,  -190,  -190,  -189,  -190,  -190,  -190
+    -188,  -188,   283,  -188,   -76,   -28,  -188,     9,  -188,  -188,
+     258,   -86,    -7,  -188,   263,  -188,  -188,  -188,   203,  -188,
+     200,  -188,  -188,  -188,   -36,  -188,   -47,   102,   103,    44,
+     100,   162,   167,   168,   129,   123,  -188,  -188,  -188,   119,
+     -34,  -188,   -61,  -188,  -188,  -188,  -188,   219,  -188,   110,
+       1,    84,  -188,   285,  -188,  -188,  -188,  -187,  -188,  -188,
+    -188,  -188,  -188,  -188,  -188,  -188,  -177,  -188
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
-static const yytype_uint8 yydefgoto[] =
+static const yytype_int16 yydefgoto[] =
 {
        0,     7,     8,     9,    10,    11,    12,    13,   105,    22,
-      23,    24,    25,    26,    27,   139,    67,   102,    44,    45,
-      91,    92,    68,    69,   157,    70,    71,    72,    73,    74,
-      75,    76,    77,    78,    79,    80,    81,    82,    83,   106,
-     115,   195,   224,    14,    15,    88,    89,   141,   142,    49,
-     196,   197,   198,    86,   199,   200,   201,   202,   203
+      23,    24,    25,    26,    27,   140,    67,    44,    45,    92,
+      93,    68,    69,   156,    70,    71,    72,    73,    74,    75,
+      76,    77,    78,    79,    80,    81,   176,    82,   177,    83,
+     106,   115,   194,   224,    14,    15,    89,    90,   142,   143,
+      50,   195,   196,   197,    87,   232,   198,   199,   200,   248,
+     201,   257,   202,   266,   261,   252,   217,   203
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -861,208 +936,184 @@ static const yytype_uint8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int16 yytable[] =
 {
-     107,    84,   140,    43,   137,    17,    19,    28,     1,     2,
-       3,     4,    39,    29,    98,    30,   100,   101,    16,    20,
-     117,    19,    19,    19,     5,   152,   103,   236,    94,    21,
-      19,   213,    95,    39,    20,   116,   107,    35,   107,    93,
-      37,   108,   109,   110,    47,    47,    90,   247,     1,     2,
-       3,     4,   159,    31,    87,    32,   152,   194,   138,   211,
-     153,   218,     6,   212,     5,   111,    43,   161,   162,   163,
-      36,   112,   152,   113,   104,   152,   246,   232,   158,   248,
-      21,   160,   116,   116,   116,   116,   116,   116,   116,   116,
-     116,   116,   116,   116,   116,   116,   116,   116,   116,   116,
-     209,    87,     6,   242,   125,   126,   148,   245,   149,    41,
-     147,   138,   127,   128,   208,   116,    96,   152,   210,   252,
-     140,   250,    47,   152,   253,    46,   256,   251,   258,   259,
-     152,   228,   261,   152,   262,    33,    34,   263,   264,    85,
-     265,   168,   169,   170,   171,   118,   119,   120,   121,   122,
-     123,   124,   116,    32,   235,   114,   237,   132,   239,   129,
-     130,   240,     1,     2,     3,     4,   204,   205,   131,     1,
-       2,     3,     4,     1,     2,     3,     4,   234,     5,   230,
-     152,   244,   152,   164,   165,   133,   255,   179,   257,     1,
-       2,     3,     4,   180,   135,   181,   182,   183,   184,   185,
-     186,   187,   188,   189,    50,     5,   190,    51,   134,    52,
-      53,   166,   167,    42,   172,   173,     6,   136,   143,    90,
-      54,    55,    56,     6,   150,   151,   154,     6,    57,    58,
-     206,   155,    59,   214,   215,   191,   216,    37,  -137,    61,
-     217,   220,   219,     6,   192,   193,    63,    64,    65,    66,
-     179,   221,   222,   225,   226,   229,   180,   238,   181,   182,
-     183,   184,   185,   186,   187,   188,   189,    50,   241,   190,
-      51,   243,    52,    53,   249,   260,   266,    18,    48,    40,
-     174,   176,   175,    54,    55,    56,   177,   146,   178,   145,
-     223,    57,    58,     0,   144,    59,   233,    38,   191,     0,
-      37,   231,    61,     0,     0,     0,     0,   192,   193,    63,
-      64,    65,    66,   179,     0,     0,     0,     0,     0,   180,
-       0,   181,   182,   183,   184,   185,   186,   187,   188,   189,
-      50,     0,   190,    51,     0,    52,    53,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    54,    55,    56,     0,
-       0,     0,     0,     0,    57,    58,     0,     0,    59,     0,
-       0,   191,     0,    37,     0,    61,     1,     2,     3,     4,
-     192,   193,    63,    64,    65,    66,     0,     0,     0,     0,
-       0,    50,     0,     0,    51,     0,    52,    53,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,    54,    55,    56,
-       0,     0,     0,     0,     0,    57,    58,     0,     0,    59,
-       0,     0,    50,     0,     0,    51,    61,    52,    53,     0,
-       6,     0,    62,    63,    64,    65,    66,     0,    54,    55,
-      56,     0,     0,     0,     0,     0,    57,    58,     0,     0,
-      59,     0,     0,    50,     0,    60,    51,    61,    52,    53,
-       0,     0,     0,    62,    63,    64,    65,    66,     0,    54,
-      55,    56,     0,     0,     0,     0,     0,    57,    58,     0,
-       0,    59,     0,     0,     0,     0,     0,    50,    61,   156,
-      51,     0,    52,    53,    62,    63,    64,    65,    66,     0,
-       0,     0,     0,    54,    55,    56,     0,     0,     0,     0,
-       0,    57,    58,     0,     0,    59,     0,     0,     0,     0,
-      50,   207,    61,    51,     0,    52,    53,     0,    62,    63,
-      64,    65,    66,     0,     0,     0,    54,    55,    56,     0,
-       0,     0,     0,     0,    57,    58,     0,     0,    59,     0,
-       0,   227,     0,    50,     0,    61,    51,     0,    52,    53,
-       0,    62,    63,    64,    65,    66,     0,     0,     0,    54,
-      55,    56,     0,     0,     0,     0,     0,    57,    58,     0,
-       0,    59,     0,     0,   191,     0,    50,     0,    61,    51,
-       0,    52,    53,     0,    62,    63,    64,    65,    66,     0,
-       0,     0,    54,    55,    56,     0,     0,     0,     0,     0,
-      57,    58,     0,     0,    59,     0,     0,     0,     0,     0,
-      50,    61,   254,    51,     0,    52,    53,    62,    63,    64,
-      65,    66,     0,     0,     0,     0,    54,    55,    56,     0,
-       0,     0,     0,     0,    57,    58,     0,     0,    59,     0,
-       0,    50,     0,     0,    51,    97,    52,    53,     0,     0,
-       0,    62,    63,    64,    65,    66,     0,    54,    55,    56,
-       0,     0,     0,     0,     0,    57,    58,     0,     0,    59,
-       0,     0,    50,     0,     0,    51,    99,    52,    53,     0,
-       0,     0,    62,    63,    64,    65,    66,     0,    54,    55,
-      56,     0,     0,     0,     0,     0,    57,    58,     0,     0,
-      59,     0,     0,     0,     0,     0,     0,    61,     0,     0,
-       0,     0,     0,    62,    63,    64,    65,    66
+     107,    84,   141,    43,    17,   218,   219,     1,     2,     3,
+       4,   138,    28,    19,    16,   100,    19,   102,   103,    19,
+      30,    39,    29,     5,   117,     1,     2,     3,     4,   237,
+      46,   151,    20,    47,    19,   116,    48,   211,   107,    91,
+     107,     5,    21,    39,    94,    35,     1,     2,     3,     4,
+      88,    36,   158,     1,     2,     3,     4,   125,   126,   139,
+     250,     6,     5,   258,   193,   127,   128,    43,    33,    34,
+     104,   160,   161,   162,    85,    37,    42,    86,   157,     6,
+      21,   159,   116,   116,   116,   116,   116,   116,   116,   116,
+     116,   116,   116,   116,   116,   116,   116,   116,    88,    31,
+       6,    32,   144,   207,    41,    19,    95,     6,   148,   151,
+      96,   209,   139,   152,   116,   210,   151,   208,    20,   141,
+     249,   118,   119,   120,     1,     2,     3,     4,    48,    97,
+     228,     1,     2,     3,     4,    98,   108,   109,   110,    51,
+     116,   116,    52,   151,    53,    54,   151,   254,   151,   151,
+     259,   116,   270,   275,   236,    55,    56,    57,   121,   122,
+     111,   241,    32,    58,    59,    48,   112,    60,   113,   167,
+     168,   169,   170,   114,    61,   235,   131,   251,     6,   253,
+      62,    63,    64,    65,    66,     6,   123,   124,   129,   130,
+     204,   205,   230,   151,   245,   151,   132,   265,   133,   178,
+     134,     1,     2,     3,     4,   179,   272,   180,   181,   182,
+     183,   184,   185,   186,   187,   188,    51,     5,   189,    52,
+     135,    53,    54,   163,   164,   136,   165,   166,   149,   171,
+     172,   137,    55,    56,    57,    91,   150,   153,   154,   206,
+      58,    59,   214,   215,    60,   220,   221,   190,   216,    37,
+    -138,    61,   222,   225,   229,     6,   191,   192,    63,    64,
+      65,    66,   178,   226,   231,   233,   238,   240,   179,   242,
+     180,   181,   182,   183,   184,   185,   186,   187,   188,    51,
+     244,   189,    52,   260,    53,    54,   151,   267,   276,   268,
+      18,    40,    49,   173,   146,    55,    56,    57,   147,   174,
+     213,   175,   239,    58,    59,   212,   223,    60,   145,   243,
+     190,    38,    37,   246,    61,   234,   247,     0,     0,   191,
+     192,    63,    64,    65,    66,     0,   255,     0,     0,     0,
+       0,     0,   256,     0,     0,     0,     0,     0,   262,    51,
+       0,   263,    52,     0,    53,    54,     0,     0,   269,     0,
+     271,     0,   273,     0,   274,    55,    56,    57,     0,     0,
+       0,     0,     0,    58,    59,     0,     0,    60,     0,     0,
+       0,     0,     0,    51,    61,   155,    52,     0,    53,    54,
+      62,    63,    64,    65,    66,     0,     0,     0,     0,    55,
+      56,    57,     0,     0,     0,     0,     0,    58,    59,     0,
+       0,    60,     0,     0,   227,     0,    51,     0,    61,    52,
+       0,    53,    54,     0,    62,    63,    64,    65,    66,     0,
+       0,     0,    55,    56,    57,     0,     0,     0,     0,     0,
+      58,    59,     0,     0,    60,     0,     0,   190,     0,    51,
+       0,    61,    52,     0,    53,    54,     0,    62,    63,    64,
+      65,    66,     0,     0,     0,    55,    56,    57,     0,     0,
+       0,     0,     0,    58,    59,     0,     0,    60,     0,     0,
+       0,     0,     0,    51,    61,   264,    52,     0,    53,    54,
+      62,    63,    64,    65,    66,     0,     0,     0,     0,    55,
+      56,    57,     0,     0,     0,     0,     0,    58,    59,     0,
+       0,    60,     0,     0,    51,     0,     0,    52,    61,    53,
+      54,     0,     0,     0,    62,    63,    64,    65,    66,     0,
+      55,    56,    57,     0,     0,     0,     0,     0,    58,    59,
+       0,     0,    60,     0,     0,    51,     0,     0,    52,    99,
+      53,    54,     0,     0,     0,    62,    63,    64,    65,    66,
+       0,    55,    56,    57,     0,     0,     0,     0,     0,    58,
+      59,     0,     0,    60,     0,     0,     0,     0,     0,     0,
+     101,     0,     0,     0,     0,     0,    62,    63,    64,    65,
+      66
 };
 
 static const yytype_int16 yycheck[] =
 {
-      61,    35,    87,    31,    86,     0,    36,    11,     3,     4,
-       5,     6,    28,    59,    50,    19,    52,    53,     5,    49,
-      71,    36,    36,    36,    19,    50,    60,   216,    50,    59,
-      36,    56,    54,    49,    49,    71,    97,    39,    99,    43,
-      51,    23,    24,    25,    59,    59,    59,   236,     3,     4,
-       5,     6,   113,    53,    41,    55,    50,   139,    86,    50,
-      54,   183,    57,    54,    19,    47,    94,   118,   119,   120,
-      55,    53,    50,    55,    61,    50,    54,   199,   112,    54,
+      61,    35,    88,    31,     0,   182,   183,     3,     4,     5,
+       6,    87,    11,    36,     5,    51,    36,    53,    54,    36,
+      19,    28,    59,    19,    71,     3,     4,     5,     6,   216,
+      60,    50,    49,    63,    36,    71,    59,    56,    99,    59,
+     101,    19,    59,    50,    43,    39,     3,     4,     5,     6,
+      41,    55,   113,     3,     4,     5,     6,    32,    33,    87,
+     237,    57,    19,   250,   140,    40,    41,    95,    49,    50,
+      61,   118,   119,   120,    60,    51,    54,    63,   112,    57,
       59,   115,   118,   119,   120,   121,   122,   123,   124,   125,
-     126,   127,   128,   129,   130,   131,   132,   133,   134,   135,
-     151,    88,    57,   225,    32,    33,    50,   229,    52,    51,
-      97,   139,    40,    41,   148,   151,    56,    50,   152,   241,
-     205,    54,    59,    50,   246,    60,   248,    54,   250,   251,
-      50,   192,   254,    50,    54,    49,    50,    54,   260,    60,
-     262,   125,   126,   127,   128,    36,    37,    38,    34,    35,
-      26,    27,   188,    55,   215,    39,   217,    45,   219,    30,
-      31,   222,     3,     4,     5,     6,    49,    50,    43,     3,
-       4,     5,     6,     3,     4,     5,     6,   211,    19,    49,
-      50,    49,    50,   121,   122,    44,   247,     1,   249,     3,
-       4,     5,     6,     7,    29,     9,    10,    11,    12,    13,
-      14,    15,    16,    17,    18,    19,    20,    21,    28,    23,
-      24,   123,   124,    54,   129,   130,    57,    56,    52,    59,
-      34,    35,    36,    57,    36,    54,    59,    57,    42,    43,
-      54,    59,    46,    49,    53,    49,    53,    51,    52,    53,
-      53,    49,    53,    57,    58,    59,    60,    61,    62,    63,
-       1,    49,    53,    48,    59,    48,     7,    10,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    48,    20,
-      21,    49,    23,    24,    53,     8,    49,     7,    34,    28,
-     131,   133,   132,    34,    35,    36,   134,    94,   135,    93,
-     188,    42,    43,    -1,    88,    46,   205,    26,    49,    -1,
-      51,    52,    53,    -1,    -1,    -1,    -1,    58,    59,    60,
-      61,    62,    63,     1,    -1,    -1,    -1,    -1,    -1,     7,
-      -1,     9,    10,    11,    12,    13,    14,    15,    16,    17,
-      18,    -1,    20,    21,    -1,    23,    24,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    34,    35,    36,    -1,
-      -1,    -1,    -1,    -1,    42,    43,    -1,    -1,    46,    -1,
-      -1,    49,    -1,    51,    -1,    53,     3,     4,     5,     6,
-      58,    59,    60,    61,    62,    63,    -1,    -1,    -1,    -1,
-      -1,    18,    -1,    -1,    21,    -1,    23,    24,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    34,    35,    36,
-      -1,    -1,    -1,    -1,    -1,    42,    43,    -1,    -1,    46,
-      -1,    -1,    18,    -1,    -1,    21,    53,    23,    24,    -1,
-      57,    -1,    59,    60,    61,    62,    63,    -1,    34,    35,
-      36,    -1,    -1,    -1,    -1,    -1,    42,    43,    -1,    -1,
-      46,    -1,    -1,    18,    -1,    51,    21,    53,    23,    24,
-      -1,    -1,    -1,    59,    60,    61,    62,    63,    -1,    34,
-      35,    36,    -1,    -1,    -1,    -1,    -1,    42,    43,    -1,
-      -1,    46,    -1,    -1,    -1,    -1,    -1,    18,    53,    54,
-      21,    -1,    23,    24,    59,    60,    61,    62,    63,    -1,
-      -1,    -1,    -1,    34,    35,    36,    -1,    -1,    -1,    -1,
-      -1,    42,    43,    -1,    -1,    46,    -1,    -1,    -1,    -1,
-      18,    52,    53,    21,    -1,    23,    24,    -1,    59,    60,
-      61,    62,    63,    -1,    -1,    -1,    34,    35,    36,    -1,
-      -1,    -1,    -1,    -1,    42,    43,    -1,    -1,    46,    -1,
-      -1,    49,    -1,    18,    -1,    53,    21,    -1,    23,    24,
-      -1,    59,    60,    61,    62,    63,    -1,    -1,    -1,    34,
+     126,   127,   128,   129,   130,   131,   132,   133,    89,    53,
+      57,    55,    52,   150,    51,    36,    50,    57,    99,    50,
+      54,    50,   140,    54,   150,    54,    50,   151,    49,   205,
+      54,    36,    37,    38,     3,     4,     5,     6,    59,    56,
+     191,     3,     4,     5,     6,    56,    23,    24,    25,    18,
+     176,   177,    21,    50,    23,    24,    50,    54,    50,    50,
+      54,   187,    54,    54,   215,    34,    35,    36,    34,    35,
+      47,   222,    55,    42,    43,    59,    53,    46,    55,   125,
+     126,   127,   128,    39,    53,   209,    43,   238,    57,   240,
+      59,    60,    61,    62,    63,    57,    26,    27,    30,    31,
+      49,    50,    49,    50,    49,    50,    45,   258,    44,     1,
+      28,     3,     4,     5,     6,     7,   267,     9,    10,    11,
+      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
+      29,    23,    24,   121,   122,    56,   123,   124,    36,   129,
+     130,    56,    34,    35,    36,    59,    54,    59,    59,    54,
+      42,    43,    49,    53,    46,    49,    49,    49,    53,    51,
+      52,    53,    53,    48,    48,    57,    58,    59,    60,    61,
+      62,    63,     1,    59,    52,     8,    53,    53,     7,    48,
+       9,    10,    11,    12,    13,    14,    15,    16,    17,    18,
+      49,    20,    21,    10,    23,    24,    50,    53,    49,    54,
+       7,    28,    34,   131,    94,    34,    35,    36,    95,   132,
+     177,   133,   218,    42,    43,   176,   187,    46,    89,   225,
+      49,    26,    51,   229,    53,   205,   232,    -1,    -1,    58,
+      59,    60,    61,    62,    63,    -1,   242,    -1,    -1,    -1,
+      -1,    -1,   248,    -1,    -1,    -1,    -1,    -1,   254,    18,
+      -1,   257,    21,    -1,    23,    24,    -1,    -1,   264,    -1,
+     266,    -1,   268,    -1,   270,    34,    35,    36,    -1,    -1,
+      -1,    -1,    -1,    42,    43,    -1,    -1,    46,    -1,    -1,
+      -1,    -1,    -1,    18,    53,    54,    21,    -1,    23,    24,
+      59,    60,    61,    62,    63,    -1,    -1,    -1,    -1,    34,
       35,    36,    -1,    -1,    -1,    -1,    -1,    42,    43,    -1,
       -1,    46,    -1,    -1,    49,    -1,    18,    -1,    53,    21,
       -1,    23,    24,    -1,    59,    60,    61,    62,    63,    -1,
       -1,    -1,    34,    35,    36,    -1,    -1,    -1,    -1,    -1,
-      42,    43,    -1,    -1,    46,    -1,    -1,    -1,    -1,    -1,
-      18,    53,    54,    21,    -1,    23,    24,    59,    60,    61,
-      62,    63,    -1,    -1,    -1,    -1,    34,    35,    36,    -1,
-      -1,    -1,    -1,    -1,    42,    43,    -1,    -1,    46,    -1,
-      -1,    18,    -1,    -1,    21,    53,    23,    24,    -1,    -1,
-      -1,    59,    60,    61,    62,    63,    -1,    34,    35,    36,
-      -1,    -1,    -1,    -1,    -1,    42,    43,    -1,    -1,    46,
-      -1,    -1,    18,    -1,    -1,    21,    53,    23,    24,    -1,
-      -1,    -1,    59,    60,    61,    62,    63,    -1,    34,    35,
-      36,    -1,    -1,    -1,    -1,    -1,    42,    43,    -1,    -1,
-      46,    -1,    -1,    -1,    -1,    -1,    -1,    53,    -1,    -1,
-      -1,    -1,    -1,    59,    60,    61,    62,    63
+      42,    43,    -1,    -1,    46,    -1,    -1,    49,    -1,    18,
+      -1,    53,    21,    -1,    23,    24,    -1,    59,    60,    61,
+      62,    63,    -1,    -1,    -1,    34,    35,    36,    -1,    -1,
+      -1,    -1,    -1,    42,    43,    -1,    -1,    46,    -1,    -1,
+      -1,    -1,    -1,    18,    53,    54,    21,    -1,    23,    24,
+      59,    60,    61,    62,    63,    -1,    -1,    -1,    -1,    34,
+      35,    36,    -1,    -1,    -1,    -1,    -1,    42,    43,    -1,
+      -1,    46,    -1,    -1,    18,    -1,    -1,    21,    53,    23,
+      24,    -1,    -1,    -1,    59,    60,    61,    62,    63,    -1,
+      34,    35,    36,    -1,    -1,    -1,    -1,    -1,    42,    43,
+      -1,    -1,    46,    -1,    -1,    18,    -1,    -1,    21,    53,
+      23,    24,    -1,    -1,    -1,    59,    60,    61,    62,    63,
+      -1,    34,    35,    36,    -1,    -1,    -1,    -1,    -1,    42,
+      43,    -1,    -1,    46,    -1,    -1,    -1,    -1,    -1,    -1,
+      53,    -1,    -1,    -1,    -1,    -1,    59,    60,    61,    62,
+      63
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
-static const yytype_int8 yystos[] =
+static const yytype_uint8 yystos[] =
 {
        0,     3,     4,     5,     6,    19,    57,    65,    66,    67,
-      68,    69,    70,    71,   107,   108,    71,     0,    66,    36,
-      49,    59,    73,    74,    75,    76,    77,    78,   113,    59,
-     113,    53,    55,    49,    50,    39,    55,    51,   116,    76,
-      78,    51,    54,    69,    82,    83,    60,    59,    74,   113,
-      18,    21,    23,    24,    34,    35,    36,    42,    43,    46,
-      51,    53,    59,    60,    61,    62,    63,    80,    86,    87,
-      89,    90,    91,    92,    93,    94,    95,    96,    97,    98,
-      99,   100,   101,   102,   103,    60,   117,    71,   109,   110,
-      59,    84,    85,   113,    50,    54,    56,    53,    89,    53,
-      89,    89,    81,   103,    71,    72,   103,   105,    23,    24,
-      25,    47,    53,    55,    39,   104,    89,    91,    36,    37,
+      68,    69,    70,    71,   108,   109,    71,     0,    66,    36,
+      49,    59,    73,    74,    75,    76,    77,    78,   114,    59,
+     114,    53,    55,    49,    50,    39,    55,    51,   117,    76,
+      78,    51,    54,    69,    81,    82,    60,    63,    59,    74,
+     114,    18,    21,    23,    24,    34,    35,    36,    42,    43,
+      46,    53,    59,    60,    61,    62,    63,    80,    85,    86,
+      88,    89,    90,    91,    92,    93,    94,    95,    96,    97,
+      98,    99,   101,   103,   104,    60,    63,   118,    71,   110,
+     111,    59,    83,    84,   114,    50,    54,    56,    56,    53,
+      88,    53,    88,    88,    71,    72,   104,   106,    23,    24,
+      25,    47,    53,    55,    39,   105,    88,    90,    36,    37,
       38,    34,    35,    26,    27,    32,    33,    40,    41,    30,
-      31,    43,    45,    44,    28,    29,    56,    68,    69,    79,
-      75,   111,   112,    52,   110,    85,    83,    71,    50,    52,
-      36,    54,    50,    54,    59,    59,    54,    88,   103,   105,
-     103,    91,    91,    91,    92,    92,    93,    93,    94,    94,
-      94,    94,    95,    95,    96,    97,    98,    99,   100,     1,
-       7,     9,    10,    11,    12,    13,    14,    15,    16,    17,
-      20,    49,    58,    59,    68,   105,   114,   115,   116,   118,
-     119,   120,   121,   122,    49,    50,    54,    52,   103,    91,
-     103,    50,    54,    56,    49,    53,    53,    53,   114,    53,
-      49,    49,    53,   102,   106,    48,    59,    49,   105,    48,
-      49,    52,   114,   112,   103,   105,   119,   105,    10,   105,
-     105,    48,   114,    49,    49,   114,    54,   119,    54,    53,
-      54,    54,   114,   114,    54,   105,   114,   105,   114,   114,
-       8,   114,    54,    54,   114,   114,    49
+      31,    43,    45,    44,    28,    29,    56,    56,    68,    69,
+      79,    75,   112,   113,    52,   111,    84,    82,    71,    36,
+      54,    50,    54,    59,    59,    54,    87,   104,   106,   104,
+      90,    90,    90,    91,    91,    92,    92,    93,    93,    93,
+      93,    94,    94,    95,    96,    97,   100,   102,     1,     7,
+       9,    10,    11,    12,    13,    14,    15,    16,    17,    20,
+      49,    58,    59,    68,   106,   115,   116,   117,   120,   121,
+     122,   124,   126,   131,    49,    50,    54,    90,   104,    50,
+      54,    56,    98,    99,    49,    53,    53,   130,   130,   130,
+      49,    49,    53,   103,   107,    48,    59,    49,   106,    48,
+      49,    52,   119,     8,   113,   104,   106,   121,    53,   115,
+      53,   106,    48,   115,    49,    49,   115,   115,   123,    54,
+     130,   106,   129,   106,    54,   115,   115,   125,   121,    54,
+      10,   128,   115,   115,    54,   106,   127,    53,    54,   115,
+      54,   115,   106,   115,   115,    54,    49
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
-static const yytype_int8 yyr1[] =
+static const yytype_uint8 yyr1[] =
 {
        0,    64,    65,    65,    66,    66,    67,    68,    68,    69,
       70,    70,    71,    71,    71,    71,    71,    72,    72,    73,
-      73,    74,    74,    75,    75,    76,    76,    76,    77,    77,
-      78,    78,    79,    79,    79,    80,    80,    80,    81,    81,
-      82,    82,    83,    84,    84,    85,    86,    86,    86,    86,
-      86,    86,    86,    87,    87,    87,    87,    87,    87,    87,
-      87,    88,    88,    89,    89,    89,    89,    89,    89,    90,
-      90,    90,    90,    90,    90,    91,    91,    92,    92,    92,
-      92,    93,    93,    93,    94,    94,    94,    95,    95,    95,
-      95,    95,    96,    96,    96,    97,    97,    98,    98,    99,
-      99,   100,   100,   101,   101,   102,   103,   103,   104,   105,
-     105,   106,   107,   107,   108,   109,   109,   110,   111,   111,
-     112,   113,   113,   114,   114,   114,   114,   114,   114,   114,
-     115,   115,   115,   117,   116,   118,   118,   118,   119,   119,
-     120,   120,   120,   121,   121,   121,   121,   121,   122,   122,
-     122,   122,   122
+      73,    74,    74,    75,    75,    76,    76,    76,    76,    76,
+      77,    77,    78,    78,    79,    79,    79,    80,    81,    81,
+      82,    83,    83,    84,    85,    85,    85,    85,    85,    85,
+      85,    86,    86,    86,    86,    86,    86,    86,    86,    87,
+      87,    88,    88,    88,    88,    88,    88,    89,    89,    89,
+      89,    89,    89,    90,    90,    91,    91,    91,    91,    92,
+      92,    92,    93,    93,    93,    94,    94,    94,    94,    94,
+      95,    95,    95,    96,    96,    97,    97,    98,    98,    99,
+     100,    99,   101,   102,   101,   103,   104,   104,   105,   106,
+     106,   107,   108,   108,   109,   110,   110,   111,   112,   112,
+     113,   114,   114,   115,   115,   115,   115,   115,   115,   115,
+     116,   116,   116,   118,   117,   119,   120,   120,   120,   121,
+     121,   122,   123,   122,   122,   125,   124,   127,   126,   128,
+     126,   129,   126,   126,   126,   130,   131,   131,   131,   131,
+     131
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
@@ -1070,20 +1121,21 @@ static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     2,     1,     1,     3,     2,     3,     1,
        1,     2,     1,     1,     1,     1,     1,     1,     2,     1,
-       3,     1,     3,     2,     1,     1,     4,     4,     2,     1,
-       4,     3,     1,     2,     0,     1,     3,     4,     1,     3,
-       1,     3,     2,     2,     1,     1,     1,     1,     1,     1,
-       1,     1,     3,     1,     4,     3,     4,     3,     3,     2,
-       2,     1,     3,     1,     2,     2,     2,     2,     4,     1,
-       1,     1,     1,     1,     1,     1,     4,     1,     3,     3,
-       3,     1,     3,     3,     1,     3,     3,     1,     3,     3,
-       3,     3,     1,     3,     3,     1,     3,     1,     3,     1,
-       3,     1,     3,     1,     3,     1,     1,     3,     1,     1,
+       3,     1,     3,     2,     1,     1,     4,     4,     4,     4,
+       2,     1,     4,     3,     1,     2,     0,     1,     1,     3,
+       2,     2,     1,     1,     1,     1,     1,     1,     1,     1,
+       3,     1,     4,     3,     4,     3,     3,     2,     2,     1,
+       3,     1,     2,     2,     2,     2,     4,     1,     1,     1,
+       1,     1,     1,     1,     4,     1,     3,     3,     3,     1,
+       3,     3,     1,     3,     3,     1,     3,     3,     3,     3,
+       1,     3,     3,     1,     3,     1,     3,     1,     3,     1,
+       0,     4,     1,     0,     4,     1,     1,     3,     1,     1,
        3,     1,     5,     2,     1,     1,     2,     3,     1,     3,
        1,     1,     2,     1,     1,     1,     1,     1,     1,     2,
-       3,     4,     3,     0,     5,     1,     2,     0,     1,     2,
-       5,     7,     5,     5,     5,     7,     6,     7,     3,     2,
-       2,     2,     3
+       3,     4,     3,     0,     5,     0,     1,     3,     0,     1,
+       2,     1,     0,     4,     5,     0,     6,     0,     7,     0,
+       7,     0,     9,     7,     8,     0,     3,     2,     2,     2,
+       3
 };
 
 
@@ -1547,7 +1599,7 @@ yyreduce:
   switch (yyn)
     {
   case 6: /* function_definition: return_types fun_declarator compound_statement  */
-#line 292 "parser.y"
+#line 555 "parser.y"
                                                          {               /* e.g., int f() { ... } */
 		// Register function definition
 		TypeInfo returnType = *(yyvsp[-2].typeinfo);
@@ -1558,22 +1610,54 @@ yyreduce:
 			cout << "Function definition: " << (yyvsp[-1].declinfo)->name << " registered\n";
 		}
 		
+		// Reset the current function context after function definition completes
+		current_function_name = "";
+		current_function_signature = "";
+
+        //print compound statement code
+        // Open a file for TAC output
+        string tac_filename = (yyvsp[-1].declinfo)->name + "_tac.txt";
+        ofstream tac_file(tac_filename);
+        
+        if (tac_file.is_open()) {
+            tac_file << "--------------------------------\n";
+            tac_file << "Function " << (yyvsp[-1].declinfo)->name << " TAC code:\n";
+            for (TACInstruction* instr : (yyvsp[0].typeinfo)->code) {
+            tac_file << get_TAC_instruction_string(instr) << "\n";
+            }
+            tac_file << "--------------------------------\n";
+            tac_file.close();
+            
+            cout << "TAC code for function " << (yyvsp[-1].declinfo)->name << " written to " << tac_filename << endl;
+        } else {
+            cout << "Failed to open file for TAC output: " << tac_filename << endl;
+        }
+        
+        // Also print to console for debugging
+        cout << "Function " << (yyvsp[-1].declinfo)->name << " TAC code (also written to " << tac_filename << "):\n";
+        for (TACInstruction* instr : (yyvsp[0].typeinfo)->code) {
+            print_TAC_instruction(instr);
+        }
+		
 		// Clean up
 		if ((yyvsp[-1].declinfo)->paramTypes) delete (yyvsp[-1].declinfo)->paramTypes;
 		delete (yyvsp[-2].typeinfo);
 		delete (yyvsp[-1].declinfo);
 	}
-#line 1567 "parser.tab.c"
+#line 1648 "parser.tab.c"
     break;
 
   case 7: /* declaration: return_types SEMICOLON  */
-#line 330 "parser.y"
-                                 { delete (yyvsp[-1].typeinfo); }
-#line 1573 "parser.tab.c"
+#line 603 "parser.y"
+                                 { 
+        (yyval.typeinfo) = new TypeInfo();
+        delete (yyvsp[-1].typeinfo); 
+    }
+#line 1657 "parser.tab.c"
     break;
 
   case 8: /* declaration: return_types init_declarator_list SEMICOLON  */
-#line 331 "parser.y"
+#line 607 "parser.y"
                                                       {
 		// Combine base type with each declarator's type information
 		for (DeclaratorInfo* declInfo : *(yyvsp[-1].decllist)) {
@@ -1583,6 +1667,9 @@ yyreduce:
 			combinedType.pointerLevel = declInfo->pointerLevel;
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
+            combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
+
+            (yyval.typeinfo) = new TypeInfo();
 			
 			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
@@ -1592,11 +1679,22 @@ yyreduce:
 						declInfo->name + "': cannot convert from " + 
 						declInfo->initType->toString() + " to " + combinedType.toString();
 					type_warning(warning_msg);
-				}
+				}else{
+                    // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
+                    
+                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_types_lhs_to_rhs(combinedType, *declInfo->initType);
+                    // append promo.first to $$->code
+                    (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), promo.first.begin(), promo.first.end());
+                    // now assign promo.second.second to declInfo->name
+                    TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
+                    (yyval.typeinfo)->code.push_back(assignInstr);
+
+                }
 			}
-			
+
+            insert_symbol(declInfo->name, combinedType, declInfo->initType);
+
 			// Insert into symbol table with native value storage
-			insert_symbol(declInfo->name, combinedType, declInfo->initType);
 			
 			// Clean up initType after insertion
 			if (declInfo->initType != nullptr) {
@@ -1607,156 +1705,156 @@ yyreduce:
 		delete (yyvsp[-2].typeinfo);
 		delete (yyvsp[-1].decllist);
 	}
-#line 1611 "parser.tab.c"
+#line 1709 "parser.tab.c"
     break;
 
   case 9: /* return_types: declaration_specifiers  */
-#line 369 "parser.y"
+#line 659 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1617 "parser.tab.c"
+#line 1715 "parser.tab.c"
     break;
 
   case 10: /* declaration_specifiers: type_specifier  */
-#line 373 "parser.y"
+#line 663 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1623 "parser.tab.c"
+#line 1721 "parser.tab.c"
     break;
 
   case 11: /* declaration_specifiers: STATIC type_specifier  */
-#line 374 "parser.y"
+#line 664 "parser.y"
                                 { 
 		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 		(yyval.typeinfo)->isStatic = true;
 	}
-#line 1632 "parser.tab.c"
+#line 1730 "parser.tab.c"
     break;
 
   case 12: /* type_specifier: VOID  */
-#line 381 "parser.y"
+#line 671 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "void"; 
     }
-#line 1641 "parser.tab.c"
+#line 1739 "parser.tab.c"
     break;
 
   case 13: /* type_specifier: CHAR  */
-#line 385 "parser.y"
+#line 675 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "char"; 
     }
-#line 1650 "parser.tab.c"
+#line 1748 "parser.tab.c"
     break;
 
   case 14: /* type_specifier: INT  */
-#line 389 "parser.y"
+#line 679 "parser.y"
           { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "int"; 
     }
-#line 1659 "parser.tab.c"
+#line 1757 "parser.tab.c"
     break;
 
   case 15: /* type_specifier: FLOAT  */
-#line 393 "parser.y"
+#line 683 "parser.y"
             { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "float"; 
     }
-#line 1668 "parser.tab.c"
+#line 1766 "parser.tab.c"
     break;
 
   case 16: /* type_specifier: struct_specifier  */
-#line 397 "parser.y"
+#line 687 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = *(yyvsp[0].sval);
         delete (yyvsp[0].sval);
     }
-#line 1678 "parser.tab.c"
+#line 1776 "parser.tab.c"
     break;
 
   case 17: /* cast_type_specifier: type_specifier  */
-#line 406 "parser.y"
+#line 696 "parser.y"
                      {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);  // Just a base type like int, float, etc.
     }
-#line 1686 "parser.tab.c"
+#line 1784 "parser.tab.c"
     break;
 
   case 18: /* cast_type_specifier: type_specifier STAR  */
-#line 409 "parser.y"
+#line 699 "parser.y"
                           {
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);
         (yyval.typeinfo)->pointerLevel = 1;  // Pointer type like int*, float*, etc.
     }
-#line 1695 "parser.tab.c"
+#line 1793 "parser.tab.c"
     break;
 
   case 19: /* init_declarator_list: init_declarator  */
-#line 418 "parser.y"
+#line 708 "parser.y"
                       { 
         (yyval.decllist) = new vector<DeclaratorInfo*>();
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1704 "parser.tab.c"
+#line 1802 "parser.tab.c"
     break;
 
   case 20: /* init_declarator_list: init_declarator_list COMMA init_declarator  */
-#line 422 "parser.y"
+#line 712 "parser.y"
                                                  {
         (yyval.decllist) = (yyvsp[-2].decllist);
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1713 "parser.tab.c"
+#line 1811 "parser.tab.c"
     break;
 
   case 21: /* init_declarator: declarator  */
-#line 430 "parser.y"
+#line 720 "parser.y"
                      { (yyval.declinfo) = (yyvsp[0].declinfo); }
-#line 1719 "parser.tab.c"
+#line 1817 "parser.tab.c"
     break;
 
   case 22: /* init_declarator: declarator ASSIGN initializer  */
-#line 431 "parser.y"
+#line 721 "parser.y"
                                         { 
 		(yyval.declinfo) = (yyvsp[-2].declinfo);
 		(yyval.declinfo)->initType = (yyvsp[0].typeinfo);  // Store the initializer's type for later checking
 	}
-#line 1728 "parser.tab.c"
+#line 1826 "parser.tab.c"
     break;
 
   case 23: /* declarator: pointer direct_declarator  */
-#line 440 "parser.y"
+#line 730 "parser.y"
                                     {                                 /* e.g., *p or **p or ***p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Add pointer levels from $1 to the declarator
 		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);
 	}
-#line 1738 "parser.tab.c"
+#line 1836 "parser.tab.c"
     break;
 
   case 24: /* declarator: direct_declarator  */
-#line 445 "parser.y"
+#line 735 "parser.y"
                             {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1746 "parser.tab.c"
+#line 1844 "parser.tab.c"
     break;
 
   case 25: /* direct_declarator: IDENTIFIER  */
-#line 452 "parser.y"
+#line 742 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 1756 "parser.tab.c"
+#line 1854 "parser.tab.c"
     break;
 
   case 26: /* direct_declarator: direct_declarator LBRACKET INT_LITERAL RBRACKET  */
-#line 457 "parser.y"
+#line 747 "parser.y"
                                                           {     /* e.g., arr[10] or arr[10][20] */ 
 		(yyval.declinfo) = (yyvsp[-3].declinfo);
         if((yyvsp[-1].ival) <= 0 ){
@@ -1765,11 +1863,11 @@ yyreduce:
         (yyval.declinfo)->isArray = true;
         (yyval.declinfo)->addArrayDimension((yyvsp[-1].ival)); // Support multidimensional arrays by adding each dimension
     }
-#line 1769 "parser.tab.c"
+#line 1867 "parser.tab.c"
     break;
 
   case 27: /* direct_declarator: IDENTIFIER LBRACKET INT_LITERAL RBRACKET  */
-#line 465 "parser.y"
+#line 755 "parser.y"
                                                {     /* e.g., arr[10] */ 
 		(yyval.declinfo) = new DeclaratorInfo();
         if( (yyvsp[-1].ival) <= 0 ){
@@ -1778,143 +1876,170 @@ yyreduce:
         (yyval.declinfo)->name = *(yyvsp[-3].sval);
         (yyval.declinfo)->isArray = true;
         (yyval.declinfo)->addArrayDimension((yyvsp[-1].ival));
-        delete (yyvsp[-3].sval);}
-#line 1783 "parser.tab.c"
+        delete (yyvsp[-3].sval);
+    }
+#line 1882 "parser.tab.c"
     break;
 
-  case 28: /* fun_declarator: pointer fun_direct_declarator  */
-#line 495 "parser.y"
+  case 28: /* direct_declarator: IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET  */
+#line 764 "parser.y"
+                                                 {     /* e.g., arr['a'] */
+        // implicit conversion of char to int for array size
+        (yyval.declinfo) = new DeclaratorInfo();
+        // Extract the character value from the string literal
+        char charValue = 0;
+        if ((yyvsp[-1].sval) && (yyvsp[-1].sval)->length() >= 3) {  // Format is 'c'
+            charValue = (*(yyvsp[-1].sval))[1];  // Get the character between quotes
+        }
+        if (charValue <= 0) {
+            yyerror("Array size must be a positive integer");
+        }
+        (yyval.declinfo)->name = *(yyvsp[-3].sval);
+        (yyval.declinfo)->isArray = true;
+        (yyval.declinfo)->addArrayDimension(static_cast<int>(charValue));
+        delete (yyvsp[-3].sval);
+    }
+#line 1903 "parser.tab.c"
+    break;
+
+  case 29: /* direct_declarator: direct_declarator LBRACKET CHAR_LITERAL RBRACKET  */
+#line 779 "parser.y"
+                                                        {     /* e.g., arr[10] or arr[10][20] */
+        // implicit conversion of char to int for array size
+        (yyval.declinfo) = (yyvsp[-3].declinfo);
+        // Extract the character value from the string literal
+        char charValue = 0;
+        if ((yyvsp[-1].sval) && (yyvsp[-1].sval)->length() >= 3) {  // Format is 'c'
+            charValue = (*(yyvsp[-1].sval))[1];  // Get the character between quotes
+        }
+        if (charValue <= 0) {
+            yyerror("Array size must be a positive integer");
+        }
+        (yyval.declinfo)->isArray = true;
+        (yyval.declinfo)->addArrayDimension(static_cast<int>(charValue)); // Support multidimensional arrays by adding each dimension
+    }
+#line 1922 "parser.tab.c"
+    break;
+
+  case 30: /* fun_declarator: pointer fun_direct_declarator  */
+#line 795 "parser.y"
                                         {
   		(yyval.declinfo) = (yyvsp[0].declinfo);
   		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);  // Function returns a pointer (possibly multi-level)
   	}
-#line 1792 "parser.tab.c"
+#line 1931 "parser.tab.c"
     break;
 
-  case 29: /* fun_declarator: fun_direct_declarator  */
-#line 499 "parser.y"
+  case 31: /* fun_declarator: fun_direct_declarator  */
+#line 799 "parser.y"
                                 {
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1800 "parser.tab.c"
+#line 1939 "parser.tab.c"
     break;
 
-  case 30: /* fun_direct_declarator: IDENTIFIER LPAREN parameter_list RPAREN  */
-#line 506 "parser.y"
+  case 32: /* fun_direct_declarator: IDENTIFIER LPAREN parameter_list RPAREN  */
+#line 806 "parser.y"
                                                   {          		/* e.g., f(int a, float b) */
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[-3].sval);
 		(yyval.declinfo)->isFunction = true;
 		(yyval.declinfo)->paramTypes = new vector<TypeInfo>(*(yyvsp[-1].typelist));  // Copy parameter types
+		
+		// Set current function context for variable name mangling
+		current_function_name = (yyval.declinfo)->name;
+		// Generate the function signature for variables in this function
+		current_function_signature = "";
+		for (size_t i = 0; i < (yyval.declinfo)->paramTypes->size(); i++) {
+			TypeInfo& param = (*((yyval.declinfo)->paramTypes))[i];
+			current_function_signature += type_code_for_mangling(param);
+			if (i < (yyval.declinfo)->paramTypes->size() - 1) {
+				current_function_signature += "_";
+			}
+		}
+		
 		cout << "Function declarator: " << (yyval.declinfo)->name << " with " << (yyval.declinfo)->paramTypes->size() << " parameters\n";
 		delete (yyvsp[-3].sval);
 		delete (yyvsp[-1].typelist);
 	}
-#line 1814 "parser.tab.c"
+#line 1966 "parser.tab.c"
     break;
 
-  case 31: /* fun_direct_declarator: IDENTIFIER LPAREN RPAREN  */
-#line 515 "parser.y"
+  case 33: /* fun_direct_declarator: IDENTIFIER LPAREN RPAREN  */
+#line 828 "parser.y"
                                    {                               /* e.g., f() (function with no params) */
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[-2].sval);
 		(yyval.declinfo)->isFunction = true;
 		(yyval.declinfo)->paramTypes = new vector<TypeInfo>();  // Empty parameter list
+		
+		// Set current function context for variable name mangling
+		current_function_name = (yyval.declinfo)->name;
+		current_function_signature = "";  // No parameters
+		
 		cout << "Function declarator: " << (yyval.declinfo)->name << " with no parameters\n";
 		delete (yyvsp[-2].sval);
 	}
-#line 1827 "parser.tab.c"
+#line 1984 "parser.tab.c"
     break;
 
-  case 35: /* initializer: assignment_expression  */
-#line 539 "parser.y"
-                                { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1833 "parser.tab.c"
-    break;
-
-  case 36: /* initializer: LBRACE initializer_list RBRACE  */
-#line 540 "parser.y"
-                                         {  //KRISH - pending alloca
-		// For array initializers, create a placeholder type
-		(yyval.typeinfo) = (yyvsp[-1].typeinfo);
-        (yyval.typeinfo)->isArray = true;
-	}
-#line 1843 "parser.tab.c"
-    break;
-
-  case 37: /* initializer: LBRACE initializer_list COMMA RBRACE  */
-#line 545 "parser.y"
-                                               { 
-		// For array initializers with trailing comma
-        (yyval.typeinfo) = (yyvsp[-2].typeinfo);
-        (yyval.typeinfo)->isArray = true;
-	}
-#line 1853 "parser.tab.c"
-    break;
-
-  case 38: /* initializer_list: assignment_expression  */
-#line 553 "parser.y"
-                                                                                                     {
+  case 34: /* declaration_list: declaration  */
+#line 846 "parser.y"
+                         {
         (yyval.typeinfo) = new TypeInfo();
-        (yyval.typeinfo)->baseType = (yyvsp[0].typeinfo)->baseType;
-        //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
-        if( (yyvsp[0].typeinfo)->isArray || (yyvsp[0].typeinfo)->pointerLevel > 0 || (yyvsp[0].typeinfo)->baseType=="string" || (yyvsp[0].typeinfo)->baseType=="void" ){
-            yyerror("Array initializer can only contain primitive types");
-        }
-        (yyval.typeinfo)->isArray = true;
-        (yyval.typeinfo)->arrayDimensions.push_back(1); // Single element
+        (yyval.typeinfo)->code = (yyvsp[0].typeinfo)->code; // Carry forward the code from the declaration
         delete (yyvsp[0].typeinfo);
     }
-#line 1869 "parser.tab.c"
+#line 1994 "parser.tab.c"
     break;
 
-  case 39: /* initializer_list: initializer_list COMMA assignment_expression  */
-#line 564 "parser.y"
-                                                                                                         {
-        (yyval.typeinfo) = (yyvsp[-2].typeinfo);
-        //if assigment expression is array/pointer/address/string literal then error, we are only allowing arrays of primitive types
-        if( (yyvsp[0].typeinfo)->isArray || (yyvsp[0].typeinfo)->pointerLevel > 0 || (yyvsp[0].typeinfo)->baseType=="string" || (yyvsp[0].typeinfo)->baseType=="void" ){
-            yyerror("Array initializer can only contain primitive types");
-        }
-        // Base type is max of both that is if one is int andd one is float ,then overall is float
-        if( (yyval.typeinfo)->baseType=="float" || (yyvsp[0].typeinfo)->baseType=="float" ){
-            (yyval.typeinfo)->baseType="float";
-        }
-        else if( (yyval.typeinfo)->baseType=="int" || (yyvsp[0].typeinfo)->baseType=="int" ){
-            (yyval.typeinfo)->baseType="int";
-        }
-        else if( (yyval.typeinfo)->baseType=="char" || (yyvsp[0].typeinfo)->baseType=="char" ){
-            (yyval.typeinfo)->baseType="char";
-        }
-        (yyval.typeinfo)->isArray = true;
-        (yyval.typeinfo)->arrayDimensions.push_back(1); // Add another dimension
+  case 35: /* declaration_list: declaration_list declaration  */
+#line 851 "parser.y"
+                                          {
+        (yyval.typeinfo) = (yyvsp[-1].typeinfo);
+        // Append the code from the new declaration
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
         delete (yyvsp[0].typeinfo);
     }
-#line 1894 "parser.tab.c"
+#line 2005 "parser.tab.c"
     break;
 
-  case 40: /* parameter_list: parameter_declaration  */
-#line 588 "parser.y"
+  case 36: /* declaration_list: %empty  */
+#line 857 "parser.y"
+                           {
+        (yyval.typeinfo) = new TypeInfo(); // Empty declaration list
+    }
+#line 2013 "parser.tab.c"
+    break;
+
+  case 37: /* initializer: assignment_expression  */
+#line 868 "parser.y"
+                                { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
+#line 2019 "parser.tab.c"
+    break;
+
+  case 38: /* parameter_list: parameter_declaration  */
+#line 872 "parser.y"
                                                                                               {
         (yyval.typelist) = new vector<TypeInfo>();
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 1904 "parser.tab.c"
+#line 2029 "parser.tab.c"
     break;
 
-  case 41: /* parameter_list: parameter_list COMMA parameter_declaration  */
-#line 593 "parser.y"
+  case 39: /* parameter_list: parameter_list COMMA parameter_declaration  */
+#line 877 "parser.y"
                                                                                                         {
         (yyval.typelist) = (yyvsp[-2].typelist);
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 1914 "parser.tab.c"
+#line 2039 "parser.tab.c"
     break;
 
-  case 42: /* parameter_declaration: return_types parameter_declarator  */
-#line 601 "parser.y"
+  case 40: /* parameter_declaration: return_types parameter_declarator  */
+#line 886 "parser.y"
                                                                                                           {
         // Combine base type with declarator-specific type info
         TypeInfo* combinedType = new TypeInfo(*(yyvsp[-1].typeinfo));  // Start with base type
@@ -1931,39 +2056,39 @@ yyreduce:
         delete (yyvsp[-1].typeinfo);
         delete (yyvsp[0].declinfo);
     }
-#line 1935 "parser.tab.c"
+#line 2060 "parser.tab.c"
     break;
 
-  case 43: /* parameter_declarator: pointer parameter_direct_declarator  */
-#line 620 "parser.y"
+  case 41: /* parameter_declarator: pointer parameter_direct_declarator  */
+#line 905 "parser.y"
                                               {                                 /* e.g., *p or **p or ***p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Add pointer levels to the declarator
 		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);
 	}
-#line 1945 "parser.tab.c"
+#line 2070 "parser.tab.c"
     break;
 
-  case 44: /* parameter_declarator: parameter_direct_declarator  */
-#line 625 "parser.y"
+  case 42: /* parameter_declarator: parameter_direct_declarator  */
+#line 910 "parser.y"
                                       {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1953 "parser.tab.c"
+#line 2078 "parser.tab.c"
     break;
 
-  case 45: /* parameter_direct_declarator: IDENTIFIER  */
-#line 632 "parser.y"
+  case 43: /* parameter_direct_declarator: IDENTIFIER  */
+#line 917 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 1963 "parser.tab.c"
+#line 2088 "parser.tab.c"
     break;
 
-  case 46: /* primary_expression: IDENTIFIER  */
-#line 667 "parser.y"
+  case 44: /* primary_expression: IDENTIFIER  */
+#line 927 "parser.y"
                  { 
         check_variable_declaration(*(yyvsp[0].sval));
         SymbolEntry entry;
@@ -1974,6 +2099,8 @@ yyreduce:
             (yyval.typeinfo)->isLiteral = false;
             (yyval.typeinfo)->isLvalue = true;   // Variables are lvalues
             cout << "Found variable: " << *(yyvsp[0].sval) << " of type " << (yyval.typeinfo)->toString() << "\n";
+
+            (yyval.typeinfo)->result = new_identifier(entry.mangledName);
         } 
         // If not a variable, check if it might be a function
         else if (is_function_name(*(yyvsp[0].sval))) {
@@ -1983,6 +2110,9 @@ yyreduce:
             (yyval.typeinfo)->isLiteral = false;
             (yyval.typeinfo)->isLvalue = false;       // Function names are not lvalues
             cout << "Found function name: " << *(yyvsp[0].sval) << "\n";
+
+            (yyval.typeinfo)->result = new_identifier(*(yyvsp[0].sval)); // Function names can be used as pointers to functions
+            // iske baad kuch nhi karna chahiye, 
         }
         // Otherwise, it's undefined
         else {
@@ -1994,61 +2124,77 @@ yyreduce:
         }
         delete (yyvsp[0].sval);
     }
-#line 1998 "parser.tab.c"
+#line 2128 "parser.tab.c"
     break;
 
-  case 47: /* primary_expression: INT_LITERAL  */
-#line 697 "parser.y"
+  case 45: /* primary_expression: INT_LITERAL  */
+#line 962 "parser.y"
                   { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "int";
         (yyval.typeinfo)->isLiteral = true;
         (yyval.typeinfo)->isLvalue = false;  // Literals are not lvalues
         cout << "Integer literal: " << (yyvsp[0].ival) << " (type: int)\n";
+
+        (yyval.typeinfo)->result = new_constant(to_string((yyvsp[0].ival)));
+
+
     }
-#line 2010 "parser.tab.c"
+#line 2144 "parser.tab.c"
     break;
 
-  case 48: /* primary_expression: FLOAT_LITERAL  */
-#line 704 "parser.y"
+  case 46: /* primary_expression: FLOAT_LITERAL  */
+#line 973 "parser.y"
                     { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "float";
         (yyval.typeinfo)->isLiteral = true;
         (yyval.typeinfo)->isLvalue = false;  // Literals are not lvalues
         cout << "Float literal: " << (yyvsp[0].fval) << " (type: float)\n";
+
+        string floatStr = float_to_string_conversion((yyvsp[0].fval));
+        (yyval.typeinfo)->result = new_constant(floatStr);
+
     }
-#line 2022 "parser.tab.c"
+#line 2160 "parser.tab.c"
     break;
 
-  case 49: /* primary_expression: CHAR_LITERAL  */
-#line 711 "parser.y"
+  case 47: /* primary_expression: CHAR_LITERAL  */
+#line 984 "parser.y"
                    { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "char";
         (yyval.typeinfo)->isLiteral = true;
         (yyval.typeinfo)->isLvalue = false;  // Literals are not lvalues
         cout << "Char literal: " << *(yyvsp[0].sval) << " (type: char)\n";
+
+        string charStr = char_to_string_conversion((*(yyvsp[0].sval))[1]); // Extract char from string literal format 'c'
+        (yyval.typeinfo)->result = new_constant(charStr);
         delete (yyvsp[0].sval);
     }
-#line 2035 "parser.tab.c"
+#line 2176 "parser.tab.c"
     break;
 
-  case 50: /* primary_expression: STRING_LITERAL  */
-#line 719 "parser.y"
+  case 48: /* primary_expression: STRING_LITERAL  */
+#line 995 "parser.y"
                      { 
         (yyval.typeinfo) = new TypeInfo();
-        (yyval.typeinfo)->baseType = "string";
+        (yyval.typeinfo)->baseType = "char";
+        (yyval.typeinfo)->pointerLevel = 1;  
         (yyval.typeinfo)->isLiteral = true;
         (yyval.typeinfo)->isLvalue = false;  // Literals are not lvalues (even though string literals are somewhat special in C)
         cout << "String literal: " << *(yyvsp[0].sval) << " (type: string)\n";
+
+        (yyval.typeinfo)->result = new_string(*(yyvsp[0].sval));
+
+
         delete (yyvsp[0].sval);
     }
-#line 2048 "parser.tab.c"
+#line 2194 "parser.tab.c"
     break;
 
-  case 51: /* primary_expression: NULL_LITERAL  */
-#line 727 "parser.y"
+  case 49: /* primary_expression: NULL_LITERAL  */
+#line 1008 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -2057,25 +2203,25 @@ yyreduce:
         (yyval.typeinfo)->isLvalue = false;  // NULL is not an lvalue
         cout << "NULL literal (type: void*)\n";
     }
-#line 2061 "parser.tab.c"
+#line 2207 "parser.tab.c"
     break;
 
-  case 52: /* primary_expression: LPAREN expression RPAREN  */
-#line 735 "parser.y"
+  case 50: /* primary_expression: LPAREN expression RPAREN  */
+#line 1016 "parser.y"
                                { 
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);  // Pass through the expression type
     }
-#line 2069 "parser.tab.c"
+#line 2215 "parser.tab.c"
     break;
 
-  case 53: /* postfix_expression: primary_expression  */
-#line 742 "parser.y"
+  case 51: /* postfix_expression: primary_expression  */
+#line 1023 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2075 "parser.tab.c"
+#line 2221 "parser.tab.c"
     break;
 
-  case 54: /* postfix_expression: postfix_expression LBRACKET expression RBRACKET  */
-#line 743 "parser.y"
+  case 52: /* postfix_expression: postfix_expression LBRACKET expression RBRACKET  */
+#line 1024 "parser.y"
                                                           {              /* e.g., arr[i] */
 		// Array subscripting: arr[i] or ptr[i]
 		TypeInfo* base = (yyvsp[-3].typeinfo);
@@ -2124,14 +2270,36 @@ yyreduce:
 			// Array subscript result is an lvalue if the base is an lvalue
 			(yyval.typeinfo)->isLvalue = base->isLvalue;
 			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << (yyval.typeinfo)->toString() << "\n";
+
+            int size_of_base = getSize(*base);
+            
+            TACOperand* offset = new_temp_var();
+            TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
+
+            // base address is &base->result
+
+            TACOperand* base_addr = new_temp_var();
+            TACInstruction* i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
+
+            TACOperand* address = new_temp_var();
+            TACInstruction* i2 = emit(TAC_OPERATOR_ADD, address, base_addr, offset,0);
+            (yyval.typeinfo)->result = new_temp_var();
+            TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, (yyval.typeinfo)->result, address, new_empty_var(),0);
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), base->code.begin(), base->code.end());
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), index->code.begin(), index->code.end());
+            (yyval.typeinfo)->code.push_back(i1);
+            (yyval.typeinfo)->code.push_back(i_base);
+            (yyval.typeinfo)->code.push_back(i2);
+            (yyval.typeinfo)->code.push_back(i3);
+
 		}
 		delete (yyvsp[-3].typeinfo); delete (yyvsp[-1].typeinfo);
 	}
-#line 2131 "parser.tab.c"
+#line 2299 "parser.tab.c"
     break;
 
-  case 55: /* postfix_expression: postfix_expression LPAREN RPAREN  */
-#line 794 "parser.y"
+  case 53: /* postfix_expression: postfix_expression LPAREN RPAREN  */
+#line 1097 "parser.y"
                                            {                               /* e.g., func() */
 		// Function call with no arguments
 		TypeInfo* base = (yyvsp[-2].typeinfo);
@@ -2157,11 +2325,11 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo);
 	}
-#line 2161 "parser.tab.c"
+#line 2329 "parser.tab.c"
     break;
 
-  case 56: /* postfix_expression: postfix_expression LPAREN argument_expression_list RPAREN  */
-#line 819 "parser.y"
+  case 54: /* postfix_expression: postfix_expression LPAREN argument_expression_list RPAREN  */
+#line 1122 "parser.y"
                                                                     {      /* e.g., func(a,b) */
 		// Function call with arguments
 		TypeInfo* base = (yyvsp[-3].typeinfo);
@@ -2197,104 +2365,104 @@ yyreduce:
 		delete (yyvsp[-3].typeinfo);
 		delete (yyvsp[-1].typelist);
 	}
-#line 2201 "parser.tab.c"
+#line 2369 "parser.tab.c"
     break;
 
-  case 57: /* postfix_expression: postfix_expression DOT IDENTIFIER  */
-#line 854 "parser.y"
+  case 55: /* postfix_expression: postfix_expression DOT IDENTIFIER  */
+#line 1157 "parser.y"
                                             {                            /* e.g., obj.field */
 		// Struct member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 2211 "parser.tab.c"
+#line 2379 "parser.tab.c"
     break;
 
-  case 58: /* postfix_expression: postfix_expression ARROW IDENTIFIER  */
-#line 859 "parser.y"
+  case 56: /* postfix_expression: postfix_expression ARROW IDENTIFIER  */
+#line 1162 "parser.y"
                                               {                             /* e.g., ptr->field */
 		// Struct pointer member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 2221 "parser.tab.c"
+#line 2389 "parser.tab.c"
     break;
 
-  case 59: /* postfix_expression: postfix_expression INCREMENT  */
-#line 864 "parser.y"
+  case 57: /* postfix_expression: postfix_expression INCREMENT  */
+#line 1167 "parser.y"
                                        {                                  /* e.g., x++ */
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "++");
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2230 "parser.tab.c"
+#line 2398 "parser.tab.c"
     break;
 
-  case 60: /* postfix_expression: postfix_expression DECREMENT  */
-#line 868 "parser.y"
+  case 58: /* postfix_expression: postfix_expression DECREMENT  */
+#line 1171 "parser.y"
                                        {                                 /* e.g., x-- */
-		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "--");
+		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "--"); 
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2239 "parser.tab.c"
+#line 2407 "parser.tab.c"
     break;
 
-  case 61: /* argument_expression_list: assignment_expression  */
-#line 875 "parser.y"
+  case 59: /* argument_expression_list: assignment_expression  */
+#line 1178 "parser.y"
                                 {                                         /* e.g., x */
 		(yyval.typelist) = new vector<TypeInfo>();
 		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
 		(yyval.typelist)->push_back(argType);
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2250 "parser.tab.c"
+#line 2418 "parser.tab.c"
     break;
 
-  case 62: /* argument_expression_list: argument_expression_list COMMA assignment_expression  */
-#line 881 "parser.y"
+  case 60: /* argument_expression_list: argument_expression_list COMMA assignment_expression  */
+#line 1184 "parser.y"
                                                                {           /* e.g., x, y */
 		(yyval.typelist) = (yyvsp[-2].typelist);
 		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
 		(yyval.typelist)->push_back(argType);
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2261 "parser.tab.c"
+#line 2429 "parser.tab.c"
     break;
 
-  case 63: /* unary_expression: postfix_expression  */
-#line 890 "parser.y"
+  case 61: /* unary_expression: postfix_expression  */
+#line 1193 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2267 "parser.tab.c"
+#line 2435 "parser.tab.c"
     break;
 
-  case 64: /* unary_expression: INCREMENT unary_expression  */
-#line 891 "parser.y"
+  case 62: /* unary_expression: INCREMENT unary_expression  */
+#line 1194 "parser.y"
                                      { 
-		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "++");
+		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "++");    
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2276 "parser.tab.c"
+#line 2444 "parser.tab.c"
     break;
 
-  case 65: /* unary_expression: DECREMENT unary_expression  */
-#line 895 "parser.y"
+  case 63: /* unary_expression: DECREMENT unary_expression  */
+#line 1198 "parser.y"
                                      { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "--");
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2285 "parser.tab.c"
+#line 2453 "parser.tab.c"
     break;
 
-  case 66: /* unary_expression: unary_operator cast_expression  */
-#line 899 "parser.y"
+  case 64: /* unary_expression: unary_operator cast_expression  */
+#line 1202 "parser.y"
                                          { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), *(yyvsp[-1].sval));
-		delete (yyvsp[-1].sval); delete (yyvsp[0].typeinfo);
+        delete (yyvsp[0].typeinfo);
 	}
-#line 2294 "parser.tab.c"
+#line 2462 "parser.tab.c"
     break;
 
-  case 67: /* unary_expression: SIZEOF unary_expression  */
-#line 903 "parser.y"
+  case 65: /* unary_expression: SIZEOF unary_expression  */
+#line 1206 "parser.y"
                                   { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2302,11 +2470,11 @@ yyreduce:
 		cout << "sizeof operation result type: int\n";
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2306 "parser.tab.c"
+#line 2474 "parser.tab.c"
     break;
 
-  case 68: /* unary_expression: SIZEOF LPAREN type_specifier RPAREN  */
-#line 910 "parser.y"
+  case 66: /* unary_expression: SIZEOF LPAREN type_specifier RPAREN  */
+#line 1213 "parser.y"
                                               { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2314,53 +2482,53 @@ yyreduce:
 		cout << "sizeof(" << (yyvsp[-1].typeinfo)->toString() << ") result type: int\n";
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2318 "parser.tab.c"
+#line 2486 "parser.tab.c"
     break;
 
-  case 69: /* unary_operator: BIT_AND  */
-#line 920 "parser.y"
+  case 67: /* unary_operator: BIT_AND  */
+#line 1223 "parser.y"
                                                                      {   (yyval.sval) = new string("&"); }
-#line 2324 "parser.tab.c"
+#line 2492 "parser.tab.c"
     break;
 
-  case 70: /* unary_operator: STAR  */
-#line 921 "parser.y"
+  case 68: /* unary_operator: STAR  */
+#line 1224 "parser.y"
                                                                            {   (yyval.sval) = new string("*"); }
-#line 2330 "parser.tab.c"
+#line 2498 "parser.tab.c"
     break;
 
-  case 71: /* unary_operator: PLUS  */
-#line 922 "parser.y"
+  case 69: /* unary_operator: PLUS  */
+#line 1225 "parser.y"
                                                                            {   (yyval.sval) = new string("+"); }
-#line 2336 "parser.tab.c"
+#line 2504 "parser.tab.c"
     break;
 
-  case 72: /* unary_operator: MINUS  */
-#line 923 "parser.y"
+  case 70: /* unary_operator: MINUS  */
+#line 1226 "parser.y"
                                                                             {   (yyval.sval) = new string("-"); }
-#line 2342 "parser.tab.c"
+#line 2510 "parser.tab.c"
     break;
 
-  case 73: /* unary_operator: BIT_NOT  */
-#line 924 "parser.y"
+  case 71: /* unary_operator: BIT_NOT  */
+#line 1227 "parser.y"
                                                                               {   (yyval.sval) = new string("~"); }
-#line 2348 "parser.tab.c"
+#line 2516 "parser.tab.c"
     break;
 
-  case 74: /* unary_operator: LOGICAL_NOT  */
-#line 925 "parser.y"
+  case 72: /* unary_operator: LOGICAL_NOT  */
+#line 1228 "parser.y"
                                                                                  {   (yyval.sval) = new string("!"); }
-#line 2354 "parser.tab.c"
+#line 2522 "parser.tab.c"
     break;
 
-  case 75: /* cast_expression: unary_expression  */
-#line 929 "parser.y"
+  case 73: /* cast_expression: unary_expression  */
+#line 1232 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2360 "parser.tab.c"
+#line 2528 "parser.tab.c"
     break;
 
-  case 76: /* cast_expression: LPAREN cast_type_specifier RPAREN cast_expression  */
-#line 930 "parser.y"
+  case 74: /* cast_expression: LPAREN cast_type_specifier RPAREN cast_expression  */
+#line 1233 "parser.y"
                                                             {                         /* e.g., (int) x, (int*) x */
 		TypeInfo* target_type = (yyvsp[-2].typeinfo);
 		TypeInfo* source_type = (yyvsp[0].typeinfo);
@@ -2411,74 +2579,74 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2415 "parser.tab.c"
+#line 2583 "parser.tab.c"
     break;
 
-  case 77: /* multiplicative_expression: cast_expression  */
-#line 983 "parser.y"
+  case 75: /* multiplicative_expression: cast_expression  */
+#line 1286 "parser.y"
                           { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2421 "parser.tab.c"
+#line 2589 "parser.tab.c"
     break;
 
-  case 78: /* multiplicative_expression: multiplicative_expression STAR cast_expression  */
-#line 984 "parser.y"
+  case 76: /* multiplicative_expression: multiplicative_expression STAR cast_expression  */
+#line 1287 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "*");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2430 "parser.tab.c"
+#line 2598 "parser.tab.c"
     break;
 
-  case 79: /* multiplicative_expression: multiplicative_expression DIVIDE cast_expression  */
-#line 988 "parser.y"
+  case 77: /* multiplicative_expression: multiplicative_expression DIVIDE cast_expression  */
+#line 1291 "parser.y"
                                                            { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "/");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2439 "parser.tab.c"
+#line 2607 "parser.tab.c"
     break;
 
-  case 80: /* multiplicative_expression: multiplicative_expression MOD cast_expression  */
-#line 992 "parser.y"
+  case 78: /* multiplicative_expression: multiplicative_expression MOD cast_expression  */
+#line 1295 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "%");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2448 "parser.tab.c"
+#line 2616 "parser.tab.c"
     break;
 
-  case 81: /* additive_expression: multiplicative_expression  */
-#line 999 "parser.y"
+  case 79: /* additive_expression: multiplicative_expression  */
+#line 1302 "parser.y"
                                     { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2454 "parser.tab.c"
+#line 2622 "parser.tab.c"
     break;
 
-  case 82: /* additive_expression: additive_expression PLUS multiplicative_expression  */
-#line 1000 "parser.y"
+  case 80: /* additive_expression: additive_expression PLUS multiplicative_expression  */
+#line 1303 "parser.y"
                                                              { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "+");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2463 "parser.tab.c"
+#line 2631 "parser.tab.c"
     break;
 
-  case 83: /* additive_expression: additive_expression MINUS multiplicative_expression  */
-#line 1004 "parser.y"
+  case 81: /* additive_expression: additive_expression MINUS multiplicative_expression  */
+#line 1307 "parser.y"
                                                               { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "-");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2472 "parser.tab.c"
+#line 2640 "parser.tab.c"
     break;
 
-  case 84: /* shift_expression: additive_expression  */
-#line 1011 "parser.y"
+  case 82: /* shift_expression: additive_expression  */
+#line 1315 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2478 "parser.tab.c"
+#line 2646 "parser.tab.c"
     break;
 
-  case 85: /* shift_expression: shift_expression LEFT_SHIFT additive_expression  */
-#line 1012 "parser.y"
+  case 83: /* shift_expression: shift_expression LEFT_SHIFT additive_expression  */
+#line 1316 "parser.y"
                                                           {                     /* e.g., a << b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->pointerLevel > 0 || (yyvsp[-2].typeinfo)->isArray ||
@@ -2493,11 +2661,11 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2497 "parser.tab.c"
+#line 2665 "parser.tab.c"
     break;
 
-  case 86: /* shift_expression: shift_expression RIGHT_SHIFT additive_expression  */
-#line 1026 "parser.y"
+  case 84: /* shift_expression: shift_expression RIGHT_SHIFT additive_expression  */
+#line 1330 "parser.y"
                                                            {                     /* e.g., a >> b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->pointerLevel > 0 || (yyvsp[-2].typeinfo)->isArray ||
@@ -2512,158 +2680,279 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2516 "parser.tab.c"
+#line 2684 "parser.tab.c"
     break;
 
-  case 87: /* relational_expression: shift_expression  */
-#line 1043 "parser.y"
+  case 85: /* relational_expression: shift_expression  */
+#line 1347 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2522 "parser.tab.c"
+#line 2690 "parser.tab.c"
     break;
 
-  case 88: /* relational_expression: relational_expression LT shift_expression  */
-#line 1044 "parser.y"
+  case 86: /* relational_expression: relational_expression LT shift_expression  */
+#line 1348 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2531 "parser.tab.c"
+#line 2699 "parser.tab.c"
     break;
 
-  case 89: /* relational_expression: relational_expression GT shift_expression  */
-#line 1048 "parser.y"
+  case 87: /* relational_expression: relational_expression GT shift_expression  */
+#line 1352 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2540 "parser.tab.c"
+#line 2708 "parser.tab.c"
     break;
 
-  case 90: /* relational_expression: relational_expression LE shift_expression  */
-#line 1052 "parser.y"
+  case 88: /* relational_expression: relational_expression LE shift_expression  */
+#line 1356 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2549 "parser.tab.c"
+#line 2717 "parser.tab.c"
     break;
 
-  case 91: /* relational_expression: relational_expression GE shift_expression  */
-#line 1056 "parser.y"
+  case 89: /* relational_expression: relational_expression GE shift_expression  */
+#line 1360 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2558 "parser.tab.c"
+#line 2726 "parser.tab.c"
     break;
 
-  case 92: /* equality_expression: relational_expression  */
-#line 1063 "parser.y"
+  case 90: /* equality_expression: relational_expression  */
+#line 1367 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2564 "parser.tab.c"
+#line 2732 "parser.tab.c"
     break;
 
-  case 93: /* equality_expression: equality_expression EQ relational_expression  */
-#line 1064 "parser.y"
+  case 91: /* equality_expression: equality_expression EQ relational_expression  */
+#line 1368 "parser.y"
                                                        { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "==");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2573 "parser.tab.c"
+#line 2741 "parser.tab.c"
     break;
 
-  case 94: /* equality_expression: equality_expression NEQ relational_expression  */
-#line 1068 "parser.y"
+  case 92: /* equality_expression: equality_expression NEQ relational_expression  */
+#line 1372 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "!=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2582 "parser.tab.c"
+#line 2750 "parser.tab.c"
     break;
 
-  case 95: /* and_expression: equality_expression  */
-#line 1075 "parser.y"
+  case 93: /* and_expression: equality_expression  */
+#line 1379 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2588 "parser.tab.c"
+#line 2756 "parser.tab.c"
     break;
 
-  case 96: /* and_expression: and_expression BIT_AND equality_expression  */
-#line 1076 "parser.y"
+  case 94: /* and_expression: and_expression BIT_AND equality_expression  */
+#line 1380 "parser.y"
                                                      { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "&");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2597 "parser.tab.c"
+#line 2765 "parser.tab.c"
     break;
 
-  case 97: /* exclusive_or_expression: and_expression  */
-#line 1083 "parser.y"
+  case 95: /* exclusive_or_expression: and_expression  */
+#line 1387 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2603 "parser.tab.c"
+#line 2771 "parser.tab.c"
     break;
 
-  case 98: /* exclusive_or_expression: exclusive_or_expression BIT_XOR and_expression  */
-#line 1084 "parser.y"
+  case 96: /* exclusive_or_expression: exclusive_or_expression BIT_XOR and_expression  */
+#line 1388 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "^");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2612 "parser.tab.c"
+#line 2780 "parser.tab.c"
     break;
 
-  case 99: /* inclusive_or_expression: exclusive_or_expression  */
-#line 1091 "parser.y"
+  case 97: /* inclusive_or_expression: exclusive_or_expression  */
+#line 1395 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2618 "parser.tab.c"
+#line 2786 "parser.tab.c"
     break;
 
-  case 100: /* inclusive_or_expression: inclusive_or_expression BIT_OR exclusive_or_expression  */
-#line 1092 "parser.y"
+  case 98: /* inclusive_or_expression: inclusive_or_expression BIT_OR exclusive_or_expression  */
+#line 1396 "parser.y"
                                                                  { 
-		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "|");
-		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
-	}
-#line 2627 "parser.tab.c"
+		
+        (yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "|");
+        delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
+    }
+#line 2796 "parser.tab.c"
     break;
 
-  case 101: /* logical_and_expression: inclusive_or_expression  */
-#line 1099 "parser.y"
+  case 99: /* logical_and_expression: inclusive_or_expression  */
+#line 1403 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2633 "parser.tab.c"
+#line 2802 "parser.tab.c"
     break;
 
-  case 102: /* logical_and_expression: logical_and_expression LOGICAL_AND inclusive_or_expression  */
-#line 1100 "parser.y"
-                                                                     { 
-		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "&&");
-		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
-	}
-#line 2642 "parser.tab.c"
+  case 100: /* $@1: %empty  */
+#line 1404 "parser.y"
+                                             { 
+        TACOperand* true_label = new_label(2);
+        TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        (yyvsp[-1].typeinfo)->code.push_back(if_true);
+        (yyvsp[-1].typeinfo)->code.push_back(goto_false);
+        (yyvsp[-1].typeinfo)->false_list.insert(goto_false);
+    }
+#line 2815 "parser.tab.c"
     break;
 
-  case 103: /* logical_or_expression: logical_and_expression  */
-#line 1107 "parser.y"
+  case 101: /* logical_and_expression: logical_and_expression LOGICAL_AND $@1 inclusive_or_expression  */
+#line 1411 "parser.y"
+                              { 
+		// Short-circuit logical AND
+        TypeInfo* left = (yyvsp[-3].typeinfo);
+        TypeInfo* right = (yyvsp[0].typeinfo);
+        
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in logical AND operation");
+        }else{
+            // okay for all other types
+            (yyval.typeinfo) = new TypeInfo();
+            (yyval.typeinfo)->baseType = "int"; // Result of logical operations is int
+            (yyval.typeinfo)->isLiteral = false;
+            (yyval.typeinfo)->isLvalue = false;
+            cout << "Logical AND: " << left->toString() << " && " << right->toString() << " -> int\n";
+
+            
+            (yyval.typeinfo)->result = new_temp_var();
+            (yyval.typeinfo)->code = left->code;
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), right->code.begin(), right->code.end());
+
+
+            TACOperand* true_label = new_label(2);
+            TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, right->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+            TACOperand* false_label = new_label(3);
+            TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), false_label, new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            TACInstruction* assign_true = emit(TACOperator(TAC_OPERATOR_NOP), (yyval.typeinfo)->result, new_constant("1"), new_empty_var(),0); // result = 1
+            TACOperand* end_label = new_label(2);
+            TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), end_label, new_empty_var(), new_empty_var(), 1); // goto ___
+            TACInstruction* assign_false = emit(TACOperator(TAC_OPERATOR_NOP), (yyval.typeinfo)->result, new_constant("0"), new_empty_var(),0); // result = 0
+            // backpatching
+            if (!left->false_list.empty()) {
+                backpatch(left->false_list, false_label);
+            }
+            if (!right->false_list.empty()) {
+                backpatch(right->false_list, false_label);
+            }
+            (yyval.typeinfo)->code.push_back(if_true);
+            (yyval.typeinfo)->code.push_back(goto_false);
+            (yyval.typeinfo)->code.push_back(assign_true);
+            (yyval.typeinfo)->code.push_back(goto_end);
+            (yyval.typeinfo)->code.push_back(assign_false);
+
+            delete left;
+            delete right;
+
+        }
+    }
+#line 2868 "parser.tab.c"
+    break;
+
+  case 102: /* logical_or_expression: logical_and_expression  */
+#line 1462 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2648 "parser.tab.c"
+#line 2874 "parser.tab.c"
     break;
 
-  case 104: /* logical_or_expression: logical_or_expression LOGICAL_OR logical_and_expression  */
-#line 1108 "parser.y"
-                                                                  { 
-		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "||");
-		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
-	}
-#line 2657 "parser.tab.c"
+  case 103: /* $@2: %empty  */
+#line 1463 "parser.y"
+                                           {
+        TACInstruction* go_true = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        (yyvsp[-1].typeinfo)->code.push_back(go_true);
+        (yyvsp[-1].typeinfo)->true_list.insert(go_true);
+    }
+#line 2884 "parser.tab.c"
+    break;
+
+  case 104: /* logical_or_expression: logical_or_expression LOGICAL_OR $@2 logical_and_expression  */
+#line 1467 "parser.y"
+                             { 
+		// short circuit
+        
+        TypeInfo* left = (yyvsp[-3].typeinfo);
+        TypeInfo* right = (yyvsp[0].typeinfo);
+
+
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in bitwise OR operation");
+        }else{
+            // okay for all other types
+            (yyval.typeinfo) = new TypeInfo();
+            (yyval.typeinfo)->baseType = "int"; // Result of bitwise operations is int
+            (yyval.typeinfo)->isLiteral = false;
+            (yyval.typeinfo)->isLvalue = false;
+            cout << "Bitwise OR: " << left->toString() << " | " << right->toString() << " -> int\n";
+            (yyval.typeinfo)->result = new_temp_var();
+            (yyval.typeinfo)->code = left->code;
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), right->code.begin(), right->code.end());
+            TACOperand* true_label = new_label(2);
+            TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, right->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+            TACOperand* false_label = new_label(3);
+            TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), false_label, new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+            TACInstruction* assign_true = emit(TACOperator(TAC_OPERATOR_NOP), (yyval.typeinfo)->result, new_constant("1"), new_empty_var(),0); // result = 1
+            TACOperand* end_label = new_label(2);
+            TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), end_label, new_empty_var(), new_empty_var(), 1); // goto ___
+            TACInstruction* assign_false = emit(TACOperator(TAC_OPERATOR_NOP), (yyval.typeinfo)->result, new_constant("0"), new_empty_var(),0); // result = 0
+
+            //backpatching
+            if (!left->true_list.empty()) {
+                backpatch(left->true_list, true_label);
+            }
+            if (!right->true_list.empty()) {
+                backpatch(right->true_list, true_label);
+            }
+
+            (yyval.typeinfo)->code.push_back(if_true);
+            (yyval.typeinfo)->code.push_back(goto_false);
+            (yyval.typeinfo)->code.push_back(assign_true);
+            (yyval.typeinfo)->code.push_back(goto_end);
+            (yyval.typeinfo)->code.push_back(assign_false);
+
+
+            delete left;
+            delete right;
+            
+        }
+    }
+#line 2938 "parser.tab.c"
+    break;
+
+  case 105: /* conditional_expression: logical_or_expression  */
+#line 1519 "parser.y"
+                                                                                         {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);  // No conditional, just pass through
+    }
+#line 2946 "parser.tab.c"
     break;
 
   case 106: /* assignment_expression: conditional_expression  */
-#line 1119 "parser.y"
+#line 1525 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2663 "parser.tab.c"
+#line 2952 "parser.tab.c"
     break;
 
   case 107: /* assignment_expression: unary_expression assignment_operator assignment_expression  */
-#line 1120 "parser.y"
+#line 1526 "parser.y"
                                                                      { 
 		// Type checking for assignment
 		TypeInfo* lhs_type = (yyvsp[-2].typeinfo);
@@ -2673,121 +2962,416 @@ yyreduce:
 		if (!is_lvalue(*lhs_type)) {
 			type_error("Cannot assign to " + lhs_type->toString() + " - not an lvalue");
 			(yyval.typeinfo) = new TypeInfo();
+            (yyval.typeinfo)->isLvalue = false;  // Result of assignment is not an lvalue in C
 			(yyval.typeinfo)->baseType = "error";
 		} else if (!is_implicit_conversion_allowed(*rhs_type, *lhs_type)) {
 			type_error("Cannot assign " + rhs_type->toString() + " to " + lhs_type->toString());
 			(yyval.typeinfo) = new TypeInfo();
+            (yyval.typeinfo)->isLvalue = false;  // Result of assignment is not an lvalue in C
 			(yyval.typeinfo)->baseType = "error";
 		} else if (is_narrowing_conversion(*rhs_type, *lhs_type)) {
 			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
 			(yyval.typeinfo) = new TypeInfo(*lhs_type);  // Result type is the LHS type
+            (yyval.typeinfo)->isLvalue = false;  // Result of assignment is not an lvalue in C
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
+            (yyval.typeinfo)->result = cast_result.second.first; // Result after casting
+            (yyval.typeinfo)->code = lhs_type->code;
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, (yyval.typeinfo)->result, new_empty_var(),0); // lhs = rhs
+            (yyval.typeinfo)->code.push_back(assign_inst);
 		} else {
 			(yyval.typeinfo) = new TypeInfo(*lhs_type);  // Result type is the LHS type
 			(yyval.typeinfo)->isLvalue = false;  // Result of assignment is not an lvalue in C
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
+            (yyval.typeinfo)->result = cast_result.second.first; // Result after casting
+            (yyval.typeinfo)->code = lhs_type->code;
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, (yyval.typeinfo)->result, new_empty_var(),0); // lhs = rhs
+            (yyval.typeinfo)->code.push_back(assign_inst);
 		}
+
+        // print 3AC
+        for(TACInstruction* inst : (yyval.typeinfo)->code){
+            print_TAC_instruction(inst);
+        }
 		
-		cout << "Assignment: " << lhs_type->toString() << " = " << rhs_type->toString() << "\n";
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2693 "parser.tab.c"
+#line 3003 "parser.tab.c"
     break;
 
   case 109: /* expression: assignment_expression  */
-#line 1152 "parser.y"
+#line 1579 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2699 "parser.tab.c"
+#line 3009 "parser.tab.c"
     break;
 
   case 110: /* expression: expression COMMA assignment_expression  */
-#line 1153 "parser.y"
+#line 1580 "parser.y"
                                                  { 
 		// Comma operator returns the type of the right operand
-		(yyval.typeinfo) = (yyvsp[0].typeinfo);
+		(yyval.typeinfo) = new TypeInfo(*(yyvsp[0].typeinfo));
+        (yyval.typeinfo)->isLvalue = false;  // Result of comma operator is not an
+        (yyval.typeinfo)->code = (yyvsp[-2].typeinfo)->code;
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
 		delete (yyvsp[-2].typeinfo);
+        delete (yyvsp[0].typeinfo);
 	}
-#line 2709 "parser.tab.c"
+#line 3023 "parser.tab.c"
     break;
 
   case 111: /* constant_expression: conditional_expression  */
-#line 1161 "parser.y"
+#line 1592 "parser.y"
                                  { 
-		// For constant expressions, we need to return an integer value
-		// For now, return 0 as a placeholder
-		(yyval.ival) = 0;
-		delete (yyvsp[0].typeinfo);
+		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 	}
-#line 2720 "parser.tab.c"
+#line 3031 "parser.tab.c"
     break;
 
   case 112: /* struct_specifier: struct IDENTIFIER LBRACE struct_declaration_list RBRACE  */
-#line 1176 "parser.y"
+#line 1600 "parser.y"
                                                                   {  // e.g., struct S { int x; float y; };
 		(yyval.sval) = new string(*(yyvsp[-4].sval) + " " + *(yyvsp[-3].sval));
 		delete (yyvsp[-4].sval); delete (yyvsp[-3].sval);
 	}
-#line 2729 "parser.tab.c"
+#line 3040 "parser.tab.c"
     break;
 
   case 113: /* struct_specifier: struct IDENTIFIER  */
-#line 1180 "parser.y"
+#line 1604 "parser.y"
                             { 
 		(yyval.sval) = new string(*(yyvsp[-1].sval) + " " + *(yyvsp[0].sval));
 		delete (yyvsp[-1].sval); delete (yyvsp[0].sval);
 	}
-#line 2738 "parser.tab.c"
+#line 3049 "parser.tab.c"
     break;
 
   case 114: /* struct: STRUCT  */
-#line 1187 "parser.y"
+#line 1611 "parser.y"
                  { (yyval.sval) = new string("struct"); }
-#line 2744 "parser.tab.c"
+#line 3055 "parser.tab.c"
     break;
 
   case 120: /* struct_declarator: declarator  */
-#line 1206 "parser.y"
+#line 1629 "parser.y"
                      { (yyval.sval) = new string((yyvsp[0].declinfo)->name); delete (yyvsp[0].declinfo); }
-#line 2750 "parser.tab.c"
+#line 3061 "parser.tab.c"
     break;
 
   case 121: /* pointer: STAR  */
-#line 1213 "parser.y"
+#line 1635 "parser.y"
            {                                   /* e.g., * */
         (yyval.ival) = 1;  // Return pointer level instead of TypeInfo
     }
-#line 2758 "parser.tab.c"
+#line 3069 "parser.tab.c"
     break;
 
   case 122: /* pointer: STAR pointer  */
-#line 1216 "parser.y"
+#line 1638 "parser.y"
                    {                           /* e.g., ** or *** etc. */
         (yyval.ival) = (yyvsp[0].ival) + 1;  // Increment pointer level for each * encountered
     }
-#line 2766 "parser.tab.c"
+#line 3077 "parser.tab.c"
+    break;
+
+  case 123: /* statement: labeled_statement  */
+#line 1647 "parser.y"
+                                                                                                      {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3085 "parser.tab.c"
+    break;
+
+  case 124: /* statement: compound_statement  */
+#line 1650 "parser.y"
+                                                                                                  {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3093 "parser.tab.c"
+    break;
+
+  case 125: /* statement: expression_statement  */
+#line 1653 "parser.y"
+                                                                                                 {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3101 "parser.tab.c"
+    break;
+
+  case 126: /* statement: selection_statement  */
+#line 1656 "parser.y"
+                                                                                                        {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3109 "parser.tab.c"
+    break;
+
+  case 127: /* statement: iteration_statement  */
+#line 1659 "parser.y"
+                                                                                                           {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3117 "parser.tab.c"
+    break;
+
+  case 128: /* statement: jump_statement  */
+#line 1662 "parser.y"
+                                                                                                     {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+    }
+#line 3125 "parser.tab.c"
     break;
 
   case 129: /* statement: error SEMICOLON  */
-#line 1231 "parser.y"
+#line 1665 "parser.y"
                           { 
 		yyerror("Invalid statement, skipping to next ';'"); 
 		yyerrok; 
 	}
-#line 2775 "parser.tab.c"
+#line 3134 "parser.tab.c"
     break;
 
-  case 133: /* $@1: %empty  */
-#line 1248 "parser.y"
+  case 133: /* $@3: %empty  */
+#line 1679 "parser.y"
                  { enter_scope(); insert_current_function_parameters(); }
-#line 2781 "parser.tab.c"
+#line 3140 "parser.tab.c"
     break;
 
-  case 134: /* compound_statement: LBRACE $@1 declaration_list statement_list RBRACE  */
-#line 1248 "parser.y"
-                                                                                                                 { exit_scope(); }
-#line 2787 "parser.tab.c"
+  case 134: /* compound_statement: LBRACE $@3 declaration_list statement_list RBRACE  */
+#line 1679 "parser.y"
+                                                                                                                 {
+        (yyval.typeinfo) = new TypeInfo();
+        if((yyvsp[-2].typeinfo)){
+            //print
+            cout<<"hehe\n"; 
+            for(TACInstruction* inst : (yyvsp[-2].typeinfo)->code){
+                print_TAC_instruction(inst);
+            }
+        }
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[-2].typeinfo)->code.begin(), (yyvsp[-2].typeinfo)->code.end());
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[-1].typeinfo)->code.begin(), (yyvsp[-1].typeinfo)->code.end());
+        (yyval.typeinfo)->next_list = (yyvsp[-1].typeinfo)->next_list;
+        delete (yyvsp[-2].typeinfo);
+        delete (yyvsp[-1].typeinfo);
+        exit_scope(); 
+    }
+#line 3161 "parser.tab.c"
+    break;
+
+  case 135: /* marker: %empty  */
+#line 1698 "parser.y"
+                  {
+        (yyval.opinfo) = new_label(0); // Create a label for the beginning of loops
+    }
+#line 3169 "parser.tab.c"
+    break;
+
+  case 136: /* statement_list: statement  */
+#line 1704 "parser.y"
+                                                                                               {
+        (yyval.typeinfo)= (yyvsp[0].typeinfo);
+        TACOperand* curr_inst = new_label(0);
+        backpatch((yyval.typeinfo)->next_list,curr_inst);
+    }
+#line 3179 "parser.tab.c"
+    break;
+
+  case 137: /* statement_list: statement_list marker statement  */
+#line 1709 "parser.y"
+                                                                                                               {
+        (yyval.typeinfo) = new TypeInfo();
+        (yyval.typeinfo)->code = (yyvsp[-2].typeinfo)->code;
+        backpatch((yyvsp[-2].typeinfo)->next_list, (yyvsp[-1].opinfo));
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
+        (yyval.typeinfo)->next_list = (yyvsp[0].typeinfo)->next_list;
+        delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
+    }
+#line 3192 "parser.tab.c"
+    break;
+
+  case 138: /* statement_list: %empty  */
+#line 1717 "parser.y"
+                        {
+        (yyval.typeinfo) = new TypeInfo();
+        (yyval.typeinfo)->baseType = "void";
+    }
+#line 3201 "parser.tab.c"
+    break;
+
+  case 140: /* expression_statement: expression SEMICOLON  */
+#line 1726 "parser.y"
+                                                                                                  {
+        (yyval.typeinfo) = (yyvsp[-1].typeinfo);
+    }
+#line 3209 "parser.tab.c"
+    break;
+
+  case 141: /* selection_statement: if_expression  */
+#line 1732 "parser.y"
+                                                                               {
+        (yyval.typeinfo) = (yyvsp[0].typeinfo);
+        if (! (yyvsp[0].typeinfo)->false_list.empty()) {
+            TACOperand* curr_inst = new_label(0);
+            backpatch((yyvsp[0].typeinfo)->false_list, curr_inst);
+        }
+    }
+#line 3221 "parser.tab.c"
+    break;
+
+  case 142: /* $@4: %empty  */
+#line 1739 "parser.y"
+                             {        
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        (yyvsp[-1].typeinfo)->code.push_back(goto_inst);
+        (yyvsp[-1].typeinfo)->next_list.insert(goto_inst);
+        if (! (yyvsp[-1].typeinfo)->false_list.empty()) {
+            TACOperand* curr_inst = new_label(0);
+            backpatch((yyvsp[-1].typeinfo)->false_list, curr_inst);
+        }
+    }
+#line 3235 "parser.tab.c"
+    break;
+
+  case 143: /* selection_statement: if_expression ELSE $@4 statement  */
+#line 1748 "parser.y"
+    {
+        (yyval.typeinfo) = (yyvsp[-3].typeinfo);
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
+        (yyval.typeinfo)->next_list.insert((yyvsp[0].typeinfo)->next_list.begin(), (yyvsp[0].typeinfo)->next_list.end());
+        delete (yyvsp[0].typeinfo);
+    }
+#line 3246 "parser.tab.c"
+    break;
+
+  case 145: /* $@5: %empty  */
+#line 1758 "parser.y"
+                                   {
+        TACOperand* true_label = new_label(2);
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); 
+        (yyvsp[-1].typeinfo)->code.push_back(if_inst);
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        (yyvsp[-1].typeinfo)->code.push_back(goto_inst);
+        (yyvsp[-1].typeinfo)->false_list.insert(goto_inst);
+    }
+#line 3259 "parser.tab.c"
+    break;
+
+  case 146: /* if_expression: IF LPAREN expression RPAREN $@5 statement  */
+#line 1765 "parser.y"
+                 {
+        (yyval.typeinfo) = (yyvsp[-3].typeinfo);
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
+        TACOperand* curr_inst = new_label(0);
+        backpatch((yyvsp[0].typeinfo)->next_list, curr_inst);
+        delete (yyvsp[0].typeinfo);
+    }
+#line 3271 "parser.tab.c"
+    break;
+
+  case 147: /* $@6: %empty  */
+#line 1777 "parser.y"
+                                                       {
+        TACOperand* true_label = new_label(2);
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2);
+        (yyvsp[-1].typeinfo)->code.push_back(if_inst);
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        (yyvsp[-1].typeinfo)->code.push_back(goto_inst);
+        (yyvsp[-1].typeinfo)->false_list.insert(goto_inst);
+
+        // backpatching to the beginning of the loop
+        // although for now it is useless
+        if(! (yyvsp[-1].typeinfo)->true_list.empty()) {
+            backpatch((yyvsp[-1].typeinfo)->true_list, new_label(0));
+        }
+    }
+#line 3290 "parser.tab.c"
+    break;
+
+  case 148: /* iteration_statement: WHILE begin_marker LPAREN expression RPAREN $@6 statement  */
+#line 1790 "parser.y"
+                                            {
+        (yyval.typeinfo) = new TypeInfo();
+        (yyval.typeinfo)->code = (yyvsp[-3].typeinfo)->code;
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
+        TACOperand* curr_inst = new_label(0);
+        backpatch((yyvsp[0].typeinfo)->next_list, curr_inst);
+        TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), (yyvsp[-5].opinfo), new_empty_var(), new_empty_var(), 1);
+        (yyval.typeinfo)->code.push_back(goto_begin);
+        (yyval.typeinfo)->next_list.insert((yyvsp[-3].typeinfo)->false_list.begin(), (yyvsp[-3].typeinfo)->false_list.end());
+        delete (yyvsp[-3].typeinfo); delete (yyvsp[0].typeinfo);
+    }
+#line 3306 "parser.tab.c"
+    break;
+
+  case 149: /* $@7: %empty  */
+#line 1801 "parser.y"
+                                               {
+        // if E then goto___ -> next list
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), (yyvsp[0].typeinfo)->result, new_empty_var(), 1);
+        (yyvsp[0].typeinfo)->code.push_back(if_inst);
+        (yyvsp[0].typeinfo)->true_list.insert(if_inst);
+    }
+#line 3317 "parser.tab.c"
+    break;
+
+  case 150: /* iteration_statement: UNTIL begin_marker LPAREN expression $@7 RPAREN statement  */
+#line 1806 "parser.y"
+                                                    {
+        (yyval.typeinfo) = new TypeInfo();
+        (yyval.typeinfo)->code = (yyvsp[-3].typeinfo)->code;
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
+        // at the end of the loop body, add a goto to the beginning of the loop
+        TACOperand* curr_inst = new_label(0);
+        backpatch((yyvsp[0].typeinfo)->next_list, curr_inst);
+        TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), (yyvsp[-5].opinfo), new_empty_var(), new_empty_var(), 1);
+        (yyval.typeinfo)->code.push_back(goto_begin);
+        // next_list of the loop statement is the true_list of the condition expression
+        (yyval.typeinfo)->next_list = (yyvsp[-3].typeinfo)->true_list;
+        delete (yyvsp[-3].typeinfo); delete (yyvsp[0].typeinfo);
+    }
+#line 3335 "parser.tab.c"
+    break;
+
+  case 151: /* $@8: %empty  */
+#line 1819 "parser.y"
+                                     {
+        TACOperand* curr_inst = new_label(0);
+        backpatch((yyvsp[0].typeinfo)->next_list, curr_inst);
+    }
+#line 3344 "parser.tab.c"
+    break;
+
+  case 152: /* iteration_statement: DO begin_marker statement $@8 WHILE LPAREN expression RPAREN SEMICOLON  */
+#line 1822 "parser.y"
+                                              {
+        (yyval.typeinfo) = new TypeInfo();
+        (yyval.typeinfo)->code = (yyvsp[-6].typeinfo)->code;
+        (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[-2].typeinfo)->code.begin(), (yyvsp[-2].typeinfo)->code.end());
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), (yyvsp[-7].opinfo), (yyvsp[-2].typeinfo)->result, new_empty_var(), 2);
+        (yyval.typeinfo)->code.push_back(if_inst);
+        TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        (yyval.typeinfo)->code.push_back(goto_end);
+        (yyvsp[-2].typeinfo)->false_list.insert(goto_end);
+        // next_list of the loop statement is the false_list of the condition expression
+        (yyval.typeinfo)->next_list = (yyvsp[-2].typeinfo)->false_list;
+
+    }
+#line 3362 "parser.tab.c"
+    break;
+
+  case 155: /* begin_marker: %empty  */
+#line 1840 "parser.y"
+                  {
+        // Mark the beginning of a loop for backpatching
+        (yyval.opinfo) = new_label(0);
+    }
+#line 3371 "parser.tab.c"
     break;
 
 
-#line 2791 "parser.tab.c"
+#line 3375 "parser.tab.c"
 
       default: break;
     }
@@ -2980,7 +3564,9 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 1284 "parser.y"
+#line 1854 "parser.y"
+
+
 
 
 void enter_scope() {
@@ -3032,6 +3618,13 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
     entry.line = yylineno;
     entry.scope_level = current_scope_level;
     
+    // Generate mangled name using the format v_name_funname_signature_scopenum
+    // Use the current function context if available
+    entry.mangledName = mangle_variable_name(name, current_scope_level, 
+                                            current_function_name, current_function_signature);
+                                            
+    cout << "Variable " << name << " mangled as " << entry.mangledName << "\n";
+    
     // Type check initialization if present
     if (initType != nullptr) {
         if (!check_initialization_compatibility(type, *initType)) {
@@ -3064,7 +3657,6 @@ bool lookup_symbol_current_scope(const string& name) {
     if (scope_stack.empty()) return false;
     return scope_stack.back().symbols.find(name) != scope_stack.back().symbols.end();
 }
-
 
 void check_variable_declaration(const string& name) {
     SymbolEntry entry;
@@ -3107,16 +3699,17 @@ void displaySymbolTable() {
         
         cout << "+-----------------------------------------------------------------------------------------+\n";
         
-        // Display variables with their type information
+        // Display variables with their type information and mangled names
         for (const auto& entry : scope.symbols) {
             cout << "  - " << entry.second.name << " (" << entry.second.type.toString() 
-                 << ") declared at line " << entry.second.line << "\n";
+                 << ") declared at line " << entry.second.line
+                 << " [mangled: " << entry.second.mangledName << "]" << "\n";
         }
         cout << "+-----------------------------------------------------------------------------------------+\n";
     }
 }
 
-// Type checking functions
+// Basically exact type match kar rha hai
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     // Check base types match (ignoring static as requested)
     if (left_type.baseType != right_type.baseType) return false;
@@ -3145,16 +3738,6 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     return true;
 }
 
-TypeInfo* get_expression_type(const string& identifier) {
-    // Search for the identifier in the symbol table from current scope up
-    for (int i = scope_stack.size() - 1; i >= 0; i--) {
-        auto it = scope_stack[i].symbols.find(identifier);
-        if (it != scope_stack[i].symbols.end()) {
-            return &(it->second.type);
-        }
-    }
-    return nullptr; // Not found
-}
 
 bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
     // First check exact type match
@@ -3177,7 +3760,7 @@ bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo
 
 // Type checking and promotion functions implementation
 bool is_numeric_type(const string& type) {
-    return type == "int" || type == "float" || type == "char";
+    return type == "int" || type == "float";
 }
 
 bool is_integer_type(const string& type) {
@@ -3273,44 +3856,137 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     return false;
 }
 
-TypeInfo* promote_types(const TypeInfo& left, const TypeInfo& right) {
-    TypeInfo* result = new TypeInfo();
-    result->isLvalue = false;  // Result of type promotion is never an lvalue
+
+pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& left, const TypeInfo& right) {
     
-    // If either is float, result is float
-    if (left.baseType == "float" || right.baseType == "float") {
-        result->baseType = "float";
-        return result;
+    
+    TypeInfo* res = new TypeInfo();
+                
+    // If either is float, res is float
+    if (left.baseType == "float" ) {
+        
+        // If right is not float, cast it to float
+        if (right.baseType != "float" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
     
-    // If either is int, result is int
-    if (left.baseType == "int" || right.baseType == "int") {
-        result->baseType = "int";
-        return result;
+    // If either is int, res is int
+    else if (left.baseType == "int" ) {
+        res->baseType = "int";
+        
+        // If right is char, cast it to int
+        if (right.baseType != "int" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
     
-    // Both char, result is int (C promotion rules)
-    if (left.baseType == "char" && right.baseType == "char") {
-        result->baseType = "int";
-        return result;
+    // Both char, res is int (C promotion rules)
+    else if (left.baseType == "char") { 
+        res->baseType = "char";
+
+        if( right.baseType != "char" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("char"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
-    
     // Default to left type
-    result->baseType = left.baseType;
-    return result;
+    else {
+        res->baseType = left.baseType;
+    }
+    
+    
+    return {res->code, {left.result, right.result}};
+}
+
+pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right) {
+    
+    
+    TypeInfo* res = new TypeInfo();
+                
+    // If either is float, res is float
+    if (left.baseType == "float" || right.baseType == "float") {
+        
+        // If left is not float, cast it to float
+        if (left.baseType != "float" && left.baseType != "error") {
+            TACOperand* left_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left_temp, right.result}}; 
+            // abhi sirf code mei hii push karte hai, jump code ki zroorat nhi, bcoz sirf type promotion hii hai
+        }
+        
+        // If right is not float, cast it to float
+        if (right.baseType != "float" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
+    }
+    
+    // If either is int, res is int
+    else if (left.baseType == "int" || right.baseType == "int") {
+        res->baseType = "int";
+        
+        // If left is char, cast it to int
+        if (left.baseType == "char") {
+            TACOperand* left_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left_temp, right.result}};
+        }
+
+        
+        // If right is char, cast it to int
+        if (right.baseType == "char") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
+    }
+    
+    // Both char, res is int (C promotion rules)
+    else if (left.baseType == "char" && right.baseType == "char") {
+        res->baseType = "int";
+        TACOperand* left_temp = new_temp_var();
+        TACOperand* right_temp = new_temp_var();
+        
+        TACInstruction* castInstr1 = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
+        TACInstruction* castInstr2 = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+        res->code.push_back(castInstr1);
+        res->code.push_back(castInstr2);
+        return {res->code, {left_temp, right_temp}};
+    }
+    // Default to left type
+    else {
+        res->baseType = left.baseType;
+    }
+    
+    
+    return {res->code, {left.result, right.result}};
 }
 
 TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, const string& op) {
     // Check for errors
     if (left.baseType == "error" || right.baseType == "error") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     cout << "Binary operation: " << left.toString() << " " << op << " " << right.toString();
     
-    // Note: All binary operation results are rvalues (not lvalues)
+    // Note: All binary operation ress are rvalues (not lvalues)
     // Binary operations generate temporary values that cannot be assigned to
     
     // Addition and subtraction with pointer arithmetic
@@ -3318,73 +3994,199 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // Case 1: Both are numeric types (regular arithmetic)
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
-            TypeInfo* result = promote_types(left, right);
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (arithmetic)\n";
-            return result;
+            if(left.baseType == "float" && right.baseType == "float"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+                res->code.push_back(instr);
+                return res;
+            }else if(left.baseType == "int" && right.baseType == "int"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "int";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+                res->code.push_back(instr);
+                return res;
+            }else if(left.baseType == "float" && right.baseType == "int"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                
+                // Cast right int to float
+                TACOperand* castRightOp = new_temp_var();
+                TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
+                res->code.push_back(castRightInstr);
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, castRightOp, 0);
+                res->code.push_back(instr);
+                return res;
+            }else if(left.baseType == "int" && right.baseType == "float"){
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "float";
+                res->isLvalue = false; // res is not an lvalue
+                cout << " -> " << res->toString() << " (arithmetic)\n";
+                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+                // Cast left int to float
+                TACOperand* castLeftOp = new_temp_var();
+                TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
+                res->code.push_back(castLeftInstr);
+                TACOperand* resultOp = new_temp_var();
+                res->result = resultOp;
+                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, castLeftOp, right.result, 0);
+                res->code.push_back(instr);
+                return res;
+            }
+            
         }
         
         // Case 2: Pointer + integer or Array + integer (only for addition)
         if (op == "+" && ((left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType) && 
                         right.pointerLevel == 0 && !right.isArray)) { // Ensure right is a plain integer
-            TypeInfo* result = new TypeInfo(left);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(left);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, left.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+            return res;
         }
         
         // Case 3: Integer + pointer (commutative for addition)
         if (op == "+" && (is_integer_type(left.baseType) && left.pointerLevel == 0 && !left.isArray && 
                         (right.pointerLevel > 0 || right.isArray))) { // Ensure left is a plain integer
-            TypeInfo* result = new TypeInfo(right);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(right);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = right.pointerLevel > 0 ? right.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, left.result, new_identifier(to_string(_size)), 0);
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, right.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            return res;
         }
         
         // Case 4: Pointer - integer
         if (op == "-" && (left.pointerLevel > 0 || left.isArray) && is_integer_type(right.baseType)) {
-            TypeInfo* result = new TypeInfo(left);
-            result->isArray = false;  // Result is always a pointer, not array
-            result->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer arithmetic)\n";
-            return result;
+            TypeInfo* res = new TypeInfo(left);
+            res->isArray = false;  // res is always a pointer, not array
+            res->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+
+            TypeInfo res2 = *res;
+            // make res2 one level down
+            if(res2.isArray && res2.arrayDimensions.size() > 0){
+                res2.arrayDimensions.erase(res2.arrayDimensions.begin());
+                if(res2.arrayDimensions.size() == 0){
+                    res2.isArray = false;
+                }
+            }else if(res2.pointerLevel > 0){
+                res2.pointerLevel -= 1;
+            }else{}
+            int _size = getSize(res2);
+            TACOperand* scaledOffset = new_temp_var();
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, scaledOffset, 0);
+            res->code.push_back(scaleInstr);
+            res->code.push_back(instr);
+            return res;
         }
         
-        // Case 5: Pointer - pointer (results in integer representing distance)
+        // Case 5: Pointer - pointer (ress in integer representing distance)
         if (op == "-" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             if (left.baseType != right.baseType) {
                 type_error("Pointer subtraction requires pointers to same type");
-                TypeInfo* result = new TypeInfo();
-                result->baseType = "error";
-                return result;
+                TypeInfo* res = new TypeInfo();
+                res->baseType = "error";
+                return res;
             }
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";  // ptrdiff_t is typically int
-            result->isLvalue = false; // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer difference)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";  // ptrdiff_t is typically int
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer difference)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            return res;
         }
         
         // Case 6: Invalid pointer + pointer
         if (op == "+" && (left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             type_error("Cannot add two pointers");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            result->isLvalue = false;
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            res->isLvalue = false;
+            return res;
         }
         
         // Invalid arithmetic operation
         type_error("Invalid operands for " + op + " operation");
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     // Multiplication, division, modulo (no pointer arithmetic allowed)
@@ -3392,22 +4194,90 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         if (!is_numeric_type(left.baseType) || !is_numeric_type(right.baseType) ||
             left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Arithmetic operation " + op + " requires numeric operands only");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Modulo only works on integers
         if (op == "%" && (left.baseType == "float" || right.baseType == "float")) {
             type_error("Modulo operation not allowed on floating-point types");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = promote_types(left, right);
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        
+        if(left.baseType == "float" && right.baseType == "float"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            return res;
+        }else if(left.baseType == "int" && right.baseType == "int"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
+            res->code.push_back(instr);
+            return res;
+        }else if(left.baseType == "float" && right.baseType == "int"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            
+            // Cast right int to float
+            TACOperand* castRightOp = new_temp_var();
+            TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
+            res->code.push_back(castRightInstr);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, left.result, castRightOp, 0);
+            res->code.push_back(instr);
+            return res;
+        }else if(left.baseType == "int" && right.baseType == "float"){
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "float";
+            res->isLvalue = false; // res is not an lvalue
+            cout << " -> " << res->toString() << " (arithmetic)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            
+            // Cast left int to float
+            TACOperand* castLeftOp = new_temp_var();
+            TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
+            res->code.push_back(castLeftInstr);
+
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
+
+            TACInstruction* instr = emit(t_op, resultOp, castLeftOp, right.result, 0);
+            res->code.push_back(instr);
+            return res;
+        }
+        //res.isLvalue = false; // res is not an lvalue
+        //return res;
     }
     
     // Relational operations
@@ -3415,59 +4285,83 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // Allow comparison between numeric types
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) &&
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";  // In C, no bool type, so relational ops return int
-            result->isLvalue = false;  // Result is not an lvalue
-            cout << " -> " << result->toString() << " (numeric comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";  // In C, no bool type, so relational ops return int
+            res->isLvalue = false;  // res is not an lvalue
+            cout << " -> " << res->toString() << " (numeric comparison)\n";
+
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
+            res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op;
+            if(op == "<") t_op = TACOperator(TAC_OPERATOR_LT);
+            else if(op == "<=") t_op = TACOperator(TAC_OPERATOR_LE);
+            else if(op == ">") t_op = TACOperator(TAC_OPERATOR_GT);
+            else if(op == ">=") t_op = TACOperator(TAC_OPERATOR_GE);
+            else if(op == "==") t_op = TACOperator(TAC_OPERATOR_EQ);
+            else if(op == "!=") t_op = TACOperator(TAC_OPERATOR_NE);
+            // if left relop right then 1 else 0
+            TACOperand* labelTrue = new_label(2);
+            TACOperand* labelFalse = new_label(4);
+            TACOperand* labelEnd = new_label(5);
+
+            TACInstruction* ifgoto = emit(t_op, labelTrue, temp.second.first, temp.second.second, 2);
+            TACInstruction* gotoo = emit(t_op, labelFalse, new_empty_var(), new_empty_var(), 1);
+            TACInstruction* assignTrue = emit(TACOperator(), resultOp, new_identifier("1"), new_empty_var(), 0);
+            TACInstruction* gotoEnd = emit(TACOperator(), labelEnd, new_empty_var(), new_empty_var(), 1);
+            TACInstruction* assignFalse = emit(TACOperator(), resultOp, new_identifier("0"), new_empty_var(), 0);
+            res->code.push_back(ifgoto);
+            res->code.push_back(gotoo);
+            res->code.push_back(assignTrue);
+            res->code.push_back(gotoEnd);
+            res->code.push_back(assignFalse);
+            return res;
         }
         
         // Allow pointer comparisons
         if ((left.pointerLevel > 0 || left.isArray) && (right.pointerLevel > 0 || right.isArray)) {
             // For == and !=, allow comparing pointers of different types with warning
             if (left.baseType != right.baseType) {
-                if (op == "==" || op == "!=") {
-                    type_warning("Comparing pointers to different types");
-                } else {
-                    // For <, >, <=, >= comparisons, require same base type
-                    type_error("Relational comparison (<, >, <=, >=) between pointers to different types is not allowed");
-                    TypeInfo* result = new TypeInfo();
-                    result->baseType = "error";
-                    return result;
-                }
+                type_error("Relational comparison (<, >, <=, >=) between pointers to different types is not allowed");
+                    TypeInfo* res = new TypeInfo();
+                    res->baseType = "error";
+                    return res;
             }
             
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;  // Result is not an lvalue
-            cout << " -> " << result->toString() << " (pointer comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;  // res is not an lvalue
+            cout << " -> " << res->toString() << " (pointer comparison)\n";
+            return res;
         }
         
         // Allow comparison of pointer with NULL (void*)
         if ((left.pointerLevel > 0 || left.isArray) && 
             right.baseType == "void" && right.pointerLevel > 0) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;
-            cout << " -> " << result->toString() << " (pointer to NULL comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;
+            cout << " -> " << res->toString() << " (pointer to NULL comparison)\n";
+            return res;
         }
         
         // Also allow NULL to pointer comparison (reverse order)
         if (left.baseType == "void" && left.pointerLevel > 0 && 
             (right.pointerLevel > 0 || right.isArray)) {
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "int";
-            result->isLvalue = false;
-            cout << " -> " << result->toString() << " (NULL to pointer comparison)\n";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "int";
+            res->isLvalue = false;
+            cout << " -> " << res->toString() << " (NULL to pointer comparison)\n";
+            return res;
         }
         
         type_error("Relational operation on incompatible types");
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     // Bitwise operations (integers only, no pointers/arrays)
@@ -3475,50 +4369,40 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         if (!is_integer_type(left.baseType) || !is_integer_type(right.baseType) ||
             left.pointerLevel > 0 || right.pointerLevel > 0 || left.isArray || right.isArray) {
             type_error("Bitwise operations require integer operands only");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
-    }
-    
-    // Logical operations
-    if (op == "&&" || op == "||") {
-        // Check for void type which cannot be used in logical operations
-        if (left.baseType == "void" || right.baseType == "void") {
-            type_error("Void type cannot be used in logical operations");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
-        }
-        
-        // All other types can be converted to a truth value in C
-        // This includes pointers, arrays, and all scalar types
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";  // Logical operations return int in C
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << " (boolean as int)\n";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "int";
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+        res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+        res->code.insert(res->code.end(), right.code.begin(), right.code.end());    
+        pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
+        res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
+        TACOperand* resultOp = new_temp_var();
+        res->result = resultOp;
+        TACOperator t_op = op == "&" ? TACOperator(TAC_OPERATOR_BIT_AND) : (op == "|" ? TACOperator(TAC_OPERATOR_BIT_OR) : TACOperator(TAC_OPERATOR_BIT_XOR));
+        TACInstruction* instr = emit(t_op, resultOp, temp.second.first, temp.second.second, 0);
+        res->code.push_back(instr);
+        return res;
     }
     
     // Unknown operation
     type_error("Unknown binary operation: " + op);
-    TypeInfo* result = new TypeInfo();
-    result->baseType = "error";
-    return result;
+    TypeInfo* res = new TypeInfo();
+    res->baseType = "error";
+    return res;
 }
 
 TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     // Check for errors
     if (operand.baseType == "error") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "error";
-        return result;
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "error";
+        return res;
     }
     
     cout << "Unary operation: " << op << operand.toString();
@@ -3527,116 +4411,215 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     if (op == "+" || op == "-") {
         if (!is_numeric_type(operand.baseType)) {
             type_error("Unary arithmetic operation on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        // Promote char to int for arithmetic
-        if (result->baseType == "char") {
-            result->baseType = "int";
+        TypeInfo* res = new TypeInfo(operand);
+        res->code = operand.code; // Copy TAC code from operand
+        TACOperator tacop;
+
+        
+        if(op == "-") tacop.type = TAC_OPERATOR_UMINUS;
+
+
+        if (res->baseType == "char") {
+            res->baseType = "int";
+            TACOperand* temp = new_temp_var();
+            TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_CAST), temp, operand.result, new_type("int"),0);
+            TACOperand* temp2 = new_temp_var();
+            res->result = temp2;    
+            TACInstruction* i2 = emit(tacop, res->result, temp, new_empty_var(),0);
+
+            res->code.push_back(i1);
+            res->code.push_back(i2);
+        }else{
+            TACOperand* temp = new_temp_var();
+            res->result = temp;    
+            TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
+            res->code.push_back(i1);
         }
-        // Result of unary +/- is not an lvalue
-        result->isLvalue = false;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+
+        // res of unary +/- is not an lvalue
+        res->isLvalue = false;
+        cout << " -> " << res->toString() << "\n";
+        return res;
     }
     
     // Increment/decrement
     if (op == "++" || op == "--") {
         if (!is_numeric_type(operand.baseType)) {
             type_error("Increment/decrement operation on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Check if operand is an lvalue
         if (!operand.isLvalue) {
             type_error("Increment/decrement requires an lvalue operand");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        // Result is not an lvalue for postfix operations, but we handle both cases here
-        result->isLvalue = false;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->code = operand.code; // Copy TAC code from operand
+        // res is not an lvalue for postfix operations, but we handle both cases here
+        res->isLvalue = false;
+        cout << " -> " << res->toString() << "\n";
+
+        TACOperator tacop;
+        if(op == "++") tacop.type = TAC_OPERATOR_ADD;
+        else tacop.type = TAC_OPERATOR_SUB;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;    
+        TACInstruction* i1 = emit(tacop, res->result, operand.result, new_constant("1"),0);
+        TACInstruction* i2 = emit(TACOperator(), operand.result, res->result, new_empty_var(),0); // Store back to the original variable
+        res->code.push_back(i1);
+        res->code.push_back(i2);
+        return res;
     }
     
     // Logical NOT
     if (op == "!") {
-        TypeInfo* result = new TypeInfo();
-        result->baseType = "int";  // Logical NOT returns int in C
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << " (boolean as int)\n";
-        return result;
+
+        // Check for void type which cannot be used in logical operations
+        if (operand.baseType == "void") {
+            type_error("Void type cannot be used in logical NOT operation");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
+        // if it is
+
+        TypeInfo* res = new TypeInfo();
+        res->baseType = "int";  // Logical NOT returns int in C
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << " (boolean as int)\n";
+
+        TACOperand* temp = new_temp_var();
+        res->result = temp;    
+        TACOperand* firstgoto = new_label(2); 
+        TACOperand* secondgoto = new_label(4);
+        TACOperand* thirdgoto = new_label(5);
+        TACInstruction* i1 = emit(TACOperator(), firstgoto, operand.result, new_empty_var(), 2); // TAC -> if P->result goto curr+3
+        TACInstruction* i2 = emit(TACOperator(), secondgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto curr+2
+        TACInstruction* i3 = emit(TACOperator(), res->result, new_constant("1"), new_empty_var(),0); // TAC -> res = 1
+        TACInstruction* i4 = emit(TACOperator(), thirdgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto ____
+        TACInstruction* i5 = emit(TACOperator(), res->result, new_constant("0"), new_empty_var(),0); // TAC -> res = 0
+
+        res->code = operand.code;
+        res->code.push_back(i1);
+        res->code.push_back(i2);
+        res->code.push_back(i3);
+        res->code.push_back(i4);
+        res->code.push_back(i5);
+
+        return res;
     }
     
     // Bitwise NOT
     if (op == "~") {
+
+        // if array or pointer then give error
+
+        if (operand.pointerLevel > 0 || operand.isArray) {
+            type_error("Bitwise NOT on pointer/array type is not allowed");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
         if (!is_numeric_type(operand.baseType)) {
             type_error("Bitwise NOT on non-numeric type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
+        }
+
+        // if float then also give error
+        if (operand.baseType == "float") {
+            type_error("Bitwise NOT on floating-point type is not allowed");
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->isLvalue = false;  // Result is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->isLvalue = false;  // res is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+        TACOperator tacop;
+        tacop.type = TAC_OPERATOR_BIT_NOT;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
+        res->code = operand.code;
+        res->code.push_back(i1);
+        
+        return res;
     }
     
     // Address-of operator
     if (op == "&") {
         if (operand.isLiteral) {
             type_error("Cannot take address of literal");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
         // Check if operand is an lvalue
         if (!operand.isLvalue) {
             type_error("Cannot take address of a temporary");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->pointerLevel++;
-        result->isLvalue = false; // Result of & operator is not an lvalue
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->pointerLevel++;
+        res->isLvalue = false; // res of & operator is not an lvalue
+        cout << " -> " << res->toString() << "\n";
+
+        res->code = operand.code;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_ADDR_OF), res->result, operand.result, new_empty_var(),0);
+        res->code.push_back(i1);
+
+        return res;
     }
     
     // Dereference operator
     if (op == "*") {
         if (operand.pointerLevel == 0) {
             type_error("Cannot dereference non-pointer type");
-            TypeInfo* result = new TypeInfo();
-            result->baseType = "error";
-            return result;
+            TypeInfo* res = new TypeInfo();
+            res->baseType = "error";
+            return res;
         }
         
-        TypeInfo* result = new TypeInfo(operand);
-        result->pointerLevel--;
-        // Result of dereference is an lvalue (you can assign to *p)
-        result->isLvalue = true;
-        cout << " -> " << result->toString() << "\n";
-        return result;
+        TypeInfo* res = new TypeInfo(operand);
+        res->pointerLevel--;
+        // res of dereference is an lvalue (you can assign to *p)
+        res->isLvalue = true;
+        cout << " -> " << res->toString() << "\n";
+        res->code = operand.code;
+        TACOperand* temp = new_temp_var();
+        res->result = temp;
+        TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_DEREF), res->result, operand.result, new_empty_var(),0);
+        res->code.push_back(i1);
+        return res;
     }
     
     // Unknown operation
     type_error("Unknown unary operation: " + op);
-    TypeInfo* result = new TypeInfo();
-    result->baseType = "error";
-    return result;
+    TypeInfo* res = new TypeInfo();
+    res->baseType = "error";
+    return res;
 }
 
 void type_error(const string& message) {
@@ -3652,47 +4635,77 @@ void type_warning(const string& message) {
     log_error(warning_msg);
 }
 
+// Utility function to convert a type to a mangling code
+string type_code_for_mangling(const TypeInfo& type) {
+    string code = "";
+    
+    // Add base type encoding
+    if (type.baseType == "int") code += "i";
+    else if (type.baseType == "char") code += "c";
+    else if (type.baseType == "float") code += "f";
+    else if (type.baseType == "void") code += "v";
+    else code += "u"; // unknown
+    
+    // Add pointer modifier
+    if (type.pointerLevel > 0) code += "p" + to_string(type.pointerLevel);
+    
+    return code;
+}
 
 // Function management implementation
 string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
     string mangledName = funcName;
     
     for (const TypeInfo& param : paramTypes) {
-        mangledName += "_";
-        
-        // Add base type encoding
-        if (param.baseType == "int") mangledName += "i";
-        else if (param.baseType == "char") mangledName += "c";
-        else if (param.baseType == "float") mangledName += "f";
-        else if (param.baseType == "void") mangledName += "v";
-        else mangledName += "u"; // unknown
-        
-        // Add pointer modifier
-        if (param.pointerLevel > 0) mangledName += "p" + to_string(param.pointerLevel);
+        mangledName += "_" + type_code_for_mangling(param);
     }
     
     return mangledName;
 }
 
+// Generate a mangled name for a variable using format: v_name_funname_signature_scopenum
+string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature) {
+    string mangledName = "v_" + varName;
+    
+    // Add function name if available (non-global variable)
+    if (!currentFuncName.empty()) {
+        mangledName += "_" + currentFuncName;
+        
+        // Add function signature if available
+        if (!funcSignature.empty()) {
+            mangledName += "_" + funcSignature;
+        }
+    }
+    
+    // Add scope level
+    mangledName += "_s" + to_string(scopeLevel);
+    
+    cout << "DEBUG: Variable " << varName << " mangled as " << mangledName 
+         << " (function: " << (currentFuncName.empty() ? "global" : currentFuncName) 
+         << ", signature: " << funcSignature << ", scope: " << scopeLevel << ")\n";
+    
+    return mangledName;
+}
+
 TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
-    TypeInfo result = type;
-    if (result.isArray) {
+    TypeInfo res = type;
+    if (res.isArray) {
         // For multidimensional arrays, we only decay the first dimension
         // int[3][4][5] -> int(*)[4][5]
-        if (result.arrayDimensions.size() > 1) {
+        if (res.arrayDimensions.size() > 1) {
             // Create a pointer to the remaining array dimensions
-            vector<int> remainingDimensions(result.arrayDimensions.begin() + 1, result.arrayDimensions.end());
-            result.arrayDimensions = remainingDimensions;
-            result.pointerLevel += 1;
+            vector<int> remainingDimensions(res.arrayDimensions.begin() + 1, res.arrayDimensions.end());
+            res.arrayDimensions = remainingDimensions;
+            res.pointerLevel += 1;
         } else {
             // Simple case: array decays to pointer
-            result.isArray = false;
-            result.pointerLevel += 1;
-            result.arrayDimensions.clear();
+            res.isArray = false;
+            res.pointerLevel += 1;
+            res.arrayDimensions.clear();
         }
-        cout << "Array to pointer conversion: " << type.toString() << " -> " << result.toString() << "\n";
+        cout << "Array to pointer conversion: " << type.toString() << " -> " << res.toString() << "\n";
     }
-    return result;
+    return res;
 }
 
 void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes) {
