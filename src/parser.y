@@ -359,6 +359,10 @@ string get_operand_string(TACOperand* operand);
     // Current function context for variable name mangling
     string current_function_name = "";
     string current_function_signature = "";
+    TypeInfo* current_function_return_type = nullptr;
+
+    // pending gotos for backpatching
+    map<string, unordered_set<TACInstruction*> > pending_gotos;
 
     // Function declarations for scope management
     void enter_scope();
@@ -375,7 +379,7 @@ string get_operand_string(TACOperand* operand);
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
     bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right);
-    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& from, const TypeInfo& to);
+    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_lhs(const TypeInfo& from, const TypeInfo& to);
 
     bool is_numeric_type(const string& type);
     bool is_integer_type(const string& type);
@@ -591,6 +595,11 @@ function_definition
         $3 = new TypeInfo();
         TACInstruction* func_begin_instr = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), func_label, new_empty_var(), new_empty_var(), 0);
         $3->code.push_back(func_begin_instr);
+
+        // -------------------------- RETURN TYPE ------------------------------------------
+        TypeInfo returnType = *$1;
+        returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
+        current_function_return_type = new TypeInfo(returnType); // Store return type for return statements
     } compound_statement {               /* e.g., int f() { ... } */
 		// Register function definition
 		TypeInfo returnType = *$1;
@@ -613,6 +622,7 @@ function_definition
 		// Reset the current function context after function definition completes
 		current_function_name = "";
 		current_function_signature = "";
+        current_function_return_type = nullptr;
 
         // Write TAC code to file
         string tac_filename = $2->name + ".tac";
@@ -664,7 +674,7 @@ declaration
 				}else{
                     // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
                     
-                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_types_lhs_to_rhs(combinedType, *declInfo->initType);
+                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
                     // append promo.first to $$->code
                     $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
                     // now assign promo.second.second to declInfo->name
@@ -1706,7 +1716,7 @@ statement
 
 
 labeled_statement
-	: IDENTIFIER COLON statement                                            /* e.g., label: stmt */
+	: IDENTIFIER COLON marker statement                                            /* e.g., label: stmt */
 	| CASE constant_expression COLON statement                              /* e.g., case 1: stmt */
 	| DEFAULT COLON statement                                               /* e.g., default: stmt */
 	;
@@ -1943,8 +1953,36 @@ jump_statement
         $$->code.push_back(goto_inst);
         $$->break_list.insert(goto_inst);
     }
-	| RETURN SEMICOLON                                                       /* e.g., return; */
-	| RETURN expression SEMICOLON                                            /* e.g., return x; */
+	| RETURN SEMICOLON                                                       /* e.g., return; */{
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+        TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), new_empty_var(), new_empty_var(), new_empty_var(),0);
+        // if current function is void, okay else type error
+        if(current_function_return_type->pointerLevel == 0 && current_function_return_type->baseType == "void"){
+            // okay
+            $$->code.push_back(ret_inst);
+        }else{
+            type_error("Return type mismatch: function expects " + current_function_return_type->toString());
+        }
+        
+    }
+	| RETURN expression SEMICOLON                                            /* e.g., return x; */{
+        $$ = $2;
+        TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), $2->result, new_empty_var(), new_empty_var(),0);
+        $$->code.push_back(ret_inst);
+        // type check with current function return type
+        if(!is_implicit_conversion_allowed(*$2, *current_function_return_type)){
+            type_error("Return type mismatch: function expects " + current_function_return_type->toString() + ", but returning " + $2->toString());
+        }else{
+            const TypeInfo lhs = *current_function_return_type;
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(lhs,*$2);
+            $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), cast_result.second.first, new_empty_var(), new_empty_var(),0);
+            $$->code.push_back(ret_inst);
+        }
+        // generate TAC code 
+        delete $2;
+    }
 	;
 
 %%
@@ -2239,7 +2277,7 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
 }
 
 
-pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& left, const TypeInfo& right) {
+pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_lhs(const TypeInfo& left, const TypeInfo& right) {
     
     
     TypeInfo* res = new TypeInfo();
@@ -3003,6 +3041,8 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     res->baseType = "error";
     return res;
 }
+
+
 
 void type_error(const string& message) {
     string error_msg = "Type Error at line " + to_string(yylineno) + ": " + message;
