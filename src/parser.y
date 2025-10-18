@@ -980,7 +980,8 @@ primary_expression
     }
     | STRING_LITERAL { 
         $$ = new TypeInfo();
-        $$->baseType = "string";
+        $$->baseType = "char";
+        $$->pointerLevel = 1;  
         $$->isLiteral = true;
         $$->isLvalue = false;  // Literals are not lvalues (even though string literals are somewhat special in C)
         cout << "String literal: " << *$1 << " (type: string)\n";
@@ -1688,6 +1689,8 @@ marker
 statement_list
 	: statement                                                            /* e.g., stmt */{
         $$= $1;
+        TACOperand* curr_inst = new_label(0);
+        backpatch($$->next_list,curr_inst);
     }
 	| statement_list marker statement                                               /* e.g., stmt; stmt; */{
         $$ = new TypeInfo();
@@ -1719,7 +1722,6 @@ selection_statement
             backpatch($1->false_list, curr_inst);
         }
     }
-
 	| if_expression ELSE {        
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $1->code.push_back(goto_inst);
@@ -1749,7 +1751,12 @@ if_expression
     }  statement {
         $$ = $3;
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
+        TACOperand* curr_inst = new_label(0);
+        backpatch($6->next_list, curr_inst);
+        delete $6;
     }
+
+
 
 
 iteration_statement
@@ -2153,13 +2160,15 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_
     }
     
     // Both char, res is int (C promotion rules)
-    else if (left.baseType == "char") {
-        res->baseType = "int";
-        TACOperand* right_temp = new_temp_var();
-        
-        TACInstruction* castInstr2 = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
-        res->code.push_back(castInstr2);
-        return {res->code, {left.result, right_temp}};
+    else if (left.baseType == "char") { 
+        res->baseType = "char";
+
+        if( right.baseType != "char" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("char"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
     }
     // Default to left type
     else {
