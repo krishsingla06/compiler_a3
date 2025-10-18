@@ -367,6 +367,8 @@ string get_operand_string(TACOperand* operand);
     bool types_compatible(const TypeInfo& lhs, const TypeInfo& rhs);
     bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type);
     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right);
+    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& from, const TypeInfo& to);
+
     bool is_numeric_type(const string& type);
     bool is_integer_type(const string& type);
     bool is_lvalue(const TypeInfo& expr);
@@ -486,9 +488,9 @@ string get_operand_string(TACOperand* operand);
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
 %type<ival> pointer
-%type<ival> marker
+%type<opinfo> marker
 
-%type<strlist> declaration_list
+%type<typeinfo> declaration_list
 %type<sval> struct_specifier
 %type<sval> struct
 
@@ -561,6 +563,14 @@ function_definition
 		// Reset the current function context after function definition completes
 		current_function_name = "";
 		current_function_signature = "";
+
+        //print compound statement code
+        cout<<"--------------------------------\n";
+        cout << "Function " << $2->name << " TAC code:\n";
+        for (TACInstruction* instr : $3->code) {
+            print_TAC_instruction(instr);
+        }
+        cout<<"--------------------------------\n";
 		
 		// Clean up
 		if ($2->paramTypes) delete $2->paramTypes;
@@ -571,7 +581,10 @@ function_definition
 	;
 
 declaration
-	: return_types SEMICOLON { delete $1; }                                   /* e.g., extern int; (rare)*/ 
+	: return_types SEMICOLON { 
+        $$ = new TypeInfo();
+        delete $1; 
+    }                                   /* e.g., extern int; (rare)*/ 
 	| return_types init_declarator_list SEMICOLON {
 		// Combine base type with each declarator's type information
 		for (DeclaratorInfo* declInfo : *$2) {
@@ -581,9 +594,9 @@ declaration
 			combinedType.pointerLevel = declInfo->pointerLevel;
 			combinedType.isArray = declInfo->isArray;
 			combinedType.arrayDimensions = declInfo->arrayDimensions;
+            combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
 
             $$ = new TypeInfo();
-
 			
 			// Type check initialization if present
 			if (declInfo->initType != nullptr) {
@@ -594,14 +607,26 @@ declaration
 						declInfo->initType->toString() + " to " + combinedType.toString();
 					type_warning(warning_msg);
 				}else{
-                    // hihi
-                    //TACInstruction* init_instr = emit(TACOperator(), declInfo->result, declInfo->initType->result, nullptr, 0);
-                    // $$->code.push_back(init_instr);
+                    // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
+                    
+                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_types_lhs_to_rhs(combinedType, *declInfo->initType);
+                    // append promo.first to $$->code
+                    $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                    // now assign promo.second.second to declInfo->name
+                    TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
+                    $$->code.push_back(assignInstr);
+                    // print the code for debugging
+                    cout<<"hihi\n";
+                    cout << "Initialization code for variable '" << declInfo->name << "':\n";
+                    for (TACInstruction* instr : $$->code) {
+                        print_TAC_instruction(instr);
+                    }
                 }
 			}
-			
+
+            insert_symbol(declInfo->name, combinedType, declInfo->initType);
+
 			// Insert into symbol table with native value storage
-			insert_symbol(declInfo->name, combinedType, declInfo->initType);
 			
 			// Clean up initType after insertion
 			if (declInfo->initType != nullptr) {
@@ -804,9 +829,19 @@ fun_direct_declarator
 
 //------------------------ It will be used in compound statements - that means start of compound statement will be definitions list only -----------------------------
 declaration_list
-	: declaration                                                          
-	| declaration_list declaration       
+	: declaration    {
+        $$ = new TypeInfo();
+        $$->code = $1->code; // Carry forward the code from the declaration
+        delete $1;
+    }                                                      
+	| declaration_list declaration    {
+        $$ = $1;
+        // Append the code from the new declaration
+        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+        delete $2;
+    }   
 	| /* empty */      {
+        $$ = new TypeInfo(); // Empty declaration list
     }                                
 	;
 
@@ -1594,7 +1629,9 @@ pointer
 
 
 statement
-	: labeled_statement                                                    /* e.g., label: stmt */
+	: labeled_statement                                                    /* e.g., label: stmt */{
+        $$ = $1;
+    }
 	| compound_statement                                                   /* e.g., { ... } */{
         $$ = $1;
     }
@@ -1626,8 +1663,17 @@ labeled_statement
 compound_statement                                    
 	: LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE {
         $$ = new TypeInfo();
-        //$$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+        if($3){
+            //print
+            cout<<"hehe\n"; 
+            for(TACInstruction* inst : $3->code){
+                print_TAC_instruction(inst);
+            }
+        }
+        $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
         $$->code.insert($$->code.end(), $4->code.begin(), $4->code.end());
+        $$->next_list = $4->next_list;
+        delete $3;
         delete $4;
         exit_scope(); 
     }                        /* e.g., { int a; stmt; } */
@@ -1635,9 +1681,9 @@ compound_statement
 
 marker
     : /* empty */ {
-        // Store current instruction index for backpatching
-        $$ = give_current_instruction_number();
+        $$ = new_label(0); // Create a label for the beginning of loops
     }
+    ;
 
 statement_list
 	: statement                                                            /* e.g., stmt */{
@@ -1646,9 +1692,7 @@ statement_list
 	| statement_list marker statement                                               /* e.g., stmt; stmt; */{
         $$ = new TypeInfo();
         $$->code = $1->code;
-        // backpatch next_list of $1 with current instruction number
-        TACOperand* curr_inst = new_label(0);
-        backpatch($1->next_list, curr_inst);
+        backpatch($1->next_list, $2);
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
         $$->next_list = $3->next_list;
         delete $1; delete $3;
@@ -1722,15 +1766,26 @@ iteration_statement
         if(! $4->true_list.empty()) {
             backpatch($4->true_list, new_label(0));
         }
-    }statement                               {
+    }statement                              {
         $$ = new TypeInfo();
         $$->code = $4->code;
         $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
-        // at the end of the loop body, add a goto to the beginning of the loop
+        TACOperand* curr_inst = new_label(0);
+        // print $7->code
+        cout<<"----------------before backpatching----------------\n";
+        for(TACInstruction* inst : $7->code){
+            print_TAC_instruction(inst);
+        }
+
+        backpatch($7->next_list, curr_inst);
+        cout<<"----------------after backpatching----------------\n";
+        for(TACInstruction* inst : $$->code){
+            print_TAC_instruction(inst);
+        }
+        cout<<"----------------------------------------\n";
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $2, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
-        // next_list of the loop statement is the false_list of the condition expression
-        $$->next_list = $4->false_list;
+        $$->next_list.insert($4->false_list.begin(), $4->false_list.end());
         delete $4; delete $7;
     }
 	| UNTIL begin_marker LPAREN expression {
@@ -2071,6 +2126,55 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     }
     
     return false;
+}
+
+
+pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_types_lhs_to_rhs(const TypeInfo& left, const TypeInfo& right) {
+    
+    
+    TypeInfo* res = new TypeInfo();
+                
+    // If either is float, res is float
+    if (left.baseType == "float" ) {
+        
+        // If right is not float, cast it to float
+        if (right.baseType != "float" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
+    }
+    
+    // If either is int, res is int
+    else if (left.baseType == "int" ) {
+        res->baseType = "int";
+        
+        // If right is char, cast it to int
+        if (right.baseType != "int" && right.baseType != "error") {
+            TACOperand* right_temp = new_temp_var();
+            TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+            res->code.push_back(castInstr);
+            return {res->code, {left.result, right_temp}};
+        }
+    }
+    
+    // Both char, res is int (C promotion rules)
+    else if (left.baseType == "char") {
+        res->baseType = "int";
+        TACOperand* right_temp = new_temp_var();
+        
+        TACInstruction* castInstr2 = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+        res->code.push_back(castInstr2);
+        return {res->code, {left.result, right_temp}};
+    }
+    // Default to left type
+    else {
+        res->baseType = left.baseType;
+    }
+    
+    
+    return {res->code, {left.result, right.result}};
 }
 
 pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const TypeInfo& left, const TypeInfo& right) {
