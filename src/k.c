@@ -1,7 +1,7 @@
 // Test case for goto statements in C
 // This demonstrates how goto works with labels
 
-int main() {
+//int main() {
 //     int i;
 //     i = 1;
     
@@ -31,9 +31,22 @@ int main() {
     
 // end_section:
 //     i = i + 2;
-int x;
-x=1;
-x++;
-return 0;
+// int x;
+// x=1;
+// x++;
+// return 0;
     
+// }
+
+int factorial(int n,int m) {
+    // if (n <= 1) {
+    //     return 1;
+    // }
+    // return n * factorial(n - 1);
+    factorial(n-1,n++);
 }
+// int main() {
+//     int result;
+//     result = factorial(5);
+//     return 0;
+// }

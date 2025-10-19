@@ -764,23 +764,23 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   558,   558,   578,   589,   592,   599,   599,   662,   666,
-     670,   722,   726,   727,   734,   738,   742,   746,   750,   759,
-     762,   771,   775,   783,   784,   793,   798,   805,   810,   818,
-     827,   842,   858,   862,   869,   891,   909,   914,   920,   931,
-     935,   940,   949,   968,   973,   980,   990,  1025,  1036,  1047,
-    1058,  1071,  1079,  1086,  1087,  1160,  1185,  1220,  1225,  1230,
-    1234,  1241,  1247,  1256,  1257,  1261,  1265,  1269,  1276,  1286,
-    1287,  1288,  1289,  1290,  1291,  1295,  1296,  1349,  1350,  1354,
-    1358,  1365,  1366,  1370,  1378,  1379,  1393,  1410,  1411,  1415,
-    1419,  1423,  1430,  1431,  1435,  1442,  1443,  1450,  1451,  1458,
-    1459,  1466,  1467,  1467,  1525,  1526,  1526,  1582,  1588,  1589,
-    1638,  1642,  1643,  1655,  1663,  1667,  1674,  1678,  1679,  1683,
-    1687,  1688,  1692,  1698,  1701,  1710,  1713,  1716,  1719,  1722,
-    1725,  1728,  1736,  1747,  1748,  1752,  1752,  1766,  1772,  1777,
-    1790,  1800,  1801,  1809,  1816,  1816,  1833,  1837,  1837,  1865,
-    1865,  1900,  1900,  1925,  1925,  1949,  1950,  1954,  1961,  1976,
-    1983,  1990,  2003
+       0,   558,   558,   578,   589,   592,   599,   599,   665,   669,
+     673,   725,   729,   730,   737,   741,   745,   749,   753,   762,
+     765,   774,   778,   786,   787,   796,   801,   808,   813,   821,
+     830,   845,   861,   865,   872,   894,   912,   917,   923,   934,
+     938,   943,   952,   971,   976,   983,   993,  1028,  1039,  1050,
+    1061,  1074,  1082,  1089,  1090,  1163,  1195,  1265,  1270,  1275,
+    1279,  1286,  1316,  1337,  1338,  1342,  1346,  1350,  1357,  1367,
+    1368,  1369,  1370,  1371,  1372,  1376,  1377,  1430,  1431,  1435,
+    1439,  1446,  1447,  1451,  1466,  1467,  1481,  1498,  1499,  1503,
+    1507,  1511,  1518,  1519,  1523,  1530,  1531,  1538,  1539,  1546,
+    1547,  1554,  1555,  1555,  1613,  1614,  1614,  1670,  1676,  1677,
+    1726,  1730,  1731,  1743,  1751,  1755,  1762,  1766,  1767,  1771,
+    1775,  1776,  1780,  1786,  1789,  1798,  1801,  1804,  1807,  1810,
+    1813,  1816,  1824,  1835,  1836,  1840,  1840,  1854,  1860,  1865,
+    1878,  1888,  1889,  1897,  1904,  1904,  1921,  1925,  1925,  1953,
+    1953,  1988,  1988,  2013,  2013,  2037,  2038,  2042,  2049,  2064,
+    2071,  2078,  2091
 };
 #endif
 
@@ -1679,24 +1679,27 @@ yyreduce:
         TypeInfo returnType = *(yyvsp[-2].typeinfo);
         returnType.pointerLevel = (yyvsp[-1].declinfo)->pointerLevel;  // Handle multi-level pointers
         current_function_return_type = new TypeInfo(returnType); // Store return type for return statements
-    }
-#line 1684 "parser.tab.c"
-    break;
 
-  case 7: /* function_definition: return_types fun_declarator marker_fun_begin $@1 compound_statement  */
-#line 614 "parser.y"
-                         {               /* e.g., int f() { ... } */
-		// Register function definition
-		TypeInfo returnType = *(yyvsp[-4].typeinfo);
-		returnType.pointerLevel = (yyvsp[-3].declinfo)->pointerLevel;  // Handle multi-level pointers
+        //-------------------------- Register Function ------------------------------------------
+        // Register function definition
+		//TypeInfo returnType = *$1;
+		returnType.pointerLevel = (yyvsp[-1].declinfo)->pointerLevel;  // Handle multi-level pointers
 
 
 		
-		if ((yyvsp[-3].declinfo)->isFunction && (yyvsp[-3].declinfo)->paramTypes) {
-			insert_function((yyvsp[-3].declinfo)->name, returnType, *(yyvsp[-3].declinfo)->paramTypes);
-			cout << "Function definition: " << (yyvsp[-3].declinfo)->name << " registered\n";
+		if ((yyvsp[-1].declinfo)->isFunction && (yyvsp[-1].declinfo)->paramTypes) {
+			insert_function((yyvsp[-1].declinfo)->name, returnType, *(yyvsp[-1].declinfo)->paramTypes);
+			cout << "Function definition: " << (yyvsp[-1].declinfo)->name << " registered\n";
 		}
 
+    }
+#line 1697 "parser.tab.c"
+    break;
+
+  case 7: /* function_definition: return_types fun_declarator marker_fun_begin $@1 compound_statement  */
+#line 627 "parser.y"
+                         {               /* e.g., int f() { ... } */
+		
         (yyval.typeinfo) = new TypeInfo();
 
         (yyval.typeinfo)->code = vector<TACInstruction*>();
@@ -1729,20 +1732,20 @@ yyreduce:
         delete (yyvsp[-3].declinfo);
         delete (yyvsp[0].typeinfo);
 	}
-#line 1733 "parser.tab.c"
+#line 1736 "parser.tab.c"
     break;
 
   case 9: /* declaration: return_types SEMICOLON  */
-#line 666 "parser.y"
+#line 669 "parser.y"
                                  { 
         (yyval.typeinfo) = new TypeInfo();
         delete (yyvsp[-1].typeinfo); 
     }
-#line 1742 "parser.tab.c"
+#line 1745 "parser.tab.c"
     break;
 
   case 10: /* declaration: return_types init_declarator_list SEMICOLON  */
-#line 670 "parser.y"
+#line 673 "parser.y"
                                                       {
 		// Combine base type with each declarator's type information
 		for (DeclaratorInfo* declInfo : *(yyvsp[-1].decllist)) {
@@ -1790,156 +1793,156 @@ yyreduce:
 		delete (yyvsp[-2].typeinfo);
 		delete (yyvsp[-1].decllist);
 	}
-#line 1794 "parser.tab.c"
+#line 1797 "parser.tab.c"
     break;
 
   case 11: /* return_types: declaration_specifiers  */
-#line 722 "parser.y"
+#line 725 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1800 "parser.tab.c"
+#line 1803 "parser.tab.c"
     break;
 
   case 12: /* declaration_specifiers: type_specifier  */
-#line 726 "parser.y"
+#line 729 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 1806 "parser.tab.c"
+#line 1809 "parser.tab.c"
     break;
 
   case 13: /* declaration_specifiers: STATIC type_specifier  */
-#line 727 "parser.y"
+#line 730 "parser.y"
                                 { 
 		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 		(yyval.typeinfo)->isStatic = true;
 	}
-#line 1815 "parser.tab.c"
+#line 1818 "parser.tab.c"
     break;
 
   case 14: /* type_specifier: VOID  */
-#line 734 "parser.y"
+#line 737 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "void"; 
     }
-#line 1824 "parser.tab.c"
+#line 1827 "parser.tab.c"
     break;
 
   case 15: /* type_specifier: CHAR  */
-#line 738 "parser.y"
+#line 741 "parser.y"
            { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "char"; 
     }
-#line 1833 "parser.tab.c"
+#line 1836 "parser.tab.c"
     break;
 
   case 16: /* type_specifier: INT  */
-#line 742 "parser.y"
+#line 745 "parser.y"
           { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "int"; 
     }
-#line 1842 "parser.tab.c"
+#line 1845 "parser.tab.c"
     break;
 
   case 17: /* type_specifier: FLOAT  */
-#line 746 "parser.y"
+#line 749 "parser.y"
             { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = "float"; 
     }
-#line 1851 "parser.tab.c"
+#line 1854 "parser.tab.c"
     break;
 
   case 18: /* type_specifier: struct_specifier  */
-#line 750 "parser.y"
+#line 753 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo(); 
         (yyval.typeinfo)->baseType = *(yyvsp[0].sval);
         delete (yyvsp[0].sval);
     }
-#line 1861 "parser.tab.c"
+#line 1864 "parser.tab.c"
     break;
 
   case 19: /* cast_type_specifier: type_specifier  */
-#line 759 "parser.y"
+#line 762 "parser.y"
                      {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);  // Just a base type like int, float, etc.
     }
-#line 1869 "parser.tab.c"
+#line 1872 "parser.tab.c"
     break;
 
   case 20: /* cast_type_specifier: type_specifier STAR  */
-#line 762 "parser.y"
+#line 765 "parser.y"
                           {
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);
         (yyval.typeinfo)->pointerLevel = 1;  // Pointer type like int*, float*, etc.
     }
-#line 1878 "parser.tab.c"
+#line 1881 "parser.tab.c"
     break;
 
   case 21: /* init_declarator_list: init_declarator  */
-#line 771 "parser.y"
+#line 774 "parser.y"
                       { 
         (yyval.decllist) = new vector<DeclaratorInfo*>();
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1887 "parser.tab.c"
+#line 1890 "parser.tab.c"
     break;
 
   case 22: /* init_declarator_list: init_declarator_list COMMA init_declarator  */
-#line 775 "parser.y"
+#line 778 "parser.y"
                                                  {
         (yyval.decllist) = (yyvsp[-2].decllist);
         (yyval.decllist)->push_back((yyvsp[0].declinfo));
     }
-#line 1896 "parser.tab.c"
+#line 1899 "parser.tab.c"
     break;
 
   case 23: /* init_declarator: declarator  */
-#line 783 "parser.y"
+#line 786 "parser.y"
                      { (yyval.declinfo) = (yyvsp[0].declinfo); }
-#line 1902 "parser.tab.c"
+#line 1905 "parser.tab.c"
     break;
 
   case 24: /* init_declarator: declarator ASSIGN initializer  */
-#line 784 "parser.y"
+#line 787 "parser.y"
                                         { 
 		(yyval.declinfo) = (yyvsp[-2].declinfo);
 		(yyval.declinfo)->initType = (yyvsp[0].typeinfo);  // Store the initializer's type for later checking
 	}
-#line 1911 "parser.tab.c"
+#line 1914 "parser.tab.c"
     break;
 
   case 25: /* declarator: pointer direct_declarator  */
-#line 793 "parser.y"
+#line 796 "parser.y"
                                     {                                 /* e.g., *p or **p or ***p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Add pointer levels from $1 to the declarator
 		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);
 	}
-#line 1921 "parser.tab.c"
+#line 1924 "parser.tab.c"
     break;
 
   case 26: /* declarator: direct_declarator  */
-#line 798 "parser.y"
+#line 801 "parser.y"
                             {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 1929 "parser.tab.c"
+#line 1932 "parser.tab.c"
     break;
 
   case 27: /* direct_declarator: IDENTIFIER  */
-#line 805 "parser.y"
+#line 808 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 1939 "parser.tab.c"
+#line 1942 "parser.tab.c"
     break;
 
   case 28: /* direct_declarator: direct_declarator LBRACKET INT_LITERAL RBRACKET  */
-#line 810 "parser.y"
+#line 813 "parser.y"
                                                           {     /* e.g., arr[10] or arr[10][20] */ 
 		(yyval.declinfo) = (yyvsp[-3].declinfo);
         if((yyvsp[-1].ival) <= 0 ){
@@ -1948,11 +1951,11 @@ yyreduce:
         (yyval.declinfo)->isArray = true;
         (yyval.declinfo)->addArrayDimension((yyvsp[-1].ival)); // Support multidimensional arrays by adding each dimension
     }
-#line 1952 "parser.tab.c"
+#line 1955 "parser.tab.c"
     break;
 
   case 29: /* direct_declarator: IDENTIFIER LBRACKET INT_LITERAL RBRACKET  */
-#line 818 "parser.y"
+#line 821 "parser.y"
                                                {     /* e.g., arr[10] */ 
 		(yyval.declinfo) = new DeclaratorInfo();
         if( (yyvsp[-1].ival) <= 0 ){
@@ -1963,11 +1966,11 @@ yyreduce:
         (yyval.declinfo)->addArrayDimension((yyvsp[-1].ival));
         delete (yyvsp[-3].sval);
     }
-#line 1967 "parser.tab.c"
+#line 1970 "parser.tab.c"
     break;
 
   case 30: /* direct_declarator: IDENTIFIER LBRACKET CHAR_LITERAL RBRACKET  */
-#line 827 "parser.y"
+#line 830 "parser.y"
                                                  {     /* e.g., arr['a'] */
         // implicit conversion of char to int for array size
         (yyval.declinfo) = new DeclaratorInfo();
@@ -1984,11 +1987,11 @@ yyreduce:
         (yyval.declinfo)->addArrayDimension(static_cast<int>(charValue));
         delete (yyvsp[-3].sval);
     }
-#line 1988 "parser.tab.c"
+#line 1991 "parser.tab.c"
     break;
 
   case 31: /* direct_declarator: direct_declarator LBRACKET CHAR_LITERAL RBRACKET  */
-#line 842 "parser.y"
+#line 845 "parser.y"
                                                         {     /* e.g., arr[10] or arr[10][20] */
         // implicit conversion of char to int for array size
         (yyval.declinfo) = (yyvsp[-3].declinfo);
@@ -2003,28 +2006,28 @@ yyreduce:
         (yyval.declinfo)->isArray = true;
         (yyval.declinfo)->addArrayDimension(static_cast<int>(charValue)); // Support multidimensional arrays by adding each dimension
     }
-#line 2007 "parser.tab.c"
+#line 2010 "parser.tab.c"
     break;
 
   case 32: /* fun_declarator: pointer fun_direct_declarator  */
-#line 858 "parser.y"
+#line 861 "parser.y"
                                         {
   		(yyval.declinfo) = (yyvsp[0].declinfo);
   		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);  // Function returns a pointer (possibly multi-level)
   	}
-#line 2016 "parser.tab.c"
+#line 2019 "parser.tab.c"
     break;
 
   case 33: /* fun_declarator: fun_direct_declarator  */
-#line 862 "parser.y"
+#line 865 "parser.y"
                                 {
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 2024 "parser.tab.c"
+#line 2027 "parser.tab.c"
     break;
 
   case 34: /* fun_direct_declarator: IDENTIFIER LPAREN parameter_list RPAREN  */
-#line 869 "parser.y"
+#line 872 "parser.y"
                                                   {          		/* e.g., f(int a, float b) */
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[-3].sval);
@@ -2047,11 +2050,11 @@ yyreduce:
 		delete (yyvsp[-3].sval);
 		delete (yyvsp[-1].typelist);
 	}
-#line 2051 "parser.tab.c"
+#line 2054 "parser.tab.c"
     break;
 
   case 35: /* fun_direct_declarator: IDENTIFIER LPAREN RPAREN  */
-#line 891 "parser.y"
+#line 894 "parser.y"
                                    {                               /* e.g., f() (function with no params) */
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[-2].sval);
@@ -2065,66 +2068,66 @@ yyreduce:
 		cout << "Function declarator: " << (yyval.declinfo)->name << " with no parameters\n";
 		delete (yyvsp[-2].sval);
 	}
-#line 2069 "parser.tab.c"
+#line 2072 "parser.tab.c"
     break;
 
   case 36: /* declaration_list: declaration  */
-#line 909 "parser.y"
+#line 912 "parser.y"
                          {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[0].typeinfo)->code; // Carry forward the code from the declaration
         delete (yyvsp[0].typeinfo);
     }
-#line 2079 "parser.tab.c"
+#line 2082 "parser.tab.c"
     break;
 
   case 37: /* declaration_list: declaration_list declaration  */
-#line 914 "parser.y"
+#line 917 "parser.y"
                                           {
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);
         // Append the code from the new declaration
         (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
         delete (yyvsp[0].typeinfo);
     }
-#line 2090 "parser.tab.c"
+#line 2093 "parser.tab.c"
     break;
 
   case 38: /* declaration_list: %empty  */
-#line 920 "parser.y"
+#line 923 "parser.y"
                            {
         (yyval.typeinfo) = new TypeInfo(); // Empty declaration list
     }
-#line 2098 "parser.tab.c"
+#line 2101 "parser.tab.c"
     break;
 
   case 39: /* initializer: assignment_expression  */
-#line 931 "parser.y"
+#line 934 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2104 "parser.tab.c"
+#line 2107 "parser.tab.c"
     break;
 
   case 40: /* parameter_list: parameter_declaration  */
-#line 935 "parser.y"
+#line 938 "parser.y"
                                                                                               {
         (yyval.typelist) = new vector<TypeInfo>();
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 2114 "parser.tab.c"
+#line 2117 "parser.tab.c"
     break;
 
   case 41: /* parameter_list: parameter_list COMMA parameter_declaration  */
-#line 940 "parser.y"
+#line 943 "parser.y"
                                                                                                         {
         (yyval.typelist) = (yyvsp[-2].typelist);
         (yyval.typelist)->push_back(*(yyvsp[0].typeinfo));
         delete (yyvsp[0].typeinfo);
     }
-#line 2124 "parser.tab.c"
+#line 2127 "parser.tab.c"
     break;
 
   case 42: /* parameter_declaration: return_types parameter_declarator  */
-#line 949 "parser.y"
+#line 952 "parser.y"
                                                                                                           {
         // Combine base type with declarator-specific type info
         TypeInfo* combinedType = new TypeInfo(*(yyvsp[-1].typeinfo));  // Start with base type
@@ -2141,39 +2144,39 @@ yyreduce:
         delete (yyvsp[-1].typeinfo);
         delete (yyvsp[0].declinfo);
     }
-#line 2145 "parser.tab.c"
+#line 2148 "parser.tab.c"
     break;
 
   case 43: /* parameter_declarator: pointer parameter_direct_declarator  */
-#line 968 "parser.y"
+#line 971 "parser.y"
                                               {                                 /* e.g., *p or **p or ***p */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 		// Add pointer levels to the declarator
 		(yyval.declinfo)->pointerLevel = (yyvsp[-1].ival);
 	}
-#line 2155 "parser.tab.c"
+#line 2158 "parser.tab.c"
     break;
 
   case 44: /* parameter_declarator: parameter_direct_declarator  */
-#line 973 "parser.y"
+#line 976 "parser.y"
                                       {                                         /* e.g., x */ 
 		(yyval.declinfo) = (yyvsp[0].declinfo);
 	}
-#line 2163 "parser.tab.c"
+#line 2166 "parser.tab.c"
     break;
 
   case 45: /* parameter_direct_declarator: IDENTIFIER  */
-#line 980 "parser.y"
+#line 983 "parser.y"
                      {                                                 /* e.g., x */  
 		(yyval.declinfo) = new DeclaratorInfo();
 		(yyval.declinfo)->name = *(yyvsp[0].sval);
 		delete (yyvsp[0].sval);
 	}
-#line 2173 "parser.tab.c"
+#line 2176 "parser.tab.c"
     break;
 
   case 46: /* primary_expression: IDENTIFIER  */
-#line 990 "parser.y"
+#line 993 "parser.y"
                  { 
         check_variable_declaration(*(yyvsp[0].sval));
         SymbolEntry entry;
@@ -2209,11 +2212,11 @@ yyreduce:
         }
         delete (yyvsp[0].sval);
     }
-#line 2213 "parser.tab.c"
+#line 2216 "parser.tab.c"
     break;
 
   case 47: /* primary_expression: INT_LITERAL  */
-#line 1025 "parser.y"
+#line 1028 "parser.y"
                   { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "int";
@@ -2225,11 +2228,11 @@ yyreduce:
 
 
     }
-#line 2229 "parser.tab.c"
+#line 2232 "parser.tab.c"
     break;
 
   case 48: /* primary_expression: FLOAT_LITERAL  */
-#line 1036 "parser.y"
+#line 1039 "parser.y"
                     { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "float";
@@ -2241,11 +2244,11 @@ yyreduce:
         (yyval.typeinfo)->result = new_constant(floatStr);
 
     }
-#line 2245 "parser.tab.c"
+#line 2248 "parser.tab.c"
     break;
 
   case 49: /* primary_expression: CHAR_LITERAL  */
-#line 1047 "parser.y"
+#line 1050 "parser.y"
                    { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "char";
@@ -2257,11 +2260,11 @@ yyreduce:
         (yyval.typeinfo)->result = new_constant(charStr);
         delete (yyvsp[0].sval);
     }
-#line 2261 "parser.tab.c"
+#line 2264 "parser.tab.c"
     break;
 
   case 50: /* primary_expression: STRING_LITERAL  */
-#line 1058 "parser.y"
+#line 1061 "parser.y"
                      { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "char";
@@ -2275,11 +2278,11 @@ yyreduce:
 
         delete (yyvsp[0].sval);
     }
-#line 2279 "parser.tab.c"
+#line 2282 "parser.tab.c"
     break;
 
   case 51: /* primary_expression: NULL_LITERAL  */
-#line 1071 "parser.y"
+#line 1074 "parser.y"
                        { 
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -2288,25 +2291,25 @@ yyreduce:
         (yyval.typeinfo)->isLvalue = false;  // NULL is not an lvalue
         cout << "NULL literal (type: void*)\n";
     }
-#line 2292 "parser.tab.c"
+#line 2295 "parser.tab.c"
     break;
 
   case 52: /* primary_expression: LPAREN expression RPAREN  */
-#line 1079 "parser.y"
+#line 1082 "parser.y"
                                { 
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);  // Pass through the expression type
     }
-#line 2300 "parser.tab.c"
+#line 2303 "parser.tab.c"
     break;
 
   case 53: /* postfix_expression: primary_expression  */
-#line 1086 "parser.y"
+#line 1089 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2306 "parser.tab.c"
+#line 2309 "parser.tab.c"
     break;
 
   case 54: /* postfix_expression: postfix_expression LBRACKET expression RBRACKET  */
-#line 1087 "parser.y"
+#line 1090 "parser.y"
                                                           {              /* e.g., arr[i] */
 		// Array subscripting: arr[i] or ptr[i]
 		TypeInfo* base = (yyvsp[-3].typeinfo);
@@ -2380,11 +2383,11 @@ yyreduce:
 		}
 		delete (yyvsp[-3].typeinfo); delete (yyvsp[-1].typeinfo);
 	}
-#line 2384 "parser.tab.c"
+#line 2387 "parser.tab.c"
     break;
 
   case 55: /* postfix_expression: postfix_expression LPAREN RPAREN  */
-#line 1160 "parser.y"
+#line 1163 "parser.y"
                                            {                               /* e.g., func() */
 		// Function call with no arguments
 		TypeInfo* base = (yyvsp[-2].typeinfo);
@@ -2398,6 +2401,13 @@ yyreduce:
 				(yyval.typeinfo) = new TypeInfo(func->returnType);
 				(yyval.typeinfo)->isLiteral = false;
 				cout << "Function call: " << base->identifier << "() -> " << (yyval.typeinfo)->toString() << "\n";
+                // Generate the call instruction
+                (yyval.typeinfo)->result = new_temp_var();
+                TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+                                            (yyval.typeinfo)->result, 
+                                            new_identifier(base->identifier), 
+                                            new_constant("0"), 0);
+                (yyval.typeinfo)->code.push_back(callInstr);
 			} else {
 				type_error("No matching function found for call to '" + base->identifier + "()'");
 				(yyval.typeinfo) = new TypeInfo();
@@ -2410,15 +2420,28 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo);
 	}
-#line 2414 "parser.tab.c"
+#line 2424 "parser.tab.c"
     break;
 
   case 56: /* postfix_expression: postfix_expression LPAREN argument_expression_list RPAREN  */
-#line 1185 "parser.y"
+#line 1195 "parser.y"
                                                                     {      /* e.g., func(a,b) */
 		// Function call with arguments
 		TypeInfo* base = (yyvsp[-3].typeinfo);
 		vector<TypeInfo>* argTypes = (yyvsp[-1].typelist);
+
+        // print for each argument type
+
+        cout<<"Function call arguments:\n";
+        for(size_t i=0;i<argTypes->size();i++){
+            cout<<"--------------- Start of argument "<<i+1<<" ---------------\n";
+            for(auto instr : (*argTypes)[i].code){
+                string instr_str = get_TAC_instruction_string(instr);
+                cout << instr_str << "\n";
+            }
+            cout<<"--------------- End of argument "<<i+1<<" ---------------\n";
+        }
+
 		
 		if (!base->identifier.empty() && argTypes) {
 			// Try to resolve function call
@@ -2427,7 +2450,29 @@ yyreduce:
 			if (func) {
 				(yyval.typeinfo) = new TypeInfo(func->returnType);
 				(yyval.typeinfo)->isLiteral = false;
-				cout << "Function call: " << base->identifier << "(...) -> " << (yyval.typeinfo)->toString() << "\n";
+                (yyval.typeinfo)->code = vector<TACInstruction*>();
+				//cout << "Function call: " << base->identifier << "(...) -> " << $$->toString() << "\n";
+                int no_of_args = argTypes->size();
+                for(int i=0;i<no_of_args;i++){
+                    (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
+                    // generate code for argument passing
+                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                    // append promo.first to $$->code
+                    (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), promo.first.begin(), promo.first.end());
+                    // now pass promo.second.second as argument
+                    TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                promo.second.second, 
+                                                new_empty_var(), 
+                                                new_empty_var(), 0);
+                    (yyval.typeinfo)->code.push_back(argInstr);
+                }
+                // Now generate the call instruction
+                (yyval.typeinfo)->result = new_temp_var();
+                TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+                                            (yyval.typeinfo)->result, 
+                                            new_identifier(base->identifier), 
+                                            new_constant(to_string(no_of_args)), 0);
+                (yyval.typeinfo)->code.push_back(callInstr);
 			} else {
 				// Create a descriptive error message
 				string argTypesStr = "";
@@ -2450,104 +2495,140 @@ yyreduce:
 		delete (yyvsp[-3].typeinfo);
 		delete (yyvsp[-1].typelist);
 	}
-#line 2454 "parser.tab.c"
+#line 2499 "parser.tab.c"
     break;
 
   case 57: /* postfix_expression: postfix_expression DOT IDENTIFIER  */
-#line 1220 "parser.y"
+#line 1265 "parser.y"
                                             {                            /* e.g., obj.field */
 		// Struct member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 2464 "parser.tab.c"
+#line 2509 "parser.tab.c"
     break;
 
   case 58: /* postfix_expression: postfix_expression ARROW IDENTIFIER  */
-#line 1225 "parser.y"
+#line 1270 "parser.y"
                                               {                             /* e.g., ptr->field */
 		// Struct pointer member access - skip for now as requested
 		(yyval.typeinfo) = (yyvsp[-2].typeinfo);
 		delete (yyvsp[0].sval);
 	}
-#line 2474 "parser.tab.c"
+#line 2519 "parser.tab.c"
     break;
 
   case 59: /* postfix_expression: postfix_expression INCREMENT  */
-#line 1230 "parser.y"
+#line 1275 "parser.y"
                                        {                                  /* e.g., x++ */
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "++");
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2483 "parser.tab.c"
+#line 2528 "parser.tab.c"
     break;
 
   case 60: /* postfix_expression: postfix_expression DECREMENT  */
-#line 1234 "parser.y"
+#line 1279 "parser.y"
                                        {                                 /* e.g., x-- */
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[-1].typeinfo), "--"); 
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2492 "parser.tab.c"
+#line 2537 "parser.tab.c"
     break;
 
   case 61: /* argument_expression_list: assignment_expression  */
-#line 1241 "parser.y"
+#line 1286 "parser.y"
                                 {                                         /* e.g., x */
 		(yyval.typelist) = new vector<TypeInfo>();
-		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
-		(yyval.typelist)->push_back(argType);
-		delete (yyvsp[0].typeinfo);
+        TypeInfo argType = *(yyvsp[0].typeinfo);
+        
+        //print TAC here
+        // isme kyunki copy constructor doesn't copy code, true_list, false_list, continue_list, break_list, result
+
+        // Yeh dono hii chahiyen 
+        // Important:
+        argType.code = (yyvsp[0].typeinfo)->code;
+        argType.result = (yyvsp[0].typeinfo)->result;
+        (yyval.typelist)->push_back(argType);
+
+        cout<<"TAC instructions for argument expression:\n";
+        for(auto instr : (yyvsp[0].typeinfo)->code){
+            string instr_str = get_TAC_instruction_string(instr);
+            cout << instr_str << "\n";
+        }
+
+        cout<<"In $$ \n";
+        for(auto instr : (yyval.typelist)->at(0).code){
+            string instr_str = get_TAC_instruction_string(instr);
+            cout << instr_str << "\n";
+        }
+
+        //delete $1;
+		//TypeInfo argType = array_to_pointer_conversion(*$1);
+		//$$->push_back(argType);
+		//delete $1;
 	}
-#line 2503 "parser.tab.c"
+#line 2572 "parser.tab.c"
     break;
 
   case 62: /* argument_expression_list: argument_expression_list COMMA assignment_expression  */
-#line 1247 "parser.y"
+#line 1316 "parser.y"
                                                                {           /* e.g., x, y */
 		(yyval.typelist) = (yyvsp[-2].typelist);
-		TypeInfo argType = array_to_pointer_conversion(*(yyvsp[0].typeinfo));
-		(yyval.typelist)->push_back(argType);
-		delete (yyvsp[0].typeinfo);
+        TypeInfo argType = *(yyvsp[0].typeinfo);
+        argType.code = (yyvsp[0].typeinfo)->code;
+        argType.result = (yyvsp[0].typeinfo)->result;
+        (yyval.typelist)->push_back(argType);
+        //print TAC here
+        // cout<<"TAC instructions for argument expression:\n";
+        // for(auto instr : $3->code){
+        //     string instr_str = get_TAC_instruction_string(instr);
+        //     cout << instr_str << "\n";
+        // }
+        //delete $3;
+
+		//TypeInfo argType = array_to_pointer_conversion(*$3);
+		//$$->push_back(argType);
+		//delete $3;
 	}
-#line 2514 "parser.tab.c"
+#line 2595 "parser.tab.c"
     break;
 
   case 63: /* unary_expression: postfix_expression  */
-#line 1256 "parser.y"
+#line 1337 "parser.y"
                              { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2520 "parser.tab.c"
+#line 2601 "parser.tab.c"
     break;
 
   case 64: /* unary_expression: INCREMENT unary_expression  */
-#line 1257 "parser.y"
+#line 1338 "parser.y"
                                      { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "++");    
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2529 "parser.tab.c"
+#line 2610 "parser.tab.c"
     break;
 
   case 65: /* unary_expression: DECREMENT unary_expression  */
-#line 1261 "parser.y"
+#line 1342 "parser.y"
                                      { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), "--");
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2538 "parser.tab.c"
+#line 2619 "parser.tab.c"
     break;
 
   case 66: /* unary_expression: unary_operator cast_expression  */
-#line 1265 "parser.y"
+#line 1346 "parser.y"
                                          { 
 		(yyval.typeinfo) = perform_unary_operation(*(yyvsp[0].typeinfo), *(yyvsp[-1].sval));
         delete (yyvsp[0].typeinfo);
 	}
-#line 2547 "parser.tab.c"
+#line 2628 "parser.tab.c"
     break;
 
   case 67: /* unary_expression: SIZEOF unary_expression  */
-#line 1269 "parser.y"
+#line 1350 "parser.y"
                                   { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2555,11 +2636,11 @@ yyreduce:
 		cout << "sizeof operation result type: int\n";
 		delete (yyvsp[0].typeinfo);
 	}
-#line 2559 "parser.tab.c"
+#line 2640 "parser.tab.c"
     break;
 
   case 68: /* unary_expression: SIZEOF LPAREN type_specifier RPAREN  */
-#line 1276 "parser.y"
+#line 1357 "parser.y"
                                               { 
 		(yyval.typeinfo) = new TypeInfo();
 		(yyval.typeinfo)->baseType = "int";  // sizeof always returns int
@@ -2567,53 +2648,53 @@ yyreduce:
 		cout << "sizeof(" << (yyvsp[-1].typeinfo)->toString() << ") result type: int\n";
 		delete (yyvsp[-1].typeinfo);
 	}
-#line 2571 "parser.tab.c"
+#line 2652 "parser.tab.c"
     break;
 
   case 69: /* unary_operator: BIT_AND  */
-#line 1286 "parser.y"
+#line 1367 "parser.y"
                                                                      {   (yyval.sval) = new string("&"); }
-#line 2577 "parser.tab.c"
+#line 2658 "parser.tab.c"
     break;
 
   case 70: /* unary_operator: STAR  */
-#line 1287 "parser.y"
+#line 1368 "parser.y"
                                                                            {   (yyval.sval) = new string("*"); }
-#line 2583 "parser.tab.c"
+#line 2664 "parser.tab.c"
     break;
 
   case 71: /* unary_operator: PLUS  */
-#line 1288 "parser.y"
+#line 1369 "parser.y"
                                                                            {   (yyval.sval) = new string("+"); }
-#line 2589 "parser.tab.c"
+#line 2670 "parser.tab.c"
     break;
 
   case 72: /* unary_operator: MINUS  */
-#line 1289 "parser.y"
+#line 1370 "parser.y"
                                                                             {   (yyval.sval) = new string("-"); }
-#line 2595 "parser.tab.c"
+#line 2676 "parser.tab.c"
     break;
 
   case 73: /* unary_operator: BIT_NOT  */
-#line 1290 "parser.y"
+#line 1371 "parser.y"
                                                                               {   (yyval.sval) = new string("~"); }
-#line 2601 "parser.tab.c"
+#line 2682 "parser.tab.c"
     break;
 
   case 74: /* unary_operator: LOGICAL_NOT  */
-#line 1291 "parser.y"
+#line 1372 "parser.y"
                                                                                  {   (yyval.sval) = new string("!"); }
-#line 2607 "parser.tab.c"
+#line 2688 "parser.tab.c"
     break;
 
   case 75: /* cast_expression: unary_expression  */
-#line 1295 "parser.y"
+#line 1376 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2613 "parser.tab.c"
+#line 2694 "parser.tab.c"
     break;
 
   case 76: /* cast_expression: LPAREN cast_type_specifier RPAREN cast_expression  */
-#line 1296 "parser.y"
+#line 1377 "parser.y"
                                                             {                         /* e.g., (int) x, (int*) x */
 		TypeInfo* target_type = (yyvsp[-2].typeinfo);
 		TypeInfo* source_type = (yyvsp[0].typeinfo);
@@ -2664,74 +2745,81 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2668 "parser.tab.c"
+#line 2749 "parser.tab.c"
     break;
 
   case 77: /* multiplicative_expression: cast_expression  */
-#line 1349 "parser.y"
+#line 1430 "parser.y"
                           { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2674 "parser.tab.c"
+#line 2755 "parser.tab.c"
     break;
 
   case 78: /* multiplicative_expression: multiplicative_expression STAR cast_expression  */
-#line 1350 "parser.y"
+#line 1431 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "*");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2683 "parser.tab.c"
+#line 2764 "parser.tab.c"
     break;
 
   case 79: /* multiplicative_expression: multiplicative_expression DIVIDE cast_expression  */
-#line 1354 "parser.y"
+#line 1435 "parser.y"
                                                            { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "/");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2692 "parser.tab.c"
+#line 2773 "parser.tab.c"
     break;
 
   case 80: /* multiplicative_expression: multiplicative_expression MOD cast_expression  */
-#line 1358 "parser.y"
+#line 1439 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "%");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2701 "parser.tab.c"
+#line 2782 "parser.tab.c"
     break;
 
   case 81: /* additive_expression: multiplicative_expression  */
-#line 1365 "parser.y"
+#line 1446 "parser.y"
                                     { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2707 "parser.tab.c"
+#line 2788 "parser.tab.c"
     break;
 
   case 82: /* additive_expression: additive_expression PLUS multiplicative_expression  */
-#line 1366 "parser.y"
+#line 1447 "parser.y"
                                                              { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "+");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2716 "parser.tab.c"
+#line 2797 "parser.tab.c"
     break;
 
   case 83: /* additive_expression: additive_expression MINUS multiplicative_expression  */
-#line 1370 "parser.y"
+#line 1451 "parser.y"
                                                               { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "-");
+        cout<<"Hello from additive expression minus\n";
+
+        //print code
+        for(auto instr : (yyval.typeinfo)->code){
+            print_TAC_instruction(instr);
+        }
+
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2725 "parser.tab.c"
+#line 2813 "parser.tab.c"
     break;
 
   case 84: /* shift_expression: additive_expression  */
-#line 1378 "parser.y"
+#line 1466 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2731 "parser.tab.c"
+#line 2819 "parser.tab.c"
     break;
 
   case 85: /* shift_expression: shift_expression LEFT_SHIFT additive_expression  */
-#line 1379 "parser.y"
+#line 1467 "parser.y"
                                                           {                     /* e.g., a << b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->pointerLevel > 0 || (yyvsp[-2].typeinfo)->isArray ||
@@ -2746,11 +2834,11 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2750 "parser.tab.c"
+#line 2838 "parser.tab.c"
     break;
 
   case 86: /* shift_expression: shift_expression RIGHT_SHIFT additive_expression  */
-#line 1393 "parser.y"
+#line 1481 "parser.y"
                                                            {                     /* e.g., a >> b */
 		// Shift operations require integer types (no pointers or arrays)
 		if (!is_integer_type((yyvsp[-2].typeinfo)->baseType) || (yyvsp[-2].typeinfo)->pointerLevel > 0 || (yyvsp[-2].typeinfo)->isArray ||
@@ -2765,129 +2853,129 @@ yyreduce:
 		}
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2769 "parser.tab.c"
+#line 2857 "parser.tab.c"
     break;
 
   case 87: /* relational_expression: shift_expression  */
-#line 1410 "parser.y"
+#line 1498 "parser.y"
                            { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2775 "parser.tab.c"
+#line 2863 "parser.tab.c"
     break;
 
   case 88: /* relational_expression: relational_expression LT shift_expression  */
-#line 1411 "parser.y"
+#line 1499 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2784 "parser.tab.c"
+#line 2872 "parser.tab.c"
     break;
 
   case 89: /* relational_expression: relational_expression GT shift_expression  */
-#line 1415 "parser.y"
+#line 1503 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2793 "parser.tab.c"
+#line 2881 "parser.tab.c"
     break;
 
   case 90: /* relational_expression: relational_expression LE shift_expression  */
-#line 1419 "parser.y"
+#line 1507 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "<=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2802 "parser.tab.c"
+#line 2890 "parser.tab.c"
     break;
 
   case 91: /* relational_expression: relational_expression GE shift_expression  */
-#line 1423 "parser.y"
+#line 1511 "parser.y"
                                                     { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), ">=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2811 "parser.tab.c"
+#line 2899 "parser.tab.c"
     break;
 
   case 92: /* equality_expression: relational_expression  */
-#line 1430 "parser.y"
+#line 1518 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2817 "parser.tab.c"
+#line 2905 "parser.tab.c"
     break;
 
   case 93: /* equality_expression: equality_expression EQ relational_expression  */
-#line 1431 "parser.y"
+#line 1519 "parser.y"
                                                        { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "==");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2826 "parser.tab.c"
+#line 2914 "parser.tab.c"
     break;
 
   case 94: /* equality_expression: equality_expression NEQ relational_expression  */
-#line 1435 "parser.y"
+#line 1523 "parser.y"
                                                         { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "!=");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2835 "parser.tab.c"
+#line 2923 "parser.tab.c"
     break;
 
   case 95: /* and_expression: equality_expression  */
-#line 1442 "parser.y"
+#line 1530 "parser.y"
                               { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2841 "parser.tab.c"
+#line 2929 "parser.tab.c"
     break;
 
   case 96: /* and_expression: and_expression BIT_AND equality_expression  */
-#line 1443 "parser.y"
+#line 1531 "parser.y"
                                                      { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "&");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2850 "parser.tab.c"
+#line 2938 "parser.tab.c"
     break;
 
   case 97: /* exclusive_or_expression: and_expression  */
-#line 1450 "parser.y"
+#line 1538 "parser.y"
                          { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2856 "parser.tab.c"
+#line 2944 "parser.tab.c"
     break;
 
   case 98: /* exclusive_or_expression: exclusive_or_expression BIT_XOR and_expression  */
-#line 1451 "parser.y"
+#line 1539 "parser.y"
                                                          { 
 		(yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "^");
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 2865 "parser.tab.c"
+#line 2953 "parser.tab.c"
     break;
 
   case 99: /* inclusive_or_expression: exclusive_or_expression  */
-#line 1458 "parser.y"
+#line 1546 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2871 "parser.tab.c"
+#line 2959 "parser.tab.c"
     break;
 
   case 100: /* inclusive_or_expression: inclusive_or_expression BIT_OR exclusive_or_expression  */
-#line 1459 "parser.y"
+#line 1547 "parser.y"
                                                                  { 
 		
         (yyval.typeinfo) = perform_binary_operation(*(yyvsp[-2].typeinfo), *(yyvsp[0].typeinfo), "|");
         delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
     }
-#line 2881 "parser.tab.c"
+#line 2969 "parser.tab.c"
     break;
 
   case 101: /* logical_and_expression: inclusive_or_expression  */
-#line 1466 "parser.y"
+#line 1554 "parser.y"
                                   { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2887 "parser.tab.c"
+#line 2975 "parser.tab.c"
     break;
 
   case 102: /* $@2: %empty  */
-#line 1467 "parser.y"
+#line 1555 "parser.y"
                                              { 
         TACOperand* true_label = new_label(2);
         TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
@@ -2896,11 +2984,11 @@ yyreduce:
         (yyvsp[-1].typeinfo)->code.push_back(goto_false);
         (yyvsp[-1].typeinfo)->false_list.insert(goto_false);
     }
-#line 2900 "parser.tab.c"
+#line 2988 "parser.tab.c"
     break;
 
   case 103: /* logical_and_expression: logical_and_expression LOGICAL_AND $@2 inclusive_or_expression  */
-#line 1474 "parser.y"
+#line 1562 "parser.y"
                               { 
 		// Short-circuit logical AND
         TypeInfo* left = (yyvsp[-3].typeinfo);
@@ -2949,27 +3037,27 @@ yyreduce:
 
         }
     }
-#line 2953 "parser.tab.c"
+#line 3041 "parser.tab.c"
     break;
 
   case 104: /* logical_or_expression: logical_and_expression  */
-#line 1525 "parser.y"
+#line 1613 "parser.y"
                                  { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 2959 "parser.tab.c"
+#line 3047 "parser.tab.c"
     break;
 
   case 105: /* $@3: %empty  */
-#line 1526 "parser.y"
+#line 1614 "parser.y"
                                            {
         TACInstruction* go_true = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
         (yyvsp[-1].typeinfo)->code.push_back(go_true);
         (yyvsp[-1].typeinfo)->true_list.insert(go_true);
     }
-#line 2969 "parser.tab.c"
+#line 3057 "parser.tab.c"
     break;
 
   case 106: /* logical_or_expression: logical_or_expression LOGICAL_OR $@3 logical_and_expression  */
-#line 1530 "parser.y"
+#line 1618 "parser.y"
                              { 
 		// short circuit
         
@@ -3019,25 +3107,25 @@ yyreduce:
             
         }
     }
-#line 3023 "parser.tab.c"
+#line 3111 "parser.tab.c"
     break;
 
   case 107: /* conditional_expression: logical_or_expression  */
-#line 1582 "parser.y"
+#line 1670 "parser.y"
                                                                                          {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);  // No conditional, just pass through
     }
-#line 3031 "parser.tab.c"
+#line 3119 "parser.tab.c"
     break;
 
   case 108: /* assignment_expression: conditional_expression  */
-#line 1588 "parser.y"
-                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 3037 "parser.tab.c"
+#line 1676 "parser.y"
+                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo);}
+#line 3125 "parser.tab.c"
     break;
 
   case 109: /* assignment_expression: unary_expression assignment_operator assignment_expression  */
-#line 1589 "parser.y"
+#line 1677 "parser.y"
                                                                      { 
 		// Type checking for assignment
 		TypeInfo* lhs_type = (yyvsp[-2].typeinfo);
@@ -3084,17 +3172,17 @@ yyreduce:
 		
 		delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
 	}
-#line 3088 "parser.tab.c"
+#line 3176 "parser.tab.c"
     break;
 
   case 111: /* expression: assignment_expression  */
-#line 1642 "parser.y"
+#line 1730 "parser.y"
                                 { (yyval.typeinfo) = (yyvsp[0].typeinfo); }
-#line 3094 "parser.tab.c"
+#line 3182 "parser.tab.c"
     break;
 
   case 112: /* expression: expression COMMA assignment_expression  */
-#line 1643 "parser.y"
+#line 1731 "parser.y"
                                                  { 
 		// Comma operator returns the type of the right operand
 		(yyval.typeinfo) = new TypeInfo(*(yyvsp[0].typeinfo));
@@ -3104,122 +3192,122 @@ yyreduce:
 		delete (yyvsp[-2].typeinfo);
         delete (yyvsp[0].typeinfo);
 	}
-#line 3108 "parser.tab.c"
+#line 3196 "parser.tab.c"
     break;
 
   case 113: /* constant_expression: conditional_expression  */
-#line 1655 "parser.y"
+#line 1743 "parser.y"
                                  { 
 		(yyval.typeinfo) = (yyvsp[0].typeinfo);
 	}
-#line 3116 "parser.tab.c"
+#line 3204 "parser.tab.c"
     break;
 
   case 114: /* struct_specifier: struct IDENTIFIER LBRACE struct_declaration_list RBRACE  */
-#line 1663 "parser.y"
+#line 1751 "parser.y"
                                                                   {  // e.g., struct S { int x; float y; };
 		(yyval.sval) = new string(*(yyvsp[-4].sval) + " " + *(yyvsp[-3].sval));
 		delete (yyvsp[-4].sval); delete (yyvsp[-3].sval);
 	}
-#line 3125 "parser.tab.c"
+#line 3213 "parser.tab.c"
     break;
 
   case 115: /* struct_specifier: struct IDENTIFIER  */
-#line 1667 "parser.y"
+#line 1755 "parser.y"
                             { 
 		(yyval.sval) = new string(*(yyvsp[-1].sval) + " " + *(yyvsp[0].sval));
 		delete (yyvsp[-1].sval); delete (yyvsp[0].sval);
 	}
-#line 3134 "parser.tab.c"
+#line 3222 "parser.tab.c"
     break;
 
   case 116: /* struct: STRUCT  */
-#line 1674 "parser.y"
+#line 1762 "parser.y"
                  { (yyval.sval) = new string("struct"); }
-#line 3140 "parser.tab.c"
+#line 3228 "parser.tab.c"
     break;
 
   case 122: /* struct_declarator: declarator  */
-#line 1692 "parser.y"
+#line 1780 "parser.y"
                      { (yyval.sval) = new string((yyvsp[0].declinfo)->name); delete (yyvsp[0].declinfo); }
-#line 3146 "parser.tab.c"
+#line 3234 "parser.tab.c"
     break;
 
   case 123: /* pointer: STAR  */
-#line 1698 "parser.y"
+#line 1786 "parser.y"
            {                                   /* e.g., * */
         (yyval.ival) = 1;  // Return pointer level instead of TypeInfo
     }
-#line 3154 "parser.tab.c"
+#line 3242 "parser.tab.c"
     break;
 
   case 124: /* pointer: STAR pointer  */
-#line 1701 "parser.y"
+#line 1789 "parser.y"
                    {                           /* e.g., ** or *** etc. */
         (yyval.ival) = (yyvsp[0].ival) + 1;  // Increment pointer level for each * encountered
     }
-#line 3162 "parser.tab.c"
+#line 3250 "parser.tab.c"
     break;
 
   case 125: /* statement: labeled_statement  */
-#line 1710 "parser.y"
+#line 1798 "parser.y"
                                                                                                       {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3170 "parser.tab.c"
+#line 3258 "parser.tab.c"
     break;
 
   case 126: /* statement: compound_statement  */
-#line 1713 "parser.y"
+#line 1801 "parser.y"
                                                                                                   {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3178 "parser.tab.c"
+#line 3266 "parser.tab.c"
     break;
 
   case 127: /* statement: expression_statement  */
-#line 1716 "parser.y"
+#line 1804 "parser.y"
                                                                                                  {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3186 "parser.tab.c"
+#line 3274 "parser.tab.c"
     break;
 
   case 128: /* statement: selection_statement  */
-#line 1719 "parser.y"
+#line 1807 "parser.y"
                                                                                                         {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3194 "parser.tab.c"
+#line 3282 "parser.tab.c"
     break;
 
   case 129: /* statement: iteration_statement  */
-#line 1722 "parser.y"
+#line 1810 "parser.y"
                                                                                                            {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3202 "parser.tab.c"
+#line 3290 "parser.tab.c"
     break;
 
   case 130: /* statement: jump_statement  */
-#line 1725 "parser.y"
+#line 1813 "parser.y"
                                                                                                      {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
     }
-#line 3210 "parser.tab.c"
+#line 3298 "parser.tab.c"
     break;
 
   case 131: /* statement: error SEMICOLON  */
-#line 1728 "parser.y"
+#line 1816 "parser.y"
                           { 
 		yyerror("Invalid statement, skipping to next ';'"); 
 		yyerrok; 
 	}
-#line 3219 "parser.tab.c"
+#line 3307 "parser.tab.c"
     break;
 
   case 132: /* labeled_statement: IDENTIFIER COLON marker statement  */
-#line 1736 "parser.y"
+#line 1824 "parser.y"
                                                                                                               {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
         if( label_map.find(*(yyvsp[-3].sval)) != label_map.end() ) {
@@ -3231,17 +3319,17 @@ yyreduce:
         }
         delete (yyvsp[-3].sval);
     }
-#line 3235 "parser.tab.c"
+#line 3323 "parser.tab.c"
     break;
 
   case 135: /* $@4: %empty  */
-#line 1752 "parser.y"
+#line 1840 "parser.y"
                  { enter_scope(); insert_current_function_parameters(); }
-#line 3241 "parser.tab.c"
+#line 3329 "parser.tab.c"
     break;
 
   case 136: /* compound_statement: LBRACE $@4 declaration_list statement_list RBRACE  */
-#line 1752 "parser.y"
+#line 1840 "parser.y"
                                                                                                                  {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[-2].typeinfo)->code.begin(), (yyvsp[-2].typeinfo)->code.end());
@@ -3253,29 +3341,29 @@ yyreduce:
         delete (yyvsp[-1].typeinfo);
         exit_scope(); 
     }
-#line 3257 "parser.tab.c"
+#line 3345 "parser.tab.c"
     break;
 
   case 137: /* marker: %empty  */
-#line 1766 "parser.y"
+#line 1854 "parser.y"
                   {
         (yyval.opinfo) = new_label(0); // Create a label for the beginning of loops
     }
-#line 3265 "parser.tab.c"
+#line 3353 "parser.tab.c"
     break;
 
   case 138: /* statement_list: statement  */
-#line 1772 "parser.y"
+#line 1860 "parser.y"
                                                                                                {
         (yyval.typeinfo)= (yyvsp[0].typeinfo);
         TACOperand* curr_inst = new_label(0);
         backpatch((yyval.typeinfo)->next_list,curr_inst);
     }
-#line 3275 "parser.tab.c"
+#line 3363 "parser.tab.c"
     break;
 
   case 139: /* statement_list: statement_list marker statement  */
-#line 1777 "parser.y"
+#line 1865 "parser.y"
                                                                                                                {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[-2].typeinfo)->code;
@@ -3289,28 +3377,28 @@ yyreduce:
         
        delete (yyvsp[-2].typeinfo); delete (yyvsp[0].typeinfo);
     }
-#line 3293 "parser.tab.c"
+#line 3381 "parser.tab.c"
     break;
 
   case 140: /* statement_list: %empty  */
-#line 1790 "parser.y"
+#line 1878 "parser.y"
                         {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
     }
-#line 3302 "parser.tab.c"
+#line 3390 "parser.tab.c"
     break;
 
   case 142: /* expression_statement: expression SEMICOLON  */
-#line 1801 "parser.y"
+#line 1889 "parser.y"
                                                                                                   {
         (yyval.typeinfo) = (yyvsp[-1].typeinfo);
     }
-#line 3310 "parser.tab.c"
+#line 3398 "parser.tab.c"
     break;
 
   case 143: /* selection_statement: if_expression  */
-#line 1809 "parser.y"
+#line 1897 "parser.y"
                                                                                {
         (yyval.typeinfo) = (yyvsp[0].typeinfo);
         if (! (yyvsp[0].typeinfo)->false_list.empty()) {
@@ -3318,11 +3406,11 @@ yyreduce:
             backpatch((yyvsp[0].typeinfo)->false_list, curr_inst);
         }
     }
-#line 3322 "parser.tab.c"
+#line 3410 "parser.tab.c"
     break;
 
   case 144: /* $@5: %empty  */
-#line 1816 "parser.y"
+#line 1904 "parser.y"
                              {        
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         (yyvsp[-1].typeinfo)->code.push_back(goto_inst);
@@ -3332,11 +3420,11 @@ yyreduce:
             backpatch((yyvsp[-1].typeinfo)->false_list, curr_inst);
         }
     }
-#line 3336 "parser.tab.c"
+#line 3424 "parser.tab.c"
     break;
 
   case 145: /* selection_statement: if_expression ELSE $@5 statement  */
-#line 1825 "parser.y"
+#line 1913 "parser.y"
     {
         (yyval.typeinfo) = (yyvsp[-3].typeinfo);
         (yyval.typeinfo)->code.insert((yyval.typeinfo)->code.end(), (yyvsp[0].typeinfo)->code.begin(), (yyvsp[0].typeinfo)->code.end());
@@ -3345,11 +3433,11 @@ yyreduce:
         (yyval.typeinfo)->continue_list.insert((yyvsp[0].typeinfo)->continue_list.begin(), (yyvsp[0].typeinfo)->continue_list.end());
         delete (yyvsp[0].typeinfo);
     }
-#line 3349 "parser.tab.c"
+#line 3437 "parser.tab.c"
     break;
 
   case 147: /* $@6: %empty  */
-#line 1837 "parser.y"
+#line 1925 "parser.y"
                                    {
         TACOperand* true_label = new_label(2);
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2); 
@@ -3358,11 +3446,11 @@ yyreduce:
         (yyvsp[-1].typeinfo)->code.push_back(goto_inst);
         (yyvsp[-1].typeinfo)->false_list.insert(goto_inst);
     }
-#line 3362 "parser.tab.c"
+#line 3450 "parser.tab.c"
     break;
 
   case 148: /* if_expression: IF LPAREN expression RPAREN $@6 statement  */
-#line 1844 "parser.y"
+#line 1932 "parser.y"
                  {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[-3].typeinfo)->code;
@@ -3379,11 +3467,11 @@ yyreduce:
         delete (yyvsp[-3].typeinfo);
         delete (yyvsp[0].typeinfo);
     }
-#line 3383 "parser.tab.c"
+#line 3471 "parser.tab.c"
     break;
 
   case 149: /* $@7: %empty  */
-#line 1865 "parser.y"
+#line 1953 "parser.y"
                                                        {
         TACOperand* true_label = new_label(2);
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, (yyvsp[-1].typeinfo)->result, new_empty_var(), 2);
@@ -3398,11 +3486,11 @@ yyreduce:
             backpatch((yyvsp[-1].typeinfo)->true_list, new_label(0));
         }
     }
-#line 3402 "parser.tab.c"
+#line 3490 "parser.tab.c"
     break;
 
   case 150: /* iteration_statement: WHILE begin_marker LPAREN expression RPAREN $@7 statement  */
-#line 1878 "parser.y"
+#line 1966 "parser.y"
                                             {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[-3].typeinfo)->code;
@@ -3425,22 +3513,22 @@ yyreduce:
         }
         delete (yyvsp[-3].typeinfo); delete (yyvsp[0].typeinfo);
     }
-#line 3429 "parser.tab.c"
+#line 3517 "parser.tab.c"
     break;
 
   case 151: /* $@8: %empty  */
-#line 1900 "parser.y"
+#line 1988 "parser.y"
                                                {
         // if E then goto___ -> next list
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), (yyvsp[0].typeinfo)->result, new_empty_var(), 1);
         (yyvsp[0].typeinfo)->code.push_back(if_inst);
         (yyvsp[0].typeinfo)->true_list.insert(if_inst);
     }
-#line 3440 "parser.tab.c"
+#line 3528 "parser.tab.c"
     break;
 
   case 152: /* iteration_statement: UNTIL begin_marker LPAREN expression $@8 RPAREN statement  */
-#line 1905 "parser.y"
+#line 1993 "parser.y"
                                                     {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[-3].typeinfo)->code;
@@ -3461,22 +3549,22 @@ yyreduce:
         }
         delete (yyvsp[-3].typeinfo); delete (yyvsp[0].typeinfo);
     }
-#line 3465 "parser.tab.c"
+#line 3553 "parser.tab.c"
     break;
 
   case 153: /* $@9: %empty  */
-#line 1925 "parser.y"
+#line 2013 "parser.y"
                                      {
         TACOperand* curr_inst = new_label(0);
         // seemss redundant but dont delete for now
         // krish
         //backpatch($3->next_list, curr_inst);
     }
-#line 3476 "parser.tab.c"
+#line 3564 "parser.tab.c"
     break;
 
   case 154: /* iteration_statement: DO begin_marker statement $@9 WHILE LPAREN marker expression RPAREN SEMICOLON  */
-#line 1930 "parser.y"
+#line 2018 "parser.y"
                                                      {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->code = (yyvsp[-7].typeinfo)->code;
@@ -3496,20 +3584,20 @@ yyreduce:
         }
 
     }
-#line 3500 "parser.tab.c"
+#line 3588 "parser.tab.c"
     break;
 
   case 157: /* begin_marker: %empty  */
-#line 1954 "parser.y"
+#line 2042 "parser.y"
                   {
         // Mark the beginning of a loop for backpatching
         (yyval.opinfo) = new_label(0);
     }
-#line 3509 "parser.tab.c"
+#line 3597 "parser.tab.c"
     break;
 
   case 158: /* jump_statement: GOTO IDENTIFIER SEMICOLON  */
-#line 1961 "parser.y"
+#line 2049 "parser.y"
                                                                                                         {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -3525,11 +3613,11 @@ yyreduce:
         }
         delete (yyvsp[-1].sval);
     }
-#line 3529 "parser.tab.c"
+#line 3617 "parser.tab.c"
     break;
 
   case 159: /* jump_statement: CONTINUE SEMICOLON  */
-#line 1976 "parser.y"
+#line 2064 "parser.y"
                                                                                                       {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -3537,11 +3625,11 @@ yyreduce:
         (yyval.typeinfo)->code.push_back(goto_inst);
         (yyval.typeinfo)->continue_list.insert(goto_inst);
     }
-#line 3541 "parser.tab.c"
+#line 3629 "parser.tab.c"
     break;
 
   case 160: /* jump_statement: BREAK SEMICOLON  */
-#line 1983 "parser.y"
+#line 2071 "parser.y"
                                                                                                    {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -3549,11 +3637,11 @@ yyreduce:
         (yyval.typeinfo)->code.push_back(goto_inst);
         (yyval.typeinfo)->break_list.insert(goto_inst);
     }
-#line 3553 "parser.tab.c"
+#line 3641 "parser.tab.c"
     break;
 
   case 161: /* jump_statement: RETURN SEMICOLON  */
-#line 1990 "parser.y"
+#line 2078 "parser.y"
                                                                                                     {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -3567,16 +3655,15 @@ yyreduce:
         }
         
     }
-#line 3571 "parser.tab.c"
+#line 3659 "parser.tab.c"
     break;
 
   case 162: /* jump_statement: RETURN expression SEMICOLON  */
-#line 2003 "parser.y"
+#line 2091 "parser.y"
                                                                                                       {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
         (yyval.typeinfo)->code = (yyvsp[-1].typeinfo)->code;
-        // type check with current function return type
         if(!is_implicit_conversion_allowed(*(yyvsp[-1].typeinfo), *current_function_return_type)){
             type_error("Return type mismatch: function expects " + current_function_return_type->toString() + ", but returning " + (yyvsp[-1].typeinfo)->toString());
         }else{
@@ -3586,14 +3673,13 @@ yyreduce:
             TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), cast_result.second.second, new_empty_var(), new_empty_var(),0);
             (yyval.typeinfo)->code.push_back(ret_inst);
         }
-        // generate TAC code 
         delete (yyvsp[-1].typeinfo);
     }
-#line 3593 "parser.tab.c"
+#line 3679 "parser.tab.c"
     break;
 
 
-#line 3597 "parser.tab.c"
+#line 3683 "parser.tab.c"
 
       default: break;
     }
@@ -3786,7 +3872,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 2022 "parser.y"
+#line 2108 "parser.y"
 
 
 

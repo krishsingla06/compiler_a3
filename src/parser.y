@@ -611,9 +611,10 @@ function_definition
         TypeInfo returnType = *$1;
         returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
         current_function_return_type = new TypeInfo(returnType); // Store return type for return statements
-    } compound_statement {               /* e.g., int f() { ... } */
-		// Register function definition
-		TypeInfo returnType = *$1;
+
+        //-------------------------- Register Function ------------------------------------------
+        // Register function definition
+		//TypeInfo returnType = *$1;
 		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
 
 
@@ -623,6 +624,8 @@ function_definition
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
 
+    } compound_statement {               /* e.g., int f() { ... } */
+		
         $$ = new TypeInfo();
 
         $$->code = vector<TACInstruction*>();
@@ -901,7 +904,7 @@ fun_direct_declarator
 		cout << "Function declarator: " << $$->name << " with no parameters\n";
 		delete $1;
 	}
-	;
+;
 
 
 //------------------------ It will be used in compound statements - that means start of compound statement will be definitions list only -----------------------------
@@ -1170,6 +1173,13 @@ postfix_expression
 				$$ = new TypeInfo(func->returnType);
 				$$->isLiteral = false;
 				cout << "Function call: " << base->identifier << "() -> " << $$->toString() << "\n";
+                // Generate the call instruction
+                $$->result = new_temp_var();
+                TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+                                            $$->result, 
+                                            new_identifier(base->identifier), 
+                                            new_constant("0"), 0);
+                $$->code.push_back(callInstr);
 			} else {
 				type_error("No matching function found for call to '" + base->identifier + "()'");
 				$$ = new TypeInfo();
@@ -1186,6 +1196,19 @@ postfix_expression
 		// Function call with arguments
 		TypeInfo* base = $1;
 		vector<TypeInfo>* argTypes = $3;
+
+        // print for each argument type
+
+        cout<<"Function call arguments:\n";
+        for(size_t i=0;i<argTypes->size();i++){
+            cout<<"--------------- Start of argument "<<i+1<<" ---------------\n";
+            for(auto instr : (*argTypes)[i].code){
+                string instr_str = get_TAC_instruction_string(instr);
+                cout << instr_str << "\n";
+            }
+            cout<<"--------------- End of argument "<<i+1<<" ---------------\n";
+        }
+
 		
 		if (!base->identifier.empty() && argTypes) {
 			// Try to resolve function call
@@ -1194,7 +1217,29 @@ postfix_expression
 			if (func) {
 				$$ = new TypeInfo(func->returnType);
 				$$->isLiteral = false;
-				cout << "Function call: " << base->identifier << "(...) -> " << $$->toString() << "\n";
+                $$->code = vector<TACInstruction*>();
+				//cout << "Function call: " << base->identifier << "(...) -> " << $$->toString() << "\n";
+                int no_of_args = argTypes->size();
+                for(int i=0;i<no_of_args;i++){
+                    $$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
+                    // generate code for argument passing
+                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                    // append promo.first to $$->code
+                    $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                    // now pass promo.second.second as argument
+                    TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                promo.second.second, 
+                                                new_empty_var(), 
+                                                new_empty_var(), 0);
+                    $$->code.push_back(argInstr);
+                }
+                // Now generate the call instruction
+                $$->result = new_temp_var();
+                TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+                                            $$->result, 
+                                            new_identifier(base->identifier), 
+                                            new_constant(to_string(no_of_args)), 0);
+                $$->code.push_back(callInstr);
 			} else {
 				// Create a descriptive error message
 				string argTypesStr = "";
@@ -1240,15 +1285,52 @@ postfix_expression
 argument_expression_list
 	: assignment_expression {                                         /* e.g., x */
 		$$ = new vector<TypeInfo>();
-		TypeInfo argType = array_to_pointer_conversion(*$1);
-		$$->push_back(argType);
-		delete $1;
+        TypeInfo argType = *$1;
+        
+        //print TAC here
+        // isme kyunki copy constructor doesn't copy code, true_list, false_list, continue_list, break_list, result
+
+        // Yeh dono hii chahiyen 
+        // Important:
+        argType.code = $1->code;
+        argType.result = $1->result;
+        $$->push_back(argType);
+        $$.back().code = $1->code;
+        $$.back().result = $1->result;
+
+        cout<<"TAC instructions for argument expression:\n";
+        for(auto instr : $1->code){
+            string instr_str = get_TAC_instruction_string(instr);
+            cout << instr_str << "\n";
+        }
+
+        cout<<"In $$ \n";
+        for(auto instr : $$->at(0).code){
+            string instr_str = get_TAC_instruction_string(instr);
+            cout << instr_str << "\n";
+        }
+
+        //delete $1;
+		//TypeInfo argType = array_to_pointer_conversion(*$1);
+		//$$->push_back(argType);
+		//delete $1;
 	}
 	| argument_expression_list COMMA assignment_expression {           /* e.g., x, y */
-		$$ = $1;
-		TypeInfo argType = array_to_pointer_conversion(*$3);
-		$$->push_back(argType);
-		delete $3;
+        TypeInfo argType = *$3;
+        argType.code = $3->code;
+        argType.result = $3->result;
+        $$->push_back(argType);
+        //print TAC here
+        // cout<<"TAC instructions for argument expression:\n";
+        // for(auto instr : $3->code){
+        //     string instr_str = get_TAC_instruction_string(instr);
+        //     cout << instr_str << "\n";
+        // }
+        //delete $3;
+
+		//TypeInfo argType = array_to_pointer_conversion(*$3);
+		//$$->push_back(argType);
+		//delete $3;
 	}
 	;
 
@@ -1369,6 +1451,13 @@ additive_expression
 	}
 	| additive_expression MINUS multiplicative_expression { 
 		$$ = perform_binary_operation(*$1, *$3, "-");
+        cout<<"Hello from additive expression minus\n";
+
+        //print code
+        for(auto instr : $$->code){
+            print_TAC_instruction(instr);
+        }
+
 		delete $1; delete $3;
 	}
 	;
@@ -1585,7 +1674,7 @@ conditional_expression
 	;
 
 assignment_expression
-	: conditional_expression { $$ = $1; }
+	: conditional_expression { $$ = $1;}
 	| unary_expression assignment_operator assignment_expression { 
 		// Type checking for assignment
 		TypeInfo* lhs_type = $1;
@@ -1805,6 +1894,8 @@ expression_statement
 
 
 
+
+// here will be problem for sure*$
 selection_statement
 	: if_expression                                 /* e.g., if (x) stmt */{
         $$ = $1;
