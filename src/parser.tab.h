@@ -445,7 +445,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 462 "parser.y"
+#line 464 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */

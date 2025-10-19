@@ -362,7 +362,9 @@ string get_operand_string(TACOperand* operand);
     TypeInfo* current_function_return_type = nullptr;
 
     // pending gotos for backpatching
-    map<string, unordered_set<TACInstruction*> > pending_gotos;
+    // In parser.y, near other global variables
+    map<string, TACOperand*> label_map;  // Maps label names to their TAC instructions
+    map<string, unordered_set<TACInstruction*>> unresolved_jumps;  // List of jumps to resolve
 
     // Function declarations for scope management
     void enter_scope();
@@ -554,22 +556,27 @@ string get_operand_string(TACOperand* operand);
 %%
 start
 	: global_declaration                        /* e.g., int x; */ {
-        $$ = $1;
-        // here write code to print $1.code to the file directly with test case file name + ".tac"  
-        string tac_filename = "Final.tac";
-        ofstream tac_file(tac_filename);
-        if (!tac_file.is_open()) {
-            cerr << "Error: Unable to open file " << tac_filename << " for writing TAC code.\n";
-        } else {
-            for (TACInstruction* instr : $1->code) {
+       $$ = $1;
+       
+       // Debug output
+       cout << "Start rule: Global declaration has " << $$->code.size() << " TAC instructions\n";
+      
+        // Open the file for writing
+        ofstream tac_file("Final.tac");
+        if (tac_file.is_open()) {
+            // simply print code
+            for(auto instr : $$->code){
                 tac_file << get_TAC_instruction_string(instr) << "\n";
             }
             tac_file.close();
+            cout << "TAC code written to Final.tac\n";
+        } else {
+            cerr << "Failed to open file for TAC output\n";
         }
         
     }
 	| start global_declaration                   /* e.g., int x; float y; */{
-        // Append $2.code to $1.code
+        // Append $2->code to $1->code
         $$ = $1;
         $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
         delete $2;
@@ -590,11 +597,15 @@ global_declaration
 
 function_definition
 	: return_types fun_declarator marker_fun_begin {
+        // Generate function begin instruction
         string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>());
         TACOperand* func_label = new_identifier(mangled_name);
         $3 = new TypeInfo();
-        TACInstruction* func_begin_instr = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), func_label, new_empty_var(), new_empty_var(), 0);
-        $3->code.push_back(func_begin_instr);
+         TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+                                       new_identifier($2->name), 
+                                       new_empty_var(), 
+                                       new_empty_var(), 0);
+        $3->code.push_back(func_begin);
 
         // -------------------------- RETURN TYPE ------------------------------------------
         TypeInfo returnType = *$1;
@@ -604,6 +615,8 @@ function_definition
 		// Register function definition
 		TypeInfo returnType = *$1;
 		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
+
+
 		
 		if ($2->isFunction && $2->paramTypes) {
 			insert_function($2->name, returnType, *$2->paramTypes);
@@ -611,32 +624,36 @@ function_definition
 		}
 
         $$ = new TypeInfo();
-        $$ = $5;
-        // add $3.code in the beginning of $$->code
-        $$->code.insert($$->code.begin(), $3->code.begin(), $3->code.end());
 
-        TACOperand* func_label = new_identifier(mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>()));
-        TACInstruction* func_end_instr = emit(TACOperator(TAC_OPERATOR_FUNC_END), func_label, new_empty_var(), new_empty_var(), 0);
-        $$->code.push_back(func_end_instr);
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+        
+        for (TACInstruction* instr : $5->code) {
+            $$->code.push_back(instr);
+        }
+        
+        // Generate function end instruction
+        TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+                                      new_identifier($2->name), 
+                                      new_empty_var(), 
+                                      new_empty_var(), 0);
+        $$->code.push_back(func_end);
 		
 		// Reset the current function context after function definition completes
 		current_function_name = "";
 		current_function_signature = "";
         current_function_return_type = nullptr;
 
-        // Write TAC code to file
-        string tac_filename = $2->name + ".tac";
-        
-        // Also print to console for debugging
-        cout << "Function " << $2->name << " TAC code (also written to " << tac_filename << "):\n";
-        for (TACInstruction* instr : $5->code) {
-            print_TAC_instruction(instr);
+   
+        for(auto instr : $5->code){
+            string instr_str = get_TAC_instruction_string(instr);
+            cout << instr_str << "\n";
         }
 		
 		// Clean up
-		if ($2->paramTypes) delete $2->paramTypes;
-		delete $1;
-		delete $2;
+        delete $1;
+        delete $2;
+        delete $5;
 	}
 	
 	;
@@ -1716,7 +1733,17 @@ statement
 
 
 labeled_statement
-	: IDENTIFIER COLON marker statement                                            /* e.g., label: stmt */
+	: IDENTIFIER COLON marker statement                                            /* e.g., label: stmt */{
+        $$ = $4;
+        if( label_map.find(*$1) != label_map.end() ) {
+            type_error("Duplicate label definition: " + *$1);
+        }else{
+            label_map[*$1] = $3;
+            // backpatch any gotos to this label
+            backpatch(unresolved_jumps[*$1], $3);
+        }
+        delete $1;
+    }
 	| CASE constant_expression COLON statement                              /* e.g., case 1: stmt */
 	| DEFAULT COLON statement                                               /* e.g., default: stmt */
 	;
@@ -1724,19 +1751,11 @@ labeled_statement
 compound_statement                                    
 	: LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE {
         $$ = new TypeInfo();
-        if($3){
-            //print
-            cout<<"hehe\n"; 
-            for(TACInstruction* inst : $3->code){
-                print_TAC_instruction(inst);
-            }
-        }
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
         $$->code.insert($$->code.end(), $4->code.begin(), $4->code.end());
         $$->next_list = $4->next_list;
         $$->break_list = $4->break_list;
         $$->continue_list = $4->continue_list;
-
         delete $3;
         delete $4;
         exit_scope(); 
@@ -1765,7 +1784,8 @@ statement_list
         $$->break_list.insert($3->break_list.begin(), $3->break_list.end());
         $$->continue_list.insert($3->continue_list.begin(), $3->continue_list.end());
         $$->next_list = $3->next_list;
-        delete $1; delete $3;
+        
+       delete $1; delete $3;
     }
 	| /* empty */   {
         $$ = new TypeInfo();
@@ -1938,7 +1958,21 @@ begin_marker
     ;
 
 jump_statement
-	: GOTO IDENTIFIER SEMICOLON                                              /* e.g., goto label; */
+	: GOTO IDENTIFIER SEMICOLON                                              /* e.g., goto label; */{
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+        TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
+        $$->code.push_back(goto_inst);
+        // In a full implementation, we would need to handle label resolution here
+        if( label_map.find(*$2) != label_map.end() ) {
+            // Label already defined, backpatch immediately
+            backpatch({goto_inst}, label_map[*$2]);
+        } else {
+            // Label not yet defined, add to unresolved jumps
+            unresolved_jumps[*$2].insert(goto_inst);
+        }
+        delete $2;
+    }
 	| CONTINUE SEMICOLON                                                     /* e.g., continue; */{
         $$ = new TypeInfo();
         $$->baseType = "void";
@@ -1967,20 +2001,18 @@ jump_statement
         
     }
 	| RETURN expression SEMICOLON                                            /* e.g., return x; */{
-        $$ = $2;
-        TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), $2->result, new_empty_var(), new_empty_var(),0);
-        $$->code.push_back(ret_inst);
-        // type check with current function return type
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+        $$->code = $2->code;
         if(!is_implicit_conversion_allowed(*$2, *current_function_return_type)){
             type_error("Return type mismatch: function expects " + current_function_return_type->toString() + ", but returning " + $2->toString());
         }else{
             const TypeInfo lhs = *current_function_return_type;
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(lhs,*$2);
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
-            TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), cast_result.second.first, new_empty_var(), new_empty_var(),0);
+            TACInstruction* ret_inst = emit(TACOperator(TAC_OPERATOR_RETURN), cast_result.second.second, new_empty_var(), new_empty_var(),0);
             $$->code.push_back(ret_inst);
         }
-        // generate TAC code 
         delete $2;
     }
 	;
