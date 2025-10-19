@@ -264,7 +264,11 @@ string get_operand_string(TACOperand* operand);
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
-                    isLvalue(other.isLvalue) {}
+                    isLvalue(other.isLvalue), result(other.result),
+                    true_list(other.true_list), false_list(other.false_list),
+                    next_list(other.next_list), code(other.code),
+                    break_list(other.break_list), continue_list(other.continue_list) {}
+                    
         
         // Calculate total array size (product of all dimensions)
         int getTotalArraySize() const {
@@ -365,7 +369,7 @@ string get_operand_string(TACOperand* operand);
         FunctionEntry() : line(0) {}
     };
 
-#line 369 "parser.tab.h"
+#line 373 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -445,7 +449,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 464 "parser.y"
+#line 468 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -458,7 +462,7 @@ union YYSTYPE
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
 
-#line 462 "parser.tab.h"
+#line 466 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -243,7 +243,11 @@ string get_operand_string(TACOperand* operand);
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
-                    isLvalue(other.isLvalue) {}
+                    isLvalue(other.isLvalue), result(other.result),
+                    true_list(other.true_list), false_list(other.false_list),
+                    next_list(other.next_list), code(other.code),
+                    break_list(other.break_list), continue_list(other.continue_list) {}
+                    
         
         // Calculate total array size (product of all dimensions)
         int getTotalArraySize() const {
@@ -1198,17 +1202,6 @@ postfix_expression
 		vector<TypeInfo>* argTypes = $3;
 
         // print for each argument type
-
-        cout<<"Function call arguments:\n";
-        for(size_t i=0;i<argTypes->size();i++){
-            cout<<"--------------- Start of argument "<<i+1<<" ---------------\n";
-            for(auto instr : (*argTypes)[i].code){
-                string instr_str = get_TAC_instruction_string(instr);
-                cout << instr_str << "\n";
-            }
-            cout<<"--------------- End of argument "<<i+1<<" ---------------\n";
-        }
-
 		
 		if (!base->identifier.empty() && argTypes) {
 			// Try to resolve function call
@@ -1222,6 +1215,8 @@ postfix_expression
                 int no_of_args = argTypes->size();
                 for(int i=0;i<no_of_args;i++){
                     $$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
+                }
+                for(int i=0;i<no_of_args;i++){
                     // generate code for argument passing
                     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
                     // append promo.first to $$->code
@@ -1286,51 +1281,14 @@ argument_expression_list
 	: assignment_expression {                                         /* e.g., x */
 		$$ = new vector<TypeInfo>();
         TypeInfo argType = *$1;
-        
-        //print TAC here
-        // isme kyunki copy constructor doesn't copy code, true_list, false_list, continue_list, break_list, result
-
-        // Yeh dono hii chahiyen 
-        // Important:
-        argType.code = $1->code;
-        argType.result = $1->result;
         $$->push_back(argType);
-        $$.back().code = $1->code;
-        $$.back().result = $1->result;
-
-        cout<<"TAC instructions for argument expression:\n";
-        for(auto instr : $1->code){
-            string instr_str = get_TAC_instruction_string(instr);
-            cout << instr_str << "\n";
-        }
-
-        cout<<"In $$ \n";
-        for(auto instr : $$->at(0).code){
-            string instr_str = get_TAC_instruction_string(instr);
-            cout << instr_str << "\n";
-        }
-
-        //delete $1;
-		//TypeInfo argType = array_to_pointer_conversion(*$1);
-		//$$->push_back(argType);
-		//delete $1;
+        delete $1;
 	}
 	| argument_expression_list COMMA assignment_expression {           /* e.g., x, y */
         TypeInfo argType = *$3;
-        argType.code = $3->code;
-        argType.result = $3->result;
+        $$ = $1;
         $$->push_back(argType);
-        //print TAC here
-        // cout<<"TAC instructions for argument expression:\n";
-        // for(auto instr : $3->code){
-        //     string instr_str = get_TAC_instruction_string(instr);
-        //     cout << instr_str << "\n";
-        // }
-        //delete $3;
-
-		//TypeInfo argType = array_to_pointer_conversion(*$3);
-		//$$->push_back(argType);
-		//delete $3;
+        delete $3;
 	}
 	;
 
