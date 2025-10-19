@@ -369,7 +369,13 @@ string get_operand_string(TACOperand* operand);
         FunctionEntry() : line(0) {}
     };
 
-#line 373 "parser.tab.h"
+    struct SwitchLabel {
+        int isInt; // 1 if int, 0 if char
+        TACOperand* label; // Label for the case
+        TACOperand* value; // Value for the case
+    };
+
+#line 379 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -449,7 +455,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 468 "parser.y"
+#line 477 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -462,7 +468,7 @@ union YYSTYPE
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
 
-#line 466 "parser.tab.h"
+#line 472 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

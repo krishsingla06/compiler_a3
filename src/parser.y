@@ -347,6 +347,12 @@ string get_operand_string(TACOperand* operand);
         
         FunctionEntry() : line(0) {}
     };
+
+    struct SwitchLabel {
+        int isInt; // 1 if int, 0 if char
+        TACOperand* label; // Label for the case
+        TACOperand* value; // Value for the case
+    };
 }
 
 %code {
@@ -369,6 +375,9 @@ string get_operand_string(TACOperand* operand);
     // In parser.y, near other global variables
     map<string, TACOperand*> label_map;  // Maps label names to their TAC instructions
     map<string, unordered_set<TACInstruction*>> unresolved_jumps;  // List of jumps to resolve
+
+    // switch labels list
+    
 
     // Function declarations for scope management
     void enter_scope();
@@ -1076,6 +1085,8 @@ primary_expression
         delete $1;
     }
 	| NULL_LITERAL { 
+        //abhi dekhna hai isko 
+        //leave it for now
         $$ = new TypeInfo();
         $$->baseType = "void";
         $$->pointerLevel = 1;  // NULL is a void pointer
@@ -1095,8 +1106,6 @@ postfix_expression
 		// Array subscripting: arr[i] or ptr[i]
 		TypeInfo* base = $1;
 		TypeInfo* index = $3;
-
-        //cout<<base->isArray<<" MEOW "<<base->pointerLevel<<"\n";
 		
 		// Check if base is array or pointer
 		if (!base->isArray && base->pointerLevel == 0) {
@@ -1310,15 +1319,33 @@ unary_expression
 		$$ = new TypeInfo();
 		$$->baseType = "int";  // sizeof always returns int
 		$$->isLiteral = true;
-		cout << "sizeof operation result type: int\n";
+
+        // 3AC code for sizeof
+        int size = getSize(*$2);
+        $$->result = new_temp_var();
+        TACInstruction* sizeInstr = emit(TACOperator(), $$->result, new_constant(to_string(size)), new_empty_var(), 0);
+        $$->code = vector<TACInstruction*>();
+        
+        for(auto instr : $2->code){
+            $$->code.push_back(instr);
+        }
+        $$->code.push_back(sizeInstr);
+
 		delete $2;
 	}
 	| SIZEOF LPAREN type_specifier RPAREN { 
 		$$ = new TypeInfo();
-		$$->baseType = "int";  // sizeof always returns int
-		$$->isLiteral = true;
-		cout << "sizeof(" << $3->toString() << ") result type: int\n";
-		delete $3;
+        $$->baseType = "int";  // sizeof always returns int
+        $$->isLiteral = true;
+
+        // 3AC code for sizeof(type)
+        int size = getSize(*$3);
+        $$->result = new_temp_var();
+        TACInstruction* sizeInstr = emit(TACOperator(), $$->result, new_constant(to_string(size)), new_empty_var(), 0);
+        $$->code = vector<TACInstruction*>();
+        $$->code.push_back(sizeInstr);
+
+        delete $3;
 	}
 	;
 
@@ -1336,51 +1363,26 @@ cast_expression
 	| LPAREN cast_type_specifier RPAREN cast_expression {                         /* e.g., (int) x, (int*) x */
 		TypeInfo* target_type = $2;
 		TypeInfo* source_type = $4;
+
+        // CHECK COMPATIBILITY
+        if (!are_types_compatible_for_casting(*target_type, *source_type)) {
+            type_error("Incompatible types for casting from " + source_type->toString() + " to " + target_type->toString());
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            delete $2; delete $4;
+            return;
+        }
 		
-		// Type casting validation
-		if (source_type->baseType == "error") {
-			$$ = source_type;
-		} else if (is_numeric_type(target_type->baseType) && is_numeric_type(source_type->baseType) 
-		           && target_type->pointerLevel == 0 && !target_type->isArray 
-		           && source_type->pointerLevel == 0 && !source_type->isArray) {
-			// Numeric type casting is allowed (but not between pointers/arrays and numerics)
-			$$ = new TypeInfo(*target_type);
-			$$->isLiteral = source_type->isLiteral;
-			cout << "Cast: (" << target_type->toString() << ")" << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if (target_type->baseType == "void" && target_type->pointerLevel > 0 && !target_type->isArray) {
-			// Casting to void* is allowed from any pointer type
-			if (source_type->pointerLevel > 0 && !source_type->isArray) {
-				$$ = new TypeInfo(*target_type);
-				$$->isLiteral = false;
-				cout << "Cast to void*: " << source_type->toString() << " -> " << $$->toString() << "\n";
-			} else {
-				type_error("Cannot cast non-pointer type " + source_type->toString() + " to void*");
-				$$ = new TypeInfo();
-				$$->baseType = "error";
-			}
-		} else if (source_type->pointerLevel > 0 && target_type->pointerLevel > 0 
-		           && !source_type->isArray && !target_type->isArray) {
-			// Pointer to pointer casting (excluding arrays)
-			$$ = new TypeInfo(*target_type);
-			$$->isLiteral = false;
-			cout << "Pointer cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if ((source_type->pointerLevel > 0 || source_type->isArray) && is_numeric_type(target_type->baseType) && target_type->pointerLevel == 0 && !target_type->isArray) {
-			// Pointer/array to integer cast (for address arithmetic, but warn)
-			type_warning("Casting pointer/array " + source_type->toString() + " to numeric type " + target_type->toString());
-			$$ = new TypeInfo(*target_type);
-			$$->isLiteral = false;
-			cout << "Pointer-to-numeric cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else if (is_numeric_type(source_type->baseType) && source_type->pointerLevel == 0 && !source_type->isArray && target_type->pointerLevel > 0 && !target_type->isArray) {
-			// Integer to pointer cast (dangerous but allowed with warning)
-			type_warning("Casting numeric type " + source_type->toString() + " to pointer " + target_type->toString());
-			$$ = new TypeInfo(*target_type);
-			$$->isLiteral = false;
-			cout << "Numeric-to-pointer cast: " << source_type->toString() << " -> " << $$->toString() << "\n";
-		} else {
-			type_error("Invalid cast from " + source_type->toString() + " to " + target_type->toString());
-			$$ = new TypeInfo();
-			$$->baseType = "error";
-		}
+		// Perform type casting 
+        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(*target_type, *source_type);
+        $$ = new TypeInfo(*target_type);
+        $$->isLiteral = false; // Result of cast is not a literal
+        $$->result = promo.second.second;
+        $$->code = vector<TACInstruction*>();
+        // Carry over the code from the source expression
+        $$->code.insert($$->code.end(), source_type->code.begin(), source_type->code.end());
+        // Append the casting instructions
+        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
 		delete $2; delete $4;
 	}
 	;
@@ -1420,7 +1422,6 @@ additive_expression
 	}
 	;
 
-// not done yet
 shift_expression
 	: additive_expression { $$ = $1; }                                             /* e.g., a */
 	| shift_expression LEFT_SHIFT additive_expression {                     /* e.g., a << b */
@@ -1434,6 +1435,24 @@ shift_expression
 			$$ = new TypeInfo(*$1);
 			if ($$->baseType == "char") $$->baseType = "int"; // Promote char to int
 			cout << "Left shift: " << $1->toString() << " << " << $3->toString() << " -> " << $$->toString() << "\n";
+            // now 3AC code
+            //if any operand is char, promote to int
+            TACOperand* left_op = $1->result;
+            TACOperand* right_op = $3->result;
+            if($1->baseType == "char"){
+                left_op = new_temp_var();
+                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, left_op, $1->result, new_empty_var(),0);
+                $$->code.push_back(promo);
+            }
+            if($3->baseType == "char"){
+                right_op = new_temp_var();
+                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, right_op, $3->result, new_empty_var(),0);
+                $$->code.push_back(promo);
+            }
+            TACOperand* result_op = new_temp_var();
+            TACInstruction* shift_instr = emit(TAC_OPERATOR_LEFT_SHIFT, result_op, left_op, right_op,0);
+            $$->code.push_back(shift_instr);
+
 		}
 		delete $1; delete $3;
 	}
@@ -1448,6 +1467,22 @@ shift_expression
 			$$ = new TypeInfo(*$1);
 			if ($$->baseType == "char") $$->baseType = "int"; // Promote char to int
 			cout << "Right shift: " << $1->toString() << " >> " << $3->toString() << " -> " << $$->toString() << "\n";
+
+            TACOperand* left_op = $1->result;
+            TACOperand* right_op = $3->result;
+            if($1->baseType == "char"){
+                left_op = new_temp_var();
+                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, left_op, $1->result, new_empty_var(),0);
+                $$->code.push_back(promo);
+            }
+            if($3->baseType == "char"){
+                right_op = new_temp_var();
+                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, right_op, $3->result, new_empty_var(),0);
+                $$->code.push_back(promo);
+            }
+            TACOperand* result_op = new_temp_var();
+            TACInstruction* shift_instr = emit(TAC_OPERATOR_RIGHT_SHIFT, result_op, left_op, right_op,0);
+            $$->code.push_back(shift_instr);
 		}
 		delete $1; delete $3;
 	}
@@ -1791,7 +1826,26 @@ labeled_statement
         }
         delete $1;
     }
-	| CASE constant_expression COLON statement                              /* e.g., case 1: stmt */
+	| CASE constant_expression {
+        // constant_expression is not int or char then error
+        if( !is_integer_type($2->baseType) || $2->pointerLevel > 0 || $2->isArray ) {
+            type_error("Case label must be of integer or char type, got: " + $2->toString());
+        }else{
+            //if it is char then convert to int
+            if($2->baseType == "char"){
+                TACOperand* casted_result = new_temp_var();
+                TACInstruction* cast_inst = emit(TACOperator(TAC_OPERATOR_CAST), casted_result, $2->result, new_empty_var(), 0);
+                $2->code.push_back(cast_inst);
+                $2->result = casted_result;
+                $2->baseType = "int";
+                $2->isLiteral = false;
+            }
+        }
+        
+    } COLON marker statement                              /* e.g., case 1: stmt */{
+        $$ = new TypeInfo();
+        //$$->code = $
+    }
 	| DEFAULT COLON statement                                               /* e.g., default: stmt */
 	;
 
@@ -1849,9 +1903,6 @@ expression_statement
         $$ = $1;
     }
 ;
-
-
-
 
 // here will be problem for sure*$
 selection_statement
@@ -2360,7 +2411,9 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
 
 pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_lhs(const TypeInfo& left, const TypeInfo& right) {
     
-    
+    //YAHAN PEHLE CHECK LAGANA HAI
+    //VOID* BHI INCLUDE KARNA HAI
+    //AND ALSO ARRAY TO POINTER DECAY
     TypeInfo* res = new TypeInfo();
                 
     // If either is float, res is float

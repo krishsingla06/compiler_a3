@@ -38,15 +38,31 @@
     
 // }
 
-int factorial(int n,int m) {
-    // if (n <= 1) {
-    //     return 1;
-    // }
-    // return n * factorial(n - 1);
-    factorial(n-1,n++);
-}
+// int factorial(int n,int m) {
+//     // if (n <= 1) {
+//     //     return 1;
+//     // }
+//     // return n * factorial(n - 1);
+//     factorial(n-1,n++);
+// }
 // int main() {
 //     int result;
 //     result = factorial(5);
 //     return 0;
 // }
+
+int main(){
+    int x;
+    switch(x+1){
+        case 1: 
+            x = x + 10;
+            x--;
+            break;
+        case 2:
+            x = x + 20;
+            break;
+        default:
+            x = x + 30;
+
+    }
+}

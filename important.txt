@@ -12,9 +12,7 @@ in c in global scope it is error
 
 char to int and vice versa conversions hata hii dunga
 
-
 string literal is lvalue, although for now we treat it as rvalue
-
 
 array to pointer conversions in declarations, assignment expressions, function calls etc. should be handled properly.
 
@@ -22,8 +20,8 @@ type casting code good karna hai, void*, null handle karna hai
 
 global declarations mei kuch kuch cheezen check karni hai like only literals in rhs
 
-switch case
-for,goto,switch,return, function calls,shift,casting, consistent type checking/conversions , size of pending
+**switch case on hold**
+switch,consistent type checking/conversions,pending
 
 
 static int foo(){ return 5; }  this is allowed in my compiler but it should not be allowed ig
