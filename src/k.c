@@ -53,16 +53,11 @@
 
 int main(){
     int x;
-    switch(x+1){
-        case 1: 
-            x = x + 10;
-            x--;
-            break;
-        case 2:
-            x = x + 20;
-            break;
-        default:
-            x = x + 30;
+   struct str{
+    int x;
+    int y;
+   } s1,s2;
 
-    }
+   struct str *p1, *p2;
+x=1;
 }

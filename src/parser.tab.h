@@ -442,11 +442,12 @@ string get_operand_string(TACOperand* operand);
     RBRACKET = 311,                /* RBRACKET  */
     STRUCT = 312,                  /* STRUCT  */
     RETURN = 313,                  /* RETURN  */
-    IDENTIFIER = 314,              /* IDENTIFIER  */
-    INT_LITERAL = 315,             /* INT_LITERAL  */
-    FLOAT_LITERAL = 316,           /* FLOAT_LITERAL  */
-    STRING_LITERAL = 317,          /* STRING_LITERAL  */
-    CHAR_LITERAL = 318             /* CHAR_LITERAL  */
+    UNION = 314,                   /* UNION  */
+    IDENTIFIER = 315,              /* IDENTIFIER  */
+    INT_LITERAL = 316,             /* INT_LITERAL  */
+    FLOAT_LITERAL = 317,           /* FLOAT_LITERAL  */
+    STRING_LITERAL = 318,          /* STRING_LITERAL  */
+    CHAR_LITERAL = 319             /* CHAR_LITERAL  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -468,7 +469,7 @@ union YYSTYPE
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
 
-#line 472 "parser.tab.h"
+#line 473 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

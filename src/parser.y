@@ -496,7 +496,7 @@ string get_operand_string(TACOperand* operand);
 %token LOGICAL_AND LOGICAL_OR EQ NEQ LE GE
 %token PLUS MINUS STAR DIVIDE MOD ASSIGN LT GT LOGICAL_NOT BIT_AND BIT_OR BIT_XOR BIT_NOT DOT
 %token COLON SEMICOLON COMMA LBRACE RBRACE LPAREN RPAREN LBRACKET RBRACKET
-%token STRUCT RETURN 
+%token STRUCT RETURN UNION
 %token <sval> IDENTIFIER
 %token <ival> INT_LITERAL 
 %token <fval> FLOAT_LITERAL
@@ -518,8 +518,8 @@ string get_operand_string(TACOperand* operand);
 %type<opinfo> marker
 
 %type<typeinfo> declaration_list
-%type<sval> struct_specifier
-%type<sval> struct
+%type<sval> struct_or_union_specifier
+%type<sval> struct_or_union
 
 %type<sval> struct_declarator
 %type<strlist> struct_declarator_list
@@ -763,7 +763,7 @@ type_specifier
         $$ = new TypeInfo(); 
         $$->baseType = "float"; 
     }
-    | struct_specifier { 
+    | struct_or_union_specifier { 
         $$ = new TypeInfo(); 
         $$->baseType = *$1;
         delete $1;
@@ -1365,13 +1365,15 @@ cast_expression
 		TypeInfo* source_type = $4;
 
         // CHECK COMPATIBILITY
-        if (!are_types_compatible_for_casting(*target_type, *source_type)) {
-            type_error("Incompatible types for casting from " + source_type->toString() + " to " + target_type->toString());
-            $$ = new TypeInfo();
-            $$->baseType = "error";
-            delete $2; delete $4;
-            return;
-        }
+        //pending
+        // if (!are_types_compatible_for_casting(*target_type, *source_type)) {
+        //     type_error("Incompatible types for casting from " + source_type->toString() + " to " + target_type->toString());
+        //     $$ = new TypeInfo();
+        //     $$->baseType = "error";
+        //     delete $2; delete $4;
+        //     return;
+        // }
+        
 		
 		// Perform type casting 
         pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(*target_type, *source_type);
@@ -1441,12 +1443,12 @@ shift_expression
             TACOperand* right_op = $3->result;
             if($1->baseType == "char"){
                 left_op = new_temp_var();
-                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, left_op, $1->result, new_empty_var(),0);
+                TACInstruction* promo = emit(TAC_OPERATOR_CAST, left_op, $1->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             if($3->baseType == "char"){
                 right_op = new_temp_var();
-                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, right_op, $3->result, new_empty_var(),0);
+                TACInstruction* promo = emit(TAC_OPERATOR_CAST, right_op, $3->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             TACOperand* result_op = new_temp_var();
@@ -1472,12 +1474,12 @@ shift_expression
             TACOperand* right_op = $3->result;
             if($1->baseType == "char"){
                 left_op = new_temp_var();
-                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, left_op, $1->result, new_empty_var(),0);
+                TACInstruction* promo = emit(TAC_OPERATOR_CAST, left_op, $1->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             if($3->baseType == "char"){
                 right_op = new_temp_var();
-                TACInstruction* promo = emit(TAC_OPERATOR_CHAR_TO_INT, right_op, $3->result, new_empty_var(),0);
+                TACInstruction* promo = emit(TAC_OPERATOR_CAST, right_op, $3->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             TACOperand* result_op = new_temp_var();
@@ -1741,19 +1743,20 @@ constant_expression
 
 // -------------------------------------------- Structs and Enums -----------------------------------------------------
 
-struct_specifier
-	: struct IDENTIFIER LBRACE struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
+struct_or_union_specifier
+	: struct_or_union IDENTIFIER LBRACE struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
 		$$ = new string(*$1 + " " + *$2);
 		delete $1; delete $2;
 	}   /* e.g., struct S { int x; };*/  
-	| struct IDENTIFIER { 
+	| struct_or_union IDENTIFIER {  // e.g., struct S; shayad yeh bas pre declaration ke liye hai // can delete it if needed
 		$$ = new string(*$1 + " " + *$2);
 		delete $1; delete $2;
 	}                                           /* e.g., struct S */ 
 	;
 
-struct
-	: STRUCT { $$ = new string("struct"); }                                                            /* struct */											 						 						
+struct_or_union
+	: STRUCT { $$ = new string("struct"); }                                                            /* struct */	
+    | UNION { $$ = new string("union"); }                                                              /* union */										 						 						
 	;
 
 struct_declaration_list
@@ -1773,6 +1776,15 @@ struct_declarator_list
 struct_declarator
 	: declarator { $$ = new string($1->name); delete $1; }                /* e.g., x */ 
 	;
+
+/*
+Dekhte hai, in future : constant_expression ko bhi handle karna hai ya nahi
+struct_declarator
+	: declarator
+	| ':' constant_expression
+	| declarator ':' constant_expression
+	;
+*/
 
 //---------------------------------------- Pointers --------------------------------------------------
 
@@ -1834,7 +1846,7 @@ labeled_statement
             //if it is char then convert to int
             if($2->baseType == "char"){
                 TACOperand* casted_result = new_temp_var();
-                TACInstruction* cast_inst = emit(TACOperator(TAC_OPERATOR_CAST), casted_result, $2->result, new_empty_var(), 0);
+                TACInstruction* cast_inst = emit(TACOperator(TAC_OPERATOR_CAST), casted_result, $2->result, new_type("int"),0);
                 $2->code.push_back(cast_inst);
                 $2->result = casted_result;
                 $2->baseType = "int";
