@@ -303,6 +303,7 @@ string get_operand_string(TACOperand* operand);
     // Scope context for semantic checking
     struct ScopeContext {
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
+        map<string, TypeInfo> typedefs; // typedef table for this scope
         int scope_level;
         
         ScopeContext(int level) : scope_level(level) {}
@@ -441,10 +442,19 @@ string get_operand_string(TACOperand* operand);
     vector<StructMember>* current_struct_members = nullptr;
     string current_struct_being_defined = "";  // Track the struct/union currently being parsed
     
+    // Typedef table - maps typedef name to TypeInfo
+    // Supports scoping by storing a vector (inner scopes shadow outer)
+    map<string, vector<TypeInfo>> typedef_table;
+    
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
     StructUnionDef* lookup_struct_union(const string& name);
     StructMember* find_member(StructUnionDef* def, const string& memberName);
+    
+    // Typedef management functions
+    void insert_typedef(const string& name, const TypeInfo& type, int scope_level);
+    TypeInfo* lookup_typedef(const string& name);
+    bool is_typedef_name(const string& name);
 
     // Function declarations for scope management
     void enter_scope();
@@ -571,7 +581,7 @@ string get_operand_string(TACOperand* operand);
 }
 
 
-%token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO
+%token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO TYPEDEF
 
 %token NULL_LITERAL INVALID
 %token INCREMENT DECREMENT
@@ -589,6 +599,7 @@ string get_operand_string(TACOperand* operand);
 %type<typeinfo> declaration_specifiers
 %type<typeinfo> type_specifier
 %type<decllist> init_declarator_list
+%type<decllist> typedef_declarator_list
 %type<declinfo> init_declarator
 %type<declinfo> declarator
 %type<declinfo> fun_declarator
@@ -834,6 +845,29 @@ declaration
 		delete $1;
 		delete $2;
 	}                                 /* e.g., int x, *p = NULL, arr[10] = {0}; */
+	| TYPEDEF return_types typedef_declarator_list SEMICOLON {
+		// Typedef declaration: typedef int Integer; or typedef int* IntPtr;
+		// Note: typedef does NOT allow initialization (e.g., typedef int I = 5; is INVALID)
+		for (DeclaratorInfo* declInfo : *$3) {
+			TypeInfo combinedType = *$2;  // Start with base type
+			
+			// Add declarator-specific type information
+			combinedType.pointerLevel = declInfo->pointerLevel;
+			combinedType.isArray = declInfo->isArray;
+			combinedType.arrayDimensions = declInfo->arrayDimensions;
+			
+			// Register typedef
+			insert_typedef(declInfo->name, combinedType, current_scope_level);
+			
+			cout << "Registered typedef: " << declInfo->name << " as " << combinedType.toString() << "\n";
+			
+			delete declInfo;
+		}
+		delete $2;
+		delete $3;
+		
+		$$ = new TypeInfo();  // typedef doesn't generate TAC
+	}                                 /* e.g., typedef int Integer; */
 	;
 
 //------------------------------------------- Return types --------------------------------------------------
@@ -870,6 +904,21 @@ type_specifier
     | struct_or_union_specifier { 
         $$ = $1;
     }
+    | IDENTIFIER {
+        // Check if this identifier is a typedef name
+        TypeInfo* typedef_type = lookup_typedef(*$1);
+        if (typedef_type) {
+            // It's a typedef - use the aliased type
+            $$ = new TypeInfo(*typedef_type);
+            cout << "Using typedef: " << *$1 << " -> " << $$->toString() << "\n";
+        } else {
+            // Not a typedef - this is an error in type context
+            type_error("Unknown type name: " + *$1);
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+        }
+        delete $1;
+    }
 
     ;
 
@@ -884,6 +933,17 @@ cast_type_specifier
     ;
 
 //-------------------------------------------------- Declarators --------------------------------------------------
+
+typedef_declarator_list
+	: declarator {
+		$$ = new vector<DeclaratorInfo*>();
+		$$->push_back($1);
+	}
+	| typedef_declarator_list COMMA declarator {
+		$$ = $1;
+		$$->push_back($3);
+	}
+	;
 
 init_declarator_list					
     : init_declarator { 
@@ -2652,6 +2712,28 @@ void exit_scope() {
             }
         }
         
+        // Pop typedef definitions from current scope
+        // For each typedef in the current scope's typedef table,
+        // pop it from the global typedef_table
+        if (!current_scope.typedefs.empty()) {
+            cout << "Destroying typedefs from scope " << current_scope_level << ":\n";
+            for (const auto& typedef_entry : current_scope.typedefs) {
+                const string& typedef_name = typedef_entry.first;
+                cout << "  - Destroying typedef " << typedef_name << "\n";
+                
+                // Pop from global map
+                auto it = typedef_table.find(typedef_name);
+                if (it != typedef_table.end() && !it->second.empty()) {
+                    it->second.pop_back();
+                    
+                    // Clean up empty vectors
+                    if (it->second.empty()) {
+                        typedef_table.erase(it);
+                    }
+                }
+            }
+        }
+        
         scope_stack.pop_back();
         current_scope_level--;
     }
@@ -4041,6 +4123,69 @@ StructMember* find_member(StructUnionDef* def, const string& memberName) {
     return nullptr;
 }
 
+//##############################################################################
+//########################## Typedef Management Functions #######################
+//##############################################################################
+
+void insert_typedef(const string& name, const TypeInfo& type, int scope_level) {
+    // Check if typedef already exists in current scope
+    if (!scope_stack.empty() && scope_stack.back().typedefs.find(name) != scope_stack.back().typedefs.end()) {
+        type_error("Redefinition of typedef '" + name + "' in the same scope");
+        return;
+    }
+    
+    // Add to current scope's typedef table
+    if (!scope_stack.empty()) {
+        scope_stack.back().typedefs[name] = type;
+    }
+    
+    // Add to global map for fast lookup (push to vector for scoping/shadowing)
+    typedef_table[name].push_back(type);
+    
+    cout << "Registered typedef: " << name << " = " << type.toString() 
+         << " at scope " << scope_level << "\n";
+}
+
+TypeInfo* lookup_typedef(const string& name) {
+    // Search in global map from innermost to outermost scope
+    auto it = typedef_table.find(name);
+    if (it != typedef_table.end() && !it->second.empty()) {
+        // Return the most recent typedef (innermost scope)
+        return &(it->second.back());
+    }
+    
+    return nullptr;
+}
+
+bool is_typedef_name(const string& name) {
+    return lookup_typedef(name) != nullptr;
+}
+
+// Display all typedefs (for debugging)
+void display_typedef_table() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                    TYPEDEF TABLE                                       |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (typedef_table.empty()) {
+        cout << "No typedefs defined.\n";
+        return;
+    }
+    
+    for (const auto& entry : typedef_table) {
+        const string& typedef_name = entry.first;
+        const vector<TypeInfo>& type_stack = entry.second;
+        
+        cout << "Typedef: " << typedef_name << "\n";
+        for (size_t i = 0; i < type_stack.size(); i++) {
+            cout << "  [" << i << "] -> " << type_stack[i].toString() << "\n";
+        }
+    }
+    
+    cout << "\n";
+}
+
 // Display all jump tables (for debugging)
 void display_jump_tables() {
     cout << "\n";
@@ -4110,6 +4255,9 @@ int main(int argc, char** argv) {
 	
 	// Display jump tables
 	display_jump_tables();
+	
+	// Display typedef table
+	display_typedef_table();
 	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
