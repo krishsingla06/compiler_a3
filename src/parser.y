@@ -1189,6 +1189,7 @@ postfix_expression
 			
 			if (base->isArray) {
 				// Handle multidimensional arrays
+                cout<<"Handling array subscript for base type: " << base->toString() << "\n";
 				if (base->arrayDimensions.size() > 1) {
 					// Remove only the first dimension, keep the rest
 					$$->isArray = true;
@@ -1198,8 +1199,11 @@ postfix_expression
 					$$->isArray = false;
 					$$->arrayDimensions.clear();
 				}
+                //print base now
+                cout<<"Resulting type after subscript: " << $$->toString() << "\n";
 			} else {
 				// Handle pointers - only allow one level pointers for subscript
+                cout<<"Handling pointer subscript for base type: " << base->toString() << "\n";
 				if (base->pointerLevel > 1) {
 					type_error("Subscript operator [] can only be applied to single-level pointers, not multi-level pointers like " + base->toString());
 					$$->baseType = "error";
@@ -1209,14 +1213,16 @@ postfix_expression
 					$$->isArray = false;
 					$$->arrayDimensions.clear();
 				}
+                cout<<"Resulting type after subscript: " << $$->toString() << "\n";
 			}
+
+        
 			
 			$$->isLiteral = false;
 			// Array subscript result is an lvalue if the base is an lvalue
 			$$->isLvalue = base->isLvalue;
-			cout << "Array subscript: " << base->toString() << "[" << index->toString() << "] -> " << $$->toString() << "\n";
 
-            int size_of_base = getSize(*base);
+            int size_of_base = getSize(*$$);
             
             TACOperand* offset = new_temp_var();
             TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
