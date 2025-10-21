@@ -1,63 +1,60 @@
-// Test case for goto statements in C
-// This demonstrates how goto works with labels
+// Test file for struct and union support
 
-//int main() {
-//     int i;
-//     i = 1;
-    
-//     // Simple goto forward
-//     goto skip_section;
-    
-//     i = i + 10;
-//     i = i * 2;
-    
-// skip_section:
-//     i = i + 5;
-    
-//     // Loop using goto (similar to a while loop)
-//     loop_start:
-//     if (i <= 5) {
-//         i = i + 1;
-//         goto loop_start;
-//     }
-//     // Conditional goto
-//     if (i == 6) {
-//         goto end_section;
-//     } else {
-//         i = i - 1;
-//     }
-    
-//     i = i * 3;
-    
-// end_section:
-//     i = i + 2;
-// int x;
-// x=1;
-// x++;
-// return 0;
-    
-// }
-
-// int factorial(int n,int m) {
-//     // if (n <= 1) {
-//     //     return 1;
-//     // }
-//     // return n * factorial(n - 1);
-//     factorial(n-1,n++);
-// }
-// int main() {
-//     int result;
-//     result = factorial(5);
-//     return 0;
-// }
-
-int main(){
-    int x;
-   struct str{
+// Define a struct
+struct Point {
     int x;
     int y;
-   } s1,s2;
+};
 
-   struct str *p1, *p2;
-x=1;
+// Define a union
+union Data {
+    int i;
+    float f;
+    char c;
+};
+
+// Define a nested struct
+struct Rectangle {
+    struct Point topLeft;
+    struct Point bottomRight;
+};
+
+int main() {
+    // Declare struct variables
+    struct Point p1;
+    struct Point p2;
+    struct Rectangle rect;
+
+    
+    // Declare union variable
+    union Data d;
+
+    struct Point* ptr;
+
+    
+    // Access struct members with dot operator
+    p1.x = 10;
+    p1.y = 20;
+    
+    p2.x = p1.x + 5;
+    p2.y = p1.y - 3;
+    p1=p2;
+    
+    // Access union members
+    d.i = 42;
+    d.f = 3.14;
+    
+    // Declare pointer to struct
+    
+    // Access struct members with arrow operator
+    ptr->x = 100;
+    ptr->y = 200;
+    
+    // Nested struct access
+    rect.topLeft.x = 0;
+    rect.topLeft.y = 0;
+    rect.bottomRight.x = 100;
+    rect.bottomRight.y = 100;
+    
+    return 0;
 }

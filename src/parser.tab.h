@@ -375,7 +375,28 @@ string get_operand_string(TACOperand* operand);
         TACOperand* value; // Value for the case
     };
 
-#line 379 "parser.tab.h"
+    // Struct/Union member information
+    struct StructMember {
+        string name;
+        TypeInfo type;
+        int offset;  // Offset from base address in bytes
+        
+        StructMember() : name(""), offset(0) {}
+        StructMember(const string& n, const TypeInfo& t, int off) : name(n), type(t), offset(off) {}
+    };
+
+    // Struct/Union definition
+    struct StructUnionDef {
+        string name;           // struct/union name
+        bool isUnion;          // true for union, false for struct
+        vector<StructMember> members;
+        int totalSize;         // Total size in bytes
+        int scope_level;       // Scope where defined
+        
+        StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
+    };
+
+#line 400 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -456,7 +477,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 477 "parser.y"
+#line 515 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -469,7 +490,7 @@ union YYSTYPE
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
 
-#line 473 "parser.tab.h"
+#line 494 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

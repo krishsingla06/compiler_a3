@@ -57,6 +57,7 @@ static char* mystrdup(const char* s) {
 "sizeof"                            { return SIZEOF; }
 "static"                            { return STATIC; }
 "struct"                            { return STRUCT; }
+"union"                             { return UNION; }
 
 
 "++"                                { return INCREMENT; }

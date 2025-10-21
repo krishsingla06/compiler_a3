@@ -353,12 +353,37 @@ string get_operand_string(TACOperand* operand);
         TACOperand* label; // Label for the case
         TACOperand* value; // Value for the case
     };
+
+    // Struct/Union member information
+    struct StructMember {
+        string name;
+        TypeInfo type;
+        int offset;  // Offset from base address in bytes
+        
+        StructMember() : name(""), offset(0) {}
+        StructMember(const string& n, const TypeInfo& t, int off) : name(n), type(t), offset(off) {}
+    };
+
+    // Struct/Union definition
+    struct StructUnionDef {
+        string name;           // struct/union name
+        bool isUnion;          // true for union, false for struct
+        vector<StructMember> members;
+        int totalSize;         // Total size in bytes
+        int scope_level;       // Scope where defined
+        
+        StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
+    };
 }
 
 %code {
     // Stack of scope contexts for different scopes
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
+    
+    // Struct/Union table - maps "struct name" or "union name" to definition
+    // We'll use scope-qualified names for lookup
+    map<string, StructUnionDef> struct_union_table;
     
     // Function symbol table
     map<string, FunctionEntry> function_table;
@@ -378,6 +403,14 @@ string get_operand_string(TACOperand* operand);
 
     // switch labels list
     
+    // Global temporary storage for struct members being parsed
+    vector<StructMember>* current_struct_members = nullptr;
+    
+    // Struct/Union management functions
+    void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
+    StructUnionDef* lookup_struct_union(const string& name);
+    string get_struct_union_key(const string& name);
+    StructMember* find_member(StructUnionDef* def, const string& memberName);
 
     // Function declarations for scope management
     void enter_scope();
@@ -454,9 +487,14 @@ string get_operand_string(TACOperand* operand);
             base_size = 0; // void has no size
         }
         else{
-            // For struct types, we can assume a fixed size or look up the struct definition
-            // Here, we'll assume a fixed size of 16 bytes for simplicity
-            base_size = 16; // Placeholder size for structs
+            // For struct/union types, look up the actual size
+            StructUnionDef* structDef = lookup_struct_union(t.baseType);
+            if (structDef) {
+                base_size = structDef->totalSize;
+            } else {
+                // Unknown type, assume a default size
+                base_size = 4; // Default size for unknown types
+            }
         }
         // If it's an array, multiply by the total number of elements
         if(t.isArray){
@@ -521,6 +559,8 @@ string get_operand_string(TACOperand* operand);
 %type<sval> struct_or_union_specifier
 %type<sval> struct_or_union
 
+%type<typeinfo> struct_declaration_list
+%type<typeinfo> struct_declaration
 %type<sval> struct_declarator
 %type<strlist> struct_declarator_list
 %type<typeinfo> constant_expression
@@ -1267,14 +1307,121 @@ postfix_expression
 		delete $3;
 	}
 	| postfix_expression DOT IDENTIFIER {                            /* e.g., obj.field */
-		// Struct member access - skip for now as requested
-		$$ = $1;
-		delete $3;
+		// Struct member access - obj.member
+		TypeInfo* base = $1;
+		string memberName = *$3;
+		
+		// Check if base is a struct/union type
+		if (base->pointerLevel > 0 || base->isArray) {
+			type_error("Dot operator requires a struct/union object, not a pointer. Use '->' for pointers.");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else {
+			// Lookup the struct/union definition
+			StructUnionDef* structDef = lookup_struct_union(base->baseType);
+			
+			if (!structDef) {
+				type_error("Type '" + base->baseType + "' is not a struct or union");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Find the member
+				StructMember* member = find_member(structDef, memberName);
+				
+				if (!member) {
+					type_error("Struct/union '" + base->baseType + "' has no member named '" + memberName + "'");
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Result is the member type
+					$$ = new TypeInfo(member->type);
+					$$->isLvalue = true;  // Member access is an lvalue
+					$$->isLiteral = false;
+					
+					// TAC: Calculate member address
+					// base_addr = &base
+					// result_addr = base_addr + offset
+					// result = *result_addr (if we need the value)
+					
+					$$->code = base->code;
+					
+					TACOperand* base_addr = new_temp_var();
+					TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
+					$$->code.push_back(addr_instr);
+					
+					TACOperand* member_addr = new_temp_var();
+					TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base_addr, 
+					                                    new_constant(to_string(member->offset)), 0);
+					$$->code.push_back(offset_instr);
+					
+					// The result is the dereferenced member address
+					$$->result = new_temp_var();
+					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
+					$$->code.push_back(deref_instr);
+					
+					cout << "Struct member access: " << base->baseType << "." << memberName 
+					     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
+				}
+			}
+		}
+		
+		delete $1; delete $3;
 	}
 	| postfix_expression ARROW IDENTIFIER {                             /* e.g., ptr->field */
-		// Struct pointer member access - skip for now as requested
-		$$ = $1;
-		delete $3;
+		// Struct pointer member access - ptr->member
+		TypeInfo* base = $1;
+		string memberName = *$3;
+		
+		// Check if base is a pointer to struct/union
+		if (base->pointerLevel == 0) {
+			type_error("Arrow operator requires a pointer to struct/union. Use '.' for objects.");
+			$$ = new TypeInfo();
+			$$->baseType = "error";
+		} else {
+			// Lookup the struct/union definition (base type without pointer)
+			StructUnionDef* structDef = lookup_struct_union(base->baseType);
+			
+			if (!structDef) {
+				type_error("Type '" + base->baseType + "' is not a struct or union");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Find the member
+				StructMember* member = find_member(structDef, memberName);
+				
+				if (!member) {
+					type_error("Struct/union '" + base->baseType + "' has no member named '" + memberName + "'");
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Result is the member type
+					$$ = new TypeInfo(member->type);
+					$$->isLvalue = true;  // Member access is an lvalue
+					$$->isLiteral = false;
+					
+					// TAC: Calculate member address
+					// member_addr = base + offset  (base is already a pointer)
+					// result = *member_addr
+					
+					$$->code = base->code;
+					
+					TACOperand* member_addr = new_temp_var();
+					TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base->result, 
+					                                    new_constant(to_string(member->offset)), 0);
+					$$->code.push_back(offset_instr);
+					
+					// The result is the dereferenced member address
+					$$->result = new_temp_var();
+					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
+					$$->code.push_back(deref_instr);
+					
+					cout << "Struct pointer member access: " << base->baseType << "*->" << memberName 
+					     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
+				}
+			}
+		}
+		
+		delete $1; delete $3;
 	}
 	| postfix_expression INCREMENT {                                  /* e.g., x++ */
 		$$ = perform_unary_operation(*$1, "++");
@@ -1744,11 +1891,25 @@ constant_expression
 // -------------------------------------------- Structs and Enums -----------------------------------------------------
 
 struct_or_union_specifier
-	: struct_or_union IDENTIFIER LBRACE struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
+	: struct_or_union IDENTIFIER LBRACE {
+		// Initialize the global member list for this struct
+		current_struct_members = new vector<StructMember>();
+	} struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
+		// This defines a new struct/union
+		bool isUnion = (*$1 == "union");
+		
+		// Use the global member list
+		if (current_struct_members) {
+			insert_struct_union(*$2, isUnion, *current_struct_members, current_scope_level);
+			delete current_struct_members;
+			current_struct_members = nullptr;
+		}
+		
 		$$ = new string(*$1 + " " + *$2);
-		delete $1; delete $2;
+		delete $1; delete $2; delete $5;
 	}   /* e.g., struct S { int x; };*/  
-	| struct_or_union IDENTIFIER {  // e.g., struct S; shayad yeh bas pre declaration ke liye hai // can delete it if needed
+	| struct_or_union IDENTIFIER {  // e.g., struct S; or using existing struct S
+		// Reference to existing struct/union or forward declaration
 		$$ = new string(*$1 + " " + *$2);
 		delete $1; delete $2;
 	}                                           /* e.g., struct S */ 
@@ -1760,17 +1921,52 @@ struct_or_union
 	;
 
 struct_declaration_list
-	: struct_declaration                                               /* e.g., int x; */
-	| struct_declaration_list struct_declaration                         /* e.g., int x; float y; */
+	: struct_declaration {
+		$$ = $1;  // Pass through the TypeInfo with member list
+	}
+	| struct_declaration_list struct_declaration {
+		$$ = $1;
+		// Merge member lists - stored in identifier field as a hack
+		// We'll use a global variable instead
+		delete $2;
+	}
 	;
+
 // NO STATIC WAS ALLOWED IN C STRUCTS
 struct_declaration
-	: type_specifier struct_declarator_list SEMICOLON         /* e.g., int x, *p; */ 
+	: type_specifier struct_declarator_list SEMICOLON {
+		$$ = new TypeInfo();
+		// For each declarator in the list, create a member
+		TypeInfo baseType = *$1;
+		
+		for (const string& memberName : *$2) {
+			StructMember member;
+			member.name = memberName;
+			member.type = baseType;
+			// Offset will be calculated when we finalize the struct
+			member.offset = 0;
+			
+			if (current_struct_members) {
+				current_struct_members->push_back(member);
+			}
+		}
+		
+		delete $1;
+		delete $2;
+	}
 	;
 
 struct_declarator_list
-	: struct_declarator                                                 /* e.g., x */ 
-	| struct_declarator_list COMMA struct_declarator                      /* e.g., x, y */
+	: struct_declarator {
+		$$ = new vector<string>();
+		$$->push_back(*$1);
+		delete $1;
+	}
+	| struct_declarator_list COMMA struct_declarator {
+		$$ = $1;
+		$$->push_back(*$3);
+		delete $3;
+	}
 	;
 
 struct_declarator
@@ -3443,6 +3639,100 @@ void log_error(const string& message) {
     }
 }
 
+// Struct/Union management functions implementation
+
+void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level) {
+    string key = (isUnion ? "union " : "struct ") + name;
+    
+    // Check if already defined in current scope
+    if (struct_union_table.find(key) != struct_union_table.end()) {
+        if (struct_union_table[key].scope_level == scope_level) {
+            type_warning("Redefinition of " + key + " in the same scope");
+        }
+    }
+    
+    StructUnionDef def;
+    def.name = name;
+    def.isUnion = isUnion;
+    def.members = members;
+    def.scope_level = scope_level;
+    
+    // Calculate offsets and total size
+    int currentOffset = 0;
+    int maxSize = 0;
+    
+    for (size_t i = 0; i < def.members.size(); i++) {
+        if (isUnion) {
+            // Union: all members start at offset 0
+            def.members[i].offset = 0;
+            int memberSize = getSize(def.members[i].type);
+            if (memberSize > maxSize) {
+                maxSize = memberSize;
+            }
+        } else {
+            // Struct: members are laid out sequentially
+            def.members[i].offset = currentOffset;
+            int memberSize = getSize(def.members[i].type);
+            currentOffset += memberSize;
+        }
+    }
+    
+    def.totalSize = isUnion ? maxSize : currentOffset;
+    
+    // Store with scope-qualified key for proper lookup
+    string scopedKey = key + "_s" + to_string(scope_level);
+    struct_union_table[scopedKey] = def;
+    
+    // Also store without scope for easier lookup (will be overridden by inner scopes)
+    struct_union_table[key] = def;
+    
+    cout << "Registered " << key << " in scope " << scope_level 
+         << " with " << members.size() << " members, total size: " << def.totalSize << " bytes\n";
+    
+    // Print member details
+    for (const auto& member : def.members) {
+        cout << "  - " << member.name << ": " << member.type.toString() 
+             << " at offset " << member.offset << "\n";
+    }
+}
+
+StructUnionDef* lookup_struct_union(const string& name) {
+    // First try exact match (for "struct S" or "union U")
+    if (struct_union_table.find(name) != struct_union_table.end()) {
+        return &struct_union_table[name];
+    }
+    
+    // Try with "struct" prefix if not already there
+    if (name.find("struct ") != 0 && name.find("union ") != 0) {
+        string structKey = "struct " + name;
+        if (struct_union_table.find(structKey) != struct_union_table.end()) {
+            return &struct_union_table[structKey];
+        }
+        
+        string unionKey = "union " + name;
+        if (struct_union_table.find(unionKey) != struct_union_table.end()) {
+            return &struct_union_table[unionKey];
+        }
+    }
+    
+    return nullptr;
+}
+
+string get_struct_union_key(const string& name) {
+    return name;  // Simple key for now
+}
+
+StructMember* find_member(StructUnionDef* def, const string& memberName) {
+    if (!def) return nullptr;
+    
+    for (size_t i = 0; i < def->members.size(); i++) {
+        if (def->members[i].name == memberName) {
+            return &def->members[i];
+        }
+    }
+    
+    return nullptr;
+}
 
 
 int main(int argc, char** argv) {
