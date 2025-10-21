@@ -60,3 +60,12 @@ struct S{
 Filhaal yeh segmentation fault de raha hai.... will fix it later
 ---------------------------------------------------------------------------------
 
+int main(){
+    {
+        int x=2;
+    }
+    int y=1+1; // x is not defined here
+    return y;
+}
+
+filhaal yeh bhi seg fault de rha hai
