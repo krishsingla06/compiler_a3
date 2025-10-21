@@ -12,3 +12,5 @@ done
 #     echo "Running parser on $file"
 #     ./src/parser "$file"      
 # done
+
+
