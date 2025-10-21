@@ -820,8 +820,10 @@ declaration
 						declInfo->initType->toString() + " to " + combinedType.toString();
 					type_warning(warning_msg);
 				}else{
-                    // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
-                    
+					// First, include the code that generates the initializer value (e.g., function call)
+                    $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+
+					// if implicit conversion allowed, then do it and reflect in 3AC else simply assign
                     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
                     // append promo.first to $$->code
                     $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
@@ -4270,3 +4272,4 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
