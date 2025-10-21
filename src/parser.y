@@ -400,9 +400,9 @@ string get_operand_string(TACOperand* operand);
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
     
-    // Struct/Union table - maps "struct name" or "union name" to definition
-    // We'll use scope-qualified names for lookup
-    map<string, StructUnionDef> struct_union_table;
+    // Struct/Union table - maps "struct name" or "union name" to a stack of definitions
+    // Inner scopes shadow outer scopes by adding to the end of the vector
+    map<string, vector<StructUnionDef>> struct_union_table;
     
     // Function symbol table
     map<string, FunctionEntry> function_table;
@@ -428,7 +428,6 @@ string get_operand_string(TACOperand* operand);
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
     StructUnionDef* lookup_struct_union(const string& name);
-    string get_struct_union_key(const string& name); // yeh dekhni hai, kyun use ho rhi hai : krish
     StructMember* find_member(StructUnionDef* def, const string& memberName);
 
     // Function declarations for scope management
@@ -637,7 +636,9 @@ string get_operand_string(TACOperand* operand);
 %%
 start
 	: global_declaration                        /* e.g., int x; */ {
-       $$ = $1;
+       $$ = new TypeInfo();
+         $$->code = vector<TACInstruction*>();
+         $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
        
        // Debug output
        cout << "Start rule: Global declaration has " << $$->code.size() << " TAC instructions\n";
@@ -658,8 +659,25 @@ start
     }
 	| start global_declaration                   /* e.g., int x; float y; */{
         // Append $2->code to $1->code
-        $$ = $1;
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
         $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+
+        // append this also to final.tac
+
+        ofstream tac_file("Final.tac", ios::app);
+        if (tac_file.is_open()) {
+            // simply print code
+            for(auto instr : $2->code){
+                tac_file << get_TAC_instruction_string(instr) << "\n";
+            }
+            tac_file.close();
+            cout << "TAC code appended to Final.tac\n";
+        } else {
+            cerr << "Failed to open file for TAC output\n";
+        }
+
         delete $2;
     }
     ;
@@ -832,7 +850,6 @@ type_specifier
         $$->baseType = "float"; 
     }
     | struct_or_union_specifier { 
-        // struct_or_union_specifier now returns TypeInfo* with all fields set
         $$ = $1;
     }
 
@@ -1942,9 +1959,27 @@ struct_or_union_specifier
 		
 		// Use the global member list
 		if (current_struct_members) {
-			insert_struct_union(structName, isUnion, *current_struct_members, current_scope_level);
-			delete current_struct_members;
-			current_struct_members = nullptr;
+            //check if all data members have unique names
+            set<string> memberNames;
+            int error_flag=0;
+            for(auto member : *current_struct_members){
+                if(memberNames.find(member.name) != memberNames.end()){
+                    type_error("Duplicate member name '" + member.name + "' in struct/union '" + structName + "'");
+                    error_flag=1;
+                }else{
+                    memberNames.insert(member.name);
+                }
+            }
+            if(error_flag==0){
+                insert_struct_union(structName, isUnion, *current_struct_members, current_scope_level);
+                delete current_struct_members;
+                current_struct_members = nullptr;
+            }else{
+                //cleanup
+                delete current_struct_members;
+                current_struct_members = nullptr;
+                type_error("Failed to define struct/union '" + structName + "' due to duplicate member names.");
+            }
 		}
 		
 		// Create and return TypeInfo
@@ -2415,6 +2450,16 @@ void exit_scope() {
             cout << "Destroying symbols from scope " << current_scope_level << ":\n";
             for (const auto& entry : current_scope.symbols) {
                 cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")\n";
+            }
+        }
+        
+        // Pop struct/union definitions from current scope
+        for (auto& pair : struct_union_table) {
+            vector<StructUnionDef>& defs = pair.second;
+            while (!defs.empty() && defs.back().scope_level == current_scope_level) {
+                cout << "  - Destroying " << (defs.back().isUnion ? "union " : "struct ") 
+                     << defs.back().name << " from scope " << current_scope_level << "\n";
+                defs.pop_back();
             }
         }
         
@@ -3726,8 +3771,8 @@ void insert_struct_union(const string& name, bool isUnion, const vector<StructMe
     string key = (isUnion ? "union " : "struct ") + name;
     
     // Check if already defined in current scope
-    if (struct_union_table.find(key) != struct_union_table.end()) {
-        if (struct_union_table[key].scope_level == scope_level) {
+    if (struct_union_table.find(key) != struct_union_table.end() && !struct_union_table[key].empty()) {
+        if (struct_union_table[key].back().scope_level == scope_level) {
             type_warning("Redefinition of " + key + " in the same scope");
         }
     }
@@ -3760,12 +3805,8 @@ void insert_struct_union(const string& name, bool isUnion, const vector<StructMe
     
     def.totalSize = isUnion ? maxSize : currentOffset;
     
-    // Store with scope-qualified key for proper lookup
-    string scopedKey = key + "_s" + to_string(scope_level);
-    struct_union_table[scopedKey] = def;
-    
-    // Also store without scope for easier lookup (will be overridden by inner scopes)
-    struct_union_table[key] = def;
+    // Just push back to vector
+    struct_union_table[key].push_back(def);
     
     cout << "Registered " << key << " in scope " << scope_level 
          << " with " << members.size() << " members, total size: " << def.totalSize << " bytes\n";
@@ -3779,28 +3820,24 @@ void insert_struct_union(const string& name, bool isUnion, const vector<StructMe
 
 StructUnionDef* lookup_struct_union(const string& name) {
     // First try exact match (for "struct S" or "union U")
-    if (struct_union_table.find(name) != struct_union_table.end()) {
-        return &struct_union_table[name];
+    if (struct_union_table.find(name) != struct_union_table.end() && !struct_union_table[name].empty()) {
+        return &struct_union_table[name].back();
     }
     
     // Try with "struct" prefix if not already there
     if (name.find("struct ") != 0 && name.find("union ") != 0) {
         string structKey = "struct " + name;
-        if (struct_union_table.find(structKey) != struct_union_table.end()) {
-            return &struct_union_table[structKey];
+        if (struct_union_table.find(structKey) != struct_union_table.end() && !struct_union_table[structKey].empty()) {
+            return &struct_union_table[structKey].back();
         }
         
         string unionKey = "union " + name;
-        if (struct_union_table.find(unionKey) != struct_union_table.end()) {
-            return &struct_union_table[unionKey];
+        if (struct_union_table.find(unionKey) != struct_union_table.end() && !struct_union_table[unionKey].empty()) {
+            return &struct_union_table[unionKey].back();
         }
     }
     
     return nullptr;
-}
-
-string get_struct_union_key(const string& name) {
-    return name;  // Simple key for now
 }
 
 StructMember* find_member(StructUnionDef* def, const string& memberName) {
