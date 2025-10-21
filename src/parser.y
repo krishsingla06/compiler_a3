@@ -421,6 +421,21 @@ string get_operand_string(TACOperand* operand);
     map<string, unordered_set<TACInstruction*>> unresolved_jumps;  // List of jumps to resolve
 
     // switch labels list
+    // Global jump table tracking
+    map<int, map<int, TACOperand*>> overall_jump_tables;  // jump_table_id -> (case_value -> label)
+    int jump_table_counter = 0;  // Counter for jump table IDs
+    
+    // Stack of switch case maps for handling nested switches
+    // Each map: case_value -> label (TACOperand*)
+    vector<map<int, TACOperand*>> switch_case_stack;
+    
+    // Stack of default labels for nested switches
+    vector<TACOperand*> switch_default_stack;
+    
+    // Stack of switch expression results for nested switches
+    
+    // Stack of jump table IDs for nested switches
+    vector<int> switch_table_id_stack;
     
     // Global temporary storage for struct members being parsed
     vector<StructMember>* current_struct_members = nullptr;
@@ -2164,26 +2179,93 @@ labeled_statement
         delete $1;
     }
 	| CASE constant_expression {
-        // constant_expression is not int or char then error
+        // Validate: constant_expression must be int or char
         if( !is_integer_type($2->baseType) || $2->pointerLevel > 0 || $2->isArray ) {
             type_error("Case label must be of integer or char type, got: " + $2->toString());
-        }else{
-            //if it is char then convert to int
-            if($2->baseType == "char"){
-                TACOperand* casted_result = new_temp_var();
-                TACInstruction* cast_inst = emit(TACOperator(TAC_OPERATOR_CAST), casted_result, $2->result, new_type("int"),0);
-                $2->code.push_back(cast_inst);
-                $2->result = casted_result;
-                $2->baseType = "int";
-                $2->isLiteral = false;
-            }
         }
         
-    } COLON marker statement                              /* e.g., case 1: stmt */{
+        // Check if we're inside a switch statement
+        if (switch_case_stack.empty()) {
+            type_error("Case label not within a switch statement");
+        } else {
+            // Convert char to int if needed
+            int case_value = 0;
+            if($2->baseType == "char"){
+                // Extract char value from result (assuming it's a constant)
+                if ($2->result && $2->result->type == TAC_OPERAND_CONSTANT) {
+                    case_value = (int)($2->result->value[0]);
+                } else {
+                    type_error("Case label must be a constant expression");
+                }
+            } else if ($2->baseType == "int") {
+                // Extract int value from result
+                if ($2->result && $2->result->type == TAC_OPERAND_CONSTANT) {
+                    case_value = stoi($2->result->value);
+                } else {
+                    type_error("Case label must be a constant expression");
+                }
+            }
+            
+            // Check for duplicate case values in current switch
+            map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
+            if (current_switch_map.find(case_value) != current_switch_map.end()) {
+                type_error("Duplicate case value: " + to_string(case_value) + " in switch statement");
+            } else {
+                // Create a label for this case
+                TACOperand* case_label = new_label(0);
+                current_switch_map[case_value] = case_label;
+                
+                // Emit the label at this point//hihi
+               // TACInstruction* label_inst = emit(TAC_OPERATOR_LABEL, case_label, new_empty_var(), new_empty_var(), 0);
+               // $2->code.push_back(label_inst);
+                
+                //cout << "Registered case " << case_value << " with label " << case_label->value << "\n";
+            }
+            }
+        }
+     COLON marker statement                              /* e.g., case 1: stmt */{
+        // Combine code from case expression and statement
         $$ = new TypeInfo();
-        //$$->code = $
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+        $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
+        
+        // Propagate break statements
+        $$->break_list = $6->break_list;
+        
+        delete $2;
+        delete $6;
     }
-	| DEFAULT COLON statement                                               /* e.g., default: stmt */
+	| DEFAULT COLON statement {                                               /* e.g., default: stmt */
+        // Check if we're inside a switch statement
+        if (switch_default_stack.empty()) {
+            type_error("Default label not within a switch statement");
+        } else {
+            // Check if default already exists for current switch
+            if (switch_default_stack.back() != nullptr) {
+                type_error("Multiple default labels in switch statement");
+            } else {
+                // Create and register default label
+                TACOperand* default_label = new_label(0);
+                switch_default_stack.back() = default_label;
+                
+                // Emit the label at this point
+                //TACInstruction* label_inst = emit(TAC_OPERATOR_LABEL, default_label, new_empty_var(), new_empty_var(), 0);
+                
+                $$ = new TypeInfo();
+                $$->code = vector<TACInstruction*>();
+                //$$->code.push_back(label_inst);
+                $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+                
+                // Propagate break statements
+                $$->break_list = $3->break_list;
+                
+                //cout << "Registered default label " << default_label->value << "\n";
+                
+                delete $3;
+            }
+        }
+    }
 	;
 
 compound_statement                                    
@@ -2267,7 +2349,86 @@ selection_statement
         $$->continue_list.insert($4->continue_list.begin(), $4->continue_list.end());
         delete $4;
     }
-	| SWITCH LPAREN expression RPAREN statement                              /* e.g., switch (x) { ... } */
+	| SWITCH LPAREN expression {
+        // Validate: expression must be int or char
+        if (!is_integer_type($3->baseType) || $3->pointerLevel > 0 || $3->isArray) {
+            type_error("Switch expression must be of integer or char type, got: " + $3->toString());
+        }
+        
+        // Convert char to int if needed
+        TACOperand* switch_value = $3->result;
+        if ($3->baseType == "char") {
+            TACOperand* int_temp = new_temp_var();
+            TACInstruction* cast_inst = emit(TAC_OPERATOR_CAST, int_temp, $3->result, new_type("int"), 0);
+            $3->code.push_back(cast_inst);
+            switch_value = int_temp;
+        }
+        
+        // Allocate a new jump table ID
+        int current_table_id = jump_table_counter++;
+        
+        // Push new switch context (empty case map and null default)
+        switch_case_stack.push_back(map<int, TACOperand*>());
+        switch_default_stack.push_back(nullptr);
+        switch_table_id_stack.push_back(current_table_id);
+        
+        // Emit: goto jump_table_i[expression.result]
+        // We use flag=4 to indicate this is a jump table instruction
+        // arg1 = jump_table_id (as constant), arg2 = switch_value
+        TACOperand* table_id_operand = new_constant(to_string(current_table_id));
+        TACInstruction* goto_jump_table = emit(TACOperator(), 
+                                               new_empty_var(),      // result (unused)
+                                               table_id_operand,     // arg1: table ID
+                                               switch_value,         // arg2: expression value
+                                               4);                   // flag=4 for jump table
+        $3->code.push_back(goto_jump_table);
+        
+        cout << "Created jump table " << current_table_id << " for switch expression\n";
+    }
+    RPAREN statement                              /* e.g., switch (x) { ... } */{
+        $$ = new TypeInfo();
+        
+        // Get switch expression code
+        $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+        
+        // Get statement code (contains all case/default labels and their code)
+        $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
+        
+        // Create end label for switch
+        TACOperand* end_label = new_label(0);
+        //TACInstruction* end_label_inst = emit(TAC_OPERATOR_LABEL, end_label, new_empty_var(), new_empty_var(), 0);
+        //$$->code.push_back(end_label_inst);
+        
+        // Backpatch all break statements to end label
+        backpatch($6->break_list, end_label);
+        
+        // Now finalize the jump table
+        int table_id = switch_table_id_stack.back();
+        map<int, TACOperand*>& case_map = switch_case_stack.back();
+        TACOperand* default_label = switch_default_stack.back();
+        
+        // Store the jump table in overall_jump_tables
+        overall_jump_tables[table_id] = case_map;
+        
+        // Store default label if exists (use special key like -1)
+        if (default_label != nullptr) {
+            overall_jump_tables[table_id][-240106] = default_label;
+        } else {
+            // If no default, jump to end label
+            overall_jump_tables[table_id][-240106] = end_label;
+        }
+        
+        cout << "Finalized jump table " << table_id << " with " << case_map.size() 
+             << " cases and default: " << (default_label ? "yes" : "end") << "\n";
+        
+        // Pop switch context
+        switch_case_stack.pop_back();
+        switch_default_stack.pop_back();
+        switch_table_id_stack.pop_back();
+        
+        delete $3;
+        delete $6;
+    }
 	;
 
 if_expression 
@@ -3880,6 +4041,39 @@ StructMember* find_member(StructUnionDef* def, const string& memberName) {
     return nullptr;
 }
 
+// Display all jump tables (for debugging)
+void display_jump_tables() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                    JUMP TABLES                                         |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (overall_jump_tables.empty()) {
+        cout << "No jump tables generated.\n";
+        return;
+    }
+    
+    for (const auto& table_entry : overall_jump_tables) {
+        int table_id = table_entry.first;
+        const map<int, TACOperand*>& jump_table = table_entry.second;
+        
+        cout << "\nJump Table " << table_id << ":\n";
+        
+        for (const auto& case_entry : jump_table) {
+            int case_value = case_entry.first;
+            TACOperand* label = case_entry.second;
+            
+            if (case_value == -1) {
+                cout << "  default -> " << (label ? label->value : "NULL") << "\n";
+            } else {
+                cout << "  case " << case_value << " -> " << (label ? label->value : "NULL") << "\n";
+            }
+        }
+    }
+    
+    cout << "\n";
+}
+
 
 int main(int argc, char** argv) {
     
@@ -3913,6 +4107,9 @@ int main(int argc, char** argv) {
 	
 	// Display function table
 	display_function_table();
+	
+	// Display jump tables
+	display_jump_tables();
 	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
