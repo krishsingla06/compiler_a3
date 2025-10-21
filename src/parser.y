@@ -211,6 +211,9 @@ string get_operand_string(TACOperand* operand);
 //------------------------------------
     using namespace std;
     
+    // Forward declarations
+    struct StructUnionDef;
+    
     // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool isStatic;
@@ -222,6 +225,12 @@ string get_operand_string(TACOperand* operand);
         bool isLiteral;         // True for literals, false for variables/expressions
         bool isLvalue;          // True if the expression is an lvalue, false for temporaries
 
+        // Struct/Union information
+        bool isStruct;          // True if this is a struct type
+        bool isUnion;           // True if this is a union type
+        string structUnionName; // Name of the struct/union (e.g., "Point", "Data")
+        StructUnionDef* structDef; // Pointer to the struct/union definition
+
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
@@ -230,20 +239,22 @@ string get_operand_string(TACOperand* operand);
 
         unordered_set<TACInstruction*> break_list; // List of break instructions (for loops/switch)
         unordered_set<TACInstruction*> continue_list; // List of continue instructions (for loops)
-        //vector<TACInstruction*> return_list; // List of return instructions (for functions)
-        // we will use it in future
 
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
-                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false) {}
+                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
+                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr) {}
         
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
-                    isLvalue(other.isLvalue), result(other.result),
+                    isLvalue(other.isLvalue), 
+                    isStruct(other.isStruct), isUnion(other.isUnion),
+                    structUnionName(other.structUnionName), structDef(other.structDef),
+                    result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
                     break_list(other.break_list), continue_list(other.continue_list) {}
@@ -264,7 +275,15 @@ string get_operand_string(TACOperand* operand);
         string toString() const {
             string res = "";
             if (isStatic) res += "static ";
-            res += baseType;
+            
+            // Handle struct/union types
+            if (isStruct) {
+                res += "struct " + structUnionName;
+            } else if (isUnion) {
+                res += "union " + structUnionName;
+            } else {
+                res += baseType;
+            }
             
             // Add pointer asterisks
             for (int i = 0; i < pointerLevel; i++) {
@@ -409,7 +428,7 @@ string get_operand_string(TACOperand* operand);
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
     StructUnionDef* lookup_struct_union(const string& name);
-    string get_struct_union_key(const string& name);
+    string get_struct_union_key(const string& name); // yeh dekhni hai, kyun use ho rhi hai : krish
     StructMember* find_member(StructUnionDef* def, const string& memberName);
 
     // Function declarations for scope management
@@ -486,15 +505,24 @@ string get_operand_string(TACOperand* operand);
         else if(t.baseType == "void"){
             base_size = 0; // void has no size
         }
-        else{
-            // For struct/union types, look up the actual size
-            StructUnionDef* structDef = lookup_struct_union(t.baseType);
-            if (structDef) {
-                base_size = structDef->totalSize;
+        else if(t.isStruct || t.isUnion){
+            // Use the structDef pointer for direct access
+            if (t.structDef) {
+                base_size = t.structDef->totalSize;
             } else {
-                // Unknown type, assume a default size
-                base_size = 4; // Default size for unknown types
+                // If structDef is not set, try to look it up
+                StructUnionDef* structDef = lookup_struct_union(t.structUnionName);
+                if (structDef) {
+                    base_size = structDef->totalSize;
+                } else {
+                    base_size = 4; // Default size for unknown struct/union
+                    type_error("Unknown struct/union type: " + t.structUnionName);
+                }
             }
+        }
+        else{
+            // Unknown type, assume a default size
+            base_size = 4; // Default size for unknown types
         }
         // If it's an array, multiply by the total number of elements
         if(t.isArray){
@@ -556,13 +584,13 @@ string get_operand_string(TACOperand* operand);
 %type<opinfo> marker
 
 %type<typeinfo> declaration_list
-%type<sval> struct_or_union_specifier
+%type<typeinfo> struct_or_union_specifier
 %type<sval> struct_or_union
-
+/* 
 %type<typeinfo> struct_declaration_list
-%type<typeinfo> struct_declaration
-%type<sval> struct_declarator
-%type<strlist> struct_declarator_list
+%type<typeinfo> struct_declaration */
+%type<declinfo> struct_declarator
+%type<decllist> struct_declarator_list
 %type<typeinfo> constant_expression
 %type<typeinfo> primary_expression
 %type<typeinfo> postfix_expression
@@ -804,9 +832,8 @@ type_specifier
         $$->baseType = "float"; 
     }
     | struct_or_union_specifier { 
-        $$ = new TypeInfo(); 
-        $$->baseType = *$1;
-        delete $1;
+        // struct_or_union_specifier now returns TypeInfo* with all fields set
+        $$ = $1;
     }
 
     ;
@@ -1316,12 +1343,16 @@ postfix_expression
 			type_error("Dot operator requires a struct/union object, not a pointer. Use '->' for pointers.");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
+		} else if (!base->isStruct && !base->isUnion) {
+			type_error("Dot operator requires a struct/union type, got: " + base->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
 		} else {
-			// Lookup the struct/union definition
-			StructUnionDef* structDef = lookup_struct_union(base->baseType);
+			// Use the structDef from TypeInfo
+			StructUnionDef* structDef = base->structDef;
 			
 			if (!structDef) {
-				type_error("Type '" + base->baseType + "' is not a struct or union");
+				type_error("Struct/union definition not found for type: " + base->toString());
 				$$ = new TypeInfo();
 				$$->baseType = "error";
 			} else {
@@ -1329,7 +1360,7 @@ postfix_expression
 				StructMember* member = find_member(structDef, memberName);
 				
 				if (!member) {
-					type_error("Struct/union '" + base->baseType + "' has no member named '" + memberName + "'");
+					type_error("Struct/union '" + base->structUnionName + "' has no member named '" + memberName + "'");
 					$$ = new TypeInfo();
 					$$->baseType = "error";
 				} else {
@@ -1359,7 +1390,7 @@ postfix_expression
 					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 					$$->code.push_back(deref_instr);
 					
-					cout << "Struct member access: " << base->baseType << "." << memberName 
+					cout << "Struct member access: " << base->toString() << "." << memberName 
 					     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
 				}
 			}
@@ -1377,12 +1408,16 @@ postfix_expression
 			type_error("Arrow operator requires a pointer to struct/union. Use '.' for objects.");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
+		} else if (!base->isStruct && !base->isUnion) {
+			type_error("Arrow operator requires a pointer to struct/union type, got: " + base->toString());
+			$$ = new TypeInfo();
+			$$->baseType = "error";
 		} else {
-			// Lookup the struct/union definition (base type without pointer)
-			StructUnionDef* structDef = lookup_struct_union(base->baseType);
+			// Use the structDef from TypeInfo
+			StructUnionDef* structDef = base->structDef;
 			
 			if (!structDef) {
-				type_error("Type '" + base->baseType + "' is not a struct or union");
+				type_error("Struct/union definition not found for type: " + base->toString());
 				$$ = new TypeInfo();
 				$$->baseType = "error";
 			} else {
@@ -1390,7 +1425,7 @@ postfix_expression
 				StructMember* member = find_member(structDef, memberName);
 				
 				if (!member) {
-					type_error("Struct/union '" + base->baseType + "' has no member named '" + memberName + "'");
+					type_error("Struct/union '" + base->structUnionName + "' has no member named '" + memberName + "'");
 					$$ = new TypeInfo();
 					$$->baseType = "error";
 				} else {
@@ -1415,7 +1450,7 @@ postfix_expression
 					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 					$$->code.push_back(deref_instr);
 					
-					cout << "Struct pointer member access: " << base->baseType << "*->" << memberName 
+					cout << "Struct pointer member access: " << base->toString() << "->" << memberName 
 					     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
 				}
 			}
@@ -1897,20 +1932,45 @@ struct_or_union_specifier
 	} struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
 		// This defines a new struct/union
 		bool isUnion = (*$1 == "union");
+		string structName = *$2;
 		
 		// Use the global member list
 		if (current_struct_members) {
-			insert_struct_union(*$2, isUnion, *current_struct_members, current_scope_level);
+			insert_struct_union(structName, isUnion, *current_struct_members, current_scope_level);
 			delete current_struct_members;
 			current_struct_members = nullptr;
 		}
 		
-		$$ = new string(*$1 + " " + *$2);
-		delete $1; delete $2; delete $5;
+		// Create and return TypeInfo
+		$$ = new TypeInfo();
+		$$->isStruct = !isUnion;
+		$$->isUnion = isUnion;
+		$$->structUnionName = structName;
+		$$->structDef = lookup_struct_union(structName);
+		$$->baseType = *$1 + " " + structName; // For compatibility and toString()
+		
+		if ($$->structDef == nullptr) {
+			type_error("Failed to register struct/union: " + structName);
+		}
+		
+		delete $1; delete $2;
 	}   /* e.g., struct S { int x; };*/  
 	| struct_or_union IDENTIFIER {  // e.g., struct S; or using existing struct S
 		// Reference to existing struct/union or forward declaration
-		$$ = new string(*$1 + " " + *$2);
+		bool isUnion = (*$1 == "union");
+		string structName = *$2;
+		
+		$$ = new TypeInfo();
+		$$->isStruct = !isUnion;
+		$$->isUnion = isUnion;
+		$$->structUnionName = structName;
+		$$->structDef = lookup_struct_union(structName);
+		$$->baseType = *$1 + " " + structName; // For compatibility and toString()
+		
+		if ($$->structDef == nullptr) {
+			type_warning("Using undefined struct/union: " + structName + " (forward declaration or error)");
+		}
+		
 		delete $1; delete $2;
 	}                                           /* e.g., struct S */ 
 	;
@@ -1921,57 +1981,57 @@ struct_or_union
 	;
 
 struct_declaration_list
-	: struct_declaration {
-		$$ = $1;  // Pass through the TypeInfo with member list
-	}
-	| struct_declaration_list struct_declaration {
-		$$ = $1;
-		// Merge member lists - stored in identifier field as a hack
-		// We'll use a global variable instead
-		delete $2;
-	}
+	: struct_declaration 
+	| struct_declaration_list struct_declaration 
 	;
 
 // NO STATIC WAS ALLOWED IN C STRUCTS
 struct_declaration
 	: type_specifier struct_declarator_list SEMICOLON {
-		$$ = new TypeInfo();
-		// For each declarator in the list, create a member
-		TypeInfo baseType = *$1;
-		
-		for (const string& memberName : *$2) {
-			StructMember member;
-			member.name = memberName;
-			member.type = baseType;
-			// Offset will be calculated when we finalize the struct
-			member.offset = 0;
-			
-			if (current_struct_members) {
-				current_struct_members->push_back(member);
-			}
-		}
-		
-		delete $1;
-		delete $2;
-	}
-	;
+		// For each declarator, create a StructMember and add to current_struct_members
+        for (auto declInfo : *$2) {
+            StructMember member;
+            member.name = declInfo->name; // Use -> since declInfo is a pointer
+            member.type = TypeInfo(*$1); // Base type from type_specifier
+            member.type.pointerLevel = declInfo->pointerLevel;
+            member.type.isArray = declInfo->isArray;
+            member.type.arrayDimensions = declInfo->arrayDimensions; // Fixed: was arraySizes
+            
+            // Calculate offset for this member
+            int offset = 0;
+            if (!current_struct_members->empty()) {
+                // Get the last member
+                StructMember& lastMember = current_struct_members->back();
+                // Offset = last member's offset + last member's size
+                offset = lastMember.offset + getSize(lastMember.type);
+            }
+            member.offset = offset;
+            
+            current_struct_members->push_back(member);
+            
+            cout << "Struct member: " << member.name << " of type " << member.type.toString() 
+                 << " at offset " << member.offset << "\n";
+        }
+        delete $1;
+        delete $2;
+    }
+    ;
 
 struct_declarator_list
 	: struct_declarator {
-		$$ = new vector<string>();
-		$$->push_back(*$1);
-		delete $1;
-	}
-	| struct_declarator_list COMMA struct_declarator {
-		$$ = $1;
-		$$->push_back(*$3);
-		delete $3;
-	}
-	;
+		$$ = new vector<DeclaratorInfo*>();
+        $$->push_back($1); // $1 is already a pointer
+    }
+    | struct_declarator_list COMMA struct_declarator {
+        $$ = $1;
+        $$->push_back($3); // $3 is already a pointer
+    }
 
 struct_declarator
-	: declarator { $$ = new string($1->name); delete $1; }                /* e.g., x */ 
-	;
+	: declarator {
+        $$ = $1;
+    }
+    ;
 
 /*
 Dekhte hai, in future : constant_expression ko bhi handle karna hai ya nahi
@@ -2471,6 +2531,21 @@ void displaySymbolTable() {
 
 // Basically exact type match kar rha hai
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
+    // Check struct/union compatibility first
+    if (left_type.isStruct != right_type.isStruct || left_type.isUnion != right_type.isUnion) {
+        return false;
+    }
+    
+    // If both are struct/union, check if they refer to the same definition
+    if (left_type.isStruct || left_type.isUnion) {
+        // Check if names match
+        if (left_type.structUnionName != right_type.structUnionName) {
+            return false;
+        }
+        // Optionally, we could check if structDef pointers are the same
+        // But name matching is sufficient for scope-aware struct/union lookup
+    }
+    
     // Check base types match (ignoring static as requested)
     if (left_type.baseType != right_type.baseType) return false;
     
