@@ -37,3 +37,26 @@ label:
 ```
 
 check this test case
+
+--------------------------------------------------------------------------------
+
+
+struct Str{
+    int p;
+    int q;
+};
+
+struct S{
+    int x;
+    int y;
+    struct Str inner;
+    // struct Str{ // You cannot define struct within another struct
+    //     int p;
+    //     int q;
+    // } inner;
+    int S;
+};
+
+Filhaal yeh segmentation fault de raha hai.... will fix it later
+---------------------------------------------------------------------------------
+
