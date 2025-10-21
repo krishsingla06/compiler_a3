@@ -69,3 +69,19 @@ int main(){
 }
 
 filhaal yeh bhi seg fault de rha hai
+
+----------------------------------------------------------------------------------
+
+// Not supported:
+typedef struct {
+    int a;
+} MyStruct;
+
+// Supported:
+struct TagName {
+    int a;
+};
+typedef struct TagName MyStruct;
+
+
+
