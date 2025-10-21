@@ -424,6 +424,7 @@ string get_operand_string(TACOperand* operand);
     
     // Global temporary storage for struct members being parsed
     vector<StructMember>* current_struct_members = nullptr;
+    string current_struct_being_defined = "";  // Track the struct/union currently being parsed
     
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
@@ -514,8 +515,10 @@ string get_operand_string(TACOperand* operand);
                 if (structDef) {
                     base_size = structDef->totalSize;
                 } else {
-                    base_size = 4; // Default size for unknown struct/union
-                    type_error("Unknown struct/union type: " + t.structUnionName);
+                    // Incomplete struct/union - this is an error if used directly
+                    // Return 0 to indicate incomplete type (error should be reported elsewhere)
+                    base_size = 0;
+                    type_error("Cannot determine size of incomplete type: " + t.structUnionName);
                 }
             }
         }
@@ -700,7 +703,7 @@ function_definition
         string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>());
         TACOperand* func_label = new_identifier(mangled_name);
         $3 = new TypeInfo();
-         TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+        TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
                                        new_identifier($2->name), 
                                        new_empty_var(), 
                                        new_empty_var(), 0);
@@ -1952,6 +1955,8 @@ struct_or_union_specifier
 	: struct_or_union IDENTIFIER LBRACE {
 		// Initialize the global member list for this struct
 		current_struct_members = new vector<StructMember>();
+		// Track the struct/union name being defined (for self-referential pointers)
+		current_struct_being_defined = (*$1 == "union" ? "union " : "struct ") + *$2;
 	} struct_declaration_list RBRACE {  // e.g., struct S { int x; float y; };
 		// This defines a new struct/union
 		bool isUnion = (*$1 == "union");
@@ -1981,6 +1986,9 @@ struct_or_union_specifier
                 type_error("Failed to define struct/union '" + structName + "' due to duplicate member names.");
             }
 		}
+		
+		// Clear the current struct being defined
+		current_struct_being_defined = "";
 		
 		// Create and return TypeInfo
 		$$ = new TypeInfo();
@@ -2037,6 +2045,26 @@ struct_declaration
             member.type.pointerLevel = declInfo->pointerLevel;
             member.type.isArray = declInfo->isArray;
             member.type.arrayDimensions = declInfo->arrayDimensions; // Fixed: was arraySizes
+            
+            // Validate: if this is a struct/union type and NOT a pointer, it must be complete
+            if ((member.type.isStruct || member.type.isUnion) && member.type.pointerLevel == 0 && !member.type.isArray) {
+                string memberTypeName = (member.type.isStruct ? "struct " : "union ") + member.type.structUnionName;
+                
+                // Special case: allow pointers to the struct being currently defined (self-referential)
+                // but disallow direct members of the same type
+                if (memberTypeName == current_struct_being_defined) {
+                    // This is the struct/union being defined - it's incomplete
+                    type_error("Incomplete type '" + memberTypeName + 
+                              "' used as struct member '" + member.name + "'. Use pointer for self-referential structure.");
+                } else {
+                    // Check if other struct/union is defined
+                    StructUnionDef* structDef = lookup_struct_union(member.type.structUnionName);
+                    if (structDef == nullptr) {
+                        type_error("Incomplete type '" + memberTypeName + 
+                                  "' used as struct member '" + member.name + "'. Use pointer instead.");
+                    }
+                }
+            }
             
             // Calculate offset for this member
             int offset = 0;
