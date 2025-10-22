@@ -231,6 +231,11 @@ string get_operand_string(TACOperand* operand);
         string structUnionName; // Name of the struct/union (e.g., "Point", "Data")
         StructUnionDef* structDef; // Pointer to the struct/union definition
 
+        // Function pointer information
+        bool isFunctionPointer; // True if this is a function pointer type
+        TypeInfo* returnType;   // Return type for function pointers (nullptr if not a function pointer)
+        vector<TypeInfo>* parameterTypes; // Parameter types for function pointers (nullptr if not a function pointer)
+
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
@@ -244,7 +249,9 @@ string get_operand_string(TACOperand* operand);
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
-                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), result(nullptr), code()  {}
+                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
+                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr),
+                     result(nullptr), code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
@@ -253,6 +260,9 @@ string get_operand_string(TACOperand* operand);
                     isLvalue(other.isLvalue), 
                     isStruct(other.isStruct), isUnion(other.isUnion),
                     structUnionName(other.structUnionName), structDef(other.structDef),
+                    isFunctionPointer(other.isFunctionPointer),
+                    returnType(other.returnType ? new TypeInfo(*other.returnType) : nullptr),
+                    parameterTypes(other.parameterTypes ? new vector<TypeInfo>(*other.parameterTypes) : nullptr),
                     result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
@@ -274,6 +284,17 @@ string get_operand_string(TACOperand* operand);
         string toString() const {
             string res = "";
             if (isStatic) res += "static ";
+            
+            // Handle function pointer types
+            if (isFunctionPointer && returnType && parameterTypes) {
+                res += returnType->toString() + " (*)(";
+                for (size_t i = 0; i < parameterTypes->size(); i++) {
+                    if (i > 0) res += ", ";
+                    res += (*parameterTypes)[i].toString();
+                }
+                res += ")";
+                return res;
+            }
             
             // Handle struct/union types
             if (isStruct) {
@@ -532,6 +553,11 @@ string get_operand_string(TACOperand* operand);
     }
 
     int getSize(TypeInfo t){
+        // Function pointers are just pointers (4 bytes on 32-bit systems)
+        if(t.isFunctionPointer){
+            return 4;
+        }
+        
         if(t.pointerLevel > 0){
             return 4; // assuming 32-bit pointers
         }
@@ -638,6 +664,9 @@ string get_operand_string(TACOperand* operand);
 %type<typeinfo> parameter_declaration
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
+%type<typelist> parameter_list
+%type<typelist> parameter_type_list
+%type<typeinfo> parameter_type_declarator
 %type<ival> pointer
 %type<opinfo> marker
 
@@ -671,7 +700,6 @@ string get_operand_string(TACOperand* operand);
 %type<typeinfo> initializer
 %type<sval> unary_operator
 %type<typelist> argument_expression_list
-%type<typelist> parameter_list
 
 
 %type<typeinfo> statement
@@ -836,16 +864,24 @@ declaration
 		for (DeclaratorInfo* declInfo : *$2) {
 			TypeInfo combinedType = *$1;  // Start with base type
 			
-			// Add declarator-specific type information
-			//combinedType.pointerLevel = declInfo->pointerLevel;
-			//combinedType.isArray = declInfo->isArray;
-			//combinedType.arrayDimensions = declInfo->arrayDimensions;
-            // to handle typedef
-            combinedType.pointerLevel += declInfo->pointerLevel;
-            combinedType.isArray |= declInfo->isArray;
-            combinedType.arrayDimensions.insert(combinedType.arrayDimensions.end(), 
-                                               declInfo->arrayDimensions.begin(), 
-                                               declInfo->arrayDimensions.end());
+			// Check if this is a function pointer declaration
+			if (declInfo->isFunction && declInfo->pointerLevel > 0) {
+				// This is a function pointer: e.g., int (*fp)(int, float)
+				combinedType.isFunctionPointer = true;
+				combinedType.pointerLevel = 0; // Function pointers don't use pointerLevel
+				combinedType.returnType = new TypeInfo(*$1); // Return type is the base type
+				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Adjust for the one pointer level used by function pointer itself
+				combinedType.parameterTypes = new vector<TypeInfo>(*declInfo->paramTypes);
+				combinedType.baseType = "function_pointer";
+				
+				cout << "Function pointer declaration: " << declInfo->name << " of type " << combinedType.toString() << "\n";
+			} else {
+				// Regular variable or array declaration
+				combinedType.pointerLevel = declInfo->pointerLevel;
+				combinedType.isArray = declInfo->isArray;
+				combinedType.arrayDimensions = declInfo->arrayDimensions;
+			}
+			
             combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
 
             $$ = new TypeInfo();
@@ -1139,6 +1175,9 @@ direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
+	| LPAREN declarator RPAREN {                                   /* e.g., (*fp) for function pointers */
+		$$ = $2;
+	}
 	| direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */ 
 		$$ = $1;
         if($3 <= 0 ){
@@ -1185,6 +1224,17 @@ direct_declarator
         $$->isArray = true;
         $$->addArrayDimension(static_cast<int>(charValue)); // Support multidimensional arrays by adding each dimension
     }
+	| direct_declarator LPAREN parameter_type_list RPAREN {              /* e.g., (*fp)(int, float) for function pointers */
+		$$ = $1;
+		$$->isFunction = true;
+		$$->paramTypes = new vector<TypeInfo>(*$3);
+		delete $3;
+	}
+	| direct_declarator LPAREN RPAREN {                             /* e.g., (*fp)() for function pointers with no params */
+		$$ = $1;
+		$$->isFunction = true;
+		$$->paramTypes = new vector<TypeInfo>();
+	}
 
 fun_declarator
   	: pointer fun_direct_declarator {
@@ -1296,6 +1346,46 @@ parameter_declaration
     }
     ;
 
+// specifically used for function pointer parameter declarations like: (int, float)
+parameter_type_list
+    : parameter_type_declarator                                              /* e.g., int */{
+        $$ = new vector<TypeInfo>();
+        $$->push_back(*$1);
+        delete $1;
+    }
+    | parameter_type_list COMMA parameter_type_declarator                          /* e.g., int, float */{
+        $$ = $1;
+        $$->push_back(*$3);
+        delete $3;
+    }
+
+
+parameter_type_declarator
+	: return_types                                                                  /* e.g., int (abstract declarator - no name) */ {
+        // Abstract declarator - just a type without a name
+        // This is used in function pointer declarations like: int (*fp)(int, float)
+        TypeInfo* combinedType = new TypeInfo(*$1);
+        
+        // No name for abstract declarators
+        current_function_parameters.push_back(make_pair("", *combinedType));
+        
+        $$ = combinedType;
+        delete $1;
+    }
+	| return_types pointer                                                          /* e.g., int* (abstract pointer declarator) */ {
+        // Abstract pointer declarator - type with pointer but no name
+        // This is used in function pointer declarations like: int (*fp)(int*, char*)
+        TypeInfo* combinedType = new TypeInfo(*$1);
+        combinedType->pointerLevel = $2;
+        
+        // No name for abstract declarators
+        current_function_parameters.push_back(make_pair("", *combinedType));
+        
+        $$ = combinedType;
+        delete $1;
+    }
+    ;
+
 parameter_declarator
 	: pointer parameter_direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
@@ -1340,14 +1430,39 @@ primary_expression
         } 
         // If not a variable, check if it might be a function
         else if (is_function_name(*$1)) {
-            $$ = new TypeInfo();
-            $$->baseType = "function";  // Mark as function type
-            $$->identifier = *$1;       // Store function name
-            $$->isLiteral = false;
-            $$->isLvalue = false;       // Function names are not lvalues
-            cout << "Found function name: " << *$1 << "\n";
-
-            $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
+            // Get the first matching function with this name
+            FunctionEntry* funcEntry = nullptr;
+            for (auto& pair : function_table) {
+                if (pair.second.originalName == *$1) {
+                    funcEntry = &pair.second;
+                    break;
+                }
+            }
+            
+            if (funcEntry) {
+                // Create a function pointer type for this function
+                $$ = new TypeInfo();
+                $$->isFunctionPointer = true;
+                $$->baseType = "function_pointer";
+                $$->returnType = new TypeInfo(funcEntry->returnType);
+                $$->parameterTypes = new vector<TypeInfo>();
+                for (const auto& param : funcEntry->parameters) {
+                    $$->parameterTypes->push_back(param.type);
+                }
+                $$->identifier = *$1;
+                $$->isLiteral = false;
+                $$->isLvalue = false;  // Function names are not lvalues
+                $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
+                
+                cout << "Found function name: " << *$1 << " as function pointer type " << $$->toString() << "\n";
+            } else {
+                check_variable_declaration(*$1);
+                $$ = new TypeInfo();
+                $$->baseType = "error";
+                $$->identifier = *$1;
+                $$->isLvalue = false;
+                type_error("Undefined function: " + *$1);
+            }
         }
         // Otherwise, it's undefined
         else {
@@ -1501,12 +1616,37 @@ postfix_expression
 		}
 		delete $1; delete $3;
 	}
-	| postfix_expression LPAREN RPAREN {                               /* e.g., func() */
-		// Function call with no arguments
+	| postfix_expression LPAREN RPAREN {                               /* e.g., func() or (*fp)() */
+		// Function call with no arguments (direct call or through function pointer)
 		TypeInfo* base = $1;
 		
-		if (!base->identifier.empty()) {
-			// Try to resolve function call
+		// Check if base is a function pointer that needs to be called
+		if (base->isFunctionPointer && base->returnType && base->parameterTypes) {
+			// This is a function pointer call: (*fp)()
+			// Check parameter count
+			if (base->parameterTypes->size() != 0) {
+				type_error("Function pointer call expects " + to_string(base->parameterTypes->size()) + 
+				          " arguments but got 0");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Return type is the function pointer's return type
+				$$ = new TypeInfo(*base->returnType);
+				$$->isLiteral = false;
+				$$->isLvalue = false;
+				cout << "Function pointer call: " << base->identifier << "() -> " << $$->toString() << "\n";
+				
+				// Generate 3AC for indirect function call
+				$$->code = base->code;
+				$$->result = new_temp_var();
+				TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+				                            $$->result, 
+				                            base->result,  // Use the function pointer variable
+				                            new_constant("0"), 0);
+				$$->code.push_back(callInstr);
+			}
+		} else if (!base->identifier.empty()) {
+			// Regular function call by name
 			vector<TypeInfo> emptyArgs;
 			FunctionEntry* func = lookup_function(base->identifier, emptyArgs);
 			
@@ -1533,15 +1673,74 @@ postfix_expression
 		}
 		delete $1;
 	}
-	| postfix_expression LPAREN argument_expression_list RPAREN {      /* e.g., func(a,b) */
-		// Function call with arguments
+	| postfix_expression LPAREN argument_expression_list RPAREN {      /* e.g., func(a,b) or (*fp)(a,b) */
+		// Function call with arguments (direct call or through function pointer)
 		TypeInfo* base = $1;
 		vector<TypeInfo>* argTypes = $3;
 
-        // print for each argument type
-		
-		if (!base->identifier.empty() && argTypes) {
-			// Try to resolve function call
+		// Check if base is a function pointer that needs to be called
+		if (base->isFunctionPointer && base->returnType && base->parameterTypes && argTypes) {
+			// This is a function pointer call: (*fp)(args)
+			// Check parameter count
+			if (base->parameterTypes->size() != argTypes->size()) {
+				type_error("Function pointer call expects " + to_string(base->parameterTypes->size()) + 
+				          " arguments but got " + to_string(argTypes->size()));
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Check parameter types
+				bool compatible = true;
+				for (size_t i = 0; i < argTypes->size(); i++) {
+					if (!types_compatible((*base->parameterTypes)[i], (*argTypes)[i])) {
+						type_error("Argument " + to_string(i+1) + " type mismatch: expected " + 
+						          (*base->parameterTypes)[i].toString() + " but got " + 
+						          (*argTypes)[i].toString());
+						compatible = false;
+					}
+				}
+				
+				if (compatible) {
+					// Return type is the function pointer's return type
+					$$ = new TypeInfo(*base->returnType);
+					$$->isLiteral = false;
+					$$->isLvalue = false;
+					$$->code = base->code;
+					
+					cout << "Function pointer call with " << argTypes->size() << " arguments -> " << $$->toString() << "\n";
+					
+					// Generate 3AC for arguments and call
+					int no_of_args = argTypes->size();
+					for(int i = 0; i < no_of_args; i++) {
+						$$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
+					}
+					for(int i = 0; i < no_of_args; i++) {
+						// Type conversion if needed
+						pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+							change_type_rhs_to_lhs((*base->parameterTypes)[i], (*argTypes)[i]);
+						$$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+						
+						// Pass the argument
+						TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+						                            promo.second.second, 
+						                            new_empty_var(), 
+						                            new_empty_var(), 0);
+						$$->code.push_back(argInstr);
+					}
+					
+					// Generate indirect call instruction
+					$$->result = new_temp_var();
+					TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+					                            $$->result, 
+					                            base->result,  // Use the function pointer variable
+					                            new_constant(to_string(no_of_args)), 0);
+					$$->code.push_back(callInstr);
+				} else {
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				}
+			}
+		} else if (!base->identifier.empty() && argTypes) {
+			// Regular function call by name
 			FunctionEntry* func = lookup_function(base->identifier, *argTypes);
 			
 			if (func) {
@@ -3066,6 +3265,39 @@ void displaySymbolTable() {
 
 // Basically exact type match kar rha hai
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
+    // Check function pointer compatibility
+    if (left_type.isFunctionPointer || right_type.isFunctionPointer) {
+        // Both must be function pointers
+        if (left_type.isFunctionPointer != right_type.isFunctionPointer) {
+            return false;
+        }
+        
+        // Check return types match
+        if (!left_type.returnType || !right_type.returnType) {
+            return false;
+        }
+        if (!types_compatible(*left_type.returnType, *right_type.returnType)) {
+            return false;
+        }
+        
+        // Check parameter count
+        if (!left_type.parameterTypes || !right_type.parameterTypes) {
+            return false;
+        }
+        if (left_type.parameterTypes->size() != right_type.parameterTypes->size()) {
+            return false;
+        }
+        
+        // Check each parameter type
+        for (size_t i = 0; i < left_type.parameterTypes->size(); i++) {
+            if (!types_compatible((*left_type.parameterTypes)[i], (*right_type.parameterTypes)[i])) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
     // Check struct/union compatibility first
     if (left_type.isStruct != right_type.isStruct || left_type.isUnion != right_type.isUnion) {
         return false;
@@ -3967,13 +4199,30 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
     
     // Dereference operator
     if (op == "*") {
-        if (operand.pointerLevel == 0) {
+        // Allow dereference for regular pointers (pointerLevel>0) and for function pointers
+        if (operand.pointerLevel == 0 && !operand.isFunctionPointer) {
             type_error("Cannot dereference non-pointer type");
             TypeInfo* res = new TypeInfo();
             res->baseType = "error";
             return res;
         }
-        
+
+        // If this is a function pointer, do not emit a memory dereference.
+        // Dereferencing a function pointer yields a callable designator; keep the
+        // function-pointer metadata and preserve the operand.result (the function
+        // address/label) so indirect call generation can use it.
+        if (operand.isFunctionPointer) {
+            TypeInfo* res = new TypeInfo(operand);
+            // Treat the dereferenced function-pointer as a callable value (not an lvalue)
+            res->isLvalue = false;
+            // Keep the same result (the function pointer variable / label)
+            res->result = operand.result;
+            // No additional TAC emitted for unary * on function pointers
+            cout << " -> " << res->toString() << "\n";
+            return res;
+        }
+
+        // Regular pointer dereference
         TypeInfo* res = new TypeInfo(operand);
         res->pointerLevel--;
         // res of dereference is an lvalue (you can assign to *p)
