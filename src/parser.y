@@ -2426,6 +2426,8 @@ statement
 	;
 
 
+
+
 labeled_statement
 	: IDENTIFIER COLON marker statement                                            /* e.g., label: stmt */{
         $$ = $4;
@@ -2438,33 +2440,16 @@ labeled_statement
         }
         delete $1;
     }
-	| CASE constant_expression {
-        // Validate: constant_expression must be int or char
-        if( !is_integer_type($2->baseType) || $2->pointerLevel > 0 || $2->isArray ) {
-            type_error("Case label must be of integer or char type, got: " + $2->toString());
-        }
-        
+	| CASE CHAR_LITERAL  {
         // Check if we're inside a switch statement
         if (switch_case_stack.empty()) {
             type_error("Case label not within a switch statement");
         } else {
             // Convert char to int if needed
             int case_value = 0;
-            if($2->baseType == "char"){
-                // Extract char value from result (assuming it's a constant)
-                if ($2->result && $2->result->type == TAC_OPERAND_CONSTANT) {
-                    case_value = (int)($2->result->value[0]);
-                } else {
-                    type_error("Case label must be a constant expression");
-                }
-            } else if ($2->baseType == "int") {
-                // Extract int value from result
-                if ($2->result && $2->result->type == TAC_OPERAND_CONSTANT) {
-                    case_value = stoi($2->result->value);
-                } else {
-                    type_error("Case label must be a constant expression");
-                }
-            }
+
+            // char literal to int conversion
+            case_value = (int)($2->result->value[0]);
             
             // Check for duplicate case values in current switch
             map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
@@ -2474,12 +2459,39 @@ labeled_statement
                 // Create a label for this case
                 TACOperand* case_label = new_label(0);
                 current_switch_map[case_value] = case_label;
-                
-                // Emit the label at this point//hihi
-               // TACInstruction* label_inst = emit(TAC_OPERATOR_LABEL, case_label, new_empty_var(), new_empty_var(), 0);
-               // $2->code.push_back(label_inst);
-                
-                //cout << "Registered case " << case_value << " with label " << case_label->value << "\n";
+            }
+            }
+        }
+    COLON marker statement                              /* e.g., case 1: stmt */{
+        // Combine code from case expression and statement
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+        $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
+        
+        // Propagate break statements
+        $$->break_list = $6->break_list;
+        
+        delete $2;
+        delete $6;
+    }
+    | CASE INT_LITERAL  {
+        
+        // Check if we're inside a switch statement
+        if (switch_case_stack.empty()) {
+            type_error("Case label not within a switch statement");
+        } else {
+            // Get integer value
+            int case_value = stoi($2->result->value);
+            
+            // Check for duplicate case values in current switch
+            map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
+            if (current_switch_map.find(case_value) != current_switch_map.end()) {
+                type_error("Duplicate case value: " + to_string(case_value) + " in switch statement");
+            } else {
+                // Create a label for this case
+                TACOperand* case_label = new_label(0);
+                current_switch_map[case_value] = case_label;
             }
             }
         }
