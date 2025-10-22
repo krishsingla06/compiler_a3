@@ -87,3 +87,8 @@ typedef struct TagName MyStruct;
 
 --------------------------------------------------------------------------------------
 No empty struct allowed for now
+
+---------------------------------------------------------------------------------------
+
+Filhaal case mei and enum initializer mei int literal hii supported hai, will have to add support for compiler time constants - some mixture of operators, int literal and chars
+
