@@ -213,7 +213,7 @@ string get_operand_string(TACOperand* operand);
     
     // Forward declarations
     struct StructUnionDef;
-    
+    struct EnumDef; 
     // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool isStatic;
@@ -224,6 +224,10 @@ string get_operand_string(TACOperand* operand);
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
         bool isLvalue;          // True if the expression is an lvalue, false for temporaries
+bool isEnum;
+string enumName;
+EnumDef* enumDef;
+
 
         // Struct/Union information
         bool isStruct;          // True if this is a struct type
@@ -244,14 +248,14 @@ string get_operand_string(TACOperand* operand);
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
-                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr) {}
-        
+                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr),isEnum(false), enumName(""), enumDef(nullptr),result(nullptr),code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
                     isLvalue(other.isLvalue), 
+                    isEnum(other.isEnum), enumName(other.enumName), enumDef(other.enumDef), 
                     isStruct(other.isStruct), isUnion(other.isUnion),
                     structUnionName(other.structUnionName), structDef(other.structDef),
                     result(other.result),
@@ -299,11 +303,30 @@ string get_operand_string(TACOperand* operand);
             return res;
         }
     };
+    // Enum constant entry
+struct EnumConstant {
+    string name;
+    int value;
+    int line;
+    string enumName;
+    int scope_level;
+};
 
+// Enum definition
+struct EnumDef {
+    string name;           // enum name (can be empty for anonymous)
+    vector<EnumConstant> constants;
+    int scope_level;
+    bool isAnonymous;
+    
+    EnumDef() : name(""), scope_level(0), isAnonymous(false) {}
+};
     // Scope context for semantic checking
     struct ScopeContext {
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
         map<string, TypeInfo> typedefs; // typedef table for this scope
+        map<string, EnumConstant> enum_constants; // Add this line
+
         int scope_level;
         
         ScopeContext(int level) : scope_level(level) {}
@@ -394,9 +417,22 @@ string get_operand_string(TACOperand* operand);
         
         StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
     };
+    struct EnumeratorInfo {
+        string name;
+        bool hasExplicitValue;
+        int explicitValue;
+    };
 }
 
 %code {
+    // Add this struct in %code requires section, around line 200
+// struct EnumeratorInfo {
+//     string name;
+//     bool hasExplicitValue;
+//     int explicitValue;
+    
+//     EnumeratorInfo() : name(""), hasExplicitValue(false), explicitValue(0) {}
+// };
     // Stack of scope contexts for different scopes
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
@@ -407,7 +443,9 @@ string get_operand_string(TACOperand* operand);
     
     // Function symbol table
     map<string, FunctionEntry> function_table;
-    
+    // In %code section
+map<string, vector<EnumDef>> enum_table;  // Similar to struct_union_table
+map<string, EnumConstant> enum_constants; // Global enum constant lookup
     // Current function parameter information (for proper scoping)
     vector<pair<string, TypeInfo>> current_function_parameters;
     
@@ -530,6 +568,9 @@ string get_operand_string(TACOperand* operand);
         else if(t.baseType == "void"){
             base_size = 0; // void has no size
         }
+else if(t.isEnum) {
+    base_size = 4; // Enums are typically int-sized
+}
         else if(t.isStruct || t.isUnion){
             // Use the structDef pointer for direct access
             if (t.structDef) {
@@ -561,10 +602,14 @@ string get_operand_string(TACOperand* operand);
         }
         return base_size;
     }
-
+void insert_enum(const string& name, const vector<EnumConstant>& constants, int scope_level);
+EnumDef* lookup_enum(const string& name);
+bool lookup_enum_constant(const string& name, EnumConstant& constant);
+void insert_enum_constant(const string& name, int value, int line);
 
     
 }
+
 
 /* Declare value types */
 %union {
@@ -578,6 +623,14 @@ string get_operand_string(TACOperand* operand);
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
+    // Add to %union
+struct EnumDef* enumdef;     /* enum definition */
+vector<string>* enumlist;    /* list of enum constants */
+    // Add this new type for enum enumerators
+    
+    EnumeratorInfo* enuminfo;
+    vector<EnumeratorInfo*>* enuminfolist;  // Add this line
+
 }
 
 
@@ -594,6 +647,7 @@ string get_operand_string(TACOperand* operand);
 %token <ival> INT_LITERAL 
 %token <fval> FLOAT_LITERAL
 %token <sval> STRING_LITERAL CHAR_LITERAL
+%token ENUM
 %type <declinfo> direct_declarator
 %type<typeinfo> return_types
 %type<typeinfo> declaration_specifiers
@@ -604,7 +658,12 @@ string get_operand_string(TACOperand* operand);
 %type<declinfo> declarator
 %type<declinfo> fun_declarator
 %type<declinfo> fun_direct_declarator
+// %type <enuminfo> enumerator
+// %type <enumlist> enumerator_list  // This should now be vector<EnumeratorInfo*>*
 
+%type <enumdef> enum_specifier
+%type <enuminfo> enumerator
+%type <enuminfolist> enumerator_list
 %type<typeinfo> parameter_declaration
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
@@ -804,19 +863,9 @@ declaration
 			TypeInfo combinedType = *$1;  // Start with base type
 			
 			// Add declarator-specific type information
-			/ Add declarator-specific type information
-			/*combinedType.pointerLevel = declInfo->pointerLevel;
+			combinedType.pointerLevel = declInfo->pointerLevel;
 			combinedType.isArray = declInfo->isArray;
-			combinedType.arrayDimensions = declInfo->arrayDimensions;*/
-            // Just to tackle typedef we will assume return_types can have pointerLevel and arrayDimensions too
-            combinedType.pointerLevel += declInfo->pointerLevel;
-            combinedType.isArray |= declInfo->isArray;
-            if(declInfo->isArray){
-                combinedType.isArray = true;
-                combinedType.arrayDimensions.insert(combinedType.arrayDimensions.end(),
-                                                    declInfo->arrayDimensions.begin(),
-                                                    declInfo->arrayDimensions.end());
-            }
+			combinedType.arrayDimensions = declInfo->arrayDimensions;
             combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
 
             $$ = new TypeInfo();
@@ -931,9 +980,146 @@ type_specifier
         }
         delete $1;
     }
+    | enum_specifier {
+        $$ = new TypeInfo();
+        $$->baseType = "int"; // Enums are treated as int
+    }
+    ;
+enum_specifier
+    : ENUM LBRACE enumerator_list RBRACE {
+        // Process enum constants with proper value handling
+        vector<EnumConstant> constants;
+        int current_value = 0;
+        
+        for (const EnumeratorInfo* enumInfo : *$3) {
+            EnumConstant constant;
+            constant.name = enumInfo->name;
+            constant.enumName = "anonymous_enum_" + to_string(current_scope_level);
+            if (enumInfo->hasExplicitValue) {
+                current_value = enumInfo->explicitValue;
+            }
+            constant.value = current_value;
+            constant.line = yylineno;
+            constant.scope_level = current_scope_level;
+            constants.push_back(constant);
+            
+            // Register each constant immediately in global table
+            // In both enum_specifier rules, before the line:
+// enum_constants[constant.name] = constant;
 
+// Add this check:
+// Check current scope for redeclaration
+if (!scope_stack.empty()) {
+    auto& current_scope = scope_stack.back();
+    if (current_scope.enum_constants.find(constant.name) != current_scope.enum_constants.end()) {
+        type_error("Redeclaration of enum constant '" + constant.name + 
+                   "' in same scope");
+    } else {
+        current_scope.enum_constants[constant.name] = constant;
+    }
+}
+// Also keep in global table for compatibility
+enum_constants[constant.name] = constant;
+            current_value++; // Increment for next constant
+            
+            delete enumInfo; // Clean up
+        }
+        
+        // Register the anonymous enum
+        insert_enum("", constants, current_scope_level);
+        
+        $$ = new EnumDef();
+        $$->constants = constants;
+        $$->isAnonymous = true;
+        delete $3;
+    }
+    | ENUM IDENTIFIER LBRACE enumerator_list RBRACE {
+        // Process enum constants with proper value handling
+        vector<EnumConstant> constants;
+        int current_value = 0;
+        
+        for (const EnumeratorInfo* enumInfo : *$4) {
+            EnumConstant constant;
+            constant.name = enumInfo->name;
+            constant.enumName = *$2;
+            if (enumInfo->hasExplicitValue) {
+                current_value = enumInfo->explicitValue;
+            }
+            constant.value = current_value;
+            constant.line = yylineno;
+            constant.scope_level = current_scope_level;
+            constants.push_back(constant);
+            
+            // Register each constant immediately in global table
+           // Check current scope for redeclaration
+if (!scope_stack.empty()) {
+    auto& current_scope = scope_stack.back();
+    if (current_scope.enum_constants.find(constant.name) != current_scope.enum_constants.end()) {
+        type_error("Redeclaration of enum constant '" + constant.name + 
+                   "' in same scope");
+    } else {
+        current_scope.enum_constants[constant.name] = constant;
+    }
+}
+// Also keep in global table for compatibility
+enum_constants[constant.name] = constant;
+            current_value++; // Increment for next constant
+            
+            delete enumInfo; // Clean up
+        }
+        
+        // Register the named enum
+        insert_enum(*$2, constants, current_scope_level);
+        
+        $$ = new EnumDef();
+        $$->name = *$2;
+        $$->constants = constants;
+        $$->isAnonymous = false;
+        delete $2;
+        delete $4;
+    }
+    | ENUM IDENTIFIER {
+        // Forward declaration - create empty enum
+        $$ = new EnumDef();
+        $$->name = *$2;
+        $$->isAnonymous = false;
+        delete $2;
+    }
+    ;
+enumerator
+    : IDENTIFIER {
+        $$ = new EnumeratorInfo();
+        $$->name = *$1;
+        $$->hasExplicitValue = false;
+        $$->explicitValue = 0;
+        delete $1;
+    }
+    | IDENTIFIER ASSIGN constant_expression {
+        $$ = new EnumeratorInfo();
+        $$->name = *$1;
+        $$->hasExplicitValue = true;
+        // Extract integer value from constant_expression
+        if ($3->result && $3->result->type == TAC_OPERAND_CONSTANT) {
+            $$->explicitValue = stoi($3->result->value);
+        } else {
+            $$->explicitValue = 0;
+            type_error("Enum constant value must be a compile-time constant");
+        }
+        delete $1;
+        delete $3;
+    }
     ;
 
+enumerator_list
+    : enumerator {
+        $$ = new vector<EnumeratorInfo*>();
+        $$->push_back($1);
+    }
+    | enumerator_list COMMA enumerator {
+        $$ = $1;
+        $$->push_back($3);
+    }
+    ;
 cast_type_specifier
     : type_specifier {
         $$ = $1;  // Just a base type like int, float, etc.
@@ -1178,7 +1364,6 @@ parameter_direct_declarator
 
 primary_expression
     : IDENTIFIER { 
-        check_variable_declaration(*$1);
         SymbolEntry entry;
         // First, check if it's a variable
         if (lookup_symbol(*$1, entry)) {
@@ -1200,18 +1385,32 @@ primary_expression
             cout << "Found function name: " << *$1 << "\n";
 
             $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
-            // iske baad kuch nhi karna chahiye, 
         }
-        // Otherwise, it's undefined
+        // Otherwise, check if it's an enum constant
         else {
-            $$ = new TypeInfo();
-            $$->baseType = "error";
-            $$->identifier = *$1;
-            $$->isLvalue = false;
-            type_error("Undefined variable: " + *$1);
+            EnumConstant enumConstant;  // Declare separate variable
+            if (lookup_enum_constant(*$1, enumConstant)) {
+                // It's an enum constant
+                $$ = new TypeInfo();
+                $$->baseType = "int";  // Enum constants are of type int
+                $$->isLiteral = true;
+                $$->isLvalue = false;  // Enum constants are not lvalues
+                cout << "Found enum constant: " << *$1 << " with value " << enumConstant.value << "\n";
+
+                $$->result = new_constant(to_string(enumConstant.value));
+            }
+            // Otherwise, it's undefined - NOW check for declaration
+            else {
+                check_variable_declaration(*$1);  // Move this here
+                $$ = new TypeInfo();
+                $$->baseType = "error";
+                $$->identifier = *$1;
+                $$->isLvalue = false;
+                type_error("Undefined variable: " + *$1);
+            }
         }
         delete $1;
-    }                                        
+    }                                 
     | INT_LITERAL { 
         $$ = new TypeInfo();
         $$->baseType = "int";
@@ -2387,14 +2586,15 @@ statement_list
 	;
 
 
-
 expression_statement
-	: SEMICOLON                                                             /* e.g., ; (empty statement) */
-	| expression SEMICOLON                                                  /* e.g., x = 1; */{
+    : SEMICOLON {
+        $$ = new TypeInfo();
+        $$->baseType = "void";
+    }
+    | expression SEMICOLON {
         $$ = $1;
     }
 ;
-
 // here will be problem for sure*$
 selection_statement
 	: if_expression                                 /* e.g., if (x) stmt */{
@@ -2723,7 +2923,22 @@ void exit_scope() {
                 defs.pop_back();
             }
         }
-        
+// Remove enum constants from current scope
+for (auto it = enum_constants.begin(); it != enum_constants.end();) {
+    if (it->second.scope_level == current_scope_level) {
+        it = enum_constants.erase(it);
+    } else {
+        ++it;
+    }
+}
+
+// Remove enum definitions from current scope
+for (auto& pair : enum_table) {
+    vector<EnumDef>& defs = pair.second;
+    while (!defs.empty() && defs.back().scope_level == current_scope_level) {
+        defs.pop_back();
+    }
+}
         // Pop typedef definitions from current scope
         // For each typedef in the current scope's typedef table,
         // pop it from the global typedef_table
@@ -2765,7 +2980,14 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
         log_error(error_msg);
         return;
     }
-    
+    // Check for conflict with enum constants in current scope
+if (current_scope.enum_constants.find(name) != current_scope.enum_constants.end()) {
+    string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + 
+                       "' conflicts with enum constant in same scope";
+    cerr << error_msg << "\n";
+    log_error(error_msg);
+    return;
+}
     SymbolEntry entry;
     entry.name = name;
     entry.type = type;
@@ -4134,7 +4356,110 @@ StructMember* find_member(StructUnionDef* def, const string& memberName) {
     
     return nullptr;
 }
+//##############################################################################
+//########################## Enum Management Functions #######################
+//##############################################################################
 
+void insert_enum(const string& name, const vector<EnumConstant>& constants, int scope_level) {
+    string key = name.empty() ? "anonymous_enum_" + to_string(scope_level) : name;
+    
+    // Check if already defined in current scope
+    if (enum_table.find(key) != enum_table.end() && !enum_table[key].empty()) {
+        if (enum_table[key].back().scope_level == scope_level) {
+            type_warning("Redefinition of enum '" + key + "' in the same scope");
+            return; // Don't insert duplicates
+        }
+    }
+    
+    EnumDef def;
+    def.name = name;
+    def.constants = constants;
+    def.scope_level = scope_level;
+    def.isAnonymous = name.empty();
+    
+    // Add enum definition to table
+    enum_table[key].push_back(def);
+    
+    // Note: Constants are already added to global table in enum_specifier rules
+    // No need to add them again here to avoid duplicates
+    
+    cout << "Registered enum '" << key << "' in scope " << scope_level 
+         << " with " << constants.size() << " constants\n";
+    
+    // Print constant details
+    for (const auto& constant : constants) {
+        cout << "  - " << constant.name << " = " << constant.value << "\n";
+    }
+}
+
+EnumDef* lookup_enum(const string& name) {
+    // Try exact match first
+    if (enum_table.find(name) != enum_table.end() && !enum_table[name].empty()) {
+        return &enum_table[name].back();
+    }
+    
+    return nullptr;
+}
+
+bool lookup_enum_constant(const string& name, EnumConstant& constant) {
+    // Search from current scope to global scope
+    for (int i = scope_stack.size() - 1; i >= 0; i--) {
+        auto it = scope_stack[i].enum_constants.find(name);
+        if (it != scope_stack[i].enum_constants.end()) {
+            constant = it->second;
+            return true;
+        }
+    }
+    return false;
+}
+
+void insert_enum_constant(const string& name, int value, int line) {
+    EnumConstant constant;
+    constant.name = name;
+    constant.value = value;
+    constant.line = line;
+    
+    // Check if constant already exists
+    if (enum_constants.find(name) != enum_constants.end()) {
+        type_warning("Redefinition of enum constant '" + name + "'");
+    }
+    
+    enum_constants[name] = constant;
+    cout << "Registered enum constant: " << name << " = " << value << " at line " << line << "\n";
+}
+// Display all enums (for debugging)
+void display_enum_table() {
+    cout << "\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    cout << "|                                    ENUM TABLE                                          |\n";
+    cout << "+-----------------------------------------------------------------------------------------+\n";
+    
+    if (enum_table.empty()) {
+        cout << "No enums defined.\n";
+        return;
+    }
+    
+    for (const auto& entry : enum_table) {
+        const string& enum_name = entry.first;
+        const vector<EnumDef>& enum_stack = entry.second;
+        
+        cout << "Enum: " << enum_name << "\n";
+        for (size_t i = 0; i < enum_stack.size(); i++) {
+            const EnumDef& enumDef = enum_stack[i];
+            cout << "  [" << i << "] Scope " << enumDef.scope_level << " with " << enumDef.constants.size() << " constants:\n";
+            for (const auto& constant : enumDef.constants) {
+                cout << "    " << constant.name << " = " << constant.value << "\n";
+            }
+        }
+    }
+    
+    cout << "\nGlobal Enum Constants:\n";
+    for (const auto& entry : enum_constants) {
+        cout << "  " << entry.first << " = " << entry.second.value << "\n";
+    }
+    
+    cout << "\n";
+}
 //##############################################################################
 //########################## Typedef Management Functions #######################
 //##############################################################################
@@ -4270,7 +4595,8 @@ int main(int argc, char** argv) {
 	
 	// Display typedef table
 	display_typedef_table();
-	
+	// Display enum table
+display_enum_table();
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
@@ -4282,5 +4608,3 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
-
-
