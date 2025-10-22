@@ -1052,6 +1052,14 @@ typedef_declarator_list
 		$$ = $1;
 		$$->push_back($3);
 	}
+	| TYPENAME {
+        // Typedef name as declarator (rare case)
+        $$ = new vector<DeclaratorInfo*>();
+        DeclaratorInfo* declInfo = new DeclaratorInfo();
+        declInfo->name = *$1;
+        $$->push_back(declInfo);
+        delete $1;
+    }
 	;
 
 init_declarator_list					
@@ -4551,4 +4559,5 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
 
