@@ -85,3 +85,5 @@ typedef struct TagName MyStruct;
 
 
 
+--------------------------------------------------------------------------------------
+No empty struct allowed for now
