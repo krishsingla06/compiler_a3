@@ -877,9 +877,11 @@ declaration
 				cout << "Function pointer declaration: " << declInfo->name << " of type " << combinedType.toString() << "\n";
 			} else {
 				// Regular variable or array declaration
-				combinedType.pointerLevel = declInfo->pointerLevel;
-				combinedType.isArray = declInfo->isArray;
-				combinedType.arrayDimensions = declInfo->arrayDimensions;
+				combinedType.pointerLevel += declInfo->pointerLevel;
+				combinedType.isArray |= declInfo->isArray;
+				combinedType.arrayDimensions.insert(combinedType.arrayDimensions.end(), 
+                                               declInfo->arrayDimensions.begin(), 
+                                               declInfo->arrayDimensions.end());
 			}
 			
             combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
@@ -4826,3 +4828,4 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
