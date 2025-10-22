@@ -12,6 +12,10 @@ using namespace std;
 
 /* Bison-generated header (must be created by `bison -d parser.y`) */
 #include "parser.tab.h"
+
+/* Forward declaration for typedef checking - defined in parser.y */
+extern bool is_typedef_name(const string& name);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,7 +60,9 @@ static char* mystrdup(const char* s) {
 "default"                           { return DEFAULT; }
 "sizeof"                            { return SIZEOF; }
 "static"                            { return STATIC; }
+"typedef"                           { return TYPEDEF; }
 "struct"                            { return STRUCT; }
+"union"                             { return UNION; }
 "enum"                              { return ENUM; }
 
 "++"                                { return INCREMENT; }
@@ -105,7 +111,14 @@ static char* mystrdup(const char* s) {
 
 "NULL"    { return NULL_LITERAL; }
 
-[a-zA-Z_][a-zA-Z0-9_]*  {yylval.sval = new std::string(yytext); return IDENTIFIER; }
+[a-zA-Z_][a-zA-Z0-9_]*  {
+    yylval.sval = new std::string(yytext);
+    /* Check if this identifier is a typedef name */
+    if (is_typedef_name(std::string(yytext))) {
+        return TYPENAME;
+    }
+    return IDENTIFIER;
+}
 
 
 .   {fprintf(stderr, "Lexer: invalid token '%s' at line %d\n", yytext, yylineno); return INVALID; }
