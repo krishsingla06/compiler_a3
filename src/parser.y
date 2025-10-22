@@ -866,11 +866,15 @@ declaration
 			
 			// Check if this is a function pointer declaration
 			if (declInfo->isFunction && declInfo->pointerLevel > 0) {
-				// This is a function pointer: e.g., int (*fp)(int, float)
+				// This is a function pointer: e.g., int* (*fp)(int, float)
+				// For "int* (*fp)(args)", the grammar parses as:
+				//   - base type: int (pointerLevel=0)
+				//   - declarator: "* (*fp)(args)" with pointerLevel=1
+				// The pointer level in the declarator represents the return type's indirection
 				combinedType.isFunctionPointer = true;
-				combinedType.pointerLevel = 0; // Function pointers don't use pointerLevel
-				combinedType.returnType = new TypeInfo(*$1); // Return type is the base type
-				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Adjust for the one pointer level used by function pointer itself
+				combinedType.pointerLevel = 0; // Function pointers don't use the pointerLevel field
+				combinedType.returnType = new TypeInfo(*$1); // Start with base type
+				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Subtract 1 for the function pointer's own indirection
 				combinedType.parameterTypes = new vector<TypeInfo>(*declInfo->paramTypes);
 				combinedType.baseType = "function_pointer";
 				
@@ -1163,7 +1167,7 @@ declarator
 	: pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
 		// Add pointer levels from $1 to the declarator
-		$$->pointerLevel = $1;
+		$$->pointerLevel += $1;  // ADD, don't replace!
 	}
 	| direct_declarator {                                         /* e.g., x */ 
 		$$ = $1;
@@ -3382,6 +3386,12 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     // Allow exact type matches
     if (types_compatible(from, to)) {
         return true;
+    }
+    
+    // Allow function pointer assignments
+    // Both must be function pointers and have compatible signatures
+    if (from.isFunctionPointer && to.isFunctionPointer) {
+        return types_compatible(from, to);
     }
     
     // Allow conversions between numeric types including char<->int
