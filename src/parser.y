@@ -2440,7 +2440,7 @@ labeled_statement
         }
         delete $1;
     }
-	| CASE CHAR_LITERAL  {
+	| CASE CHAR_LITERAL  { 
         // Check if we're inside a switch statement
         if (switch_case_stack.empty()) {
             type_error("Case label not within a switch statement");
@@ -2448,8 +2448,9 @@ labeled_statement
             // Convert char to int if needed
             int case_value = 0;
 
-            // char literal to int conversion
-            case_value = (int)($2->result->value[0]);
+            // CHAR_LITERAL is of type string* , we have to convert it to int   
+            case_value = static_cast<int>((*$2)[0]); // Get ASCII value of the character literal
+            
             
             // Check for duplicate case values in current switch
             map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
@@ -2466,7 +2467,6 @@ labeled_statement
         // Combine code from case expression and statement
         $$ = new TypeInfo();
         $$->code = vector<TACInstruction*>();
-        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
         
         // Propagate break statements
@@ -2482,7 +2482,7 @@ labeled_statement
             type_error("Case label not within a switch statement");
         } else {
             // Get integer value
-            int case_value = stoi($2->result->value);
+            int case_value = $2;
             
             // Check for duplicate case values in current switch
             map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
@@ -2499,13 +2499,11 @@ labeled_statement
         // Combine code from case expression and statement
         $$ = new TypeInfo();
         $$->code = vector<TACInstruction*>();
-        $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
         
         // Propagate break statements
         $$->break_list = $6->break_list;
         
-        delete $2;
         delete $6;
     }
 	| DEFAULT COLON statement {                                               /* e.g., default: stmt */
@@ -2520,20 +2518,11 @@ labeled_statement
                 // Create and register default label
                 TACOperand* default_label = new_label(0);
                 switch_default_stack.back() = default_label;
-                
-                // Emit the label at this point
-                //TACInstruction* label_inst = emit(TAC_OPERATOR_LABEL, default_label, new_empty_var(), new_empty_var(), 0);
-                
                 $$ = new TypeInfo();
                 $$->code = vector<TACInstruction*>();
-                //$$->code.push_back(label_inst);
                 $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
-                
                 // Propagate break statements
-                $$->break_list = $3->break_list;
-                
-                //cout << "Registered default label " << default_label->value << "\n";
-                
+                $$->break_list = $3->break_list;                
                 delete $3;
             }
         }
@@ -2554,26 +2543,6 @@ compound_statement
     }                        /* e.g., { int a; stmt; } */
 	;
 
- //: LBRACE  { enter_scope(); insert_current_function_parameters(); } RBRACE {
-   //    cout << "Empty compound statement\n";
-   //    $$ = new TypeInfo();
-   //    $$->baseType = "void"; // Empty compound statement has void type
-   //}                        /* e.g., { } */
-   //| LBRACE  { enter_scope(); insert_current_function_parameters(); } declaration_list RBRACE {
-   //    cout<< "Compound statement with declarations only\n";
-   //    $$ = new TypeInfo();
-   //    $$->code = $3->code;
-   //}                        /* e.g., { int a; } */
-   //| LBRACE  { enter_scope(); insert_current_function_parameters(); } statement_list RBRACE {
-   //    cout << "Compound statement with statements only\n";
-   //    $$ = new TypeInfo();
-   //    $$->code = $3->code;
-   //    $$->next_list = $3->next_list;
-   //    $$->break_list = $3->break_list;
-   //    $$->continue_list = $3->continue_list;
-
-   //}                        /* e.g., { stmt; } */
-	
 
 marker
     : /* empty */ {
