@@ -1176,7 +1176,7 @@ declarator
 	: pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
 		// Add pointer levels from $1 to the declarator
-		$$->pointerLevel = $1;
+		$$->pointerLevel += $1;
 	}
 	| direct_declarator {                                         /* e.g., x */ 
 		$$ = $1;
@@ -5067,4 +5067,5 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
 
