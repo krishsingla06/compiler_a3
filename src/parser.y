@@ -886,6 +886,82 @@ declaration
 				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Adjust for the one pointer level used by function pointer itself
 				combinedType.parameterTypes = new vector<TypeInfo>(*declInfo->paramTypes);
 				combinedType.baseType = "function_pointer";
+                // initializer here must be function name, we will have to find among functions with exaxct return type and parameter types, if not found then give error
+
+                // Function pointer initialization validation
+                if (declInfo->initType != nullptr) {
+                    // Check if initializer is a function name
+                    if (declInfo->initType->baseType == "function" && !declInfo->initType->identifier.empty()) {
+                        string funcName = declInfo->initType->identifier;
+                        
+                        // Need to match: return type and parameter types
+                        TypeInfo expectedReturnType = *combinedType.returnType;
+                        vector<TypeInfo> expectedParamTypes;
+                        if (combinedType.parameterTypes != nullptr) {
+                            expectedParamTypes = *combinedType.parameterTypes;
+                        }
+                        
+                        // Search for matching function in function table
+                        FunctionEntry* matchingFunc = nullptr;
+                        int matchCount = 0;
+                        
+                        for (auto& pair : function_table) {
+                            FunctionEntry& func = pair.second;
+                            
+                            // Check if this is the right function name
+                            if (func.originalName != funcName) {
+                                continue;
+                            }
+                            
+                            // Check return type match
+                            if (!types_compatible(func.returnType, expectedReturnType)) {
+                                continue;
+                            }
+                            
+                            // Check parameter count
+                            if (func.parameters.size() != expectedParamTypes.size()) {
+                                continue;
+                            }
+                            
+                            // Check each parameter type
+                            bool paramsMatch = true;
+                            for (size_t i = 0; i < func.parameters.size(); i++) {
+                                if (!types_compatible(func.parameters[i].type, expectedParamTypes[i])) {
+                                    paramsMatch = false;
+                                    break;
+                                }
+                            }
+                            
+                            if (paramsMatch) {
+                                matchingFunc = &func;
+                                matchCount++;
+                            }
+                        }
+                        
+                        if (matchCount == 0) {
+                            string error_msg = "No matching function '" + funcName + "' found with return type " + 
+                                expectedReturnType.toString() + " and parameters (";
+                            for (size_t i = 0; i < expectedParamTypes.size(); i++) {
+                                if (i > 0) error_msg += ", ";
+                                error_msg += expectedParamTypes[i].toString();
+                            }
+                            error_msg += ")";
+                            yyerror(error_msg.c_str());
+                        } else if (matchCount > 1) {
+                            string error_msg = "Ambiguous function pointer initialization: multiple functions named '" + 
+                                funcName + "' match the required signature";
+                            yyerror(error_msg.c_str());
+                        } else {
+                            // Exactly one match found - success!
+                            cout << "Function pointer '" << declInfo->name << "' initialized with function '" << 
+                                matchingFunc->mangledName << "'\n";
+                            
+                            // Update the initializer's result to use the mangled function name
+                            declInfo->initType->result = new_identifier(matchingFunc->mangledName);
+                        }
+                    }
+                }
+ 
 				
 				cout << "Function pointer declaration: " << declInfo->name << " of type " << combinedType.toString() << "\n";
 			} else {
@@ -3148,7 +3224,7 @@ iteration_statement
         $$->code.push_back(goto_begin);
         
         // RENUMBER instructions in correct order
-        renumber_instructions($$->code);
+        //renumber_instructions($$->code);
         
         // next_list contains false_list of condition and next_list of body and break statements
         $$->next_list = $5->false_list;
@@ -3420,9 +3496,77 @@ void displaySymbolTable() {
 // Basically exact type match kar rha hai
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     // Check function pointer compatibility
+    // print types of both
+    cout << "Checking function pointer compatibility between " 
+         << left_type.toString() << " and " << right_type.toString() << "\n";
     if (left_type.isFunctionPointer || right_type.isFunctionPointer) {
         // Both must be function pointers
         if (left_type.isFunctionPointer != right_type.isFunctionPointer) {
+            // One is function pointer, other is not
+            // if right is function and left is function pointer then find the exact match
+            //hihi
+            // One is function pointer, other is not
+            // if right is function and left is function pointer then find the exact match
+            if (left_type.isFunctionPointer && right_type.baseType == "function" && !right_type.identifier.empty()) {
+                // Right side is a function name, left side is function pointer
+                cout<<"Right side is a function name, left side is function pointer\n";
+                string funcName = right_type.identifier;
+                
+                // Need to match: return type and parameter types
+                TypeInfo expectedReturnType = *left_type.returnType;
+                vector<TypeInfo> expectedParamTypes;
+                if (left_type.parameterTypes != nullptr) {
+                    expectedParamTypes = *left_type.parameterTypes;
+                }
+                
+                // Search for matching function in function table
+                FunctionEntry* matchingFunc = nullptr;
+                int matchCount = 0;
+                
+                for (auto& pair : function_table) {
+                    FunctionEntry& func = pair.second;
+                    
+                    // Check if this is the right function name
+                    if (func.originalName != funcName) {
+                        continue;
+                    }
+                    
+                    // Check return type match
+                    if (!types_compatible(func.returnType, expectedReturnType)) {
+                        continue;
+                    }
+                    
+                    // Check parameter count
+                    if (func.parameters.size() != expectedParamTypes.size()) {
+                        continue;
+                    }
+                    
+                    // Check each parameter type
+                    bool paramsMatch = true;
+                    for (size_t i = 0; i < func.parameters.size(); i++) {
+                        if (!types_compatible(func.parameters[i].type, expectedParamTypes[i])) {
+                            paramsMatch = false;
+                            break;
+                        }
+                    }
+                    
+                    if (paramsMatch) {
+                        matchingFunc = &func;
+                        matchCount++;
+                    }
+                }
+                
+                // If exactly one match found, it's compatible
+                if (matchCount == 1) {
+                    cout << "Function '" << funcName << "' matches function pointer type\n";
+                    return true;
+                }
+                
+                // No match or ambiguous - not compatible
+                return false;
+            }
+
+            // Otherwise not compatible
             return false;
         }
         
@@ -3497,7 +3641,17 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
 
 bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo& init_type) {
     // First check exact type match
-    if (types_compatible(var_type, init_type)) {
+    // if lhs is function pointer return true
+
+
+    /* if(var_type.isFunctionPointer){
+        return 1;
+    }
+    if(init_type.isFunctionPointer){
+        return 0;
+    } */
+
+    if (types_compatible(init_type,var_type)) { // krish : yahan most recent commit - function pointer ke liye change kiye hai, 
         return true;
     }
     
@@ -3532,9 +3686,20 @@ bool is_lvalue(const TypeInfo& expr) {
 
 bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     // Allow exact type matches
-    if (types_compatible(from, to)) {
+    if (types_compatible(to,from)) { // krish : yahan most recent commit - function pointer ke liye change kiye hai, 
         return true;
     }
+
+    // if from is function, and to is function pointer, then find exact function with same signature and return type
+
+    
+
+    // Allow function pointer assignments
+    // Both must be function pointers and have compatible signatures
+    /* if (from.isFunctionPointer && to.isFunctionPointer) {
+        return types_compatible(from, to);
+    } */
+    
     
     // Allow conversions between numeric types including char<->int<->float
     if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType) && 
@@ -3570,6 +3735,8 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
             return true;
         }
     }
+
+    
     
     return false;
 }
@@ -5067,5 +5234,4 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
-
 
