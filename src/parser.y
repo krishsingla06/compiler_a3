@@ -615,7 +615,7 @@ string get_operand_string(TACOperand* operand);
 %token PLUS MINUS STAR DIVIDE MOD ASSIGN LT GT LOGICAL_NOT BIT_AND BIT_OR BIT_XOR BIT_NOT DOT
 %token COLON SEMICOLON COMMA LBRACE RBRACE LPAREN RPAREN LBRACKET RBRACKET
 %token STRUCT RETURN UNION
-%token <sval> IDENTIFIER
+%token <sval> IDENTIFIER TYPENAME
 %token <ival> INT_LITERAL 
 %token <fval> FLOAT_LITERAL
 %token <sval> STRING_LITERAL CHAR_LITERAL
@@ -936,15 +936,15 @@ type_specifier
     | struct_or_union_specifier { 
         $$ = $1;
     }
-    | IDENTIFIER {
-        // Check if this identifier is a typedef name
+    | TYPENAME {
+        // This identifier is a typedef name (verified by lexer)
         TypeInfo* typedef_type = lookup_typedef(*$1);
         if (typedef_type) {
             // It's a typedef - use the aliased type
             $$ = new TypeInfo(*typedef_type);
             cout << "Using typedef: " << *$1 << " -> " << $$->toString() << "\n";
         } else {
-            // Not a typedef - this is an error in type context
+            // Should not happen since lexer verified it, but handle gracefully
             type_error("Unknown type name: " + *$1);
             $$ = new TypeInfo();
             $$->baseType = "error";
@@ -1197,9 +1197,9 @@ declaration_list
         $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
         delete $2;
     }   
-	| /* empty */      {
+	|    {
         $$ = new TypeInfo(); // Empty declaration list
-    }                                
+    }                                 
 	;
 
 
@@ -2476,19 +2476,40 @@ labeled_statement
     }
 	;
 
-compound_statement                                    
-	: LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE {
+compound_statement    
+  :LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE {
+        cout << "Compound statement with declarations and statements\n";
         $$ = new TypeInfo();
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
         $$->code.insert($$->code.end(), $4->code.begin(), $4->code.end());
         $$->next_list = $4->next_list;
         $$->break_list = $4->break_list;
         $$->continue_list = $4->continue_list;
-        delete $3;
-        delete $4;
+
         exit_scope(); 
     }                        /* e.g., { int a; stmt; } */
 	;
+
+ //: LBRACE  { enter_scope(); insert_current_function_parameters(); } RBRACE {
+   //    cout << "Empty compound statement\n";
+   //    $$ = new TypeInfo();
+   //    $$->baseType = "void"; // Empty compound statement has void type
+   //}                        /* e.g., { } */
+   //| LBRACE  { enter_scope(); insert_current_function_parameters(); } declaration_list RBRACE {
+   //    cout<< "Compound statement with declarations only\n";
+   //    $$ = new TypeInfo();
+   //    $$->code = $3->code;
+   //}                        /* e.g., { int a; } */
+   //| LBRACE  { enter_scope(); insert_current_function_parameters(); } statement_list RBRACE {
+   //    cout << "Compound statement with statements only\n";
+   //    $$ = new TypeInfo();
+   //    $$->code = $3->code;
+   //    $$->next_list = $3->next_list;
+   //    $$->break_list = $3->break_list;
+   //    $$->continue_list = $3->continue_list;
+
+   //}                        /* e.g., { stmt; } */
+	
 
 marker
     : /* empty */ {
@@ -2515,7 +2536,7 @@ statement_list
         
        delete $1; delete $3;
     }
-	| /* empty */   {
+	|  {
         $$ = new TypeInfo();
         $$->baseType = "void";
     }
