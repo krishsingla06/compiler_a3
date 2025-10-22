@@ -232,6 +232,9 @@ string get_operand_string(TACOperand* operand);
 //------------------------------------
     using namespace std;
     
+    // Forward declarations
+    struct StructUnionDef;
+    struct EnumDef; 
     // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool isStatic;
@@ -242,6 +245,16 @@ string get_operand_string(TACOperand* operand);
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
         bool isLvalue;          // True if the expression is an lvalue, false for temporaries
+bool isEnum;
+string enumName;
+EnumDef* enumDef;
+
+
+        // Struct/Union information
+        bool isStruct;          // True if this is a struct type
+        bool isUnion;           // True if this is a union type
+        string structUnionName; // Name of the struct/union (e.g., "Point", "Data")
+        StructUnionDef* structDef; // Pointer to the struct/union definition
 
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
@@ -251,20 +264,22 @@ string get_operand_string(TACOperand* operand);
 
         unordered_set<TACInstruction*> break_list; // List of break instructions (for loops/switch)
         unordered_set<TACInstruction*> continue_list; // List of continue instructions (for loops)
-        //vector<TACInstruction*> return_list; // List of return instructions (for functions)
-        // we will use it in future
 
         
         TypeInfo() : isStatic(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
-                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false) {}
-        
+                     arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
+                     isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr),isEnum(false), enumName(""), enumDef(nullptr),result(nullptr),code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
-                    isLvalue(other.isLvalue), result(other.result),
+                    isLvalue(other.isLvalue), 
+                    isEnum(other.isEnum), enumName(other.enumName), enumDef(other.enumDef), 
+                    isStruct(other.isStruct), isUnion(other.isUnion),
+                    structUnionName(other.structUnionName), structDef(other.structDef),
+                    result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
                     break_list(other.break_list), continue_list(other.continue_list) {}
@@ -285,7 +300,15 @@ string get_operand_string(TACOperand* operand);
         string toString() const {
             string res = "";
             if (isStatic) res += "static ";
-            res += baseType;
+            
+            // Handle struct/union types
+            if (isStruct) {
+                res += "struct " + structUnionName;
+            } else if (isUnion) {
+                res += "union " + structUnionName;
+            } else {
+                res += baseType;
+            }
             
             // Add pointer asterisks
             for (int i = 0; i < pointerLevel; i++) {
@@ -301,10 +324,30 @@ string get_operand_string(TACOperand* operand);
             return res;
         }
     };
+    // Enum constant entry
+struct EnumConstant {
+    string name;
+    int value;
+    int line;
+    string enumName;
+    int scope_level;
+};
 
+// Enum definition
+struct EnumDef {
+    string name;           // enum name (can be empty for anonymous)
+    vector<EnumConstant> constants;
+    int scope_level;
+    bool isAnonymous;
+    
+    EnumDef() : name(""), scope_level(0), isAnonymous(false) {}
+};
     // Scope context for semantic checking
     struct ScopeContext {
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
+        map<string, TypeInfo> typedefs; // typedef table for this scope
+        map<string, EnumConstant> enum_constants; // Add this line
+
         int scope_level;
         
         ScopeContext(int level) : scope_level(level) {}
@@ -395,8 +438,13 @@ string get_operand_string(TACOperand* operand);
         
         StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
     };
+    struct EnumeratorInfo {
+        string name;
+        bool hasExplicitValue;
+        int explicitValue;
+    };
 
-#line 400 "parser.tab.h"
+#line 448 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -425,50 +473,52 @@ string get_operand_string(TACOperand* operand);
     SIZEOF = 273,                  /* SIZEOF  */
     STATIC = 274,                  /* STATIC  */
     GOTO = 275,                    /* GOTO  */
-    NULL_LITERAL = 276,            /* NULL_LITERAL  */
-    INVALID = 277,                 /* INVALID  */
-    INCREMENT = 278,               /* INCREMENT  */
-    DECREMENT = 279,               /* DECREMENT  */
-    ARROW = 280,                   /* ARROW  */
-    LEFT_SHIFT = 281,              /* LEFT_SHIFT  */
-    RIGHT_SHIFT = 282,             /* RIGHT_SHIFT  */
-    LOGICAL_AND = 283,             /* LOGICAL_AND  */
-    LOGICAL_OR = 284,              /* LOGICAL_OR  */
-    EQ = 285,                      /* EQ  */
-    NEQ = 286,                     /* NEQ  */
-    LE = 287,                      /* LE  */
-    GE = 288,                      /* GE  */
-    PLUS = 289,                    /* PLUS  */
-    MINUS = 290,                   /* MINUS  */
-    STAR = 291,                    /* STAR  */
-    DIVIDE = 292,                  /* DIVIDE  */
-    MOD = 293,                     /* MOD  */
-    ASSIGN = 294,                  /* ASSIGN  */
-    LT = 295,                      /* LT  */
-    GT = 296,                      /* GT  */
-    LOGICAL_NOT = 297,             /* LOGICAL_NOT  */
-    BIT_AND = 298,                 /* BIT_AND  */
-    BIT_OR = 299,                  /* BIT_OR  */
-    BIT_XOR = 300,                 /* BIT_XOR  */
-    BIT_NOT = 301,                 /* BIT_NOT  */
-    DOT = 302,                     /* DOT  */
-    COLON = 303,                   /* COLON  */
-    SEMICOLON = 304,               /* SEMICOLON  */
-    COMMA = 305,                   /* COMMA  */
-    LBRACE = 306,                  /* LBRACE  */
-    RBRACE = 307,                  /* RBRACE  */
-    LPAREN = 308,                  /* LPAREN  */
-    RPAREN = 309,                  /* RPAREN  */
-    LBRACKET = 310,                /* LBRACKET  */
-    RBRACKET = 311,                /* RBRACKET  */
-    STRUCT = 312,                  /* STRUCT  */
-    RETURN = 313,                  /* RETURN  */
-    UNION = 314,                   /* UNION  */
-    IDENTIFIER = 315,              /* IDENTIFIER  */
-    INT_LITERAL = 316,             /* INT_LITERAL  */
-    FLOAT_LITERAL = 317,           /* FLOAT_LITERAL  */
-    STRING_LITERAL = 318,          /* STRING_LITERAL  */
-    CHAR_LITERAL = 319             /* CHAR_LITERAL  */
+    TYPEDEF = 276,                 /* TYPEDEF  */
+    NULL_LITERAL = 277,            /* NULL_LITERAL  */
+    INVALID = 278,                 /* INVALID  */
+    INCREMENT = 279,               /* INCREMENT  */
+    DECREMENT = 280,               /* DECREMENT  */
+    ARROW = 281,                   /* ARROW  */
+    LEFT_SHIFT = 282,              /* LEFT_SHIFT  */
+    RIGHT_SHIFT = 283,             /* RIGHT_SHIFT  */
+    LOGICAL_AND = 284,             /* LOGICAL_AND  */
+    LOGICAL_OR = 285,              /* LOGICAL_OR  */
+    EQ = 286,                      /* EQ  */
+    NEQ = 287,                     /* NEQ  */
+    LE = 288,                      /* LE  */
+    GE = 289,                      /* GE  */
+    PLUS = 290,                    /* PLUS  */
+    MINUS = 291,                   /* MINUS  */
+    STAR = 292,                    /* STAR  */
+    DIVIDE = 293,                  /* DIVIDE  */
+    MOD = 294,                     /* MOD  */
+    ASSIGN = 295,                  /* ASSIGN  */
+    LT = 296,                      /* LT  */
+    GT = 297,                      /* GT  */
+    LOGICAL_NOT = 298,             /* LOGICAL_NOT  */
+    BIT_AND = 299,                 /* BIT_AND  */
+    BIT_OR = 300,                  /* BIT_OR  */
+    BIT_XOR = 301,                 /* BIT_XOR  */
+    BIT_NOT = 302,                 /* BIT_NOT  */
+    DOT = 303,                     /* DOT  */
+    COLON = 304,                   /* COLON  */
+    SEMICOLON = 305,               /* SEMICOLON  */
+    COMMA = 306,                   /* COMMA  */
+    LBRACE = 307,                  /* LBRACE  */
+    RBRACE = 308,                  /* RBRACE  */
+    LPAREN = 309,                  /* LPAREN  */
+    RPAREN = 310,                  /* RPAREN  */
+    LBRACKET = 311,                /* LBRACKET  */
+    RBRACKET = 312,                /* RBRACKET  */
+    STRUCT = 313,                  /* STRUCT  */
+    RETURN = 314,                  /* RETURN  */
+    UNION = 315,                   /* UNION  */
+    IDENTIFIER = 316,              /* IDENTIFIER  */
+    INT_LITERAL = 317,             /* INT_LITERAL  */
+    FLOAT_LITERAL = 318,           /* FLOAT_LITERAL  */
+    STRING_LITERAL = 319,          /* STRING_LITERAL  */
+    CHAR_LITERAL = 320,            /* CHAR_LITERAL  */
+    ENUM = 321                     /* ENUM  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -477,7 +527,7 @@ string get_operand_string(TACOperand* operand);
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 515 "parser.y"
+#line 617 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -489,8 +539,16 @@ union YYSTYPE
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
+    // Add to %union
+struct EnumDef* enumdef;     /* enum definition */
+vector<string>* enumlist;    /* list of enum constants */
+    // Add this new type for enum enumerators
+    
+    EnumeratorInfo* enuminfo;
+    vector<EnumeratorInfo*>* enuminfolist;  // Add this line
 
-#line 494 "parser.tab.h"
+
+#line 552 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
