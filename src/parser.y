@@ -621,6 +621,9 @@ string get_operand_string(TACOperand* operand);
 %token <sval> STRING_LITERAL CHAR_LITERAL
 %token ENUM
 %type <declinfo> direct_declarator
+// typedef declarator
+%type<declinfo> typedef_declarator
+%type<declinfo> typedef_direct_declarator
 %type<typeinfo> return_types
 %type<typeinfo> declaration_specifiers
 %type<typeinfo> type_specifier
@@ -693,9 +696,9 @@ string get_operand_string(TACOperand* operand);
 %%
 start
 	: global_declaration                        /* e.g., int x; */ {
-       $$ = new TypeInfo();
-         $$->code = vector<TACInstruction*>();
-         $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
        
        // Debug output
        cout << "Start rule: Global declaration has " << $$->code.size() << " TAC instructions\n";
@@ -834,7 +837,6 @@ declaration
 			TypeInfo combinedType = *$1;  // Start with base type
 			
 			// Add declarator-specific type information
-			// Add declarator-specific type information
 			//combinedType.pointerLevel = declInfo->pointerLevel;
 			//combinedType.isArray = declInfo->isArray;
 			//combinedType.arrayDimensions = declInfo->arrayDimensions;
@@ -922,7 +924,7 @@ declaration_specifiers
 		$$->isStatic = true;
 	}                                     /* e.g., static int */
 	;
-    
+   
 type_specifier
     : VOID { 
         $$ = new TypeInfo(); 
@@ -1044,23 +1046,58 @@ cast_type_specifier
 //-------------------------------------------------- Declarators --------------------------------------------------
 
 typedef_declarator_list
-	: declarator {
+	: typedef_declarator {
 		$$ = new vector<DeclaratorInfo*>();
 		$$->push_back($1);
 	}
-	| typedef_declarator_list COMMA declarator {
+	| typedef_declarator_list COMMA typedef_declarator {
 		$$ = $1;
 		$$->push_back($3);
 	}
-	| TYPENAME {
-        // Typedef name as declarator (rare case)
-        $$ = new vector<DeclaratorInfo*>();
-        DeclaratorInfo* declInfo = new DeclaratorInfo();
-        declInfo->name = *$1;
-        $$->push_back(declInfo);
+	;
+
+typedef_declarator
+    : pointer typedef_direct_declarator {                                 /* e.g., *p or **p or ***p */ 
+        $$ = $2;
+        // Add pointer levels from $1 to the declarator
+        $$->pointerLevel = $1;
+    }
+    | typedef_direct_declarator {                                         /* e.g., x */ 
+        $$ = $1;
+    }
+    ;
+
+typedef_direct_declarator
+    : IDENTIFIER {                                                 /* e.g., x */  
+        $$ = new DeclaratorInfo();
+        $$->name = *$1;
         delete $1;
     }
-	;
+    | TYPENAME {                                                 /* e.g., x */  
+        $$ = new DeclaratorInfo();
+        $$->name = *$1;
+        delete $1;
+    }
+    | typedef_direct_declarator LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] or arr[10][20] */ 
+        $$ = $1;
+        if($3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
+        $$->isArray = true;
+        $$->addArrayDimension($3); // Support multidimensional arrays by adding each dimension
+    }
+    | IDENTIFIER LBRACKET INT_LITERAL RBRACKET {     /* e.g., arr[10] */ 
+        $$ = new DeclaratorInfo();
+        if( $3 <= 0 ){
+            yyerror("Array size must be a positive integer");
+        }
+        $$->name = *$1;
+        $$->isArray = true;
+        $$->addArrayDimension($3);
+        delete $1;
+    }
+    
+    ;
 
 init_declarator_list					
     : init_declarator { 
@@ -4559,5 +4596,3 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
-
-
