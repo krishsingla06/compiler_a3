@@ -543,7 +543,7 @@ string get_operand_string(TACOperand* operand);
             base_size = 1;
         }
         else if(t.baseType == "float"){
-            base_size = 8;
+            base_size = 4;
         }
         else if(t.baseType == "void"){
             base_size = 0; // void has no size
