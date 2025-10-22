@@ -340,6 +340,15 @@ string get_operand_string(TACOperand* operand);
         ScopeContext(int level) : scope_level(level) {}
     };
 
+    // Parameter list with variadic support
+    struct ParamListInfo {
+        vector<TypeInfo> params;
+        bool hasEllipsis;
+        
+        ParamListInfo() : hasEllipsis(false) {}
+        ParamListInfo(const vector<TypeInfo>& p, bool ellipsis) : params(p), hasEllipsis(ellipsis) {}
+    };
+
     // Declarator information - combines identifier with type modifiers
     struct DeclaratorInfo {
         string name;            // variable/function name
@@ -352,10 +361,11 @@ string get_operand_string(TACOperand* operand);
         // Function-specific information
         bool isFunction;        // True if this is a function declarator
         vector<TypeInfo>* paramTypes;  // Parameter types for functions
+        bool isVariadic;        // True if function is variadic
         
         DeclaratorInfo() : name(""), pointerLevel(0), 
                           isArray(false), arrayDimensions(), initValue(""), initType(nullptr),
-                          isFunction(false), paramTypes(nullptr) {}
+                          isFunction(false), paramTypes(nullptr), isVariadic(false) {}
                           
         // Add a new array dimension (for multidimensional arrays)
         void addArrayDimension(int size) {
@@ -397,6 +407,7 @@ string get_operand_string(TACOperand* operand);
         TypeInfo returnType;      // Return type
         vector<FunctionParam> parameters;  // Parameter list
         int line;                 // Declaration line
+        bool isVariadic;        // True if function is variadic
         
         FunctionEntry() : line(0) {}
     };
@@ -529,13 +540,13 @@ string get_operand_string(TACOperand* operand);
     
     // Function management functions
     string type_code_for_mangling(const TypeInfo& type);
-    string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes);
+    string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes, bool isVariadic);
     string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature);
     TypeInfo array_to_pointer_conversion(const TypeInfo& type);
-    void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes);
+    void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes, bool isVariadic);
     FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
     bool is_function_name(const string& name);
-    bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params);
+    bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params, bool isVariadic);
     void display_function_table();
     void insert_current_function_parameters();
 
@@ -629,14 +640,15 @@ string get_operand_string(TACOperand* operand);
 	DeclaratorInfo* declinfo; /* declarator information */
 	vector<DeclaratorInfo*>* decllist; /* list of declarators */
     TACOperand* opinfo; /* TAC operand information */
+    ParamListInfo* paramlist; /* parameter list information */
 }
 
 
-%token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO TYPEDEF
+%token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO TYPEDEF 
 
 %token NULL_LITERAL INVALID
 %token INCREMENT DECREMENT
-%token ARROW LEFT_SHIFT RIGHT_SHIFT
+%token ARROW LEFT_SHIFT RIGHT_SHIFT ELLIPSIS
 %token LOGICAL_AND LOGICAL_OR EQ NEQ LE GE
 %token PLUS MINUS STAR DIVIDE MOD ASSIGN LT GT LOGICAL_NOT BIT_AND BIT_OR BIT_XOR BIT_NOT DOT
 %token COLON SEMICOLON COMMA LBRACE RBRACE LPAREN RPAREN LBRACKET RBRACKET
@@ -664,7 +676,8 @@ string get_operand_string(TACOperand* operand);
 %type<typeinfo> parameter_declaration
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
-%type<typelist> parameter_list
+//%type<typelist> parameter_list
+%type<paramlist> parameter_list
 %type<typelist> parameter_type_list
 %type<typeinfo> parameter_type_declarator
 %type<ival> pointer
@@ -785,7 +798,7 @@ global_declaration
 function_definition
 	: return_types fun_declarator marker_fun_begin {
         // Generate function begin instruction
-        string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>());
+        string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>(), $2->isVariadic);
         TACOperand* func_label = new_identifier(mangled_name);
         //$3 = new TypeInfo(); //naya
         TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
@@ -807,7 +820,7 @@ function_definition
 
 		
 		if ($2->isFunction && $2->paramTypes) {
-			insert_function($2->name, returnType, *$2->paramTypes);
+			insert_function($2->name, returnType, *$2->paramTypes, $2->isVariadic);
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
 
@@ -866,15 +879,11 @@ declaration
 			
 			// Check if this is a function pointer declaration
 			if (declInfo->isFunction && declInfo->pointerLevel > 0) {
-				// This is a function pointer: e.g., int* (*fp)(int, float)
-				// For "int* (*fp)(args)", the grammar parses as:
-				//   - base type: int (pointerLevel=0)
-				//   - declarator: "* (*fp)(args)" with pointerLevel=1
-				// The pointer level in the declarator represents the return type's indirection
+				// This is a function pointer: e.g., int (*fp)(int, float)
 				combinedType.isFunctionPointer = true;
-				combinedType.pointerLevel = 0; // Function pointers don't use the pointerLevel field
-				combinedType.returnType = new TypeInfo(*$1); // Start with base type
-				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Subtract 1 for the function pointer's own indirection
+				combinedType.pointerLevel = 0; // Function pointers don't use pointerLevel
+				combinedType.returnType = new TypeInfo(*$1); // Return type is the base type
+				combinedType.returnType->pointerLevel = declInfo->pointerLevel - 1; // Adjust for the one pointer level used by function pointer itself
 				combinedType.parameterTypes = new vector<TypeInfo>(*declInfo->paramTypes);
 				combinedType.baseType = "function_pointer";
 				
@@ -1167,7 +1176,7 @@ declarator
 	: pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
 		$$ = $2;
 		// Add pointer levels from $1 to the declarator
-		$$->pointerLevel += $1;  // ADD, don't replace!
+		$$->pointerLevel = $1;
 	}
 	| direct_declarator {                                         /* e.g., x */ 
 		$$ = $1;
@@ -1258,7 +1267,9 @@ fun_direct_declarator
 		$$ = new DeclaratorInfo();
 		$$->name = *$1;
 		$$->isFunction = true;
-		$$->paramTypes = new vector<TypeInfo>(*$3);  // Copy parameter types
+		//$$->paramTypes = new vector<TypeInfo>(*$3);  // Copy parameter types
+        $$->paramTypes = new vector<TypeInfo>($3->params);
+        $$->isVariadic = $3->hasEllipsis;
 		
 		// Set current function context for variable name mangling
 		current_function_name = $$->name;
@@ -1318,19 +1329,37 @@ declaration_list
 initializer
 	: assignment_expression { $$ = $1; }  //Basically any expression                                            
 	;
-
+/* 
 parameter_list
-	: parameter_declaration                                              /* e.g., int a */{
+	: parameter_declaration                                             
         $$ = new vector<TypeInfo>();
         $$->push_back(*$1);
         delete $1;
     }
-	| parameter_list COMMA parameter_declaration                          /* e.g., int a, float b */{
+	| parameter_list COMMA parameter_declaration                         {
         $$ = $1;
         $$->push_back(*$3);
         delete $3;
     }
-	;
+	; */
+
+parameter_list
+    : parameter_declaration {
+        $$ = new ParamListInfo();
+        $$->params.push_back(*$1);
+        $$->hasEllipsis = false;
+        delete $1;
+    }
+    | parameter_list COMMA parameter_declaration {
+        $$ = $1;
+        $$->params.push_back(*$3);
+        delete $3;
+    }
+    | parameter_list COMMA ELLIPSIS {
+        $$ = $1;
+        $$->hasEllipsis = true;
+    }
+    ;
 
 
 parameter_declaration
@@ -1436,39 +1465,49 @@ primary_expression
         } 
         // If not a variable, check if it might be a function
         else if (is_function_name(*$1)) {
+
+             $$ = new TypeInfo();
+            $$->baseType = "function";  // Mark as function type
+            $$->identifier = *$1;       // Store function name
+            $$->isLiteral = false;
+            $$->isLvalue = false;       // Function names are not lvalues
+            cout << "Found function name: " << *$1 << "\n";
+
+            $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
+
             // Get the first matching function with this name
-            FunctionEntry* funcEntry = nullptr;
-            for (auto& pair : function_table) {
-                if (pair.second.originalName == *$1) {
-                    funcEntry = &pair.second;
-                    break;
-                }
-            }
+            // FunctionEntry* funcEntry = nullptr;
+            // for (auto& pair : function_table) {
+            //     if (pair.second.originalName == *$1) {
+            //         funcEntry = &pair.second;
+            //         break;
+            //     }
+            // }
             
-            if (funcEntry) {
-                // Create a function pointer type for this function
-                $$ = new TypeInfo();
-                $$->isFunctionPointer = true;
-                $$->baseType = "function_pointer";
-                $$->returnType = new TypeInfo(funcEntry->returnType);
-                $$->parameterTypes = new vector<TypeInfo>();
-                for (const auto& param : funcEntry->parameters) {
-                    $$->parameterTypes->push_back(param.type);
-                }
-                $$->identifier = *$1;
-                $$->isLiteral = false;
-                $$->isLvalue = false;  // Function names are not lvalues
-                $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
+            // if (funcEntry) {
+            //     // Create a function pointer type for this function
+            //     $$ = new TypeInfo();
+            //     $$->isFunctionPointer = true;
+            //     $$->baseType = "function_pointer";
+            //     $$->returnType = new TypeInfo(funcEntry->returnType);
+            //     $$->parameterTypes = new vector<TypeInfo>();
+            //     for (const auto& param : funcEntry->parameters) {
+            //         $$->parameterTypes->push_back(param.type);
+            //     }
+            //     $$->identifier = *$1;
+            //     $$->isLiteral = false;
+            //     $$->isLvalue = false;  // Function names are not lvalues
+            //     $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
                 
-                cout << "Found function name: " << *$1 << " as function pointer type " << $$->toString() << "\n";
-            } else {
-                check_variable_declaration(*$1);
-                $$ = new TypeInfo();
-                $$->baseType = "error";
-                $$->identifier = *$1;
-                $$->isLvalue = false;
-                type_error("Undefined function: " + *$1);
-            }
+            //     cout << "Found function name: " << *$1 << " as function pointer type " << $$->toString() << "\n";
+            // } else {
+            //     check_variable_declaration(*$1);
+            //     $$ = new TypeInfo();
+            //     $$->baseType = "error";
+            //     $$->identifier = *$1;
+            //     $$->isLvalue = false;
+            //     t//ype_error("Undefined function: " + *$1);
+            // }
         }
         // Otherwise, it's undefined
         else {
@@ -1664,7 +1703,7 @@ postfix_expression
                 $$->result = new_temp_var();
                 TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
                                             $$->result, 
-                                            new_identifier(base->identifier), 
+                                            new_identifier(func->mangledName), 
                                             new_constant("0"), 0);
                 $$->code.push_back(callInstr);
 			} else {
@@ -1688,6 +1727,7 @@ postfix_expression
 		if (base->isFunctionPointer && base->returnType && base->parameterTypes && argTypes) {
 			// This is a function pointer call: (*fp)(args)
 			// Check parameter count
+            cout<<"Hello from function pointer call with arguments\n";
 			if (base->parameterTypes->size() != argTypes->size()) {
 				type_error("Function pointer call expects " + to_string(base->parameterTypes->size()) + 
 				          " arguments but got " + to_string(argTypes->size()));
@@ -1758,23 +1798,47 @@ postfix_expression
                 for(int i=0;i<no_of_args;i++){
                     $$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
                 }
+                // for(int i=0;i<no_of_args;i++){
+                //     // generate code for argument passing
+                //     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                //     // append promo.first to $$->code
+                //     $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                //     // now pass promo.second.second as argument
+                //     TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                //                                 promo.second.second, 
+                //                                 new_empty_var(), 
+                //                                 new_empty_var(), 0);
+                //     $$->code.push_back(argInstr);
+                // }
+
+                // Pass arguments with type conversion for fixed parameters
+                int no_of_fixed_params = func->parameters.size();
                 for(int i=0;i<no_of_args;i++){
-                    // generate code for argument passing
-                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
-                    // append promo.first to $$->code
-                    $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-                    // now pass promo.second.second as argument
-                    TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-                                                promo.second.second, 
-                                                new_empty_var(), 
-                                                new_empty_var(), 0);
-                    $$->code.push_back(argInstr);
+                    if (i < no_of_fixed_params) {
+                        // For fixed parameters, do type conversion
+                        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+                            change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                        TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                    promo.second.second, 
+                                                    new_empty_var(), 
+                                                    new_empty_var(), 0);
+                        $$->code.push_back(argInstr);
+                    } else {
+                        // For variadic arguments, pass as-is (no type checking/conversion)
+                        TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                    (*argTypes)[i].result, 
+                                                    new_empty_var(), 
+                                                    new_empty_var(), 0);
+                        $$->code.push_back(argInstr);
+                    }
                 }
+
                 // Now generate the call instruction
                 $$->result = new_temp_var();
                 TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
                                             $$->result, 
-                                            new_identifier(base->identifier), 
+                                            new_identifier(func->mangledName),
                                             new_constant(to_string(no_of_args)), 0);
                 $$->code.push_back(callInstr);
 			} else {
@@ -3107,7 +3171,6 @@ begin_marker
     }
     ;
 
-
 jump_statement
 	: GOTO IDENTIFIER SEMICOLON                                              /* e.g., goto label; */{
         $$ = new TypeInfo();
@@ -3453,7 +3516,7 @@ bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo
 
 // Type checking and promotion functions implementation
 bool is_numeric_type(const string& type) {
-    return type == "int" || type == "float";
+    return type == "int" || type == "float" || type == "char";
 }
 
 bool is_integer_type(const string& type) {
@@ -3473,13 +3536,7 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
         return true;
     }
     
-    // Allow function pointer assignments
-    // Both must be function pointers and have compatible signatures
-    if (from.isFunctionPointer && to.isFunctionPointer) {
-        return types_compatible(from, to);
-    }
-    
-    // Allow conversions between numeric types including char<->int
+    // Allow conversions between numeric types including char<->int<->float
     if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType) && 
         from.pointerLevel == 0 && to.pointerLevel == 0 && 
         !from.isArray && !to.isArray) {
@@ -3489,15 +3546,10 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     }
     
     // Allow NULL (void*) to any pointer conversion
-    if (from.baseType == "void" && from.pointerLevel > 0 && to.pointerLevel > 0) {
+    if (from.baseType == "void" && from.pointerLevel > 0 && to.pointerLevel > 0 && !to.isArray && !from.isArray &&( from.pointerLevel == to.pointerLevel)) {
         return true;
     }
     
-    // Allow integer literals to floating-point types
-    if (from.isLiteral && from.baseType == "int" && to.baseType == "float" &&
-        from.pointerLevel == 0 && to.pointerLevel == 0) {
-        return true;
-    }
     
     // Allow array to pointer conversion (array decay)
     if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType) {
@@ -3523,10 +3575,9 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
 }
 
 bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
+    //yahan mei assume kar rha hu, sirf tabhi jaa payenge if possible
     // float to int is narrowing (potential loss of fractional part)
-    if (from.baseType == "float" && to.baseType == "int" && 
-        from.pointerLevel == 0 && to.pointerLevel == 0 && 
-        !from.isArray && !to.isArray) {
+    if (from.baseType == "float" && to.baseType == "int") {
         return true;
     }
     
@@ -3542,15 +3593,17 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     }
     
     // Any pointer to smaller integer type is narrowing on most platforms
-    if (from.pointerLevel > 0 && (to.baseType == "int" || to.baseType == "char")) {
+    //yeh allow hii nhi kiya
+    /* if (from.pointerLevel > 0 && (to.baseType == "int" || to.baseType == "char")) {
         return true;
-    }
+    } */
+
     
     // Pointer to different pointer type (other than void*) is potentially unsafe
-    if (from.pointerLevel > 0 && to.pointerLevel > 0 && from.baseType != to.baseType && 
+    /* if (from.pointerLevel > 0 && to.pointerLevel > 0 && from.baseType != to.baseType && 
         from.baseType != "void" && to.baseType != "void") {
         return true;
-    }
+    } */
     
     return false;
 }
@@ -4373,12 +4426,17 @@ string type_code_for_mangling(const TypeInfo& type) {
 }
 
 // Function management implementation
-string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes) {
+string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes,bool isVariadic) {
     string mangledName = funcName;
     
     for (const TypeInfo& param : paramTypes) {
         mangledName += "_" + type_code_for_mangling(param);
     }
+
+   if (isVariadic) {
+        mangledName += "_variadic";
+    }
+    
     
     return mangledName;
 }
@@ -4428,14 +4486,14 @@ TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
     return res;
 }
 
-void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes) {
+void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes,bool isVariadic=false) {
     // Convert array parameters to pointers
     vector<TypeInfo> convertedParams;
     for (const TypeInfo& param : paramTypes) {
         convertedParams.push_back(array_to_pointer_conversion(param));
     }
     
-    string mangledName = mangle_function_name(name, convertedParams);
+    string mangledName = mangle_function_name(name, convertedParams, isVariadic);
     
     // Check if function already exists
     if (function_table.find(mangledName) != function_table.end()) {
@@ -4448,6 +4506,7 @@ void insert_function(const string& name, const TypeInfo& returnType, const vecto
     entry.mangledName = mangledName;
     entry.returnType = returnType;
     entry.line = yylineno;
+    entry.isVariadic = isVariadic;
     
     // Convert parameter types to FunctionParam objects
     for (size_t i = 0; i < convertedParams.size(); i++) {
@@ -4470,7 +4529,7 @@ bool is_function_name(const string& name) {
     }
     return false;
 }
-
+/* 
 FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
     // Convert array arguments to pointers
     vector<TypeInfo> convertedArgs;
@@ -4513,17 +4572,102 @@ FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTy
     
     // No compatible functions found
     return nullptr;
-}
+} */
 
-bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params) {
-    if (argTypes.size() != params.size()) {
-        return false;
+FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
+    // Convert array arguments to pointers
+    vector<TypeInfo> convertedArgs;
+    for (const TypeInfo& arg : argTypes) {
+        convertedArgs.push_back(array_to_pointer_conversion(arg));
     }
     
-    for (size_t i = 0; i < argTypes.size(); i++) {
-        if (!is_implicit_conversion_allowed(argTypes[i], params[i].type)) {
+    // Priority 1: Try exact match first (non-variadic with exact types)
+    string exactMangledName = mangle_function_name(name, convertedArgs, false);
+    auto it = function_table.find(exactMangledName);
+    if (it != function_table.end()) {
+        cout << "Found exact function match: " << exactMangledName << "\n";
+        return &(it->second);
+    }
+    
+    // Priority 2: Collect non-variadic functions with type conversions
+    vector<FunctionEntry*> compatibleNonVariadic;
+    
+    for (auto& entry : function_table) {
+        FunctionEntry& func = entry.second;
+        if (func.originalName == name && !func.isVariadic && 
+            are_parameters_compatible(convertedArgs, func.parameters, false)) {
+            compatibleNonVariadic.push_back(&func);
+            cout << "Found compatible non-variadic function: " << func.mangledName << "\n";
+        }
+    }
+    
+    if (compatibleNonVariadic.size() == 1) {
+        return compatibleNonVariadic[0];
+    } else if (compatibleNonVariadic.size() > 1) {
+        string errorMsg = "Ambiguous function call to '" + name + "', multiple matching non-variadic overloads:";
+        for (auto* func : compatibleNonVariadic) {
+            errorMsg += "\n  " + func->mangledName;
+        }
+        type_error(errorMsg);
+        return nullptr;
+    }
+    
+    // Priority 3: Check variadic functions
+    vector<FunctionEntry*> compatibleVariadic;
+    
+    for (auto& entry : function_table) {
+        FunctionEntry& func = entry.second;
+        if (func.originalName == name && func.isVariadic) {
+            // For variadic functions, we only check fixed parameters
+            // Extra arguments are allowed and don't need type checking
+            if (are_parameters_compatible(convertedArgs, func.parameters, true)) {
+                compatibleVariadic.push_back(&func);
+                cout << "Found compatible variadic function: " << func.mangledName << "\n";
+            }
+        }
+    }
+    
+    if (compatibleVariadic.size() == 1) {
+        return compatibleVariadic[0];
+    } else if (compatibleVariadic.size() > 1) {
+        string errorMsg = "Ambiguous function call to '" + name + "', multiple matching variadic overloads:";
+        for (auto* func : compatibleVariadic) {
+            errorMsg += "\n  " + func->mangledName;
+        }
+        type_error(errorMsg);
+        return nullptr;
+    }
+    
+    // No compatible functions found
+    return nullptr;
+}
+
+bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params,bool isVariadic) {
+     if (isVariadic) {
+        // For variadic functions, allow more arguments than fixed parameters
+        if (argTypes.size() < params.size()) {
+            return false;  // Too few arguments
+        }
+        // Check only the fixed parameters
+        for (size_t i = 0; i < params.size(); i++) {
+            if (!is_implicit_conversion_allowed(argTypes[i], params[i].type)) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        // For non-variadic functions, exact count required
+        if (argTypes.size() != params.size()) {
             return false;
         }
+        
+        for (size_t i = 0; i < argTypes.size(); i++) {
+            if (!is_implicit_conversion_allowed(argTypes[i], params[i].type)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     return true;
