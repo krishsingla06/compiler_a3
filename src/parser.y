@@ -494,6 +494,8 @@ map<string, EnumConstant> enum_constants; // Global enum constant lookup
     TypeInfo* lookup_typedef(const string& name);
     bool is_typedef_name(const string& name);
 
+    int anonymous_struct_counter = 0; // naya
+
     // Function declarations for scope management
     void enter_scope();
     void exit_scope();
@@ -702,6 +704,7 @@ vector<string>* enumlist;    /* list of enum constants */
 %type<typelist> argument_expression_list
 %type<typelist> parameter_list
 
+
 %type<typeinfo> statement
 %type<typeinfo> compound_statement
 %type<typeinfo> statement_list
@@ -787,7 +790,7 @@ function_definition
         // Generate function begin instruction
         string mangled_name = mangle_function_name($2->name, $2->paramTypes ? *$2->paramTypes : vector<TypeInfo>());
         TACOperand* func_label = new_identifier(mangled_name);
-        $3 = new TypeInfo();
+        //$3 = new TypeInfo(); //naya
         TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
                                        new_identifier($2->name), 
                                        new_empty_var(), 
@@ -849,7 +852,9 @@ function_definition
 	;
 
 marker_fun_begin
-    : /* empty */ ;
+    : /* empty */ {
+        $$ = new TypeInfo();//naya
+    }
 
 
 declaration
@@ -2290,6 +2295,45 @@ struct_or_union_specifier
 		
 		delete $1; delete $2;
 	}   /* e.g., struct S { int x; };*/  
+     // anonymous struct/union
+    // -------------------------    -----------------------------
+    // naya
+    |  struct_or_union LBRACE {
+        // Initialize the global member list for this struct
+        current_struct_members = new vector<StructMember>();
+        // Track the struct/union name being defined (for self-referential pointers)
+        string structType = (*$1 == "union" ? "union " : "struct ");
+        current_struct_being_defined = structType + "<anonymous>" + "_" + to_string(anonymous_struct_counter++);
+
+    } struct_declaration_list RBRACE {  // e.g., struct { int x
+        // This defines a new anonymous struct/union
+        bool isUnion = (*$1 == "union");
+        string structName = string("<anonymous>") + "_" + to_string(anonymous_struct_counter - 1);
+        
+        // Use the global member list
+        if (current_struct_members) {
+            insert_struct_union(structName, isUnion, *current_struct_members, current_scope_level);
+            delete current_struct_members;
+            current_struct_members = nullptr;
+        }
+        
+        // Clear the current struct being defined
+        current_struct_being_defined = "";
+        
+        // Create and return TypeInfo
+        $$ = new TypeInfo();
+        $$->isStruct = !isUnion;
+        $$->isUnion = isUnion;
+        $$->structUnionName = structName;
+        $$->structDef = lookup_struct_union(structName);
+        $$->baseType = *$1 + " " + structName; // For compatibility and toString()
+        
+        if ($$->structDef == nullptr) {
+            type_error("Failed to register anonymous struct/union");
+        }
+        
+        delete $1;
+    }
 	| struct_or_union IDENTIFIER {  // e.g., struct S; or using existing struct S
 		// Reference to existing struct/union or forward declaration
 		bool isUnion = (*$1 == "union");
@@ -2318,6 +2362,7 @@ struct_or_union
 struct_declaration_list
 	: struct_declaration 
 	| struct_declaration_list struct_declaration 
+    | /* epsilon */ 
 	;
 
 // NO STATIC WAS ALLOWED IN C STRUCTS
@@ -4274,11 +4319,19 @@ void log_error(const string& message) {
 
 void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level) {
     string key = (isUnion ? "union " : "struct ") + name;
-    
+/*     
     // Check if already defined in current scope
     if (struct_union_table.find(key) != struct_union_table.end() && !struct_union_table[key].empty()) {
         if (struct_union_table[key].back().scope_level == scope_level) {
             type_warning("Redefinition of " + key + " in the same scope");
+        }
+    } */
+    //naya
+    if (name.find("<anonymous>") == string::npos) {
+        if (struct_union_table.find(key) != struct_union_table.end() && !struct_union_table[key].empty()) {
+            if (struct_union_table[key].back().scope_level == scope_level) {
+                type_warning("Redefinition of " + key + " in the same scope");
+            }
         }
     }
     
@@ -4596,7 +4649,7 @@ int main(int argc, char** argv) {
 	// Display typedef table
 	display_typedef_table();
 	// Display enum table
-display_enum_table();
+	display_enum_table();
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
