@@ -92,3 +92,6 @@ No empty struct allowed for now
 
 Filhaal case mei and enum initializer mei int literal hii supported hai, will have to add support for compiler time constants - some mixture of operators, int literal and chars
 
+--------------------------------------------------------------------------------------
+
+Typenames are tokenized as TYPENAMES, not identifiers, so once agar kisi identifier ko typedef define kar diya, abb usko as identifier use nhi kar skte, although kisi aur scope mei usko dubare typedef with some other type define kar skte hai.
