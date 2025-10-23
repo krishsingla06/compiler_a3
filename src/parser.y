@@ -3376,50 +3376,55 @@ iteration_statement
 	| FOR LPAREN expression_statement begin_marker expression_statement {
         // For loop with increment: for(init; cond; incr) body
         // Create labels for conditional jump
-        TACOperand* true_label = new_label(2);
-        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, $5->result, new_empty_var(), 2);
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $5->result, new_empty_var(), 2);
         $5->code.push_back(if_inst);
+        $5->true_list.insert(if_inst);
+
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $5->code.push_back(goto_inst);
         $5->false_list.insert(goto_inst);
+
+    } begin_marker expression RPAREN begin_marker {
+        
+        // Add init code
+        // Add condition code
+        $3->code.insert($3->code.end(), $5->code.begin(), $5->code.end());
+
+        // Add increment code and jump back to condition
+        $3->code.insert($3->code.end(), $8->code.begin(), $8->code.end());
+        TACInstruction* goto_condition = emit(TACOperator(TAC_OPERATOR_NOP), $4, new_empty_var(), new_empty_var(), 1);
+        $3->code.push_back(goto_condition);
 
         // Backpatch true_list to continue to body
         if(! $5->true_list.empty()) {
             backpatch($5->true_list, new_label(0));
         }
-    } expression RPAREN begin_marker statement /* e.g., for (init; cond; incr) stmt */ {
-        $$ = new TypeInfo();
-        // Add init code
-        $$->code = $3->code;
-        // Add condition code
-        $$->code.insert($$->code.end(), $5->code.begin(), $5->code.end());
+        
+    } statement /* e.g., for (init; cond; incr) stmt */ {
         // Add body code
-        $$->code.insert($$->code.end(), $10->code.begin(), $10->code.end());
-        
-        // After body, add increment code and jump back to condition
-        // Mark position for continue statements
-        TACOperand* incr_label = $9;
-        $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
-        
-        // After increment, jump back to begin (condition check)
-        TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $4, new_empty_var(), new_empty_var(), 1);
-        $$->code.push_back(goto_begin);
-        
-        // RENUMBER instructions in correct order
-        // renumber_instructions($$->code);
-        //renumber_instructions($$->code);
+        $$ = new TypeInfo();
+
+        $$->code = $3->code;
+
+        $$->code.insert($$->code.end(), $12->code.begin(), $12->code.end());
+
+        // After body, jump back to increment
+        TACInstruction* goto_incr = emit(TACOperator(TAC_OPERATOR_NOP), $7, new_empty_var(), new_empty_var(), 1);
+        $$->code.push_back(goto_incr);
+                
+        TACOperand* incr_label = $10;
         
         // next_list contains false_list of condition and next_list of body and break statements
         $$->next_list = $5->false_list;
-        $$->next_list.insert($10->next_list.begin(), $10->next_list.end());
-        $$->next_list.insert($10->break_list.begin(), $10->break_list.end());
+        $$->next_list.insert($12->next_list.begin(), $12->next_list.end());
+        $$->next_list.insert($12->break_list.begin(), $12->break_list.end());
         
         // Continue statements should jump to increment label
-        if(! $10->continue_list.empty()) {
-            backpatch($10->continue_list, incr_label);
+        if(! $12->continue_list.empty()) {
+            backpatch($12->continue_list, incr_label);
         }
         
-        delete $3; delete $5; delete $7; delete $10;
+        delete $3; delete $5; delete $8; delete $12;
     }
 	;
 
