@@ -1,0 +1,16 @@
+int x = 1;          // Global variable
+
+int main() {
+    int x = 2;      // Redeclaration in local scope (allowed: shadows global)
+    int y = 5;
+    int y = 6;  // ERROR: Redeclaration in same scope (should fail to compile)
+    {
+        int x = 3;  // Inner block shadow (allowed)
+}
+// Accessing global variable
+
+    
+       // ERROR: Redeclaration in same scope (should fail to compile)
+
+    return 0;
+}
