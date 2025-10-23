@@ -312,6 +312,8 @@ void yyerror(const char* s) {
     // Typedef table - maps typedef name to TypeInfo
     // Supports scoping by storing a vector (inner scopes shadow outer)
     map<string, vector<TypeInfo>> typedef_table;
+
+    int loop_depth = 0;  // Incremented at loop start, decremented at loop end
     
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
@@ -3081,6 +3083,7 @@ iteration_statement
         if(! $4->true_list.empty()) {
             backpatch($4->true_list, new_label(0));
         }
+        loop_depth++;
     }statement                              {
         $$ = new TypeInfo();
         $$->code = $4->code;
@@ -3101,6 +3104,7 @@ iteration_statement
         }else{
             cout<<"continue list empty\n";
         }
+        loop_depth--;
         delete $4; delete $7;
     }
 	| UNTIL begin_marker LPAREN short_circuited_expression { // here also change for short circuited expressions
@@ -3112,6 +3116,7 @@ iteration_statement
         if(! $4->false_list.empty()) {
             backpatch($4->false_list, new_label(0));
         }
+        loop_depth++;
     } RPAREN statement                              {
         $$ = new TypeInfo();
         $$->code = $4->code;
@@ -3130,35 +3135,39 @@ iteration_statement
         if(! $7->continue_list.empty()) {
             backpatch($7->continue_list, $2);
         }
+        loop_depth--;
         delete $4; delete $7;
     }
-	|  DO begin_marker statement {
-        TACOperand* curr_inst = new_label(0);
+	|  DO begin_marker {
+        loop_depth++;
+    } statement {
+        //TACOperand* curr_inst = new_label(0);
         // seemss redundant but dont delete for now
         // krish
         //backpatch($3->next_list, curr_inst);
     } WHILE LPAREN marker short_circuited_expression RPAREN SEMICOLON{ // here also change for short circuited expressions
         $$ = new TypeInfo();
-        $$->code = $3->code;
-        $$->code.insert($$->code.end(), $8->code.begin(), $8->code.end());
-        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $8->result, new_empty_var(), 2);
+        $$->code = $4->code;
+        $$->code.insert($$->code.end(), $9->code.begin(), $9->code.end());
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), $2, $9->result, new_empty_var(), 2);
         $$->code.push_back(if_inst);
         TACInstruction* goto_end = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_end);
-        $8->false_list.insert(goto_end);
+        $9->false_list.insert(goto_end);
         // next_list of the loop statement is the false_list of the condition expression
-        $$->next_list = $8->false_list;
-        $$->next_list.insert($3->next_list.begin(), $3->next_list.end());
-        $$->next_list.insert($3->break_list.begin(), $3->break_list.end());
+        $$->next_list = $9->false_list;
+        $$->next_list.insert($4->next_list.begin(), $4->next_list.end());
+        $$->next_list.insert($4->break_list.begin(), $4->break_list.end());
 
-        if(! $3->continue_list.empty()) {
-            backpatch($3->continue_list, $7);
+        if(! $4->continue_list.empty()) {
+            backpatch($4->continue_list, $8);
         }
 
         // also backpatch true_list to the beginning of the loop
-        if(! $8->true_list.empty()) {
-            backpatch($8->true_list, $2);
+        if(! $9->true_list.empty()) {
+            backpatch($9->true_list, $2);
         }
+        loop_depth--;
 
     }                  
 	| FOR LPAREN expression_statement begin_marker expression_statement {
@@ -3175,6 +3184,7 @@ iteration_statement
         if(! $5->true_list.empty()) {
             backpatch($5->true_list, new_label(0));
         }
+        loop_depth++;
     } RPAREN statement   /* e.g., for (init; cond; ) stmt */ {
         $$ = new TypeInfo();
         // Add init code
@@ -3196,7 +3206,9 @@ iteration_statement
         // Continue statements should jump to condition (begin_marker)
         if(! $8->continue_list.empty()) {
             backpatch($8->continue_list, $4);
-        }
+        }   
+
+        loop_depth--;
         
         delete $3; delete $5; delete $8;
     }
@@ -3226,6 +3238,8 @@ iteration_statement
         if(! $5->true_list.empty()) {
             backpatch($5->true_list, new_label(0));
         }
+
+        loop_depth++;
         
     } statement /* e.g., for (init; cond; incr) stmt */ {
         // Add body code
@@ -3250,6 +3264,7 @@ iteration_statement
         if(! $12->continue_list.empty()) {
             backpatch($12->continue_list, incr_label);
         }
+        loop_depth--;
         
         delete $3; delete $5; delete $8; delete $12;
     }
@@ -3279,6 +3294,9 @@ jump_statement
         delete $2;
     }
 	| CONTINUE SEMICOLON                                                     /* e.g., continue; */{
+        if (loop_depth == 0) {
+            type_error("Continue statement not within loop");
+        }
         $$ = new TypeInfo();
         $$->baseType = "void";
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
@@ -3286,6 +3304,9 @@ jump_statement
         $$->continue_list.insert(goto_inst);
     }
 	| BREAK SEMICOLON                                                        /* e.g., break; */{
+        if (loop_depth == 0 && switch_case_stack.empty()) {
+            type_error("Break statement not within loop or switch");
+        }
         $$ = new TypeInfo();
         $$->baseType = "void";
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
