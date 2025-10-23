@@ -1,5 +1,3 @@
-#ifndef TAC_H
-#define TAC_H
 
 #include <unordered_map>
 #include <unordered_set>
@@ -9,14 +7,10 @@ using namespace std;
 
 class Type;
 
-static unsigned int instruction_id = 1;
 static unsigned int temp_var_id = 1;
-unsigned int label_id = 1;
-const int MAX_CODE_SIZE = 1e6; // Maximum number of TAC instructions
+static unsigned int label_id = 1;
 
-//##############################################################################
-//################################## TACOperand ######################################
-//##############################################################################
+// --------------------- TAC OPERAND ---------------------------- 
 
 enum TACOperandType {
     TAC_OPERAND_TEMP_VAR,         // Temporary variables (e.g., t1, t2)
@@ -56,10 +50,7 @@ TACOperand* new_type(string value);
 
 TACOperand* new_string(string value);
 
-
-//##############################################################################
-//################################## TACOperator ######################################
-//##############################################################################
+// --------------------- TAC INSTRUCTION ----------------------------
 
 enum TACOperatorType {
     // Arithmetic Operators
@@ -101,21 +92,12 @@ enum TACOperatorType {
     // Casting Operators
     TAC_OPERATOR_CAST,       // Type casting (e.g., (int)x) #codegen done (cast)
 
-    // Control Flow (Branching & Jumps)
-    TAC_OPERATOR_GOTO,       // goto label
-    TAC_OPERATOR_IF_GOTO,         // if (condition) goto label
-    TAC_OPERATOR_LABEL,      // Label definition
-
     // Function and Procedure Handling
     TAC_OPERATOR_CALL,       // Function call
     TAC_OPERATOR_RETURN,     // return value
     TAC_OPERATOR_PARAM,      // Function parameter passing
     TAC_OPERATOR_FUNC_BEGIN, // Function prologue
     TAC_OPERATOR_FUNC_END,   // Function epilogue
-
-    // Array and Indexing Operators
-    TAC_OPERATOR_INDEX,        // Array access: T = a[i]
-    TAC_OPERATOR_INDEX_ASSIGN, // Array assignment: a[i] = T
 
     // Miscellaneous
     TAC_OPERATOR_NOP         // No operation
@@ -129,12 +111,6 @@ public:
     TACOperator(TACOperatorType type);
 };
 
-
-//##############################################################################
-//################################## TACInstruction ######################################
-//##############################################################################
-
-//ok - bass label mei mere acc TACOperand* ki jagah sirf int bhi rakh stke the, i am unable to understand for now why its datatype is TACOperand*
 class TACInstruction {
 public:
     TACOperand* label; // Unique instruction label (instruction number)
@@ -151,27 +127,10 @@ public:
 
 bool is_assignment(TACInstruction* instruction);
 
-extern vector<TACInstruction*> TAC_CODE; // Array of TAC instructions
-
 TACInstruction* emit(TACOperator op, TACOperand* result, TACOperand* arg1, TACOperand* arg2, int flag); // ok
 
 void backpatch(unordered_set<TACInstruction*> list, TACOperand* label);
 
-unordered_set<TACInstruction*> merge_lists(unordered_set<TACInstruction*>& list1, unordered_set<TACInstruction*>& list2);
-
-void print_TAC_instruction(TACInstruction* instruction);
-string get_TAC_instruction_string(TACInstruction* instruction);
-
-void print_TAC();
-
-int give_current_instruction_number();
-
-void fix_labels_temps();
-
-//##############################################################################
-//################################## PRINT TACInstruction ######################################
-//##############################################################################
+string get_TAC_instruction_string(TACInstruction* instruction); 
 
 string get_operand_string(TACOperand* operand);
-
-#endif

@@ -10,32 +10,19 @@ void yyerror(const char *msg);
 // Define the global map for identifiers
 unordered_map<string, TACOperand*> identifiers;
 
-// Define the global vector for TAC instructions
-vector<TACInstruction*> TAC_CODE;
 
-//##############################################################################
-//################################## TACOperand ######################################
-//##############################################################################
-
-//TACOperand ki value ka matlab hai ke uska naam kya hai, jaise ke #t1, a, b
-//ok
 TACOperand::TACOperand(TACOperandType type, string value) : type(type), value(value) {}
-
-//ok
 TACOperand* new_temp_var() {
     string temp_var = "#t" + to_string(temp_var_id++);
     TACOperand* t = new TACOperand(TAC_OPERAND_TEMP_VAR, temp_var);
     return t; // Return a pointer to the temporary variable
 }
 
-//ok
 TACOperand* new_empty_var() {
     TACOperand* t = new TACOperand(TAC_OPERAND_EMPTY, "");
     return t; // Return a pointer to the empty variable
 }
 
-
-//ok : har 3AC instruction ko label toh chahiye hii, toh this new_label, do counter++ and return TACOperand* which contains info of this label and also that this is label operand kind of
 TACOperand* new_label() {
     string label = to_string(label_id++);
     TACOperand* t = new TACOperand(TAC_OPERAND_LABEL, label);
@@ -53,7 +40,6 @@ TACOperand* new_constant(string value) {
     TACOperand* t = new TACOperand(TAC_OPERAND_CONSTANT, value);
     return t; // Return a pointer to the constant
 }
-
 
 TACOperand* new_identifier(string value) {
     if (identifiers.find(value) == identifiers.end()) {
@@ -79,20 +65,15 @@ TACOperand* new_string(string value) {
 }
 
 
-//##############################################################################
-//################################## TACOperator ######################################
-//##############################################################################
+//--------------------------- TACOperator ----------------------------------
 TACOperator::TACOperator() : type(TACOperatorType::TAC_OPERATOR_NOP) {}
 
 TACOperator::TACOperator(TACOperatorType type) : type(type) {}
 
-//##############################################################################
-//################################## TACInstruction ######################################
-//##############################################################################
+//--------------------------- TACInstruction -------------------------------
 
-// ok
 TACInstruction::TACInstruction(TACOperator op, TACOperand* result, TACOperand* arg1, TACOperand* arg2, int flag) {
-    this->label = new_label(); // Default flag value
+    this->label = new_label(); 
     this->flag = flag;
     this->op = op;
     this->result = result;
@@ -107,12 +88,7 @@ bool is_assignment(TACInstruction* instruction) {
     else return true;
 }
 
-// ok
 TACInstruction* emit(TACOperator op, TACOperand* result, TACOperand* arg1, TACOperand* arg2, int flag) {
-    if (instruction_id >= MAX_CODE_SIZE) {
-        yyerror("Error: Code size exceeded maximum limit.");
-        exit(1);
-    }
     TACInstruction* instruction = new TACInstruction(op, result, arg1, arg2, flag);
     return instruction;
 }
@@ -123,22 +99,7 @@ void backpatch(unordered_set<TACInstruction*> list, TACOperand* label) {
     }
 }
 
-unordered_set<TACInstruction*> merge_lists(unordered_set<TACInstruction*>& list1, unordered_set<TACInstruction*>& list2) {
-    for (auto it = list2.begin(); it != list2.end(); ++it) {
-        list1.insert(*it);
-    }
-    return list1;
-}
-
-//##############################################################################
-//################################## PRINT TACInstruction ######################################
-//##############################################################################
-
-
-//ok
 string get_operand_string(TACOperand* operand) {
-    //cout<<"Name of operand is "<<operand->value<<endl;
-    //cout<<"Type of operand is "<<operand->type<<endl;
     if(operand == nullptr) return ""; // Handle null operand case
     if (operand->type == TAC_OPERAND_TEMP_VAR ||
         operand->type == TAC_OPERAND_IDENTIFIER ||
@@ -163,7 +124,6 @@ string get_operand_string(TACOperand* operand) {
     return ""; // Default case
 }
 
-//ok
 string get_operator_string(TACOperatorType op) {
     switch (op) {
     case TAC_OPERATOR_ADD: return "+";
@@ -190,85 +150,12 @@ string get_operator_string(TACOperatorType op) {
     case TAC_OPERATOR_BIT_NOT: return "~";
     case TAC_OPERATOR_ASSIGN: return "=";
     case TAC_OPERATOR_ADDR_OF: return "&"; // Address of operator
-    case TAC_OPERATOR_INDEX: return "[]"; // Array index operator
     default: return ""; // Default case
     }
 }
 
-void print_TAC_instruction(TACInstruction* instruction) {
-
-    if(instruction->label->type == TAC_OPERAND_LABEL) cout<<instruction->label->value << ": "; // Print the label of the instruction
-    // **Jump Instructions**
-    if (instruction->flag == 1) {
-        cout << "goto " << get_operand_string(instruction->result); // may need to change depending on emit call
-    }
-    else if (instruction->flag == 2) {  // may need to change depending on emit call
-        cout << "if " << get_operand_string(instruction->arg1) << " "
-            << get_operator_string(instruction->op.type) << " "
-            << get_operand_string(instruction->arg2) << " goto "
-            << get_operand_string(instruction->result);
-    } else if (instruction->flag == 4) {  // Jump table instruction
-        cout << "goto jump_table_" << get_operand_string(instruction->arg1)
-            << "[" << get_operand_string(instruction->arg2)<< "]";
-    }
-    // **Function Instructions**
-    else if(instruction->op.type == TAC_OPERATOR_CAST) {
-        cout << get_operand_string(instruction->result) << " = "
-                << "(" << get_operand_string(instruction->arg1) << ")"
-                << get_operand_string(instruction->arg2) ;
-    }
-    else if (instruction->op.type == TAC_OPERATOR_PARAM) {
-        cout << "param " << get_operand_string(instruction->result);
-    }
-    else if (instruction->op.type == TAC_OPERATOR_CALL) {
-        if (instruction->result->value == "") {
-            // If the result is empty, it means it's a void function call
-            cout << "call " << get_operand_string(instruction->arg1) << ", "
-                << get_operand_string(instruction->arg2);
-        }
-        else {
-            cout << get_operand_string(instruction->result) << " = call "
-                << get_operand_string(instruction->arg1) << ", "
-                << get_operand_string(instruction->arg2);
-        }
-    }
-    else if (instruction->op.type == TAC_OPERATOR_RETURN) { // MAY NEED TO CHANGE
-        cout << "return " << get_operand_string(instruction->result);
-    }
-    else if(instruction->op.type == TAC_OPERATOR_FUNC_BEGIN) {
-        cout << "function " << get_operand_string(instruction->result);
-    }
-    else if (instruction->op.type == TAC_OPERATOR_FUNC_END) {
-        cout << "end function "<< get_operand_string(instruction->result);
-    }
-
-    // **Assignment Cases**
-    else if (is_assignment(instruction)) {
-        if (instruction->arg2->type != TAC_OPERAND_EMPTY) {
-            // Binary operation: `x = y op z`
-            cout << get_operand_string(instruction->result) << " = "
-                << get_operand_string(instruction->arg1) << " "
-                << get_operator_string(instruction->op.type) << " "
-                << get_operand_string(instruction->arg2);
-        }
-        else if (instruction->op.type != TAC_OPERATOR_NOP) {
-            // Unary operation: `x = op y`
-            cout << get_operand_string(instruction->result) << " = "
-                << get_operator_string(instruction->op.type) << " "
-                << get_operand_string(instruction->arg1);
-        }
-        else {
-            // Simple assignment: `x = y`
-            cout << get_operand_string(instruction->result) << " = "
-                << get_operand_string(instruction->arg1);
-        }
-    }
-    else cout << "Nothing to print";
-    cout << endl;
-}
 
 string get_TAC_instruction_string(TACInstruction* instruction) {
-    // Similar to print_TAC_instruction but returns a string instead of printing
     string result;
     if(instruction->label->type == TAC_OPERAND_LABEL) result += instruction->label->value + ": "; // Print the label of the instruction
     // **Jump Instructions**
@@ -339,57 +226,4 @@ string get_TAC_instruction_string(TACInstruction* instruction) {
     }
     else result += "Nothing to print";
     return result;
-}
-
-//ok
-void print_TAC() {
-    cout << "===== Three-Address Code (TAC) =====" << endl;
-    for (int i = 0; i < TAC_CODE.size(); ++i) {
-         // Stop when we reach uninitialized entries
-         TACInstruction* instruction = TAC_CODE[i];
-         if(instruction == nullptr) continue; // Stop printing if we reach an uninitialized entry  
-        print_TAC_instruction(instruction); // Print each instruction
-    }
-    cout << "====================================" << endl;
-}
-
-int give_current_instruction_number(){
-    return label_id;    
-}
-
-
-void print_code_vector(vector<TACInstruction*>& code) {
-    cout << "===== Three-Address Code (TAC) intermediate =====" << endl;
-    for (int i = 0; i < code.size(); ++i) {
-         // Stop when we reach uninitialized entries
-        TACInstruction* instruction = code[i];
-        print_TAC_instruction(instruction); // Print each instruction
-    }
-    cout << "====================================" << endl;
-}
-
-void fix_labels_temps(){
-    map<string,int> labels;
-    int label_ct = 1;
-
-    for(int i=0;i<TAC_CODE.size();i++){
-        TACInstruction* instr = TAC_CODE[i];
-        if (TAC_CODE[i]->result->type == TAC_OPERAND_EMPTY && instr->flag!=0) TAC_CODE.erase(TAC_CODE.begin() + i); // Remove uninitialized entries
-        if(TAC_CODE[i]->label->type == TAC_OPERAND_LABEL && TAC_CODE[i]->label->value != ""){
-            if(labels.find(TAC_CODE[i]->label->value) == labels.end()){
-                labels[TAC_CODE[i]->label->value] = label_ct;
-                label_ct++;
-            }
-        }
-    }
-
-    map<string,int> temps;
-    int temp_ct = 1;
-    
-
-    for(int i=0;i<TAC_CODE.size();i++){
-        if(TAC_CODE[i]->label->type == TAC_OPERAND_LABEL && TAC_CODE[i]->label->value != ""){
-            TAC_CODE[i]->label->value = to_string(labels[TAC_CODE[i]->label->value]);
-        }
-    }
 }
