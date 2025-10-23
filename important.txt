@@ -95,3 +95,29 @@ Filhaal case mei and enum initializer mei int literal hii supported hai, will ha
 --------------------------------------------------------------------------------------
 
 Typenames are tokenized as TYPENAMES, not identifiers, so once agar kisi identifier ko typedef define kar diya, abb usko as identifier use nhi kar skte, although kisi aur scope mei usko dubare typedef with some other type define kar skte hai.
+
+--------------------------------------------------------------------------------------
+
+# Variadic Function Support
+
+✅ SUPPORTED:
+- Declaring variadic functions: int foo(int x, ...);
+- Calling variadic functions with extra arguments
+- External library functions: printf, scanf, etc.
+
+❌ NOT SUPPORTED:
+- Implementing custom variadic functions
+- va_list, va_start, va_arg, va_end macros
+- Accessing ... arguments inside function body
+
+RATIONALE:
+The <stdarg.h> macros are architecture-dependent and would 
+require implementing:
+- Address-of operator (&)
+- sizeof operator  
+- Pointer arithmetic
+- Preprocessor #define macros
+- Platform-specific calling conventions
+
+For this compiler, variadic functions are assumed to be 
+provided by external libraries and linked at runtime.
