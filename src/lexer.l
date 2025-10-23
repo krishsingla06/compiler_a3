@@ -100,6 +100,7 @@ static char* mystrdup(const char* s) {
 ")"                                 { return RPAREN; }
 "["                                 { return LBRACKET; }
 "]"                                 { return RBRACKET; }
+"..."                                {return ELLIPSIS; }
 
 [0-9]*[.][0-9]*   {yylval.fval = atof(yytext);  return FLOAT_LITERAL; }
 
@@ -124,4 +125,5 @@ static char* mystrdup(const char* s) {
 .   {fprintf(stderr, "Lexer: invalid token '%s' at line %d\n", yytext, yylineno); return INVALID; }
 
 %%
+
 
