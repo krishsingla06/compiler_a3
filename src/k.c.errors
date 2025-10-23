@@ -1,8 +1,7 @@
 === Parser Error Log ===
-Generated on: Oct 23 2025 13:34:59
+Generated on: Oct 23 2025 18:05:29
 Input file: k.c.errors
 ========================
 
-Type Warning at line 2: Type mismatch in initialization of variable 'ptr': cannot convert from void* to void**
 
 === End of Error Log ===

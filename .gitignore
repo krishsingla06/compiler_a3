@@ -16,3 +16,5 @@ src/lex.yy.c
 # Ignore other build artifacts
 *.out
 *.exe
+
+

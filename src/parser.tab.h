@@ -75,7 +75,7 @@ extern int yydebug;
         bool isFunctionPointer; // True if this is a function pointer type
         TypeInfo* returnType;   // Return type for function pointers (nullptr if not a function pointer)
         vector<TypeInfo>* parameterTypes; // Parameter types for function pointers (nullptr if not a function pointer)
-
+        bool isReference;       // True if this is a reference type (int&, char&, etc.)
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
@@ -90,7 +90,7 @@ extern int yydebug;
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
                      isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
-                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr),
+                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false),
                      result(nullptr), code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
@@ -103,7 +103,7 @@ extern int yydebug;
                     isFunctionPointer(other.isFunctionPointer),
                     returnType(other.returnType ? new TypeInfo(*other.returnType) : nullptr),
                     parameterTypes(other.parameterTypes ? new vector<TypeInfo>(*other.parameterTypes) : nullptr),
-                    result(other.result),
+                    isReference(other.isReference),result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
                     break_list(other.break_list), continue_list(other.continue_list) {}
@@ -148,6 +148,11 @@ extern int yydebug;
             // Add pointer asterisks
             for (int i = 0; i < pointerLevel; i++) {
                 res += "*";
+            }
+
+            // Add reference
+            if (isReference) {
+                res += "&";
             }
             
             // Add array dimensions
@@ -194,6 +199,7 @@ extern int yydebug;
         string name;            // variable/function name
         int pointerLevel;       // Number of pointer levels (*, **, ***, etc.)
         bool isArray;
+        bool isReference;
         vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
@@ -204,7 +210,7 @@ extern int yydebug;
         bool isVariadic;        // True if function is variadic
         
         DeclaratorInfo() : name(""), pointerLevel(0), 
-                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr),
+                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr), isReference(false),
                           isFunction(false), paramTypes(nullptr), isVariadic(false) {}
                           
         // Add a new array dimension (for multidimensional arrays)
@@ -279,7 +285,7 @@ extern int yydebug;
         StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
     };
 
-#line 283 "parser.tab.h"
+#line 289 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -364,7 +370,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 456 "parser.y"
+#line 465 "parser.y"
 
     int ival;       /* integer literals */
     string* sval;     /* identifiers */
@@ -378,7 +384,7 @@ union YYSTYPE
     TACOperand* opinfo; /* TAC operand information */
     ParamListInfo* paramlist; /* parameter list information */
 
-#line 382 "parser.tab.h"
+#line 388 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

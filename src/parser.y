@@ -54,7 +54,7 @@ void yyerror(const char* s) {
         bool isFunctionPointer; // True if this is a function pointer type
         TypeInfo* returnType;   // Return type for function pointers (nullptr if not a function pointer)
         vector<TypeInfo>* parameterTypes; // Parameter types for function pointers (nullptr if not a function pointer)
-
+        bool isReference;       // True if this is a reference type (int&, char&, etc.)
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
@@ -69,7 +69,7 @@ void yyerror(const char* s) {
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
                      isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
-                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr),
+                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false),
                      result(nullptr), code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
@@ -82,7 +82,7 @@ void yyerror(const char* s) {
                     isFunctionPointer(other.isFunctionPointer),
                     returnType(other.returnType ? new TypeInfo(*other.returnType) : nullptr),
                     parameterTypes(other.parameterTypes ? new vector<TypeInfo>(*other.parameterTypes) : nullptr),
-                    result(other.result),
+                    isReference(other.isReference),result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
                     break_list(other.break_list), continue_list(other.continue_list) {}
@@ -127,6 +127,11 @@ void yyerror(const char* s) {
             // Add pointer asterisks
             for (int i = 0; i < pointerLevel; i++) {
                 res += "*";
+            }
+
+            // Add reference
+            if (isReference) {
+                res += "&";
             }
             
             // Add array dimensions
@@ -173,6 +178,7 @@ void yyerror(const char* s) {
         string name;            // variable/function name
         int pointerLevel;       // Number of pointer levels (*, **, ***, etc.)
         bool isArray;
+        bool isReference;
         vector<int> arrayDimensions; // Dimensions for multidimensional arrays [3][4][5]
         string initValue;       // initialization value if any
         TypeInfo* initType;     // type information of the initializer
@@ -183,7 +189,7 @@ void yyerror(const char* s) {
         bool isVariadic;        // True if function is variadic
         
         DeclaratorInfo() : name(""), pointerLevel(0), 
-                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr),
+                          isArray(false), arrayDimensions(), initValue(""), initType(nullptr), isReference(false),
                           isFunction(false), paramTypes(nullptr), isVariadic(false) {}
                           
         // Add a new array dimension (for multidimensional arrays)
@@ -392,6 +398,9 @@ void yyerror(const char* s) {
         if(t.isFunctionPointer){
             return 4;
         }
+        if(t.isReference){ // this thing we can remove also. keep it for now.
+            return 4;
+        }
         
         if(t.pointerLevel > 0){
             return 4; // assuming 32-bit pointers
@@ -506,6 +515,7 @@ void yyerror(const char* s) {
 %type<typeinfo> parameter_type_declarator
 %type<ival> pointer
 %type<opinfo> marker
+%type<ival> reference
 
 %type<typeinfo> declaration_list
 %type<typeinfo> struct_or_union_specifier
@@ -803,17 +813,74 @@ declaration
 				// Regular variable or array declaration
 				combinedType.pointerLevel += declInfo->pointerLevel;
 				combinedType.isArray |= declInfo->isArray;
+                combinedType.isReference |= declInfo->isReference;
 				combinedType.arrayDimensions.insert(combinedType.arrayDimensions.end(), 
                                                declInfo->arrayDimensions.begin(), 
                                                declInfo->arrayDimensions.end());
 			}
 			
-            combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
 
             $$ = new TypeInfo();
-			
+            combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
+            $$->code = vector<TACInstruction*>();
+
+                        
+            // Reference-specific validation
+            if (combinedType.isReference) {
+                // References cannot be arrays
+                if (combinedType.isArray) {
+                    type_error("Reference '" + declInfo->name + "' cannot be an array");
+                }
+                
+                // References cannot have multiple pointer levels
+                if (combinedType.pointerLevel > 0) {
+                    type_error("Reference '" + declInfo->name + "' cannot be a pointer");
+                }
+                
+                // References must be initialized
+                if (declInfo->initType == nullptr) {
+                    type_error("Reference '" + declInfo->name + "' must be initialized");
+                }
+                
+                // References must be initialized with lvalues
+                if (declInfo->initType != nullptr && !declInfo->initType->isLvalue) {
+                    type_error("Reference '" + declInfo->name + "' must be initialized with an lvalue");
+                }
+                
+                // References require EXACT type match - no implicit conversions
+                if (declInfo->initType != nullptr) {
+                    TypeInfo expectedType = combinedType;
+                    expectedType.isReference = false;  // Compare underlying type
+                    
+                    TypeInfo actualType = *declInfo->initType;
+                    actualType.isReference = false;    // Compare underlying type
+                    
+                    // Check exact type match (base type, pointer level, array, struct/union)
+                    if (expectedType.baseType != actualType.baseType ||
+                        expectedType.pointerLevel != actualType.pointerLevel ||
+                        expectedType.isArray != actualType.isArray ||
+                        expectedType.isStruct != actualType.isStruct ||
+                        expectedType.isUnion != actualType.isUnion ||
+                        (expectedType.isStruct && expectedType.structUnionName != actualType.structUnionName) ||
+                        (expectedType.isUnion && expectedType.structUnionName != actualType.structUnionName)) {
+                        type_error("Reference '" + declInfo->name + "' of type '" + combinedType.toString() + 
+                                  "' cannot bind to value of type '" + declInfo->initType->toString() + 
+                                  "' (exact type match required)");
+                    }
+                    
+                    // Include initializer code
+                    $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+                    
+                    // Take address of the initializer
+                    TACOperand* ref_var = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
+                    TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, ref_var, declInfo->initType->result, new_empty_var(), 0);
+                    $$->code.push_back(addr_inst);
+                    
+                    combinedType.result = ref_var;
+                }
+            }
 			// Type check initialization if present
-			if (declInfo->initType != nullptr) {
+			else if (declInfo->initType != nullptr) {
 				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
 					// Issue a warning instead of error to allow compilation to continue
 					string warning_msg = "Type mismatch in initialization of variable '" + 
@@ -1084,15 +1151,20 @@ init_declarator
 
 // Support for multi-level pointers like *, **, ***, etc.
 declarator
-	: pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
-		$$ = $2;
-		// Add pointer levels from $1 to the declarator
-		$$->pointerLevel += $1;
-	}
-	| direct_declarator {                                         /* e.g., x */ 
-		$$ = $1;
-	}
-	;
+    : pointer direct_declarator {                                 /* e.g., *p or **p or ***p */ 
+        $$ = $2;
+        // Add pointer levels from $1 to the declarator
+        $$->pointerLevel += $1;
+    }
+    | reference direct_declarator {                               /* e.g., &ref */
+        $$ = $2;
+        // Mark as reference
+        $$->isReference = true;
+    }
+    | direct_declarator {                                         /* e.g., x */ 
+        $$ = $1;
+    }
+    ;
 
 
 direct_declarator
@@ -1275,6 +1347,7 @@ parameter_declaration
             combinedType->pointerLevel += $2->pointerLevel;
             combinedType->isArray |= $2->isArray;
             combinedType->arrayDimensions = $2->arrayDimensions;
+            combinedType->isReference |= $2->isReference;
         }
         
         current_function_parameters.push_back(make_pair($2->name, *combinedType));
@@ -1325,15 +1398,20 @@ parameter_type_declarator
     ;
 
 parameter_declarator
-	: pointer parameter_direct_declarator {                                 /* e.g., *p or **p or ***p */ 
-		$$ = $2;
-		// Add pointer levels to the declarator
-		$$->pointerLevel = $1;
-	}
-	| parameter_direct_declarator {                                         /* e.g., x */ 
-		$$ = $1;
-	}
-	;
+    : pointer parameter_direct_declarator {                                 /* e.g., *p or **p or ***p */ 
+        $$ = $2;
+        // Add pointer levels to the declarator
+        $$->pointerLevel = $1;
+    }
+    | reference parameter_direct_declarator {                               /* e.g., &ref */
+        $$ = $2;
+        // Mark as reference
+        $$->isReference = true;
+    }
+    | parameter_direct_declarator {                                         /* e.g., x */ 
+        $$ = $1;
+    }
+    ;
 
 
 parameter_direct_declarator
@@ -1377,6 +1455,21 @@ primary_expression
                 $$->isLvalue = false;  // Const enumerators are not lvalues
                 cout << "Found enum constant: " << *$1 << " with value " << entry.constValue << "\n";
                 $$->result = new_constant(to_string(entry.constValue));
+            } 
+            // Check if it's a reference - auto-dereference it
+            else if (entry.type.isReference) {
+                $$->isLvalue = true;   // Dereferenced references are lvalues
+                cout << "Found reference: " << *$1 << " of type " << $$->toString() << " (auto-dereferencing)\n";
+                
+                // The reference variable stores an address, dereference it
+                TACOperand* ref_var = new_identifier(entry.mangledName);
+                TACOperand* temp = new_temp_var();
+                TACInstruction* deref_inst = emit(TAC_OPERATOR_DEREF, temp, ref_var, new_empty_var(), 0);
+                $$->code.push_back(deref_inst);
+                $$->result = temp;
+                
+                // The type info should reflect what the reference refers to, not the reference itself
+                $$->isReference = false;  // After dereferencing, it's no longer a reference
             } else {
                 $$->isLvalue = true;   // Regular variables are lvalues
                 cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
@@ -1646,17 +1739,55 @@ postfix_expression
 						$$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
 					}
 					for(int i = 0; i < no_of_args; i++) {
-						// Type conversion if needed
-						pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
-							change_type_rhs_to_lhs((*base->parameterTypes)[i], (*argTypes)[i]);
-						$$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-						
-						// Pass the argument
-						TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-						                            promo.second.second, 
-						                            new_empty_var(), 
-						                            new_empty_var(), 0);
-						$$->code.push_back(argInstr);
+						// Check if parameter is a reference
+						if ((*base->parameterTypes)[i].isReference) {
+							// For reference parameters, check if argument is lvalue
+							if (!(*argTypes)[i].isLvalue) {
+								type_error("Cannot bind non-lvalue to reference parameter " + to_string(i+1) + " in function pointer call");
+							}
+							
+							// References require EXACT type match
+							TypeInfo expectedType = (*base->parameterTypes)[i];
+							expectedType.isReference = false;
+							
+							TypeInfo actualType = (*argTypes)[i];
+							actualType.isReference = false;
+							
+							if (expectedType.baseType != actualType.baseType ||
+								expectedType.pointerLevel != actualType.pointerLevel ||
+								expectedType.isArray != actualType.isArray ||
+								expectedType.isStruct != actualType.isStruct ||
+								expectedType.isUnion != actualType.isUnion ||
+								(expectedType.isStruct && expectedType.structUnionName != actualType.structUnionName) ||
+								(expectedType.isUnion && expectedType.structUnionName != actualType.structUnionName)) {
+								type_error("Argument " + to_string(i+1) + " type mismatch in function pointer call: reference parameter '" + 
+										  (*base->parameterTypes)[i].toString() + "' cannot bind to '" + 
+										  (*argTypes)[i].toString() + "' (exact type match required)");
+							}
+							
+							// Pass address of the argument
+							TACOperand* addr = new_temp_var();
+							TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
+							$$->code.push_back(addr_inst);
+							
+							TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+														addr, 
+														new_empty_var(), 
+														new_empty_var(), 0);
+							$$->code.push_back(argInstr);
+						} else {
+							// Type conversion if needed for non-reference parameters
+							pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+								change_type_rhs_to_lhs((*base->parameterTypes)[i], (*argTypes)[i]);
+							$$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+							
+							// Pass the argument
+							TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+														promo.second.second, 
+														new_empty_var(), 
+														new_empty_var(), 0);
+							$$->code.push_back(argInstr);
+						}
 					}
 					
 					// Generate indirect call instruction
@@ -1689,15 +1820,54 @@ postfix_expression
                 int no_of_fixed_params = func->parameters.size();
                 for(int i=0;i<no_of_args;i++){
                     if (i < no_of_fixed_params) {
-                        // For fixed parameters, do type conversion
-                        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
-                            change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
-                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-                        TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-                                                    promo.second.second, 
-                                                    new_empty_var(), 
-                                                    new_empty_var(), 0);
-                        $$->code.push_back(argInstr);
+                       // Check if parameter is a reference
+                        if (func->parameters[i].type.isReference) {
+                            // For reference parameters, check if argument is lvalue
+                            if (!(*argTypes)[i].isLvalue) {
+                                type_error("Cannot bind non-lvalue to reference parameter " + to_string(i+1));
+                            }
+                            
+                            // References require EXACT type match - no implicit conversions
+                            TypeInfo expectedType = func->parameters[i].type;
+                            expectedType.isReference = false;  // Compare underlying type
+                            
+                            TypeInfo actualType = (*argTypes)[i];
+                            actualType.isReference = false;    // Compare underlying type
+                            
+                            // Check exact type match
+                            if (expectedType.baseType != actualType.baseType ||
+                                expectedType.pointerLevel != actualType.pointerLevel ||
+                                expectedType.isArray != actualType.isArray ||
+                                expectedType.isStruct != actualType.isStruct ||
+                                expectedType.isUnion != actualType.isUnion ||
+                                (expectedType.isStruct && expectedType.structUnionName != actualType.structUnionName) ||
+                                (expectedType.isUnion && expectedType.structUnionName != actualType.structUnionName)) {
+                                type_error("Argument " + to_string(i+1) + " type mismatch: reference parameter '" + 
+                                          func->parameters[i].type.toString() + "' cannot bind to '" + 
+                                          (*argTypes)[i].toString() + "' (exact type match required)");
+                            }
+                            
+                            // Pass address of the argument
+                            TACOperand* addr = new_temp_var();
+                            TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
+                            $$->code.push_back(addr_inst);
+                            
+                            TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                        addr, 
+                                                        new_empty_var(), 
+                                                        new_empty_var(), 0);
+                            $$->code.push_back(argInstr);
+                        } else {
+                            // For non-reference parameters, do type conversion
+                            pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+                                change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                            $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                            TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                        promo.second.second, 
+                                                        new_empty_var(), 
+                                                        new_empty_var(), 0);
+                            $$->code.push_back(argInstr);
+                        }
                     } else {
                         // For variadic arguments, pass as-is (no type checking/conversion)
                         TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
@@ -2370,7 +2540,7 @@ struct_or_union_specifier
 		
 		delete $1; delete $2;
 	}   /* e.g., struct S { int x; };*/  
-     // anonymous struct/union
+    // anonymous struct/union
     // -------------------------    -----------------------------
     // naya
     |  struct_or_union LBRACE {
@@ -2509,6 +2679,12 @@ struct_declarator
     ;
 
 //---------------------------------------- Pointers --------------------------------------------------
+
+reference
+    : BIT_AND {                                /* e.g., & */
+        $$ = 1;  // Flag indicating reference
+    }
+    ;
 
 pointer
     : STAR {                                   /* e.g., * */
