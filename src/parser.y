@@ -3224,6 +3224,7 @@ iteration_statement
         $$->code.push_back(goto_begin);
         
         // RENUMBER instructions in correct order
+        // renumber_instructions($$->code);
         //renumber_instructions($$->code);
         
         // next_list contains false_list of condition and next_list of body and break statements
