@@ -835,6 +835,12 @@ function_definition
             $$->code.push_back(instr);
         }
         
+        // Backpatch any remaining next_list jumps to the function end
+        if (!$5->next_list.empty()) {
+            TACOperand* end_label = new_label(0);
+            backpatch($5->next_list, end_label);
+        }
+        
         // Generate function end instruction
         TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
                                       new_identifier($2->name), 
@@ -2898,8 +2904,8 @@ marker
 statement_list
 	: statement                                                            /* e.g., stmt */{
         $$= $1;
-        TACOperand* curr_inst = new_label(0);
-        backpatch($$->next_list,curr_inst);
+        // Don't backpatch next_list here - let it propagate up
+        // It will be backpatched by the caller if needed
     }
 	| statement_list marker statement                                               /* e.g., stmt; stmt; */{
         $$ = new TypeInfo();
