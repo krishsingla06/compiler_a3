@@ -686,7 +686,6 @@ function_definition
             cout << instr_str << "\n";
         }
 		
-		// Clean up
         delete $1;
         delete $2;
         delete $5;
@@ -1231,26 +1230,11 @@ declaration_list
 	;
 
 
-
-
 //--------------------------------- Initializers -> RHS of assignment expressions -----------------------------------------------------
 
 initializer
 	: assignment_expression { $$ = $1; }  //Basically any expression                                            
 	;
-/* 
-parameter_list
-	: parameter_declaration                                             
-        $$ = new vector<TypeInfo>();
-        $$->push_back(*$1);
-        delete $1;
-    }
-	| parameter_list COMMA parameter_declaration                         {
-        $$ = $1;
-        $$->push_back(*$3);
-        delete $3;
-    }
-	; */
 
 parameter_list
     : parameter_declaration {
@@ -1407,40 +1391,6 @@ primary_expression
             cout << "Found function name: " << *$1 << "\n";
 
             $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
-
-            // Get the first matching function with this name
-            // FunctionEntry* funcEntry = nullptr;
-            // for (auto& pair : function_table) {
-            //     if (pair.second.originalName == *$1) {
-            //         funcEntry = &pair.second;
-            //         break;
-            //     }
-            // }
-            
-            // if (funcEntry) {
-            //     // Create a function pointer type for this function
-            //     $$ = new TypeInfo();
-            //     $$->isFunctionPointer = true;
-            //     $$->baseType = "function_pointer";
-            //     $$->returnType = new TypeInfo(funcEntry->returnType);
-            //     $$->parameterTypes = new vector<TypeInfo>();
-            //     for (const auto& param : funcEntry->parameters) {
-            //         $$->parameterTypes->push_back(param.type);
-            //     }
-            //     $$->identifier = *$1;
-            //     $$->isLiteral = false;
-            //     $$->isLvalue = false;  // Function names are not lvalues
-            //     $$->result = new_identifier(*$1); // Function names can be used as pointers to functions
-                
-            //     cout << "Found function name: " << *$1 << " as function pointer type " << $$->toString() << "\n";
-            // } else {
-            //     check_variable_declaration(*$1);
-            //     $$ = new TypeInfo();
-            //     $$->baseType = "error";
-            //     $$->identifier = *$1;
-            //     $$->isLvalue = false;
-            //     t//ype_error("Undefined function: " + *$1);
-            // }
         }
         // Otherwise, it's undefined
         else {
@@ -1731,18 +1681,6 @@ postfix_expression
                 for(int i=0;i<no_of_args;i++){
                     $$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
                 }
-                // for(int i=0;i<no_of_args;i++){
-                //     // generate code for argument passing
-                //     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
-                //     // append promo.first to $$->code
-                //     $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-                //     // now pass promo.second.second as argument
-                //     TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-                //                                 promo.second.second, 
-                //                                 new_empty_var(), 
-                //                                 new_empty_var(), 0);
-                //     $$->code.push_back(argInstr);
-                // }
 
                 // Pass arguments with type conversion for fixed parameters
                 int no_of_fixed_params = func->parameters.size();
@@ -1896,10 +1834,7 @@ postfix_expression
 					$$ = new TypeInfo(member->type);
 					$$->isLvalue = true;  // Member access is an lvalue
 					$$->isLiteral = false;
-					
-					// TAC: Calculate member address
-					// member_addr = base + offset  (base is already a pointer)
-					// result = *member_addr
+				
 					
 					$$->code = base->code;
 					
@@ -2569,15 +2504,6 @@ struct_declarator
         $$ = $1;
     }
     ;
-
-/*
-Dekhte hai, in future : constant_expression ko bhi handle karna hai ya nahi
-struct_declarator
-	: declarator
-	| ':' constant_expression
-	| declarator ':' constant_expression
-	;
-*/
 
 //---------------------------------------- Pointers --------------------------------------------------
 
@@ -3344,8 +3270,6 @@ jump_statement
 	;
 
 %%
-
-
 
 void enter_scope() {
     current_scope_level++;
@@ -4753,50 +4677,6 @@ bool is_function_name(const string& name) {
     }
     return false;
 }
-/* 
-FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
-    // Convert array arguments to pointers
-    vector<TypeInfo> convertedArgs;
-    for (const TypeInfo& arg : argTypes) {
-        convertedArgs.push_back(array_to_pointer_conversion(arg));
-    }
-    
-    // Try exact match first
-    string exactMangledName = mangle_function_name(name, convertedArgs);
-    auto it = function_table.find(exactMangledName);
-    if (it != function_table.end()) {
-        cout << "Found exact function match: " << exactMangledName << "\n";
-        return &(it->second);
-    }
-    
-    // If no exact match, collect all compatible functions
-    vector<FunctionEntry*> compatibleFunctions;
-    
-    for (auto& entry : function_table) {
-        FunctionEntry& func = entry.second;
-        if (func.originalName == name && are_parameters_compatible(convertedArgs, func.parameters)) {
-            compatibleFunctions.push_back(&func);
-            cout << "Found compatible function: " << func.mangledName << " for " << name << "\n";
-        }
-    }
-    
-    // If exactly one compatible function is found, return it
-    if (compatibleFunctions.size() == 1) {
-        return compatibleFunctions[0];
-    }
-    // If multiple compatible functions are found, report ambiguity error
-    else if (compatibleFunctions.size() > 1) {
-        string errorMsg = "Ambiguous function call to '" + name + "', multiple matching overloads:";
-        for (auto* func : compatibleFunctions) {
-            errorMsg += "\n  " + func->mangledName;
-        }
-        type_error(errorMsg);
-        return nullptr;
-    }
-    
-    // No compatible functions found
-    return nullptr;
-} */
 
 FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
     // Convert array arguments to pointers

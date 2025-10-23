@@ -891,7 +891,7 @@ static const yytype_int16 yyrline[] =
     2786,  2786,  2821,  2821,  2852,  2876,  2876,  2891,  2897,  2902,
     2915,  2924,  2928,  2934,  2941,  2941,  2958,  2958,  3039,  3039,
     3072,  3072,  3110,  3110,  3141,  3143,  3141,  3173,  3173,  3215,
-    3226,  3215,  3274,  3281,  3296,  3303,  3310,  3323
+    3226,  3215,  3274,  3281,  3296,  3306,  3316,  3329
 };
 #endif
 
@@ -5299,29 +5299,35 @@ yyreduce:
   case 214: /* jump_statement: CONTINUE SEMICOLON  */
 #line 3296 "parser.y"
                                                                                                       {
+        if (loop_depth == 0) {
+            type_error("Continue statement not within loop");
+        }
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         (yyval.typeinfo)->code.push_back(goto_inst);
         (yyval.typeinfo)->continue_list.insert(goto_inst);
     }
-#line 5309 "parser.tab.c"
+#line 5312 "parser.tab.c"
     break;
 
   case 215: /* jump_statement: BREAK SEMICOLON  */
-#line 3303 "parser.y"
+#line 3306 "parser.y"
                                                                                                    {
+        if (loop_depth == 0 && switch_case_stack.empty()) {
+            type_error("Break statement not within loop or switch");
+        }
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         (yyval.typeinfo)->code.push_back(goto_inst);
         (yyval.typeinfo)->break_list.insert(goto_inst);
     }
-#line 5321 "parser.tab.c"
+#line 5327 "parser.tab.c"
     break;
 
   case 216: /* jump_statement: RETURN SEMICOLON  */
-#line 3310 "parser.y"
+#line 3316 "parser.y"
                                                                                                     {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -5335,11 +5341,11 @@ yyreduce:
         }
         
     }
-#line 5339 "parser.tab.c"
+#line 5345 "parser.tab.c"
     break;
 
   case 217: /* jump_statement: RETURN expression SEMICOLON  */
-#line 3323 "parser.y"
+#line 3329 "parser.y"
                                                                                                       {
         (yyval.typeinfo) = new TypeInfo();
         (yyval.typeinfo)->baseType = "void";
@@ -5355,11 +5361,11 @@ yyreduce:
         }
         delete (yyvsp[-1].typeinfo);
     }
-#line 5359 "parser.tab.c"
+#line 5365 "parser.tab.c"
     break;
 
 
-#line 5363 "parser.tab.c"
+#line 5369 "parser.tab.c"
 
       default: break;
     }
@@ -5552,9 +5558,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 3340 "parser.y"
-
-
+#line 3346 "parser.y"
 
 
 void enter_scope() {
