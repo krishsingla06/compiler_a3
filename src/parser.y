@@ -457,6 +457,8 @@ void yyerror(const char* s) {
     // Helper to insert enumerator as const symbol
     void insert_enumerator(const string& name, int value);
 
+    bool canExplicitlyConvert(const TypeInfo& from, const TypeInfo& to);
+
     
 }
 
@@ -890,7 +892,6 @@ declaration
 				}else{
 					// First, include the code that generates the initializer value (e.g., function call)
                     $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
-
 					// if implicit conversion allowed, then do it and reflect in 3AC else simply assign
                     pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
                     // append promo.first to $$->code
@@ -2119,26 +2120,26 @@ cast_expression
 
         // CHECK COMPATIBILITY
         //pending
-        // if (!are_types_compatible_for_casting(*target_type, *source_type)) {
-        //     type_error("Incompatible types for casting from " + source_type->toString() + " to " + target_type->toString());
-        //     $$ = new TypeInfo();
-        //     $$->baseType = "error";
-        //     delete $2; delete $4;
-        //     return;
-        // }
-        
-		
-		// Perform type casting 
-        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(*target_type, *source_type);
-        $$ = new TypeInfo(*target_type);
-        $$->isLiteral = false; // Result of cast is not a literal
-        $$->result = promo.second.second;
-        $$->code = vector<TACInstruction*>();
-        // Carry over the code from the source expression
-        $$->code.insert($$->code.end(), source_type->code.begin(), source_type->code.end());
-        // Append the casting instructions
-        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-		delete $2; delete $4;
+
+        if(!canExplicitlyConvert(*source_type, *target_type)){
+            type_error("Cannot cast from type " + source_type->toString() + " to " + target_type->toString());
+            $$ = new TypeInfo();
+            $$->baseType = "error";
+            delete $2; delete $4;
+        }else{
+            $$ = new TypeInfo(*target_type);
+            $$->isLiteral = false;
+            $$->isLvalue = false;  // Result of cast is not an lvalue
+            cout << "Casting from " << source_type->toString() << " to " << target_type->toString() << "\n";
+            // Generate 3AC for casting by simply one instruction
+            $$->code = source_type->code;
+            TACOperand* result_op = new_temp_var();
+            TACOperand* target_type_op = new_type(target_type->toString());
+            TACInstruction* cast_instr = emit(TAC_OPERATOR_CAST, result_op, source_type->result, target_type_op,0);
+            $$->code.push_back(cast_instr);
+            $$->result = result_op;
+            delete $2; delete $4;
+        }
 	}
 	;
 
@@ -2294,6 +2295,7 @@ inclusive_or_expression
         delete $1; delete $3;
     }
 
+// #galati -> logical expression se pehle convert to int daal skta hu
 logical_and_expression
 	: inclusive_or_expression { $$ = $1; }
 	| logical_and_expression LOGICAL_AND { 
@@ -2897,8 +2899,8 @@ labeled_statement
             int case_value = 0;
 
             // CHAR_LITERAL is of type string* , we have to convert it to int   
-            case_value = static_cast<int>((*$2)[1]); // Get ASCII value of the character literal (skip the opening quote)
-            
+            case_value = static_cast<int>((*$2)[1]); // Get ASCII value of the character literal
+            cout << "Case label with char literal: " << *$2 << " (ASCII " << case_value << ")\n";
             
             // Check for duplicate case values in current switch
             map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
@@ -2931,6 +2933,7 @@ labeled_statement
         } else {
             // Get integer value
             int case_value = $2;
+            cout<<"Case value: "<<case_value<<"\n";
             
             // Check for duplicate case values in current switch
             map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
@@ -3646,6 +3649,7 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
             //hihi
             // One is function pointer, other is not
             // if right is function and left is function pointer then find the exact match
+            // # galati
             if (left_type.isFunctionPointer && right_type.baseType == "function" && !right_type.identifier.empty()) {
                 // Right side is a function name, left side is function pointer
                 cout<<"Right side is a function name, left side is function pointer\n";
@@ -3741,6 +3745,8 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     }
     
     // If both are struct/union, check if they refer to the same definition
+    // struct and union mei type checking can me made more comprehensive by checking member wise compatibility
+    // or atleast name mangling karke check krna chahiye - to get idea  of scope
     if (left_type.isStruct || left_type.isUnion) {
         // Check if names match
         if (left_type.structUnionName != right_type.structUnionName) {
@@ -3750,7 +3756,7 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
         // But name matching is sufficient for scope-aware struct/union lookup
     }
     
-    // Check base types match (ignoring static as requested)
+    // Check base types match 
     if (left_type.baseType != right_type.baseType) return false;
     
     // Check pointer compatibility 
@@ -3789,7 +3795,7 @@ bool check_initialization_compatibility(const TypeInfo& var_type, const TypeInfo
     if(init_type.isFunctionPointer){
         return 0;
     } */
-
+    // #galati maybe - kyun types_compatible mei left,right ka order hai, but yahan var_type, init_type bhej rha hu , but voh func ptrs ke liye kiya gya tha
     if (types_compatible(init_type,var_type)) { // krish : yahan most recent commit - function pointer ke liye change kiye hai, 
         return true;
     }
@@ -3823,6 +3829,8 @@ bool is_lvalue(const TypeInfo& expr) {
     return expr.isLvalue;
 }
 
+
+//done
 bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     // Allow exact type matches
     if (types_compatible(to,from)) { // krish : yahan most recent commit - function pointer ke liye change kiye hai, 
@@ -3853,27 +3861,17 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     if (from.baseType == "void" && from.pointerLevel > 0 && to.pointerLevel > 0 && !to.isArray && !from.isArray &&( from.pointerLevel == to.pointerLevel)) {
         return true;
     }
+
+    // any other pointer to void* conversion
+    if (to.baseType == "void" && to.pointerLevel > 0 && from.pointerLevel > 0 && !to.isArray && !from.isArray &&( from.pointerLevel == to.pointerLevel)) {
+        return true;
+    }
     
     
     // Allow array to pointer conversion (array decay)
-    if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType) {
-        // For multidimensional arrays, we need to check that the remaining dimensions match
-        if (from.arrayDimensions.size() > 1) {
-            // Create the decayed array type for comparison
-            TypeInfo decayedType = array_to_pointer_conversion(from);
-            return types_compatible(decayedType, to);
-        }
-        // For single-dimension arrays, check if pointer level matches (array[n] -> T*)
-        return to.pointerLevel == 1;
-    }
-    
-    // Allow pointer conversions with compatible base types
-    if (from.pointerLevel > 0 && to.pointerLevel > 0) {
-        // Void pointer can be assigned to any pointer type with same level
-        if ((from.baseType == "void" || to.baseType == "void") && from.pointerLevel == to.pointerLevel) {
-            return true;
-        }
-    }
+    if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType && (from.pointerLevel + from.arrayDimensions.size() == to.pointerLevel)) {
+        return true;
+    }   
 
     
     
@@ -3914,17 +3912,74 @@ bool is_narrowing_conversion(const TypeInfo& from, const TypeInfo& to) {
     return false;
 }
 
+bool canExplicitlyConvert(const TypeInfo& from, const TypeInfo& to) {
+    // For simplicity, allow explicit conversions between numeric types
+    if (is_numeric_type(from.baseType) && is_numeric_type(to.baseType) && 
+        from.pointerLevel == 0 && to.pointerLevel == 0 && 
+        !from.isArray && !to.isArray) {
+        return true;
+    }
+    
+    // Allow explicit pointer conversions (except function pointers)
+    if (from.pointerLevel > 0 && to.pointerLevel > 0 && 
+        !from.isFunctionPointer && !to.isFunctionPointer) {
+        return true;
+    }
+    
+    return false;
+}
+
 
 pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_lhs(const TypeInfo& left, const TypeInfo& right) {
     
     //YAHAN PEHLE CHECK LAGANA HAI
     //VOID* BHI INCLUDE KARNA HAI
     //AND ALSO ARRAY TO POINTER DECAY
+
+    // baaki cheezein are not convertible kind of... like function pointer check alag se laga hai, reference check alag se laga hai, struct and union convertible hii nhi hai
     TypeInfo* res = new TypeInfo();
-                
-    // If either is float, res is float
-    if (left.baseType == "float" ) {
+
+    // if lhs is void pointer, and rhs is pointer, then allow
+    if (left.baseType == "void" && left.pointerLevel > 0 && right.pointerLevel > 0) {
         
+        TACOperand* right_temp = new_temp_var();
+        string targetTypeStr = "void";
+        for (int i = 0; i < left.pointerLevel; i++) {
+            targetTypeStr += "*";
+        }
+        TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type(targetTypeStr), 0);
+        res->code.push_back(castInstr);
+        return {res->code, {right_temp, right.result}};
+    }
+
+    //if rhs is void pointer, and lhs is pointer, then allow
+    if (right.baseType == "void" && right.pointerLevel > 0 && left.pointerLevel > 0) {
+        
+        TACOperand* right_temp = new_temp_var();
+        string targetTypeStr = left.baseType;
+        for (int i = 0; i < left.pointerLevel; i++) {
+            targetTypeStr += "*";
+        }
+        TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type(targetTypeStr), 0);
+        res->code.push_back(castInstr);
+        return {res->code, {left.result, right_temp}};
+    }
+
+    //if rhs is array and lhs is pointer, then do array to pointer decay
+    if (right.isArray && left.pointerLevel > 0 && right.baseType == left.baseType && left.pointerLevel == (right.pointerLevel + right.arrayDimensions.size())) {
+        TypeInfo decayedType = array_to_pointer_conversion(right);
+        TACOperand* right_temp = new_temp_var();
+        string targetTypeStr = decayedType.baseType;
+        for (int i = 0; i < decayedType.pointerLevel; i++) {
+            targetTypeStr += "*";
+        }
+        TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type(targetTypeStr), 0);
+        res->code.push_back(castInstr);
+        return {res->code, {left.result, right_temp}};
+    }
+                
+    // If either is float, res is float and both are non array and non pointer
+    if (left.baseType == "float" && left.pointerLevel == 0 && !left.isArray && right.pointerLevel == 0 && !right.isArray) {
         // If right is not float, cast it to float
         if (right.baseType != "float" && right.baseType != "error") {
             TACOperand* right_temp = new_temp_var();
@@ -3934,8 +3989,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
         }
     }
     
-    // If either is int, res is int
-    else if (left.baseType == "int" ) {
+    else if (left.baseType == "int" || right.baseType == "int") {
         res->baseType = "int";
         
         // If right is char, cast it to int
@@ -3947,7 +4001,6 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
         }
     }
     
-    // Both char, res is int (C promotion rules)
     else if (left.baseType == "char") { 
         res->baseType = "char";
 
@@ -3958,11 +4011,9 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
             return {res->code, {left.result, right_temp}};
         }
     }
-    // Default to left type
     else {
         res->baseType = left.baseType;
     }
-    
     
     return {res->code, {left.result, right.result}};
 }
@@ -4795,9 +4846,14 @@ string mangle_variable_name(const string& varName, int scopeLevel, const string&
 TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
     TypeInfo res = type;
     if (res.isArray) {
+        //simple make array of level = dimension of array
+        res.isArray = false;
+        res.pointerLevel += res.arrayDimensions.size();
+        res.arrayDimensions.clear();
+
         // For multidimensional arrays, we only decay the first dimension
         // int[3][4][5] -> int(*)[4][5]
-        if (res.arrayDimensions.size() > 1) {
+        /* if (res.arrayDimensions.size() > 1) {
             // Create a pointer to the remaining array dimensions
             vector<int> remainingDimensions(res.arrayDimensions.begin() + 1, res.arrayDimensions.end());
             res.arrayDimensions = remainingDimensions;
@@ -4808,7 +4864,7 @@ TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
             res.pointerLevel += 1;
             res.arrayDimensions.clear();
         }
-        cout << "Array to pointer conversion: " << type.toString() << " -> " << res.toString() << "\n";
+        cout << "Array to pointer conversion: " << type.toString() << " -> " << res.toString() << "\n"; */
     }
     return res;
 }
