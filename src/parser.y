@@ -314,6 +314,9 @@ void yyerror(const char* s) {
     map<string, vector<TypeInfo>> typedef_table;
 
     int loop_depth = 0;  // Incremented at loop start, decremented at loop end
+
+    // Global variable to store the output TAC filename
+    string output_tac_filename = "Final.tac";  // Default fallback
     
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
@@ -572,14 +575,14 @@ start
        cout << "Start rule: Global declaration has " << $$->code.size() << " TAC instructions\n";
       
         // Open the file for writing
-        ofstream tac_file("Final.tac");
+        ofstream tac_file(output_tac_filename);
         if (tac_file.is_open()) {
             // simply print code
             for(auto instr : $$->code){
                 tac_file << get_TAC_instruction_string(instr) << "\n";
             }
             tac_file.close();
-            cout << "TAC code written to Final.tac\n";
+            cout << "TAC code written to " << output_tac_filename << "\n";
         } else {
             cerr << "Failed to open file for TAC output\n";
         }
@@ -594,14 +597,14 @@ start
 
         // append this also to final.tac
 
-        ofstream tac_file("Final.tac", ios::app);
+       ofstream tac_file(output_tac_filename, ios::app);
         if (tac_file.is_open()) {
             // simply print code
             for(auto instr : $2->code){
                 tac_file << get_TAC_instruction_string(instr) << "\n";
             }
             tac_file.close();
-            cout << "TAC code appended to Final.tac\n";
+            cout << "TAC code appended to " << output_tac_filename << "\n";
         } else {
             cerr << "Failed to open file for TAC output\n";
         }
@@ -5138,8 +5141,16 @@ int main(int argc, char** argv) {
 	string error_log_name = input_filename + ".errors";
 	init_error_log(error_log_name);
 
+    string base_name = input_filename;
+    size_t last_dot = base_name.find_last_of('.');
+    if (last_dot != string::npos) {
+        base_name = base_name.substr(0, last_dot);
+    }
+    output_tac_filename = base_name + ".tac";
+
 	yyin = f;
 	cout << "Starting parser...\n";
+
 	
 	// Initialize global scope
 	enter_scope();

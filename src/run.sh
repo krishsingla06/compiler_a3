@@ -1,9 +1,9 @@
 #!/bin/bash
-rm -f test_cases/*.errors
+rm -f ../test_cases/*.errors
 
-for file in test_cases/*; do
+for file in ../test_cases/*; do
     echo "Running parser on $file"
-    ./src/parser "$file"    
+    ./parser "$file"    
 done
 
 # rm -f newwtestcases/*.errors
