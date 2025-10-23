@@ -733,6 +733,12 @@ string get_operand_string(TACOperand* operand);
 %type <typeinfo> global_declaration
 %type <typeinfo> start
 
+%type<typeinfo> short_circuited_logical_and_expression
+%type<typeinfo> short_circuited_logical_or_expression
+%type<typeinfo> short_circuited_expression
+%type<typeinfo> short_circuited_assignment_expression
+%type<typeinfo> short_circuited_conditional_expression
+
 
 %%
 start
@@ -5411,5 +5417,6 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
 
 
