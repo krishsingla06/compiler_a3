@@ -2748,6 +2748,161 @@ pointer
     }
     ;
 
+// short circuited logical and and or expressions 
+//----------------------------------------------------------------------------------------------------------
+
+
+short_circuited_logical_and_expression
+	: inclusive_or_expression { $$ = $1; }
+	| short_circuited_logical_and_expression LOGICAL_AND { 
+        TACOperand* true_label = new_label(2);
+        TACInstruction* if_true = emit(TACOperator(TAC_OPERATOR_NOP), true_label, $1->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        TACInstruction* goto_false = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1); // TAC -> goto ___
+        $1->code.push_back(if_true);
+        $1->code.push_back(goto_false);
+        $1->false_list.insert(goto_false);
+    } inclusive_or_expression { 
+		// Short-circuit logical AND
+        cout<<"Entered short circuited logical and expression\n";
+        TypeInfo* left = $1;
+        TypeInfo* right = $4;
+        
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in logical AND operation");
+        }else{
+            // okay for all other types
+            $$ = new TypeInfo();
+            $$->baseType = "int"; // Result of logical operations is int
+            $$->isLiteral = false;
+            $$->isLvalue = false;
+            cout << "Short circuted Logical AND: " << left->toString() << " && " << right->toString() << " -> int\n";
+
+            
+            $$->result = new_temp_var();
+            $$->code = left->code;
+            $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
+
+
+            $$->true_list = right->true_list;
+            $$->false_list = left->false_list;
+            $$->false_list.insert(right->false_list.begin(), right->false_list.end());
+
+            delete left;
+            delete right;
+
+        }
+    }
+    ;
+
+short_circuited_logical_or_expression
+	: short_circuited_logical_and_expression { $$ = $1; }
+	| short_circuited_logical_or_expression LOGICAL_OR {
+        TACInstruction* go_true = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $1->result, new_empty_var(), 2); // TAC -> if E1->result nop ___ goto ___
+        $1->code.push_back(go_true);
+        $1->true_list.insert(go_true);
+    } short_circuited_logical_and_expression { 
+		// short circuit
+        
+        TypeInfo* left = $1;
+        TypeInfo* right = $4;
+
+
+        // Both sides must be scalar types (not arrays or structs)
+        if(left->baseType == "void" || right->baseType == "void" ){
+            type_error("Void type cannot be used in bitwise OR operation");
+        }else{
+            // okay for all other types
+            $$ = new TypeInfo();
+            $$->baseType = "int"; // Result of bitwise operations is int
+            $$->isLiteral = false;
+            $$->isLvalue = false;
+            cout << "Bitwise OR: " << left->toString() << " | " << right->toString() << " -> int\n";
+            $$->result = new_temp_var();
+            $$->code = left->code;
+            $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
+            
+            $$->true_list = left->true_list;
+            $$->true_list.insert(right->true_list.begin(), right->true_list.end());
+
+            delete left;
+            delete right;
+            
+        }
+    }
+	;
+
+short_circuited_conditional_expression
+    : short_circuited_logical_or_expression                                            /* e.g., x */ {
+        $$ = $1;  // No conditional, just pass through
+    }
+
+
+short_circuited_assignment_expression
+	: short_circuited_conditional_expression { $$ = $1;}
+	| unary_expression assignment_operator assignment_expression {  // yeh line dikkat de skti hai in future, because assignment_expression mein short_circuited_assignment_expression hona chahiye
+		// Type checking for assignment
+		TypeInfo* lhs_type = $1;
+		TypeInfo* rhs_type = $3;
+		
+		// Check if left-hand side is a valid lvalue
+		if (!is_lvalue(*lhs_type)) {
+			type_error("Cannot assign to " + lhs_type->toString() + " - not an lvalue");
+			$$ = new TypeInfo();
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+			$$->baseType = "error";
+		} else if (!is_implicit_conversion_allowed(*rhs_type, *lhs_type)) {
+			type_error("Cannot assign " + rhs_type->toString() + " to " + lhs_type->toString());
+			$$ = new TypeInfo();
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+			$$->baseType = "error";
+		} else if (is_narrowing_conversion(*rhs_type, *lhs_type)) {
+			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
+			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
+            $$->result = cast_result.second.first; // Result after casting
+            $$->code = lhs_type->code;
+            $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, $$->result, new_empty_var(),0); // lhs = rhs
+            $$->code.push_back(assign_inst);
+		} else {
+			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
+			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
+            $$->result = cast_result.second.first; // Result after casting
+            $$->code = lhs_type->code;
+            $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, $$->result, new_empty_var(),0); // lhs = rhs
+            $$->code.push_back(assign_inst);
+		}
+
+        // print 3AC
+        for(TACInstruction* inst : $$->code){
+            print_TAC_instruction(inst);
+        }
+		
+		delete $1; delete $3;
+	}
+	;
+
+
+
+short_circuited_expression
+	: short_circuited_assignment_expression { $$ = $1; }
+	| short_circuited_expression COMMA short_circuited_assignment_expression {  // yahan bhi assignment_expression ki jagah short_circuited_assignment_expression likh skte hai, but abhi ke liye nhi likh rhe, although it is correct
+		// Comma operator returns the type of the right operand
+		$$ = new TypeInfo(*$3);
+        $$->isLvalue = false;  // Result of comma operator is not an
+        $$->code = $1->code;
+        $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
+		delete $1;
+        delete $3;
+	}
+	;
+
 //---------------------------------------- Statements --------------------------------------------------
 
 
@@ -3046,13 +3201,18 @@ selection_statement
 	;
 
 if_expression 
-    : IF LPAREN expression RPAREN  {
+    : IF LPAREN short_circuited_expression RPAREN  { // making change here for short circuited expressions
         TACOperand* true_label = new_label(2);
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, $3->result, new_empty_var(), 2); 
         $3->code.push_back(if_inst);
         TACInstruction* goto_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), new_empty_var(), new_empty_var(), 1);
         $3->code.push_back(goto_inst);
         $3->false_list.insert(goto_inst);
+
+        // backpatching to the true label
+        if(! $3->true_list.empty()) {
+            backpatch($3->true_list, new_label(0));
+        }
     }  statement {
         $$ = new TypeInfo();
         $$->code = $3->code;
@@ -3074,7 +3234,7 @@ if_expression
 
 
 iteration_statement
-	:  WHILE begin_marker LPAREN expression RPAREN {
+	:  WHILE begin_marker LPAREN short_circuited_expression RPAREN { // here also change for short circuited expressions
         TACOperand* true_label = new_label(2);
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), true_label, $4->result, new_empty_var(), 2);
         $4->code.push_back(if_inst);
@@ -3084,6 +3244,7 @@ iteration_statement
 
         // backpatching to the beginning of the loop
         // although for now it is useless
+        // now it is useful for short circuited expressions
         if(! $4->true_list.empty()) {
             backpatch($4->true_list, new_label(0));
         }
@@ -3109,11 +3270,15 @@ iteration_statement
         }
         delete $4; delete $7;
     }
-	| UNTIL begin_marker LPAREN expression {
+	| UNTIL begin_marker LPAREN short_circuited_expression { // here also change for short circuited expressions
         // if E then goto___ -> next list
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $4->result, new_empty_var(), 1);
         $4->code.push_back(if_inst);
         $4->true_list.insert(if_inst);
+        // backpatch expression's false_list to beginning of loop's statement
+        if(! $4->false_list.empty()) {
+            backpatch($4->false_list, new_label(0));
+        }
     } RPAREN statement                              {
         $$ = new TypeInfo();
         $$->code = $4->code;
@@ -3139,7 +3304,7 @@ iteration_statement
         // seemss redundant but dont delete for now
         // krish
         //backpatch($3->next_list, curr_inst);
-    } WHILE LPAREN marker expression RPAREN SEMICOLON{
+    } WHILE LPAREN marker short_circuited_expression RPAREN SEMICOLON{ // here also change for short circuited expressions
         $$ = new TypeInfo();
         $$->code = $3->code;
         $$->code.insert($$->code.end(), $8->code.begin(), $8->code.end());
@@ -3155,6 +3320,11 @@ iteration_statement
 
         if(! $3->continue_list.empty()) {
             backpatch($3->continue_list, $7);
+        }
+
+        // also backpatch true_list to the beginning of the loop
+        if(! $8->true_list.empty()) {
+            backpatch($8->true_list, $2);
         }
 
     }                  
@@ -5241,4 +5411,5 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
 
