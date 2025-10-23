@@ -2897,7 +2897,7 @@ labeled_statement
             int case_value = 0;
 
             // CHAR_LITERAL is of type string* , we have to convert it to int   
-            case_value = static_cast<int>((*$2)[0]); // Get ASCII value of the character literal
+            case_value = static_cast<int>((*$2)[1]); // Get ASCII value of the character literal (skip the opening quote)
             
             
             // Check for duplicate case values in current switch
