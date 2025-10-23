@@ -1451,16 +1451,24 @@ parameter_list
 
 
 parameter_declaration
-	: return_types parameter_declarator                                             /* e.g., int x */ {
-        // Combine base type with declarator-specific type info
-        TypeInfo* combinedType = new TypeInfo(*$1);  // Start with base type
+    : return_types parameter_declarator {
+        TypeInfo* combinedType = new TypeInfo(*$1);
         
-        // Add declarator-specific type information
-        combinedType->pointerLevel = $2->pointerLevel;
-        combinedType->isArray = $2->isArray;
-        combinedType->arrayDimensions = $2->arrayDimensions;
+        // Check if this is a function pointer parameter
+        if ($2->isFunction && $2->paramTypes) {
+            // This is a function pointer: e.g., int (*fp)(int, float)
+            combinedType->isFunctionPointer = true;
+            combinedType->returnType = new TypeInfo(*$1);  // Return type of the function pointer
+            combinedType->parameterTypes = new vector<TypeInfo>(*$2->paramTypes);
+            combinedType->pointerLevel = $2->pointerLevel - 1;  // Adjust for the function pointer itself
+            combinedType->baseType = "function_pointer";
+        } else {
+            // Regular parameter
+            combinedType->pointerLevel += $2->pointerLevel;
+            combinedType->isArray |= $2->isArray;
+            combinedType->arrayDimensions = $2->arrayDimensions;
+        }
         
-        // Store parameter information for later insertion into function scope
         current_function_parameters.push_back(make_pair($2->name, *combinedType));
         
         $$ = combinedType;
@@ -1490,7 +1498,7 @@ parameter_type_declarator
         TypeInfo* combinedType = new TypeInfo(*$1);
         
         // No name for abstract declarators
-        current_function_parameters.push_back(make_pair("", *combinedType));
+       // current_function_parameters.push_back(make_pair("", *combinedType));
         
         $$ = combinedType;
         delete $1;
@@ -1501,9 +1509,8 @@ parameter_type_declarator
         TypeInfo* combinedType = new TypeInfo(*$1);
         combinedType->pointerLevel = $2;
         
-        // No name for abstract declarators
-        current_function_parameters.push_back(make_pair("", *combinedType));
-        
+        // DON'T add to current_function_parameters - these are function pointer's params, not function's params
+        // current_function_parameters.push_back(make_pair("", *combinedType))
         $$ = combinedType;
         delete $1;
     }
@@ -1527,6 +1534,23 @@ parameter_direct_declarator
 		$$->name = *$1;
 		delete $1;
 	}
+    | LPAREN parameter_declarator RPAREN {
+        // Handles parenthesized declarators like (*fp)
+        $$ = $2;
+    }
+    | parameter_direct_declarator LPAREN parameter_type_list RPAREN {
+        // Function pointer with params: (*fp)(int, float)
+        $$ = $1;
+        $$->isFunction = true;
+        $$->paramTypes = new vector<TypeInfo>(*$3);
+        delete $3;
+    }
+    | parameter_direct_declarator LPAREN RPAREN {
+        // Function pointer with no params: (*fp)()
+        $$ = $1;
+        $$->isFunction = true;
+        $$->paramTypes = new vector<TypeInfo>();
+    }
 	;
 
 //------------------------ Simply expressions - used in RHS of initializers -----------------------------------------------------
@@ -4780,20 +4804,41 @@ string type_code_for_mangling(const TypeInfo& type) {
     return code;
 }
 
-// Function management implementation
-string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes,bool isVariadic) {
-    string mangledName = funcName;
+
+
+string mangle_function_name(const string& funcName, const vector<TypeInfo>& paramTypes, bool isVariadic) {
+    string mangled = funcName;
     
     for (const TypeInfo& param : paramTypes) {
-        mangledName += "_" + type_code_for_mangling(param);
-    }
-
-   if (isVariadic) {
-        mangledName += "_variadic";
+        mangled += "_";
+        
+        // Handle function pointers specially
+        if (param.isFunctionPointer) {
+            mangled += "fp";  // "fp" for function pointer
+            
+            // Add return type encoding (without separator)
+            if (param.returnType) {
+                mangled += "_r" + type_code_for_mangling(*param.returnType);
+            }
+            
+            // Add parameter types encoding (without separator)
+            if (param.parameterTypes) {
+                mangled += "_p";
+                for (const TypeInfo& fpParam : *param.parameterTypes) {
+                    mangled += type_code_for_mangling(fpParam);
+                }
+            }
+        } else {
+            // Regular parameter encoding (your existing code)
+            mangled += type_code_for_mangling(param);
+        }
     }
     
+    if (isVariadic) {
+        mangled += "_variadic";
+    }
     
-    return mangledName;
+    return mangled;
 }
 
 // Generate a mangled name for a variable using format: v_name_funname_signature_scopenum
