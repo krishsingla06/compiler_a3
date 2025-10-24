@@ -884,11 +884,10 @@ declaration
 			// Type check initialization if present
 			else if (declInfo->initType != nullptr) {
 				if (!check_initialization_compatibility(combinedType, *declInfo->initType)) {
-					// Issue a warning instead of error to allow compilation to continue
-					string warning_msg = "Type mismatch in initialization of variable '" + 
-						declInfo->name + "': cannot convert from " + 
-						declInfo->initType->toString() + " to " + combinedType.toString();
-					type_warning(warning_msg);
+					string error_msg = "Incompatible initialization of variable '" + declInfo->name + 
+                        "' of type '" + combinedType.toString() + "' with value of type '" + 
+                        declInfo->initType->toString() + "'";
+                    type_error(error_msg);
 				}else{
 					// First, include the code that generates the initializer value (e.g., function call)
                     $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
