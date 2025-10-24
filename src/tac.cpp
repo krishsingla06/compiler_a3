@@ -169,8 +169,8 @@ string get_TAC_instruction_string(TACInstruction* instruction) {
             + get_operand_string(instruction->result);
     }
     else if (instruction->flag == 4) {  // Jump table instruction
-        result += "goto jump_table_" + get_operand_string(instruction->arg1)
-            + "[" + get_operand_string(instruction->arg2)+ "]";
+        result += "goto_jump_table(" + get_operand_string(instruction->arg1)
+            + "," + get_operand_string(instruction->arg2)+ ")";
     }
     // **Function Instructions**
     else if(instruction->op.type == TAC_OPERATOR_CAST) {
