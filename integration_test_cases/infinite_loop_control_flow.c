@@ -1,14 +1,12 @@
-// not passed yet
-
+// passed both
 void foo(){
     label2:
 
-    until(1){
+    until(0){
         goto label2;
     }
 }
 
-// not passed yet
 void boo(){
     int i = 0;
     while(1){
