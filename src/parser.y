@@ -3124,10 +3124,10 @@ selection_statement
         
         // Store default label if exists (use special key like -1)
         if (default_label != nullptr) {
-            overall_jump_tables[table_id][INT_MIN] = default_label;
+            overall_jump_tables[table_id][-240106] = default_label;
         } else {
             // If no default, jump to end label
-            overall_jump_tables[table_id][INT_MIN] = end_label;
+            overall_jump_tables[table_id][-240106] = end_label;
         }
         
         cout << "Finalized jump table " << table_id << " with " << case_map.size() 
@@ -4105,65 +4105,26 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // Case 1: Both are numeric types (regular arithmetic)
         if (is_numeric_type(left.baseType) && is_numeric_type(right.baseType) && 
             left.pointerLevel == 0 && right.pointerLevel == 0 && !left.isArray && !right.isArray) {
-            if(left.baseType == "float" && right.baseType == "float"){
-                TypeInfo* res = new TypeInfo();
-                res->baseType = "float";
-                res->isLvalue = false; // res is not an lvalue
-                cout << " -> " << res->toString() << " (arithmetic)\n";
-                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-                TACOperand* resultOp = new_temp_var();
-                res->result = resultOp;
-                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
-                res->code.push_back(instr);
-                return res;
-            }else if(left.baseType == "int" && right.baseType == "int"){
-                TypeInfo* res = new TypeInfo();
-                res->baseType = "int";
-                res->isLvalue = false; // res is not an lvalue
-                cout << " -> " << res->toString() << " (arithmetic)\n";
-                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-                TACOperand* resultOp = new_temp_var();
-                res->result = resultOp;
-                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
-                res->code.push_back(instr);
-                return res;
-            }else if(left.baseType == "float" && right.baseType == "int"){
-                TypeInfo* res = new TypeInfo();
-                res->baseType = "float";
-                res->isLvalue = false; // res is not an lvalue
-                cout << " -> " << res->toString() << " (arithmetic)\n";
-                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-                
-                // Cast right int to float
-                TACOperand* castRightOp = new_temp_var();
-                TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
-                res->code.push_back(castRightInstr);
-                TACOperand* resultOp = new_temp_var();
-                res->result = resultOp;
-                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, castRightOp, 0);
-                res->code.push_back(instr);
-                return res;
-            }else if(left.baseType == "int" && right.baseType == "float"){
-                TypeInfo* res = new TypeInfo();
-                res->baseType = "float";
-                res->isLvalue = false; // res is not an lvalue
-                cout << " -> " << res->toString() << " (arithmetic)\n";
-                res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-                res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-                // Cast left int to float
-                TACOperand* castLeftOp = new_temp_var();
-                TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
-                res->code.push_back(castLeftInstr);
-                TACOperand* resultOp = new_temp_var();
-                res->result = resultOp;
-                TACInstruction* instr = emit(op == "+" ? TACOperator(TAC_OPERATOR_ADD) : TACOperator(TAC_OPERATOR_SUB), resultOp, castLeftOp, right.result, 0);
-                res->code.push_back(instr);
-                return res;
+            // promote types if needed
+            pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = promote_types(left, right);
+            TypeInfo* res = new TypeInfo(); 
+            res->baseType = promo.second.first->type->baseType;
+            res->isLvalue = false; // res is not an lvalue
+            res->code = left.code;
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            res->code.insert(res->code.end(), promo.first.begin(), promo.first.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator tacOp;
+            if (op == "+") {
+                tacOp = TACOperator(TAC_OPERATOR_ADD);
+            } else {
+                tacOp = TACOperator(TAC_OPERATOR_SUB);
             }
-            
+            TACInstruction* instr = emit(tacOp, resultOp, promo.second.first, promo.second.second, 0);
+            res->code.push_back(instr);
+            cout << " -> " << res->toString() << " (numeric arithmetic)\n";
+            return res;
         }
         
         // Case 2: Pointer + integer or Array + integer (only for addition)
@@ -4175,6 +4136,15 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->isLvalue = false; // res is not an lvalue
             res->code.insert(res->code.end(), left.code.begin(), left.code.end());
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            // if right is char, promote to int
+            TACOperand* rightOperand = right.result;
+            if (right.baseType == "char") {
+                TACOperand* right_temp = new_temp_var();
+                TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
+                res->code.push_back(castInstr);
+                rightOperand = right_temp;
+            }
+
             TypeInfo res2 = *res;
             // make res2 one level down
             if(res2.isArray && res2.arrayDimensions.size() > 0){
@@ -4188,7 +4158,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             int _size = getSize(res2);
 
             TACOperand* scaledOffset = new_temp_var();
-            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, rightOperand.result, new_identifier(to_string(_size)), 0);
 
             TACOperand* resultOp = new_temp_var();
             res->result = resultOp;
@@ -4319,74 +4289,28 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         }
         
         
-        if(left.baseType == "float" && right.baseType == "float"){
-            TypeInfo* res = new TypeInfo();
-            res->baseType = "float";
-            res->isLvalue = false; // res is not an lvalue
-            cout << " -> " << res->toString() << " (arithmetic)\n";
-            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-            TACOperand* resultOp = new_temp_var();
-            res->result = resultOp;
-            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
-            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
-            res->code.push_back(instr);
-            return res;
-        }else if(left.baseType == "int" && right.baseType == "int"){
-            TypeInfo* res = new TypeInfo();
-            res->baseType = "int";
-            res->isLvalue = false; // res is not an lvalue
-            cout << " -> " << res->toString() << " (arithmetic)\n";
-            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-            TACOperand* resultOp = new_temp_var();
-            res->result = resultOp;
-            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
-
-            TACInstruction* instr = emit(t_op, resultOp, left.result, right.result, 0);
-            res->code.push_back(instr);
-            return res;
-        }else if(left.baseType == "float" && right.baseType == "int"){
-            TypeInfo* res = new TypeInfo();
-            res->baseType = "float";
-            res->isLvalue = false; // res is not an lvalue
-            cout << " -> " << res->toString() << " (arithmetic)\n";
-            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-            
-            // Cast right int to float
-            TACOperand* castRightOp = new_temp_var();
-            TACInstruction* castRightInstr = emit(TACOperator(TAC_OPERATOR_CAST), castRightOp, right.result, new_identifier("float"), 0);
-            res->code.push_back(castRightInstr);
-
-            TACOperand* resultOp = new_temp_var();
-            res->result = resultOp;
-            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
-
-            TACInstruction* instr = emit(t_op, resultOp, left.result, castRightOp, 0);
-            res->code.push_back(instr);
-            return res;
-        }else if(left.baseType == "int" && right.baseType == "float"){
-            TypeInfo* res = new TypeInfo();
-            res->baseType = "float";
-            res->isLvalue = false; // res is not an lvalue
-            cout << " -> " << res->toString() << " (arithmetic)\n";
-            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
-            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-            
-            // Cast left int to float
-            TACOperand* castLeftOp = new_temp_var();
-            TACInstruction* castLeftInstr = emit(TACOperator(TAC_OPERATOR_CAST), castLeftOp, left.result, new_identifier("float"), 0);
-            res->code.push_back(castLeftInstr);
-
-            TACOperand* resultOp = new_temp_var();
-            res->result = resultOp;
-            TACOperator t_op = op == "*" ? TACOperator(TAC_OPERATOR_MUL) : (op == "/" ? TACOperator(TAC_OPERATOR_DIV) : TACOperator(TAC_OPERATOR_MOD));
-
-            TACInstruction* instr = emit(t_op, resultOp, castLeftOp, right.result, 0);
-            res->code.push_back(instr);
-            return res;
+        // promote types if needed
+        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = promote_types(left, right);
+        TypeInfo* res = new TypeInfo();
+        res->baseType = promo.second.first->type->baseType;
+        res->isLvalue = false; // res is not an lvalue
+        res->code = left.code;
+        res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+        res->code.insert(res->code.end(), promo.first.begin(), promo.first.end());
+        TACOperand* resultOp = new_temp_var();
+        res->result = resultOp;
+        TACOperator tacOp;
+        if (op == "*") {
+            tacOp = TACOperator(TAC_OPERATOR_MUL);
+        } else if (op == "/") {
+            tacOp = TACOperator(TAC_OPERATOR_DIV);
+        } else {
+            tacOp = TACOperator(TAC_OPERATOR_MOD);
         }
+        TACInstruction* instr = emit(tacOp, resultOp, promo.second.first, promo.second.second, 0);
+        res->code.push_back(instr);
+        cout << " -> " << res->toString() << " (numeric arithmetic)\n";
+        return res;
         //res.isLvalue = false; // res is not an lvalue
         //return res;
     }
