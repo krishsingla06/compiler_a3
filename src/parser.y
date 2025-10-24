@@ -2440,8 +2440,8 @@ assignment_expression
 			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
-            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
-            $$->result = cast_result.second.first; // Result after casting
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->result = cast_result.second.second; // Result after casting
             $$->code = lhs_type->code;
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
@@ -2450,8 +2450,8 @@ assignment_expression
 		} else {
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
-            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
-            $$->result = cast_result.second.first; // Result after casting
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->result = cast_result.second.second; // Result after casting
             $$->code = lhs_type->code;
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
@@ -2809,8 +2809,8 @@ short_circuited_assignment_expression
 			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
-            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
-            $$->result = cast_result.second.first; // Result after casting
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->result = cast_result.second.second; // Result after casting
             $$->code = lhs_type->code;
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
@@ -2819,8 +2819,8 @@ short_circuited_assignment_expression
 		} else {
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
-            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = promote_types(*rhs_type, *lhs_type);
-            $$->result = cast_result.second.first; // Result after casting
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->result = cast_result.second.second; // Result after casting
             $$->code = lhs_type->code;
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
@@ -4003,6 +4003,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     
     else if (left.baseType == "char") { 
         res->baseType = "char";
+        cout<<"Hello ji\n";
 
         if( right.baseType != "char" && right.baseType != "error") {
             TACOperand* right_temp = new_temp_var();
@@ -4108,7 +4109,11 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             // promote types if needed
             pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = promote_types(left, right);
             TypeInfo* res = new TypeInfo(); 
-            res->baseType = promo.second.first->type->baseType;
+            //if any one is float then base type is float else int left or right
+            if(left.baseType == "float" || right.baseType == "float")
+                res->baseType = "float";
+            else res->baseType = "int";
+
             res->isLvalue = false; // res is not an lvalue
             res->code = left.code;
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
@@ -4158,7 +4163,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             int _size = getSize(res2);
 
             TACOperand* scaledOffset = new_temp_var();
-            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, rightOperand.result, new_identifier(to_string(_size)), 0);
+            TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, rightOperand, new_identifier(to_string(_size)), 0);
 
             TACOperand* resultOp = new_temp_var();
             res->result = resultOp;
@@ -4292,7 +4297,9 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         // promote types if needed
         pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = promote_types(left, right);
         TypeInfo* res = new TypeInfo();
-        res->baseType = promo.second.first->type->baseType;
+        if(left.baseType == "float" || right.baseType == "float")
+            res->baseType = "float";
+        else res->baseType = "int";
         res->isLvalue = false; // res is not an lvalue
         res->code = left.code;
         res->code.insert(res->code.end(), right.code.begin(), right.code.end());
@@ -4542,9 +4549,9 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         TACOperand* thirdgoto = new_label(5);
         TACInstruction* i1 = emit(TACOperator(), firstgoto, operand.result, new_empty_var(), 2); // TAC -> if P->result goto curr+3
         TACInstruction* i2 = emit(TACOperator(), secondgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto curr+2
-        TACInstruction* i3 = emit(TACOperator(), res->result, new_constant("1"), new_empty_var(),0); // TAC -> res = 1
+        TACInstruction* i3 = emit(TACOperator(), res->result, new_constant("0"), new_empty_var(),0); // TAC -> res = 1
         TACInstruction* i4 = emit(TACOperator(), thirdgoto, new_empty_var(), new_empty_var(), 1); // TAC -> goto ____
-        TACInstruction* i5 = emit(TACOperator(), res->result, new_constant("0"), new_empty_var(),0); // TAC -> res = 0
+        TACInstruction* i5 = emit(TACOperator(), res->result, new_constant("1"), new_empty_var(),0); // TAC -> res = 0
 
         res->code = operand.code;
         res->code.push_back(i1);
