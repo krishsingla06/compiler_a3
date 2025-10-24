@@ -121,3 +121,6 @@ require implementing:
 
 For this compiler, variadic functions are assumed to be 
 provided by external libraries and linked at runtime.
+--------------------------------------------------------------------------------------------
+
+Modulo operator should be strictly typed (only integers allowed)
