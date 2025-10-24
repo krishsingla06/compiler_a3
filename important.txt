@@ -124,3 +124,4 @@ provided by external libraries and linked at runtime.
 --------------------------------------------------------------------------------------------
 
 Modulo operator should be strictly typed (only integers allowed)
+Array ki initialization is not allowed 
