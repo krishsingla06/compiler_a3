@@ -1,3 +1,5 @@
+// passed
+
 int main(){
     int var = 65;  
     int a = 0; 
