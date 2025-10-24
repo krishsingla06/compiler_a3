@@ -3217,7 +3217,13 @@ iteration_statement
     }
 	| UNTIL begin_marker LPAREN short_circuited_expression { // here also change for short circuited expressions
         // if E then goto___ -> next list
-        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $4->result, new_empty_var(), 1);
+        TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $4->result, new_empty_var(), 2);
+        // print code for debugging
+
+        // for (auto inst : $4->code) {
+        //     string inst_str = get_TAC_instruction_string(inst);
+        //     cout << "Generated TAC: " << inst_str << "\n";
+        // }
         $4->code.push_back(if_inst);
         $4->true_list.insert(if_inst);
         // backpatch expression's false_list to beginning of loop's statement
