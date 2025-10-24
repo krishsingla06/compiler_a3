@@ -1573,7 +1573,7 @@ postfix_expression
 			type_error("Subscript operator [] can only be applied to arrays or pointers");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
-		} else if (!is_integer_type(index->baseType)) {
+		} else if (!is_integer_type(index->baseType) || index->pointerLevel > 0 || index->isArray) {
 			type_error("Array index must be an integer type, got " + index->toString());
 			$$ = new TypeInfo();
 			$$->baseType = "error";
