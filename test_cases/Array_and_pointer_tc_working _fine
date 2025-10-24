@@ -1,0 +1,82 @@
+int main(){
+int v=10;                      
+int a[5];                   // 1D array of 5 ints
+// int b[3] = {1, 2, 3};       // initialized 1D array
+int m[2][3];  
+int t[3];
+int z[2][2];  
+int r[2][2];
+int *p;            // 2D array: 2 rows, 3 cols
+// int n[2][2] = { {1,2}, {3,4} };
+int idxf = 2.2; 
+int i0 = 0;
+float f = 1.5;
+int i1 = 1 + 1;  
+char *s = "hello";           // constant-foldable index
+a[0] = 10;                  // write
+v = a[0];                // read
+a[i1] = 20;                 // index via expression
+m[1][2] = a[0];             // 2D index store
+v = m[1][2];                // 2D index load
+m[0][1] = a[2];             // use both arrays
+a[0] = m[1][1];             // copy from 2D to 1D
+
+( a[4] ) = 99;
+( ( m[0][0] ) ) = ( a[4] );
+
+// // Suspicious but typically valid in C (implementation-defined/undefined at runtime)
+// // These are valid syntactically and for 3AC, though may be UB at runtime if executed
+a[4 - 5 + 6] = 7;           // computed index => 5 (in-bounds)
+v = a[5];                   // constant OOB index (optional static error if your compiler checks bounds)
+m[0][3] = 1;                // OOB second dimension (optional static error)
+
+// // INVALID declarations (should be rejected)
+// int bad_sz1[-5];            // ERROR: negative size
+// int bad_sz2[3.5];           // ERROR: non-integer size
+// int bad_sz3[0];             // ERROR in standard C (zero-length arrays)
+
+// // INVALID l-values / locations
+// int x;
+// v[0] = 1;                   // ERROR: indexing a non-array scalar
+
+// int y[4];
+// y = a;                      // ERROR: array name is not assignable (not an lvalue)
+// a = y;                      // ERROR: same reason
+
+
+// z[0] = i0;                   // ERROR: z[0] has type int[2] (array), not assignable to int[4] or as scalar
+
+
+// t[1][0] = 5;                // ERROR: too many indices for 1D array
+
+
+// r[0][0][0] = 1;             // ERROR: too many indices even for 2D
+
+            // (If strict typing) ERROR: non-integer initializer; else truncation allowed
+
+// a[f] = 11;                  // ERROR in strict typing: non-integer index (implicit cast disallowed)
+
+
+a[s] = 12;                  // ERROR: index must be integer, not pointer
+
+
+p[0] = 1;                   // ERROR if your language disallows pointer indexing when not an array type
+
+// Parenthesis misuse / syntax errors
+// a[] = 3;                    // ERROR: missing index expression
+// a[ ] = 3;                   // ERROR: missing index expression
+// m[1,2] = 5;                 // ERROR in C for array indexing: comma operator not valid as 2D index
+// m[(1)][(2] = 7;             // ERROR: unbalanced parentheses
+
+// Too many initializers for declared shape (semantic error)
+int over_init[2] = {1,2,3}; // ERROR: too many initializers
+
+// Mismatched initializer rank
+// int bad_init2d[1][2] = {1,2};       // ERROR: rank mismatch (needs nested braces per strict checker)
+// int bad_init1d[3]   = {{1,2,3}};    // ERROR: extra braces for 1D if your checker forbids it
+
+// Using an array as an rvalue in arithmetic is OK (decays), but
+// assigning directly to array name is NOT (already covered).
+// int k = a[0] + b[1];        // valid read expression
+}
+// End of test
