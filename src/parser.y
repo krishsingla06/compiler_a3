@@ -3123,10 +3123,10 @@ selection_statement
         
         // Store default label if exists (use special key like -1)
         if (default_label != nullptr) {
-            overall_jump_tables[table_id][-240106] = default_label;
+            overall_jump_tables[table_id][-1] = default_label;
         } else {
             // If no default, jump to end label
-            overall_jump_tables[table_id][-240106] = end_label;
+            overall_jump_tables[table_id][-1] = end_label;
         }
         
         cout << "Finalized jump table " << table_id << " with " << case_map.size() 
@@ -5350,6 +5350,7 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
+
 
 
 
