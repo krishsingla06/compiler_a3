@@ -237,6 +237,8 @@ int func(int a, int b){ // definition should be present
   }
 ```
 
+- But we have allowed struct/union prior declarations without definition (which is also present in standard C/C++).
+
 - For switch-case labels - We only allowed positive integer literals and char literals, because in standard C/C++, case labels must be compile time constants, so we thought users rather than writing ``` case 2+3: ``` should write ``` case 5: ``` which also makes more sense.
 
 - For ellipsis - We allowed defining function with ellipsis, we also allowed calling the function with ellipsis, but inside the function body if we want to use the parameters beyond `...`, those things are not present in *Standard C* also, but implemented in the library `<cstdarg>`, so we didn't implemented that part *varargs* handling. Anyways the grammar supports ellipsis in function definition and function call, and while function call params are pushed onto stack via `PARAM` instruction.
@@ -244,6 +246,15 @@ int func(int a, int b){ // definition should be present
 - Removed `const`, because it was not required for the assignment, although it can be added with some efforts - by maintaining a flag in `TypeInfo` class.
 
 - In function calls, we removed syntax `int arr[]` or `int arr[10]`, because in standard C/C++, while passing array to function, it decays to pointer, so `int arr[]` is anyways equivalent to `int* arr`, and also passing `int arr[10]` seems to be of very less use.
+
+- We have kept function pointer assignment in one way only that is:
+```
+int (*fcnptr) (int, int) = foo; // valid in both C and our language
+```
+The below way of function pointer assignment is not allowed in our language:
+```
+int (*fcnptr) (int, int) = &foo; // not allowed in our language, although valid in C
+```
 
 
 # Build & run
