@@ -28,6 +28,14 @@ void yyerror(const char* s) {
 // Debug file stream
 std::ofstream debug_file;
 
+// Symbol table file stream
+std::ofstream symtab_file;
+
+// Function table file stream
+std::ofstream function_table_file;
+// Jump table file stream
+std::ofstream jump_table_file;
+
 #define DEBUG_PRINT(x) do { \
         if (debug_file.is_open()) { \
             debug_file << x << std::endl; \
@@ -47,6 +55,71 @@ void init_debug_file(const char* input_filename) {
 void close_debug_file() {
     if (debug_file.is_open()) {
         debug_file.close();
+    }
+}
+
+// Global variable to save original cout buffer
+static streambuf* cout_backup = nullptr;
+
+// Function to redirect cout to debug file
+void redirect_cout_to_debug() {
+    if (debug_file.is_open() && cout_backup == nullptr) {
+        cout_backup = cout.rdbuf();        // Save original cout buffer
+        cout.rdbuf(debug_file.rdbuf());    // Redirect cout to debug file
+    }
+}
+
+// Function to restore cout to console
+void restore_cout_to_console() {
+    if (cout_backup != nullptr) {
+        cout.rdbuf(cout_backup);  // Restore original cout buffer
+        cout_backup = nullptr;
+    }
+}
+
+// Function to initialize symbol table file
+void init_symtab_file(const char* input_filename) {
+    string symtab_filename = string(input_filename) + ".symtab";
+    symtab_file.open(symtab_filename);
+    if (!symtab_file.is_open()) {
+        cerr << "Warning: Could not open symbol table file: " << symtab_filename << endl;
+    }
+}
+
+void init_function_table_file(const char* input_filename) {
+    string function_table_filename = string(input_filename) + ".functab";
+    function_table_file.open(function_table_filename);
+    if (!function_table_file.is_open()) {
+        cerr << "Warning: Could not open function table file: " << function_table_filename << endl;
+    }
+}
+
+void inti_jump_table_file(const char* input_filename) {
+    string jump_table_filename = string(input_filename) + ".jumptab";
+    jump_table_file.open(jump_table_filename);
+    if (!jump_table_file.is_open()) {
+        cerr << "Warning: Could not open jump table file: " << jump_table_filename << endl;
+    }
+}
+
+// Function to close symbol table file
+void close_symtab_file() {
+    if (symtab_file.is_open()) {
+        symtab_file.close();
+    }
+}
+
+void close_function_table_file(){
+    // Placeholder for function table file closur
+    if (function_table_file.is_open()) {
+        function_table_file.close();
+    }
+}
+
+void close_jump_table_file(){
+    // Placeholder for jump table file closure
+    if (jump_table_file.is_open()) {
+        jump_table_file.close();
     }
 }
 
@@ -731,11 +804,6 @@ function_definition
         current_function_return_type = nullptr;
 
    
-        for(auto instr : $5->code){
-            string instr_str = get_TAC_instruction_string(instr);
-            cout << instr_str << "\n";
-        }
-		
         delete $1;
         delete $2;
         delete $5;
@@ -3645,15 +3713,19 @@ void displaySymbolTable();
 void exit_scope() {
     if (!scope_stack.empty()) {
         auto& current_scope = scope_stack.back();
-        cout << "Exiting scope level " << current_scope_level << "\n";
-        
+        //cout << "Exiting scope level " << current_scope_level << "\n";
+        symtab_file << "Exiting scope level " << current_scope_level << "\n";
         displaySymbolTable(); // Display current symbol table before destruction
         
         // Display symbols being destroyed
         if (!current_scope.symbols.empty()) {
-            cout << "Destroying symbols from scope " << current_scope_level << ":\n";
+            /* cout << "Destroying symbols from scope " << current_scope_level << ":\n";
             for (const auto& entry : current_scope.symbols) {
                 cout << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")\n";
+            } */
+            symtab_file << "Destroying symbols from scope " << current_scope_level << ":\n";
+            for (const auto& entry : current_scope.symbols) {
+                symtab_file << "  - " << entry.second.name << " (" << entry.second.type.toString() << ")\n";
             }
         }
         
@@ -3661,7 +3733,9 @@ void exit_scope() {
         for (auto& pair : struct_union_table) {
             vector<StructUnionDef>& defs = pair.second;
             while (!defs.empty() && defs.back().scope_level == current_scope_level) {
-                cout << "  - Destroying " << (defs.back().isUnion ? "union " : "struct ") 
+                /* cout << "  - Destroying " << (defs.back().isUnion ? "union " : "struct ") 
+                     << defs.back().name << " from scope " << current_scope_level << "\n"; */
+                symtab_file << "  - Destroying " << (defs.back().isUnion ? "union " : "struct ")
                      << defs.back().name << " from scope " << current_scope_level << "\n";
                 defs.pop_back();
             }
@@ -3671,7 +3745,8 @@ void exit_scope() {
         for (auto& pair : enum_table) {
             vector<EnumInfo>& defs = pair.second;
             while (!defs.empty() && defs.back().scope_level == current_scope_level) {
-                cout << "  - Destroying enum " << defs.back().name << " from scope " << current_scope_level << "\n";
+                //cout << "  - Destroying enum " << defs.back().name << " from scope " << current_scope_level << "\n";
+                symtab_file << "  - Destroying enum " << defs.back().name << " from scope " << current_scope_level << "\n";
                 defs.pop_back();
             }
         }
@@ -3679,11 +3754,12 @@ void exit_scope() {
         // For each typedef in the current scope's typedef table,
         // pop it from the global typedef_table
         if (!current_scope.typedefs.empty()) {
-            cout << "Destroying typedefs from scope " << current_scope_level << ":\n";
+            symtab_file << "Destroying typedefs from scope " << current_scope_level << ":\n";
+            //cout << "Destroying typedefs from scope " << current_scope_level << ":\n";
             for (const auto& typedef_entry : current_scope.typedefs) {
                 const string& typedef_name = typedef_entry.first;
-                cout << "  - Destroying typedef " << typedef_name << "\n";
-                
+                //cout << "  - Destroying typedef " << typedef_name << "\n";
+                symtab_file << "  - Destroying typedef " << typedef_name << "\n";
                 // Pop from global map
                 auto it = typedef_table.find(typedef_name);
                 if (it != typedef_table.end() && !it->second.empty()) {
@@ -3699,6 +3775,7 @@ void exit_scope() {
         
         scope_stack.pop_back();
         current_scope_level--;
+        symtab_file <<"\n\n\n\n\n";
     }
 }
 
@@ -3782,37 +3859,40 @@ void check_variable_declaration(const string& name) {
 }
 
 void displaySymbolTable() {
-    cout << "\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
-    cout << "|                                    SYMBOL TABLE                                        |\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
-    
-    if (scope_stack.empty()) {
-        cout << "| No active scopes                                                                    |\n";
-        cout << "+-----------------------------------------------------------------------------------------+\n";
-        return;
-    }
-    
-    for (int i = 0; i < scope_stack.size(); i++) {
-        auto& scope = scope_stack[i];
-        cout << "\n+- SCOPE LEVEL " << scope.scope_level << " ";
-        cout << string(55 - to_string(scope.scope_level).length(), '-') << "+\n";
+    if (symtab_file.is_open()) {
+        symtab_file << "\n";
+        symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+        symtab_file << "|                                    SYMBOL TABLE                                        |\n";
+        symtab_file << "+-----------------------------------------------------------------------------------------+\n";
         
-        if (scope.symbols.empty()) {
-            cout << "| (empty scope)                                                                       |\n";
-            cout << "+-----------------------------------------------------------------------------------------+\n";
-            continue;
+        if (scope_stack.empty()) {
+            symtab_file << "| No active scopes                                                                    |\n";
+            symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+            return;
         }
         
-        cout << "+-----------------------------------------------------------------------------------------+\n";
-        
-        // Display variables with their type information and mangled names
-        for (const auto& entry : scope.symbols) {
-            cout << "  - " << entry.second.name << " (" << entry.second.type.toString() 
-                 << ") declared at line " << entry.second.line
-                 << " [mangled: " << entry.second.mangledName << "]" << "\n";
+        for (int i = 0; i < scope_stack.size(); i++) {
+            auto& scope = scope_stack[i];
+            symtab_file << "\n+- SCOPE LEVEL " << scope.scope_level << " ";
+            symtab_file << string(55 - to_string(scope.scope_level).length(), '-') << "+\n";
+            
+            if (scope.symbols.empty()) {
+                symtab_file << "| (empty scope)                                                                       |\n";
+                symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+                continue;
+            }
+            
+            symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+            
+            // Display variables with their type information and mangled names
+            for (const auto& entry : scope.symbols) {
+                symtab_file << "  - " << entry.second.name << " (" << entry.second.type.toString() 
+                     << ") declared at line " << entry.second.line
+                     << " [mangled: " << entry.second.mangledName << "]" << "\n";
+            }
+            symtab_file << "+-----------------------------------------------------------------------------------------+\n";
         }
-        cout << "+-----------------------------------------------------------------------------------------+\n";
+        symtab_file.flush(); // Ensure immediate write
     }
 }
 
@@ -5125,27 +5205,30 @@ bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<Fu
 }
 
 void display_function_table() {
-    cout << "\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
-    cout << "|                                   FUNCTION TABLE                                       |\n";
-    cout << "+-----------------------------------------------------------------------------------------+\n";
-    
-    if (function_table.empty()) {
-        cout << "| No functions declared                                                              |\n";
-        cout << "+-----------------------------------------------------------------------------------------+\n";
-        return;
-    }
-    
-    for (const auto& entry : function_table) {
-        const FunctionEntry& func = entry.second;
-        cout << "Function: " << func.originalName << " (" << func.mangledName << ")\n";
-        cout << "  Return type: " << func.returnType.toString() << "\n";
-        cout << "  Parameters: ";
-        for (const FunctionParam& param : func.parameters) {
-            cout << param.type.toString() << " ";
+    if (function_table_file.is_open()) {
+        function_table_file << "\n";
+        function_table_file << "+-----------------------------------------------------------------------------------------+\n";
+        function_table_file << "|                                   FUNCTION TABLE                                       |\n";
+        function_table_file << "+-----------------------------------------------------------------------------------------+\n";
+
+        if (function_table.empty()) {
+            function_table_file << "| No functions declared                                                              |\n";
+            function_table_file << "+-----------------------------------------------------------------------------------------+\n";
+            return;
         }
-        cout << "\n  Declared at line: " << func.line << "\n";
-        cout << "+-----------------------------------------------------------------------------------------+\n";
+        
+        for (const auto& entry : function_table) {
+            const FunctionEntry& func = entry.second;
+            function_table_file << "| Function: " << func.originalName << " (" << func.mangledName << ")\n";
+            function_table_file << "|   Return type: " << func.returnType.toString() << "\n";
+            function_table_file << "|   Parameters: ";
+            for (const FunctionParam& param : func.parameters) {
+                function_table_file << param.type.toString() << " ";
+            }
+            function_table_file << "\n|   Declared at line: " << func.line << "\n";
+            function_table_file << "+-----------------------------------------------------------------------------------------+\n";
+        }
+        function_table_file.flush();
     }
 }
 
@@ -5436,25 +5519,37 @@ void display_typedef_table() {
 // Display all jump tables (for debugging)
 // map<int, vector<TACOperand*>> jump_table;
 void display_jump_tables() {
-    cout << "\n";
+    /* cout << "\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
     cout << "|                                   JUMP TABLES                                          |\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
-    
+     */
+
+    jump_table_file << "\n";
+    jump_table_file << "+-----------------------------------------------------------------------------------------+\n";
+    jump_table_file << "|                                   JUMP TABLES                                          |\n";
+    jump_table_file << "+-----------------------------------------------------------------------------------------+\n";
     if (overall_jump_tables.empty()) {
-        cout << "No jump tables defined.\n";
+        //cout << "No jump tables defined.\n";
+        jump_table_file << "No jump tables defined.\n";
         return;
     }
     for (const auto& entry : overall_jump_tables) {
         int jumpId = entry.first;
         const vector<TACOperand*>& labels = entry.second;
         
-        cout << "Jump ID: " << jumpId << "\n";
+        /* cout << "Jump ID: " << jumpId << "\n";
         for (size_t i = 0; i < labels.size(); i++) {
             cout << "  Label " << i << ": " << get_operand_string(labels[i]) << "\n";
+        } */
+        jump_table_file << "Jump ID: " << jumpId << "\n";
+        for (size_t i = 0; i < labels.size(); i++) {
+            jump_table_file << "  Label " << i << ": " << get_operand_string(labels[i]) << "\n";
         }
+
     }
-    cout << "\n";
+    //cout << "\n";
+    jump_table_file << "\n\n\n\n";
 }
 
 int main(int argc, char** argv) {
@@ -5465,6 +5560,10 @@ int main(int argc, char** argv) {
 	}
 
     init_debug_file(argv[1]);  // Initialize debug file
+    redirect_cout_to_debug();  // Redirect all cout to debug file
+    init_symtab_file(argv[1]); // Initialize symbol table file
+    init_function_table_file(argv[1]); // Initialize function table file
+    inti_jump_table_file(argv[1]); // Initialize jump table file
 	
 	FILE* f = fopen(argv[1], "r");
 	if (!f) {
@@ -5495,7 +5594,7 @@ int main(int argc, char** argv) {
 	cout << "yyparse() returned " << res << "\n";
 	
 	// Display the new scope-based symbol table
-	displaySymbolTable();
+	//displaySymbolTable();
 	
 	// Display function table
 	display_function_table();
@@ -5514,7 +5613,11 @@ int main(int argc, char** argv) {
 	
 	// Close error log
 	close_error_log();
+    restore_cout_to_console();  // Restore cout to console before closing debug file
     close_debug_file();
+    close_symtab_file();
+    close_function_table_file();
+    close_jump_table_file();
 	
 	fclose(f);
 	return res;
