@@ -3156,7 +3156,7 @@ labeled_statement
         $$ = new TypeInfo();
         $$->code = vector<TACInstruction*>();
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
-        
+
         // Propagate break statements
         $$->break_list = $6->break_list;
         
@@ -3364,6 +3364,21 @@ selection_statement
         if (default_label == nullptr) {
             default_label = end_label; // If no default, jump to end
         }
+        int MAX_JUMP_TABLE_SIZE = 1000000;
+        //if table_size is too large, warn and fallback to chained if-else
+        if(table_size > MAX_JUMP_TABLE_SIZE){
+            type_warning("Jump table size " + to_string(table_size) + " exceeds maximum of " + to_string(MAX_JUMP_TABLE_SIZE) + 
+                         ". Falling back to chained if-else for switch statement.");
+            // cleanup
+            overall_jump_tables.erase(table_id);
+            // pop from switch stacks
+            switch_case_stack.pop_back();
+            switch_default_stack.pop_back();
+            switch_table_id_stack.pop_back();
+            switch_min_case_stack.pop_back();
+            switch_max_case_stack.pop_back();
+            delete $3; delete $6;
+        }else{
         vector<TACOperand*> jump_table_entries(table_size, default_label);
         for (const auto& pair : case_map) {
             int case_value = pair.first;
@@ -3392,6 +3407,7 @@ selection_statement
         switch_min_case_stack.pop_back();
         switch_max_case_stack.pop_back();
         delete $3; delete $6;
+        }
         
     }
 	;
