@@ -23,6 +23,33 @@ void yyerror(const char* s) {
     }
 }
 
+#include <fstream>
+    
+// Debug file stream
+std::ofstream debug_file;
+
+#define DEBUG_PRINT(x) do { \
+        if (debug_file.is_open()) { \
+            debug_file << x << std::endl; \
+        } \
+    } while(0)
+
+// Function to initialize debug file
+void init_debug_file(const char* input_filename) {
+    string debug_filename = string(input_filename) + ".debug";
+    debug_file.open(debug_filename);
+    if (!debug_file.is_open()) {
+        cerr << "Warning: Could not open debug file: " << debug_filename << endl;
+    }
+}
+
+// Function to close debug file
+void close_debug_file() {
+    if (debug_file.is_open()) {
+        debug_file.close();
+    }
+}
+
 %}
 
 %code requires {
@@ -5436,6 +5463,8 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "Usage: %s <input_file>\n", argv[0]);
 		return 1;
 	}
+
+    init_debug_file(argv[1]);  // Initialize debug file
 	
 	FILE* f = fopen(argv[1], "r");
 	if (!f) {
@@ -5485,6 +5514,7 @@ int main(int argc, char** argv) {
 	
 	// Close error log
 	close_error_log();
+    close_debug_file();
 	
 	fclose(f);
 	return res;
