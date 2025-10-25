@@ -299,12 +299,17 @@ void yyerror(const char* s) {
 
     // switch labels list
     // Global jump table tracking
-    map<int, map<int, TACOperand*>> overall_jump_tables;  // jump_table_id -> (case_value -> label)
+    //map<int, map<int, TACOperand*>> overall_jump_tables;  // jump_table_id -> (case_value -> label)
+    map<int, vector<TACOperand*>> overall_jump_tables;  // jump_table_id -> list of labels (for jump table)
     int jump_table_counter = 0;  // Counter for jump table IDs
     
     // Stack of switch case maps for handling nested switches
     // Each map: case_value -> label (TACOperand*)
     vector<map<int, TACOperand*>> switch_case_stack;
+
+    // stacks for min and max case values in nested switches
+    vector<int> switch_min_case_stack;
+    vector<int> switch_max_case_stack;
     
     // Stack of default labels for nested switches
     vector<TACOperand*> switch_default_stack;
@@ -3008,8 +3013,13 @@ labeled_statement
                 TACOperand* case_label = new_label(0);
                 current_switch_map[case_value] = case_label;
             }
-            }
+
+            // update min and max case values for switch optimization
+            switch_min_case_stack.back() = min(switch_min_case_stack.back(), case_value);
+            switch_max_case_stack.back() = max(switch_max_case_stack.back(), case_value);
+
         }
+    }
     COLON marker statement                              /* e.g., case 1: stmt */{
         // Combine code from case expression and statement
         $$ = new TypeInfo();
@@ -3041,8 +3051,11 @@ labeled_statement
                 TACOperand* case_label = new_label(0);
                 current_switch_map[case_value] = case_label;
             }
-            }
+            // update min and max case values for switch optimization
+            switch_min_case_stack.back() = min(switch_min_case_stack.back(), case_value);
+            switch_max_case_stack.back() = max(switch_max_case_stack.back(), case_value);
         }
+    }
      COLON marker statement                              /* e.g., case 1: stmt */{
         // Combine code from case expression and statement
         $$ = new TypeInfo();
@@ -3182,17 +3195,48 @@ selection_statement
         switch_case_stack.push_back(map<int, TACOperand*>());
         switch_default_stack.push_back(nullptr);
         switch_table_id_stack.push_back(current_table_id);
+        // min and max case values for optimization
+        switch_min_case_stack.push_back(INT_MAX);
+        switch_max_case_stack.push_back(INT_MIN);
         
         // Emit: goto jump_table_i[expression.result]
         // We use flag=4 to indicate this is a jump table instruction
         // arg1 = jump_table_id (as constant), arg2 = switch_value
-        TACOperand* table_id_operand = new_constant(to_string(current_table_id));
+
+        // if switch_value < ____ goto ____ 
+        // if switch_value > ____ goto ____
+        // these 4 fields will be backpatched later during finalization of switch statement
+        // #ti = switch_value - ____ 
+        // goto jump_table_i[#ti]
+
+        TACOperand* min_case_operand = new_constant(to_string(switch_min_case_stack.back()));
+        TACOperand* max_case_operand = new_constant(to_string(switch_max_case_stack.back()));
+        TACInstruction* check_lower_bound = emit(TACOperator(TAC_OPERATOR_LT), new_empty_var(), switch_value, min_case_operand, 2);
+        TACInstruction* check_upper_bound = emit(TACOperator(TAC_OPERATOR_GT), new_empty_var(), switch_value, max_case_operand, 2);
+        $3->code.push_back(check_lower_bound);
+        $3->code.push_back(check_upper_bound);
+        // backpatch these later
+        TACOperand* switch_value_minus_min = new_temp_var();
+        TACInstruction* subtract_min = emit(TACOperator(TAC_OPERATOR_SUB), switch_value_minus_min, switch_value, min_case_operand, 0);
+        $3->code.push_back(subtract_min);
+
+        // goto jump_table_i[switch_value - min_case]
         TACInstruction* goto_jump_table = emit(TACOperator(), 
                                                new_empty_var(),      // result (unused)
-                                               table_id_operand,     // arg1: table ID
-                                               switch_value,         // arg2: expression value
+                                               new_constant(to_string(current_table_id)),     // arg1: table ID
+                                               switch_value_minus_min,         // arg2: expression value - min_case
                                                4);                   // flag=4 for jump table
+
+        // all the above 4 instructions will be updated later during finalization of switch statement
         $3->code.push_back(goto_jump_table);
+
+        // TACOperand* table_id_operand = new_constant(to_string(current_table_id));
+        // TACInstruction* goto_jump_table = emit(TACOperator(), 
+        //                                        new_empty_var(),      // result (unused)
+        //                                        table_id_operand,     // arg1: table ID
+        //                                        switch_value,         // arg2: expression value
+        //                                        4);                   // flag=4 for jump table
+        // $3->code.push_back(goto_jump_table);
         
         cout << "Created jump table " << current_table_id << " for switch expression\n";
     }
@@ -3216,27 +3260,34 @@ selection_statement
         map<int, TACOperand*>& case_map = switch_case_stack.back();
         TACOperand* default_label = switch_default_stack.back();
         
-        // Store the jump table in overall_jump_tables
-        overall_jump_tables[table_id] = case_map;
-        
-        // Store default label if exists (use special key like -1)
-        if (default_label != nullptr) {
-            overall_jump_tables[table_id][-240106] = default_label;
-        } else {
-            // If no default, jump to end label
-            overall_jump_tables[table_id][-240106] = end_label;
+        // Overall jump table is resize from min_case to max_case
+        int min_case = switch_min_case_stack.back();
+        int max_case = switch_max_case_stack.back();
+        int table_size = max_case - min_case + 1;
+        if (default_label == nullptr) {
+            default_label = end_label; // If no default, jump to end
         }
-        
-        cout << "Finalized jump table " << table_id << " with " << case_map.size() 
-             << " cases and default: " << (default_label ? "yes" : "end") << "\n";
-        
-        // Pop switch context
-        switch_case_stack.pop_back();
-        switch_default_stack.pop_back();
-        switch_table_id_stack.pop_back();
-        
-        delete $3;
-        delete $6;
+        vector<TACOperand*> jump_table_entries(table_size, default_label);
+        for (const auto& pair : case_map) {
+            int case_value = pair.first;
+            TACOperand* case_label = pair.second;
+            int index = case_value - min_case;
+            jump_table_entries[index] = case_label;
+        }
+        overall_jump_tables[table_id] = jump_table_entries;
+        // now the first 4 instructions related to jump table need to be backpatched
+
+        TACInstruction* check_lower_bound = $$->code[$3->code.size() - 4];
+        TACInstruction* check_upper_bound = $$->code[$3->code.size() - 3];
+        TACInstruction* subtract_min = $$->code[$3->code.size() - 2];
+        TACInstruction* goto_jump_table = $$->code[$3->code.size() - 1];
+        // Now change the fields of these instructions like in check lower bound change goto to default label and also subtract min value
+        check_lower_bound->arg2 = new_constant(to_string(min_case));
+        check_lower_bound->result = default_label; // if less than min_case goto default
+        check_upper_bound->arg2 = new_constant(to_string(max_case));
+        check_upper_bound->result = default_label; // if greater than max_case goto default
+        subtract_min->arg2 = new_constant(to_string(min_case));
+
     }
 	;
 
@@ -5356,38 +5407,28 @@ void display_typedef_table() {
 }
 
 // Display all jump tables (for debugging)
+// map<int, vector<TACOperand*>> jump_table;
 void display_jump_tables() {
     cout << "\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
-    cout << "|                                    JUMP TABLES                                         |\n";
+    cout << "|                                   JUMP TABLES                                          |\n";
     cout << "+-----------------------------------------------------------------------------------------+\n";
     
     if (overall_jump_tables.empty()) {
-        cout << "No jump tables generated.\n";
+        cout << "No jump tables defined.\n";
         return;
     }
-    
-    for (const auto& table_entry : overall_jump_tables) {
-        int table_id = table_entry.first;
-        const map<int, TACOperand*>& jump_table = table_entry.second;
+    for (const auto& entry : overall_jump_tables) {
+        int jumpId = entry.first;
+        const vector<TACOperand*>& labels = entry.second;
         
-        cout << "\nJump Table " << table_id << ":\n";
-        
-        for (const auto& case_entry : jump_table) {
-            int case_value = case_entry.first;
-            TACOperand* label = case_entry.second;
-            
-            if (case_value == -1) {
-                cout << "  default -> " << (label ? label->value : "NULL") << "\n";
-            } else {
-                cout << "  case " << case_value << " -> " << (label ? label->value : "NULL") << "\n";
-            }
+        cout << "Jump ID: " << jumpId << "\n";
+        for (size_t i = 0; i < labels.size(); i++) {
+            cout << "  Label " << i << ": " << get_operand_string(labels[i]) << "\n";
         }
     }
-    
     cout << "\n";
 }
-
 
 int main(int argc, char** argv) {
     
@@ -5448,6 +5489,5 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
-
 
 
