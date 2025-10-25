@@ -35,7 +35,8 @@ void yyerror(const char* s) {
     struct EnumDef; 
     // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
-        bool isStatic;
+        bool is_static;
+        string guard_var_name = "";  // For static variables with initializers
         string baseType;        // int, char, float, void, struct_name, etc.
         int pointerLevel;       // Number of pointer levels (e.g., 1 for *, 2 for **)
         bool isArray;
@@ -60,19 +61,18 @@ void yyerror(const char* s) {
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
         unordered_set<TACInstruction*> next_list; // List of next instructions (for jumps) (conditional expressions)
         vector<TACInstruction*> code; // List of instructions for the expression
-
         unordered_set<TACInstruction*> break_list; // List of break instructions (for loops/switch)
         unordered_set<TACInstruction*> continue_list; // List of continue instructions (for loops)
 
         
-        TypeInfo() : isStatic(false), baseType(""), 
+        TypeInfo() : is_static(false), baseType(""), 
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
                      isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
                      isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false),
                      result(nullptr), code()  {}
         // Copy constructor
-        TypeInfo(const TypeInfo& other) : isStatic(other.isStatic),
+        TypeInfo(const TypeInfo& other) : is_static(other.is_static),
                     baseType(other.baseType), pointerLevel(other.pointerLevel), 
                     isArray(other.isArray), arrayDimensions(other.arrayDimensions),
                     identifier(other.identifier), isLiteral(other.isLiteral),
@@ -102,7 +102,7 @@ void yyerror(const char* s) {
         
         string toString() const {
             string res = "";
-            if (isStatic) res += "static ";
+            if (is_static) res += "static ";
             
             // Handle function pointer types
             if (isFunctionPointer && returnType && parameterTypes) {
@@ -288,6 +288,9 @@ void yyerror(const char* s) {
     string current_function_name = "";
     string current_function_signature = "";
     TypeInfo* current_function_return_type = nullptr;
+
+    int static_guard_counter = 0;  // Counter for static initialization guards
+    map<string, string> static_var_guards;  // Maps static var name -> guard variable name
 
     // pending gotos for backpatching
     // In parser.y, near other global variables
@@ -724,6 +727,19 @@ declaration
 		for (DeclaratorInfo* declInfo : *$2) {
 			TypeInfo combinedType = *$1;  // Start with base type
 			
+
+            // ========== NEW: Check if this is a static variable ==========
+            bool is_function_local_static = false;
+            if (combinedType.is_static && current_function_name != "") {
+                // This is a function-local static variable
+                is_function_local_static = true;
+                cout << "Detected function-local static variable: " << declInfo->name << "\n";
+            } else if (combinedType.is_static) {
+                // This is a global static variable (file-scope static)
+                cout << "Detected global static variable: " << declInfo->name << "\n";
+            }
+            // ============================================================
+
 			// Check if this is a function pointer declaration
 			if (declInfo->isFunction && declInfo->pointerLevel > 0) {
 				// This is a function pointer: e.g., int (*fp)(int, float)
@@ -889,16 +905,98 @@ declaration
                         declInfo->initType->toString() + "'";
                     type_error(error_msg);
 				}else{
-					// First, include the code that generates the initializer value (e.g., function call)
-                    $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
-					// if implicit conversion allowed, then do it and reflect in 3AC else simply assign
-                    pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
-                    // append promo.first to $$->code
-                    $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
-                    // now assign promo.second.second to declInfo->name
-                    TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
-                    $$->code.push_back(assignInstr);
+                    // ========== NEW: Handle static variable initialization with guard ==========
+                    if (is_function_local_static) {
+                        // Function-local static with initializer - needs guard
+                        
+                        // 1. Generate mangled names
+                        string mangled_var_name = mangle_variable_name(declInfo->name, current_scope_level, 
+                                                                    current_function_name, current_function_signature);
+                        string guard_name = "__guard_" + mangled_var_name;
+                        
+                        // 2. Store guard mapping
+                        static_var_guards[mangled_var_name] = guard_name;
+                        combinedType.guard_var_name = guard_name;
+                        
+                        // 3. Initialize guard variable to 1 (not yet initialized)
+                        TACOperand* guard_var = new_identifier(guard_name);
+                        // TACInstruction* guard_init = emit(
+                        //     TACOperator(TAC_OPERATOR_ASSIGN),
+                        //     guard_var,
+                        //     new_constant("1"),
+                        //     new_empty_var(),
+                        //     0
+                        // );
+                        // $$->code.push_back(guard_init);
+                        
+                        // 4. Create labels
+                        
+                        // 5. Check if guard == 0 (already initialized), then skip
+                        TACInstruction* check = emit(
+                            TACOperator(TAC_OPERATOR_EQ),
+                            new_empty_var(),
+                            guard_var,
+                            new_constant("0"),
+                            2  // if-goto flag
+                        );
+                        $$->code.push_back(check);
+                        
+                        // 6. Include initializer code
+                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), 
+                                    declInfo->initType->code.end());
+                        
+                        // 7. Perform type conversion if needed
+                        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+                            change_type_rhs_to_lhs(combinedType, *declInfo->initType);
+                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                        
+                        // 8. Assign to variable
+                        TACInstruction* assignInstr = emit(
+                            TACOperator(), 
+                            promo.second.first, 
+                            promo.second.second, 
+                            new_empty_var(), 
+                            0
+                        );
+                        $$->code.push_back(assignInstr);
+                        
+                        // 9. Set guard to 0 (initialized)
+                        TACInstruction* guard_reset = emit(
+                            TACOperator(),
+                            guard_var,
+                            new_constant("0"),
+                            new_empty_var(),
+                            0
+                        );
+                        $$->code.push_back(guard_reset);
 
+                        TACOperand* skip_label = new_label(0);
+                        // Backpatch the check instruction to jump to skip_label
+                        backpatch({check}, skip_label);
+                        
+                        // // 10. Skip label
+                        // TACInstruction* skip = emit(
+                        //     TACOperator(TAC_OPERATOR_NOP),
+                        //     new_empty_var(),
+                        //     new_empty_var(),
+                        //     new_empty_var(),
+                        //     0
+                        // );
+                        // skip->label = skip_label;
+                        //$$->code.push_back(skip);
+                        
+                        cout << "Generated guarded initialization for static variable: " << declInfo->name << "\n";
+                    } else {
+                        // First, include the code that generates the initializer value (e.g., function call)
+                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+                        // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
+                        pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
+                        // append promo.first to $$->code
+                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                        // now assign promo.second.second to declInfo->name
+                        TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
+                        $$->code.push_back(assignInstr);
+                    }
                 }
 			}
 
@@ -950,7 +1048,7 @@ declaration_specifiers
 	: type_specifier { $$ = $1; }                                             /* e.g., int */
 	| STATIC type_specifier { 
 		$$ = $2;
-		$$->isStatic = true;
+		$$->is_static = true;
 	}                                     /* e.g., static int */
 	;
    
@@ -3123,10 +3221,10 @@ selection_statement
         
         // Store default label if exists (use special key like -1)
         if (default_label != nullptr) {
-            overall_jump_tables[table_id][-1] = default_label;
+            overall_jump_tables[table_id][-240106] = default_label;
         } else {
             // If no default, jump to end label
-            overall_jump_tables[table_id][-1] = end_label;
+            overall_jump_tables[table_id][-240106] = end_label;
         }
         
         cout << "Finalized jump table " << table_id << " with " << case_map.size() 
@@ -3644,8 +3742,8 @@ void displaySymbolTable() {
 bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
     // Check function pointer compatibility
     // print types of both
-    cout << "Checking function pointer compatibility between " 
-         << left_type.toString() << " and " << right_type.toString() << "\n";
+    /* cout << "Checking function pointer compatibility between " 
+         << left_type.toString() << " and " << right_type.toString() << "\n"; */
     if (left_type.isFunctionPointer || right_type.isFunctionPointer) {
         // Both must be function pointers
         if (left_type.isFunctionPointer != right_type.isFunctionPointer) {
@@ -3657,7 +3755,7 @@ bool types_compatible(const TypeInfo& left_type, const TypeInfo& right_type) {
             // # galati
             if (left_type.isFunctionPointer && right_type.baseType == "function" && !right_type.identifier.empty()) {
                 // Right side is a function name, left side is function pointer
-                cout<<"Right side is a function name, left side is function pointer\n";
+               // cout<<"Right side is a function name, left side is function pointer\n";
                 string funcName = right_type.identifier;
                 
                 // Need to match: return type and parameter types
@@ -5350,7 +5448,6 @@ int main(int argc, char** argv) {
 	fclose(f);
 	return res;
 }
-
 
 
 
