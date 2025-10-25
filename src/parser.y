@@ -3334,6 +3334,8 @@ selection_statement
         // $3->code.push_back(goto_jump_table);
         
         cout << "Created jump table " << current_table_id << " for switch expression\n";
+        // pop from stacks will be done in finalization of switch statement
+
     }
     RPAREN statement                              /* e.g., switch (x) { ... } */{
         $$ = new TypeInfo();
@@ -3382,7 +3384,15 @@ selection_statement
         check_upper_bound->arg2 = new_constant(to_string(max_case));
         check_upper_bound->result = default_label; // if greater than max_case goto default
         subtract_min->arg2 = new_constant(to_string(min_case));
-
+        goto_jump_table->flag = 4; // already set
+        // pop from switch stacks
+        switch_case_stack.pop_back();
+        switch_default_stack.pop_back();
+        switch_table_id_stack.pop_back();
+        switch_min_case_stack.pop_back();
+        switch_max_case_stack.pop_back();
+        delete $3; delete $6;
+        
     }
 	;
 
@@ -4952,7 +4962,7 @@ void type_error(const string& message) {
 
 void type_warning(const string& message) {
     string warning_msg = "Type Warning at line " + to_string(yylineno) + ": " + message;
-    cout << warning_msg << "\n";
+    cerr << warning_msg << "\n";
     // Also log warnings to error file
     log_error(warning_msg);
 }
@@ -5620,6 +5630,17 @@ int main(int argc, char** argv) {
     close_jump_table_file();
 	
 	fclose(f);
+    cout<<"\n\n-------------------------------------------------------------------------\n";
+    cout<<"Parsing completed. TAC output written to " << output_tac_filename << "\n";
+    cout<<"Error log written to " << error_log_name << "\n";
+    cout<<"Debug log written to debug.log\n";
+    cout<<"Symbol table log written to symtab.log\n";
+    cout<<"Function table log written to function_table.log\n";
+    cout<<"Jump table log written to jump_table.log\n";
+    cout<<"-------------------------------------------------------------------------\n";
+
+    cout<<"-------------------------------------------------------------------------\n";
+    cout<<"\n\n\n";
 	return res;
 }
 
