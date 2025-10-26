@@ -283,13 +283,14 @@ or directly use to run all files
 ./run.sh
 ```
 
-##TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
+## TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
 ---
 
 # Contributions
-- **Krish Singla, 23114050** : 30%
+- **Krish Singla, 23114050** : 25%
 - **Kritik Vijay, 23114051** : 25%
 - **Arnav Gupta, 23114010** : 25%
-- **Shubham Kataria, 23114092** : 20%
+- **Shubham Kataria, 23114092** : 25%
+
 
 
