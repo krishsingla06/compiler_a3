@@ -24,7 +24,7 @@ void yyerror(const char* s) {
 }
 
 #include <fstream>
-    
+
 // Debug file stream
 std::ofstream debug_file;
 
@@ -133,6 +133,7 @@ void close_jump_table_file(){
     // Forward declarations
     struct StructUnionDef;
     struct EnumDef; 
+    struct ClassDef;
     // Type information for semantic checking and 3-address code generation
     struct TypeInfo {
         bool is_static;
@@ -151,11 +152,23 @@ void close_jump_table_file(){
         string structUnionName; // Name of the struct/union (e.g., "Point", "Data")
         StructUnionDef* structDef; // Pointer to the struct/union definition
 
+        // Class information
+        bool isClass;           // True if this is a class type
+        string className;       // Name of the class (e.g., "MyClass")
+        ClassDef* classDef;     // Pointer to the class definition
+
         // Function pointer information
         bool isFunctionPointer; // True if this is a function pointer type
         TypeInfo* returnType;   // Return type for function pointers (nullptr if not a function pointer)
         vector<TypeInfo>* parameterTypes; // Parameter types for function pointers (nullptr if not a function pointer)
         bool isReference;       // True if this is a reference type (int&, char&, etc.)
+        
+        // Member function information
+        bool isMemberFunction;  // True if this represents a member function access (obj.method or ptr->method)
+        string memberFunctionName; // Name of the member function
+        ClassDef* memberFunctionClass; // Class that contains the member function
+        TACOperand* objectAddress; // Address of the object (for 'this' pointer)
+        
         TACOperand* result; // Result of the expression
         unordered_set<TACInstruction*> true_list; // List of true instructions (for conditional jumps)
         unordered_set<TACInstruction*> false_list; // List of false instructions (for conditional jumps)
@@ -169,7 +182,9 @@ void close_jump_table_file(){
                      pointerLevel(0), isArray(false), 
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
                      isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
+                     isClass(false), className(""), classDef(nullptr),
                      isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false),
+                     isMemberFunction(false), memberFunctionName(""), memberFunctionClass(nullptr), objectAddress(nullptr),
                      result(nullptr), code()  {}
         // Copy constructor
         TypeInfo(const TypeInfo& other) : is_static(other.is_static),
@@ -179,10 +194,14 @@ void close_jump_table_file(){
                     isLvalue(other.isLvalue), 
                     isStruct(other.isStruct), isUnion(other.isUnion),
                     structUnionName(other.structUnionName), structDef(other.structDef),
+                    isClass(other.isClass), className(other.className), classDef(other.classDef),
                     isFunctionPointer(other.isFunctionPointer),
                     returnType(other.returnType ? new TypeInfo(*other.returnType) : nullptr),
                     parameterTypes(other.parameterTypes ? new vector<TypeInfo>(*other.parameterTypes) : nullptr),
-                    isReference(other.isReference),result(other.result),
+                    isReference(other.isReference),
+                    isMemberFunction(other.isMemberFunction), memberFunctionName(other.memberFunctionName),
+                    memberFunctionClass(other.memberFunctionClass), objectAddress(other.objectAddress),
+                    result(other.result),
                     true_list(other.true_list), false_list(other.false_list),
                     next_list(other.next_list), code(other.code),
                     break_list(other.break_list), continue_list(other.continue_list) {}
@@ -220,6 +239,8 @@ void close_jump_table_file(){
                 res += "struct " + structUnionName;
             } else if (isUnion) {
                 res += "union " + structUnionName;
+            } else if (isClass) {
+                res += "class " + className;
             } else {
                 res += baseType;
             }
@@ -363,6 +384,42 @@ void close_jump_table_file(){
         
         StructUnionDef() : name(""), isUnion(false), totalSize(0), scope_level(0) {}
     };
+
+    // Access specifier enum for classes
+    enum AccessSpecifier {
+        ACCESS_PRIVATE = 0,
+        ACCESS_PUBLIC = 1,
+        ACCESS_PROTECTED = 2
+    };
+
+    // Class member information (data members + member functions)
+    struct ClassMember {
+        string name;
+        TypeInfo type;
+        AccessSpecifier access;
+        int offset;  // Offset from base address in bytes (for data members)
+        bool isMemberFunction;  // true for member functions, false for data members
+        bool isConstructor;     // true if this is a constructor
+        bool isDestructor;      // true if this is a destructor
+        vector<TypeInfo> paramTypes;  // For member functions
+        
+        ClassMember() : name(""), access(ACCESS_PRIVATE), offset(0), 
+                       isMemberFunction(false), isConstructor(false), isDestructor(false) {}
+        ClassMember(const string& n, const TypeInfo& t, AccessSpecifier a, int off) 
+            : name(n), type(t), access(a), offset(off), 
+              isMemberFunction(false), isConstructor(false), isDestructor(false) {}
+    };
+
+    // Class definition
+    struct ClassDef {
+        string name;           // class name
+        vector<ClassMember> members;
+        int totalSize;         // Total size in bytes (only data members)
+        int scope_level;       // Scope where defined
+        AccessSpecifier defaultAccess;  // Default access (private for classes)
+        
+        ClassDef() : name(""), totalSize(0), scope_level(0), defaultAccess(ACCESS_PRIVATE) {}
+    };
 }
 
 %code {
@@ -373,6 +430,10 @@ void close_jump_table_file(){
     // Struct/Union table - maps "struct name" or "union name" to a stack of definitions
     // Inner scopes shadow outer scopes by adding to the end of the vector
     map<string, vector<StructUnionDef>> struct_union_table;
+    
+    // Class table - maps "class name" to a stack of definitions
+    // Inner scopes shadow outer scopes by adding to the end of the vector
+    map<string, vector<ClassDef>> class_table;
     
     // Function symbol table
     map<string, FunctionEntry> function_table;
@@ -423,6 +484,14 @@ void close_jump_table_file(){
     vector<StructMember>* current_struct_members = nullptr;
     string current_struct_being_defined = "";  // Track the struct/union currently being parsed
     
+    // Global temporary storage for class members being parsed
+    vector<ClassMember>* current_class_members = nullptr;
+    string current_class_being_defined = "";  // Track the class currently being parsed
+    AccessSpecifier current_access_specifier = ACCESS_PRIVATE;  // Default access for classes
+    
+    // Track when we're inside a member function (for allowing access to class members)
+    ClassDef* current_member_function_class = nullptr;  // Non-null when inside a member function
+    
     // Typedef table - maps typedef name to TypeInfo
     // Supports scoping by storing a vector (inner scopes shadow outer)
     map<string, vector<TypeInfo>> typedef_table;
@@ -436,6 +505,12 @@ void close_jump_table_file(){
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
     StructUnionDef* lookup_struct_union(const string& name);
     StructMember* find_member(StructUnionDef* def, const string& memberName);
+    
+    // Class management functions
+    void insert_class(const string& name, const vector<ClassMember>& members, int scope_level);
+    ClassDef* lookup_class(const string& name);
+    ClassMember* find_class_member(ClassDef* def, const string& memberName);
+    bool check_member_access(ClassMember* member, AccessSpecifier contextAccess);
     
     // Typedef management functions
     void insert_typedef(const string& name, const TypeInfo& type, int scope_level);
@@ -543,6 +618,22 @@ void close_jump_table_file(){
                 }
             }
         }
+        else if(t.isClass){
+            // Use the classDef pointer for direct access
+            if (t.classDef) {
+                base_size = t.classDef->totalSize;
+            } else {
+                // If classDef is not set, try to look it up
+                ClassDef* classDef = lookup_class(t.className);
+                if (classDef) {
+                    base_size = classDef->totalSize;
+                } else {
+                    // Incomplete class - this is an error if used directly
+                    base_size = 0;
+                    type_error("Cannot determine size of incomplete type: " + t.className);
+                }
+            }
+        }
         else{
             // Unknown type, assume a default size
             base_size = 4; // Default size for unknown types
@@ -588,7 +679,7 @@ void close_jump_table_file(){
 
 
 %token INT FLOAT CHAR VOID IF ELSE FOR WHILE DO UNTIL BREAK CONTINUE SWITCH CASE DEFAULT SIZEOF STATIC GOTO TYPEDEF 
-
+%token CLASS PUBLIC PRIVATE PROTECTED
 %token NULL_LITERAL INVALID
 %token INCREMENT DECREMENT
 %token ARROW LEFT_SHIFT RIGHT_SHIFT ELLIPSIS
@@ -630,6 +721,8 @@ void close_jump_table_file(){
 %type<typeinfo> declaration_list
 %type<typeinfo> struct_or_union_specifier
 %type<sval> struct_or_union
+%type<typeinfo> class_specifier
+%type<ival> access_specifier
 /* 
 %type<typeinfo> struct_declaration_list
 %type<typeinfo> struct_declaration */
@@ -1187,6 +1280,9 @@ type_specifier
         $$->baseType = "float"; 
     }
     | struct_or_union_specifier { 
+        $$ = $1;
+    }
+    | class_specifier {
         $$ = $1;
     }
     | TYPENAME {
@@ -1859,8 +1955,56 @@ postfix_expression
 		// Function call with no arguments (direct call or through function pointer)
 		TypeInfo* base = $1;
 		
+		// Check if this is a member function call with no arguments (obj.method() or ptr->method())
+		if (base->isMemberFunction && base->memberFunctionClass) {
+			// Member function call with no arguments
+			string methodName = base->memberFunctionName;
+			ClassDef* classDef = base->memberFunctionClass;
+			
+			// Find the member function in the class
+			ClassMember* member = find_class_member(classDef, methodName);
+			
+			if (!member || !member->isMemberFunction) {
+				type_error("Member function '" + methodName + "' not found in class");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Check parameter count
+				if (member->paramTypes.size() != 0) {
+					type_error("Member function '" + methodName + "' expects " + 
+					          to_string(member->paramTypes.size()) + " arguments but got 0");
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Return type is the member function's return type
+					$$ = new TypeInfo(member->type);
+					$$->isLiteral = false;
+					$$->isLvalue = false;
+					$$->code = base->code;
+					
+					cout << "Member function call: " << classDef->name << "::" << methodName 
+					     << "() -> " << $$->toString() << "\n";
+					
+					// Generate TAC: Pass 'this' pointer as first (implicit) parameter
+					TACInstruction* thisParam = emit(TACOperator(TAC_OPERATOR_PARAM), 
+					                                 base->objectAddress, 
+					                                 new_empty_var(), 
+					                                 new_empty_var(), 0);
+					$$->code.push_back(thisParam);
+					
+					// Generate call to member function (use mangled name with class prefix)
+					string mangledName = classDef->name + "::" + methodName;
+					$$->result = new_temp_var();
+					TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+					                                 $$->result, 
+					                                 new_identifier(mangledName),
+					                                 new_constant("1"), 0); // 1 for 'this' pointer
+					$$->code.push_back(callInstr);
+				}
+			}
+		}
 		// Check if base is a function pointer that needs to be called
-		if (base->isFunctionPointer && base->returnType && base->parameterTypes) {
+		else if (base->isFunctionPointer && base->returnType && base->parameterTypes) {
 			// This is a function pointer call: (*fp)()
 			// Check parameter count
 			if (base->parameterTypes->size() != 0) {
@@ -1921,8 +2065,91 @@ postfix_expression
 		TypeInfo* base = $1;
 		vector<TypeInfo>* argTypes = $3;
 
+		// Check if this is a member function call (obj.method(args) or ptr->method(args))
+		if (base->isMemberFunction && base->memberFunctionClass && argTypes) {
+			// Member function call
+			string methodName = base->memberFunctionName;
+			ClassDef* classDef = base->memberFunctionClass;
+			
+			// Find the member function in the class
+			ClassMember* member = find_class_member(classDef, methodName);
+			
+			if (!member || !member->isMemberFunction) {
+				type_error("Member function '" + methodName + "' not found in class");
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Check parameter count
+				if (member->paramTypes.size() != argTypes->size()) {
+					type_error("Member function '" + methodName + "' expects " + 
+					          to_string(member->paramTypes.size()) + " arguments but got " + 
+					          to_string(argTypes->size()));
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Check parameter types
+					bool compatible = true;
+					for (size_t i = 0; i < argTypes->size(); i++) {
+						if (!types_compatible(member->paramTypes[i], (*argTypes)[i])) {
+							type_error("Argument " + to_string(i+1) + " type mismatch in member function call: expected " + 
+							          member->paramTypes[i].toString() + " but got " + 
+							          (*argTypes)[i].toString());
+							compatible = false;
+						}
+					}
+					
+					if (compatible) {
+						// Return type is the member function's return type
+						$$ = new TypeInfo(member->type);
+						$$->isLiteral = false;
+						$$->isLvalue = false;
+						$$->code = base->code;
+						
+						cout << "Member function call: " << classDef->name << "::" << methodName 
+						     << " with " << argTypes->size() << " arguments -> " << $$->toString() << "\n";
+						
+						// Generate TAC: Pass 'this' pointer as first (implicit) parameter
+						TACInstruction* thisParam = emit(TACOperator(TAC_OPERATOR_PARAM), 
+						                                 base->objectAddress, 
+						                                 new_empty_var(), 
+						                                 new_empty_var(), 0);
+						$$->code.push_back(thisParam);
+						
+						// Generate TAC for arguments and pass them
+						int no_of_args = argTypes->size();
+						for(int i = 0; i < no_of_args; i++) {
+							$$->code.insert($$->code.end(), (*argTypes)[i].code.begin(), (*argTypes)[i].code.end());
+						}
+						for(int i = 0; i < no_of_args; i++) {
+							// Type conversion if needed
+							pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+								change_type_rhs_to_lhs(member->paramTypes[i], (*argTypes)[i]);
+							$$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+							
+							TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+							                                promo.second.second, 
+							                                new_empty_var(), 
+							                                new_empty_var(), 0);
+							$$->code.push_back(argInstr);
+						}
+						
+						// Generate call to member function (use mangled name with class prefix)
+						string mangledName = classDef->name + "::" + methodName;
+						$$->result = new_temp_var();
+						TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
+						                                 $$->result, 
+						                                 new_identifier(mangledName),
+						                                 new_constant(to_string(no_of_args + 1)), 0); // +1 for 'this' pointer
+						$$->code.push_back(callInstr);
+					} else {
+						$$ = new TypeInfo();
+						$$->baseType = "error";
+					}
+				}
+			}
+		}
 		// Check if base is a function pointer that needs to be called
-		if (base->isFunctionPointer && base->returnType && base->parameterTypes && argTypes) {
+		else if (base->isFunctionPointer && base->returnType && base->parameterTypes && argTypes) {
 			// This is a function pointer call: (*fp)(args)
 			// Check parameter count
             cout<<"Hello from function pointer call with arguments\n";
@@ -2131,21 +2358,95 @@ postfix_expression
 		delete $3;
 	}
 	| postfix_expression DOT IDENTIFIER {                            /* e.g., obj.field */
-		// Struct member access - obj.member
+		// Struct/Class member access - obj.member
 		TypeInfo* base = $1;
 		string memberName = *$3;
 		
-		// Check if base is a struct/union type
+		// Check if base is a struct/union/class type
 		if (base->pointerLevel > 0 || base->isArray) {
-			type_error("Dot operator requires a struct/union object, not a pointer. Use '->' for pointers.");
+			type_error("Dot operator requires a struct/union/class object, not a pointer. Use '->' for pointers.");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
-		} else if (!base->isStruct && !base->isUnion) {
-			type_error("Dot operator requires a struct/union type, got: " + base->toString());
+		} else if (!base->isStruct && !base->isUnion && !base->isClass) {
+			type_error("Dot operator requires a struct/union/class type, got: " + base->toString());
 			$$ = new TypeInfo();
 			$$->baseType = "error";
+		} else if (base->isClass) {
+			// Class member access
+			ClassDef* classDef = base->classDef;
+			
+			if (!classDef) {
+				type_error("Class definition not found for type: " + base->toString());
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Find the member
+				ClassMember* member = find_class_member(classDef, memberName);
+				
+				if (!member) {
+					type_error("Class '" + base->className + "' has no member named '" + memberName + "'");
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Check access control (basic implementation)
+					check_member_access(member, ACCESS_PUBLIC);
+					
+					if (member->isMemberFunction) {
+						// Member function - store information for potential function call
+						$$ = new TypeInfo(member->type);
+						$$->isLvalue = false;
+						$$->isLiteral = false;
+						$$->code = base->code;
+						
+						// Mark as member function and store context
+						$$->isMemberFunction = true;
+						$$->memberFunctionName = memberName;
+						$$->memberFunctionClass = classDef;
+						
+						// Calculate object address and store it
+						$$->objectAddress = new_temp_var();
+						TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), $$->objectAddress, base->result, new_empty_var(), 0);
+						$$->code.push_back(addr_instr);
+						
+						// Set up parameter types for the member function
+						$$->parameterTypes = new vector<TypeInfo>();
+						for (const auto& paramType : member->paramTypes) {
+							$$->parameterTypes->push_back(paramType);
+						}
+						
+						$$->result = base->result;
+						
+						cout << "Class member function access: " << base->toString() << "." << memberName << "\n";
+					} else {
+						// Data member
+						$$ = new TypeInfo(member->type);
+						$$->isLvalue = true;  // Member access is an lvalue
+						$$->isLiteral = false;
+						
+						// TAC: Calculate member address
+						$$->code = base->code;
+						
+						TACOperand* base_addr = new_temp_var();
+						TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
+						$$->code.push_back(addr_instr);
+						
+						TACOperand* member_addr = new_temp_var();
+						TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base_addr, 
+						                                    new_constant(to_string(member->offset)), 0);
+						$$->code.push_back(offset_instr);
+						
+						// The result is the dereferenced member address
+						$$->result = new_temp_var();
+						TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
+						$$->code.push_back(deref_instr);
+						
+						cout << "Class data member access: " << base->toString() << "." << memberName 
+						     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
+					}
+				}
+			}
 		} else {
-			// Use the structDef from TypeInfo
+			// Struct/union member access (original logic)
 			StructUnionDef* structDef = base->structDef;
 			
 			if (!structDef) {
@@ -2196,21 +2497,88 @@ postfix_expression
 		delete $1; delete $3;
 	}
 	| postfix_expression ARROW IDENTIFIER {                             /* e.g., ptr->field */
-		// Struct pointer member access - ptr->member
+		// Struct/Class pointer member access - ptr->member
 		TypeInfo* base = $1;
 		string memberName = *$3;
 		
-		// Check if base is a pointer to struct/union
+		// Check if base is a pointer to struct/union/class
 		if (base->pointerLevel == 0) {
-			type_error("Arrow operator requires a pointer to struct/union. Use '.' for objects.");
+			type_error("Arrow operator requires a pointer to struct/union/class. Use '.' for objects.");
 			$$ = new TypeInfo();
 			$$->baseType = "error";
-		} else if (!base->isStruct && !base->isUnion) {
-			type_error("Arrow operator requires a pointer to struct/union type, got: " + base->toString());
+		} else if (!base->isStruct && !base->isUnion && !base->isClass) {
+			type_error("Arrow operator requires a pointer to struct/union/class type, got: " + base->toString());
 			$$ = new TypeInfo();
 			$$->baseType = "error";
+		} else if (base->isClass) {
+			// Class member access via pointer
+			ClassDef* classDef = base->classDef;
+			
+			if (!classDef) {
+				type_error("Class definition not found for type: " + base->toString());
+				$$ = new TypeInfo();
+				$$->baseType = "error";
+			} else {
+				// Find the member
+				ClassMember* member = find_class_member(classDef, memberName);
+				
+				if (!member) {
+					type_error("Class '" + base->className + "' has no member named '" + memberName + "'");
+					$$ = new TypeInfo();
+					$$->baseType = "error";
+				} else {
+					// Check access control
+					check_member_access(member, ACCESS_PUBLIC);
+					
+					if (member->isMemberFunction) {
+						// Member function access via pointer
+						$$ = new TypeInfo(member->type);
+						$$->isLvalue = false;
+						$$->isLiteral = false;
+						$$->code = base->code;
+						
+						// Mark as member function and store context
+						$$->isMemberFunction = true;
+						$$->memberFunctionName = memberName;
+						$$->memberFunctionClass = classDef;
+						
+						// For pointer access, the base->result already is the pointer (address)
+						$$->objectAddress = base->result;
+						
+						// Set up parameter types for the member function
+						$$->parameterTypes = new vector<TypeInfo>();
+						for (const auto& paramType : member->paramTypes) {
+							$$->parameterTypes->push_back(paramType);
+						}
+						
+						$$->result = base->result;
+						
+						cout << "Class member function access: " << base->toString() << "->" << memberName << "\n";
+					} else {
+						// Data member
+						$$ = new TypeInfo(member->type);
+						$$->isLvalue = true;  // Member access is an lvalue
+						$$->isLiteral = false;
+						
+						$$->code = base->code;
+						
+						TACOperand* member_addr = new_temp_var();
+						TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base->result, 
+						                                    new_constant(to_string(member->offset)), 0);
+						$$->code.push_back(offset_instr);
+						
+						// The result is the dereferenced member address
+						$$->result = new_temp_var();
+						TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
+						$$->code.push_back(deref_instr);
+						
+						cout << "Class pointer data member access: " << base->toString() << "->" << memberName 
+						     << " -> " << $$->toString() << " at offset " << member->offset << "\n";
+					}
+				}
+			}
 		} else {
-			// Use the structDef from TypeInfo
+			// Struct/union member access (original logic)
 			StructUnionDef* structDef = base->structDef;
 			
 			if (!structDef) {
@@ -2842,6 +3210,413 @@ struct_or_union_specifier
 struct_or_union
 	: STRUCT { $$ = new string("struct"); }                                                            /* struct */	
     | UNION { $$ = new string("union"); }                                                              /* union */										 						 						
+	;
+
+// -------------------------------------------- Classes -----------------------------------------------------
+
+class_specifier
+	: CLASS IDENTIFIER LBRACE {
+		// Initialize the global member list for this class
+		current_class_members = new vector<ClassMember>();
+		current_class_being_defined = "class " + *$2;
+		current_access_specifier = ACCESS_PRIVATE;  // Default for classes
+	} class_declaration_list RBRACE {  // e.g., class MyClass { public: int x; void foo(); };
+		// This defines a new class
+		string className = *$2;
+		
+		// Use the global member list
+		if (current_class_members) {
+			// Check if all members have unique names (skip constructors/destructors as they can share class name)
+			set<string> memberNames;
+			int error_flag = 0;
+			for(auto& member : *current_class_members) {
+				// Skip constructors and destructors from duplicate name checking
+				if (member.isConstructor || member.isDestructor) {
+					continue;
+				}
+				if(memberNames.find(member.name) != memberNames.end()) {
+					type_error("Duplicate member name '" + member.name + "' in class '" + className + "'");
+					error_flag = 1;
+				} else {
+					memberNames.insert(member.name);
+				}
+			}
+			
+			if(error_flag == 0) {
+				insert_class(className, *current_class_members, current_scope_level);
+				delete current_class_members;
+				current_class_members = nullptr;
+			} else {
+				// Cleanup
+				delete current_class_members;
+				current_class_members = nullptr;
+				type_error("Failed to define class '" + className + "' due to duplicate member names.");
+			}
+		}
+		
+		// Clear the current class being defined
+		current_class_being_defined = "";
+		
+		// Create and return TypeInfo
+		$$ = new TypeInfo();
+		$$->isClass = true;
+		$$->className = className;
+		$$->classDef = lookup_class(className);
+		$$->baseType = "class " + className; // For compatibility and toString()
+		
+		if ($$->classDef == nullptr) {
+			type_error("Failed to register class: " + className);
+		}
+		
+		delete $2;
+	}
+	| CLASS IDENTIFIER {  // e.g., class MyClass; or using existing class MyClass
+		// Reference to existing class or forward declaration
+		string className = *$2;
+		
+		$$ = new TypeInfo();
+		$$->isClass = true;
+		$$->className = className;
+		$$->classDef = lookup_class(className);
+		$$->baseType = "class " + className; // For compatibility and toString()
+		
+		if ($$->classDef == nullptr) {
+			type_warning("Using undefined class: " + className + " (forward declaration or error)");
+		}
+		
+		delete $2;
+	}
+	;
+
+access_specifier
+	: PUBLIC { $$ = ACCESS_PUBLIC; }
+	| PRIVATE { $$ = ACCESS_PRIVATE; }
+	| PROTECTED { $$ = ACCESS_PROTECTED; }
+	;
+
+class_declaration_list
+	: class_member_declaration
+	| class_declaration_list class_member_declaration
+	| /* epsilon */
+	;
+
+class_member_declaration
+	: access_specifier COLON {
+		// Change the current access specifier
+		current_access_specifier = (AccessSpecifier)$1;
+		cout << "Access specifier changed to " << ($1 == ACCESS_PUBLIC ? "public" : 
+		                                           ($1 == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+	}
+	| type_specifier struct_declarator_list SEMICOLON {
+		// Data members (similar to struct members but with access control)
+		for (auto declInfo : *$2) {
+			ClassMember member;
+			member.name = declInfo->name;
+			member.type = TypeInfo(*$1); // Base type from type_specifier
+			member.type.pointerLevel = declInfo->pointerLevel;
+			member.type.isArray = declInfo->isArray;
+			member.type.arrayDimensions = declInfo->arrayDimensions;
+			member.access = current_access_specifier;
+			member.isMemberFunction = false;
+			
+			// Validate: if this is a class/struct/union type and NOT a pointer, it must be complete
+			if ((member.type.isClass || member.type.isStruct || member.type.isUnion) && 
+			    member.type.pointerLevel == 0 && !member.type.isArray) {
+				string memberTypeName;
+				if (member.type.isClass) {
+					memberTypeName = "class " + member.type.className;
+				} else if (member.type.isStruct) {
+					memberTypeName = "struct " + member.type.structUnionName;
+				} else {
+					memberTypeName = "union " + member.type.structUnionName;
+				}
+				
+				// Special case: allow pointers to the class being currently defined
+				if (memberTypeName == current_class_being_defined) {
+					type_error("Incomplete type '" + memberTypeName + 
+					          "' used as class member '" + member.name + "'. Use pointer for self-referential structure.");
+				}
+			}
+			
+			// Calculate offset for this data member
+			int offset = 0;
+			for (const auto& existingMember : *current_class_members) {
+				if (!existingMember.isMemberFunction) {
+					offset += getSize(existingMember.type);
+				}
+			}
+			member.offset = offset;
+			
+			current_class_members->push_back(member);
+			
+			cout << "Class data member: " << member.name << " of type " << member.type.toString() 
+			     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+			                            (member.access == ACCESS_PROTECTED ? "protected" : "private"))
+			     << " at offset " << member.offset << "\n";
+		}
+		delete $1;
+		delete $2;
+	}
+	| type_specifier IDENTIFIER LPAREN parameter_list RPAREN SEMICOLON {
+		// Member function declaration
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo(*$1); // Return type
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = false;
+		
+		// Store parameter types
+		if ($4) {
+			for (const auto& param : $4->params) {
+				member.paramTypes.push_back(param);
+			}
+			delete $4;
+		}
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class member function: " << member.type.toString() << " " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		delete $1;
+		delete $2;
+	}
+	| type_specifier IDENTIFIER LPAREN parameter_list RPAREN {
+		// Before parsing compound_statement, set the return type context
+		current_function_return_type = new TypeInfo(*$1);
+	} compound_statement {
+		// Member function definition (inline)
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo(*$1); // Return type
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = false;
+		
+		// Store parameter types
+		if ($4) {
+			for (const auto& param : $4->params) {
+				member.paramTypes.push_back(param);
+			}
+			delete $4;
+		}
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class member function (inline): " << member.type.toString() << " " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		
+		// Clear return type context
+		delete current_function_return_type;
+		current_function_return_type = nullptr;
+		
+		delete $1;
+		delete $2;
+		delete $7; // compound_statement
+	}
+	| type_specifier IDENTIFIER LPAREN RPAREN SEMICOLON {
+		// Member function with no parameters
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo(*$1); // Return type
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = false;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class member function: " << member.type.toString() << " " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		delete $1;
+		delete $2;
+	}
+	| type_specifier IDENTIFIER LPAREN RPAREN {
+		// Before parsing compound_statement, set the return type context
+		current_function_return_type = new TypeInfo(*$1);
+	} compound_statement {
+		// Member function with no parameters (inline)
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo(*$1); // Return type
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = false;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class member function (inline): " << member.type.toString() << " " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		
+		// Clear return type context
+		delete current_function_return_type;
+		current_function_return_type = nullptr;
+		
+		delete $1;
+		delete $2;
+		delete $6; // compound_statement
+	}
+	| IDENTIFIER LPAREN parameter_list RPAREN SEMICOLON {
+		// Constructor declaration (same name as class, no return type)
+		ClassMember member;
+		member.name = *$1;
+		member.type = TypeInfo(); // Constructors have no return type
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = true;
+		member.isDestructor = false;
+		
+		// Store parameter types
+		if ($3) {
+			for (const auto& param : $3->params) {
+				member.paramTypes.push_back(param);
+			}
+			delete $3;
+		}
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class constructor: " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		delete $1;
+	}
+	| IDENTIFIER LPAREN parameter_list RPAREN {
+		// Before parsing compound_statement, set the return type context for constructor
+		current_function_return_type = new TypeInfo();
+		current_function_return_type->baseType = "void";
+	} compound_statement {
+		// Constructor definition (inline)
+		ClassMember member;
+		member.name = *$1;
+		member.type = TypeInfo();
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = true;
+		member.isDestructor = false;
+		
+		// Store parameter types
+		if ($3) {
+			for (const auto& param : $3->params) {
+				member.paramTypes.push_back(param);
+			}
+			delete $3;
+		}
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class constructor (inline): " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		
+		// Clear return type context
+		delete current_function_return_type;
+		current_function_return_type = nullptr;
+		
+		delete $1;
+		delete $6; // compound_statement
+	}
+	| IDENTIFIER LPAREN RPAREN SEMICOLON {
+		// Constructor with no parameters
+		ClassMember member;
+		member.name = *$1;
+		member.type = TypeInfo();
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = true;
+		member.isDestructor = false;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class constructor: " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		delete $1;
+	}
+	| IDENTIFIER LPAREN RPAREN {
+		// Before parsing compound_statement, set the return type context for constructor
+		current_function_return_type = new TypeInfo();
+		current_function_return_type->baseType = "void";
+	} compound_statement {
+		// Constructor with no parameters (inline)
+		ClassMember member;
+		member.name = *$1;
+		member.type = TypeInfo();
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = true;
+		member.isDestructor = false;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class constructor (inline): " << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		
+		// Clear return type context
+		delete current_function_return_type;
+		current_function_return_type = nullptr;
+		
+		delete $1;
+		delete $5; // compound_statement
+	}
+	| BIT_NOT IDENTIFIER LPAREN RPAREN SEMICOLON {
+		// Destructor declaration (~ClassName())
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo();
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = true;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class destructor: ~" << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		delete $2;
+	}
+	| BIT_NOT IDENTIFIER LPAREN RPAREN {
+		// Before parsing compound_statement, set the return type context for destructor
+		current_function_return_type = new TypeInfo();
+		current_function_return_type->baseType = "void";
+	} compound_statement {
+		// Destructor definition (inline)
+		ClassMember member;
+		member.name = *$2;
+		member.type = TypeInfo();
+		member.type.baseType = "void";
+		member.access = current_access_specifier;
+		member.isMemberFunction = true;
+		member.isConstructor = false;
+		member.isDestructor = true;
+		
+		current_class_members->push_back(member);
+		
+		cout << "Class destructor (inline): ~" << member.name << "()" 
+		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
+		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
+		
+		// Clear return type context
+		delete current_function_return_type;
+		current_function_return_type = nullptr;
+		
+		delete $2;
+		delete $6; // compound_statement
+	}
 	;
 
 struct_declaration_list
@@ -3901,6 +4676,27 @@ bool lookup_symbol(const string& name, SymbolEntry& entry) {
             return true;
         }
     }
+    
+    // If not found in regular scopes and we're inside a member function being defined,
+    // check if this is a class data member
+    if (current_class_members != nullptr) {
+        // Look in the current class members being defined
+        // Use indexed loop to avoid iterator invalidation issues
+        for (size_t i = 0; i < current_class_members->size(); i++) {
+            const ClassMember& member = (*current_class_members)[i];
+            if (member.name == name && !member.isMemberFunction) {
+                // Found a data member - create a synthetic symbol entry for it
+                entry.name = name;
+                entry.mangledName = name;
+                entry.type = member.type;
+                entry.line = yylineno;
+                entry.scope_level = -1;  // Special marker for class members
+                entry.isConst = false;
+                return true;
+            }
+        }
+    }
+    
     return false;
 }
 
@@ -5434,6 +6230,122 @@ StructMember* find_member(StructUnionDef* def, const string& memberName) {
     
     return nullptr;
 }
+
+//##############################################################################
+//########################## Class Management Functions ########################
+//##############################################################################
+
+void insert_class(const string& name, const vector<ClassMember>& members, int scope_level) {
+    string key = "class " + name;
+    
+    // Check if already defined in current scope
+    if (class_table.find(key) != class_table.end() && !class_table[key].empty()) {
+        if (class_table[key].back().scope_level == scope_level) {
+            type_warning("Redefinition of " + key + " in the same scope");
+        }
+    }
+    
+    ClassDef def;
+    def.name = name;
+    def.members = members;
+    def.scope_level = scope_level;
+    def.defaultAccess = ACCESS_PRIVATE;  // Classes default to private
+    
+    // Calculate offsets and total size (only for data members)
+    int currentOffset = 0;
+    
+    for (size_t i = 0; i < def.members.size(); i++) {
+        if (!def.members[i].isMemberFunction) {
+            // Data member: assign offset
+            def.members[i].offset = currentOffset;
+            int memberSize = getSize(def.members[i].type);
+            currentOffset += memberSize;
+        }
+    }
+    
+    def.totalSize = currentOffset;
+    
+    // Push to vector
+    class_table[key].push_back(def);
+    
+    cout << "Registered " << key << " in scope " << scope_level 
+         << " with " << members.size() << " members, total size: " << def.totalSize << " bytes\n";
+    
+    // Print member details
+    for (const auto& member : def.members) {
+        string accessStr = (member.access == ACCESS_PUBLIC ? "public" : 
+                           (member.access == ACCESS_PROTECTED ? "protected" : "private"));
+        if (member.isMemberFunction) {
+            if (member.isConstructor) {
+                cout << "  - " << accessStr << " constructor: " << member.name << "\n";
+            } else if (member.isDestructor) {
+                cout << "  - " << accessStr << " destructor: ~" << member.name << "\n";
+            } else {
+                cout << "  - " << accessStr << " function: " << member.type.toString() << " " 
+                     << member.name << "()\n";
+            }
+        } else {
+            cout << "  - " << accessStr << " data: " << member.name << ": " 
+                 << member.type.toString() << " at offset " << member.offset << "\n";
+        }
+    }
+}
+
+ClassDef* lookup_class(const string& name) {
+    // First try exact match (for "class C")
+    if (class_table.find(name) != class_table.end() && !class_table[name].empty()) {
+        return &class_table[name].back();
+    }
+    
+    // Try with "class" prefix if not already there
+    if (name.find("class ") != 0) {
+        string classKey = "class " + name;
+        if (class_table.find(classKey) != class_table.end() && !class_table[classKey].empty()) {
+            return &class_table[classKey].back();
+        }
+    }
+    
+    return nullptr;
+}
+
+ClassMember* find_class_member(ClassDef* def, const string& memberName) {
+    if (!def) return nullptr;
+    
+    for (size_t i = 0; i < def->members.size(); i++) {
+        if (def->members[i].name == memberName) {
+            return &def->members[i];
+        }
+    }
+    
+    return nullptr;
+}
+
+// Check if member access is allowed based on access specifier
+// For now, we'll do basic checking (can be enhanced for protected/friend access)
+bool check_member_access(ClassMember* member, AccessSpecifier contextAccess) {
+    if (!member) return false;
+    
+    // Public members are always accessible
+    if (member->access == ACCESS_PUBLIC) {
+        return true;
+    }
+    
+    // Private and protected members need to be accessed from within the class
+    // For simplicity, we'll allow access for now and just issue warnings
+    // A complete implementation would track the current class context
+    if (member->access == ACCESS_PRIVATE) {
+        type_warning("Accessing private member '" + member->name + "'");
+        return true;  // Allow but warn
+    }
+    
+    if (member->access == ACCESS_PROTECTED) {
+        type_warning("Accessing protected member '" + member->name + "'");
+        return true;  // Allow but warn
+    }
+    
+    return true;
+}
+
 //##############################################################################
 //########################## Enum Management Functions #######################
 //##############################################################################
