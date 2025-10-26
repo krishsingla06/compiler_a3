@@ -1086,7 +1086,24 @@ declaration
                         //$$->code.push_back(skip);
                         
                         cout << "Generated guarded initialization for static variable: " << declInfo->name << "\n";
-                    } else {
+                    } 
+                    //case of function pointer handled seperately below
+                    else if(combinedType.isFunctionPointer){
+                        // Function pointer initialization
+                        // Just assign the function address (initializer result)
+                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+                        
+                       // assign address of rhs to lhs
+                        TACOperand* func_ptr_var = combinedType.result;
+                        TACOperand* func_address = new_temp_var();
+                        TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, declInfo->initType->result, new_empty_var(), 0);
+                        $$->code.push_back(addr_of_instr);
+                        TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
+                        $$->code.push_back(assignInstr);
+
+
+                    }
+                    else {
                         // First, include the code that generates the initializer value (e.g., function call)
                         $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
                         // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
@@ -1860,10 +1877,14 @@ postfix_expression
 				
 				// Generate 3AC for indirect function call
 				$$->code = base->code;
+                TACOperand* func_ptr = base->result; // Function pointer variable
+                TACOperand* dereferenced_func = new_temp_var();
+                TACInstruction* derefInstr = emit(TAC_OPERATOR_DEREF, dereferenced_func, func_ptr, new_empty_var(), 0);
+                $$->code.push_back(derefInstr);
 				$$->result = new_temp_var();
 				TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 				                            $$->result, 
-				                            base->result,  // Use the function pointer variable
+				                            dereferenced_func,
 				                            new_constant("0"), 0);
 				$$->code.push_back(callInstr);
 			}
@@ -1989,10 +2010,14 @@ postfix_expression
 					}
 					
 					// Generate indirect call instruction
+                    TACOperand* func_ptr = base->result; // Function pointer variable
+                    TACOperand* dereferenced_func = new_temp_var();
+                    TACInstruction* derefInstr = emit(TAC_OPERATOR_DEREF, dereferenced_func, func_ptr, new_empty_var(), 0);
+                    $$->code.push_back(derefInstr);
 					$$->result = new_temp_var();
 					TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 					                            $$->result, 
-					                            base->result,  // Use the function pointer variable
+					                            dereferenced_func,
 					                            new_constant(to_string(no_of_args)), 0);
 					$$->code.push_back(callInstr);
 				} else {
@@ -2644,7 +2669,23 @@ assignment_expression
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
             TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, $$->result, new_empty_var(),0); // lhs = rhs
             $$->code.push_back(assign_inst);
-		} else {
+		} 
+        // for function pointers
+        else if (lhs_type->isFunctionPointer){
+            $$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+            //$$->code = lhs_type->code; //seems redundant
+            $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            TACOperand* func_ptr_var = lhs_type->result;
+            TACOperand* func_address = new_temp_var();
+            TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, rhs_type->result, new_empty_var(), 0);
+            $$->code.push_back(addr_of_instr);
+            TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
+            $$->code.push_back(assignInstr);
+
+            
+        }
+        else {
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
