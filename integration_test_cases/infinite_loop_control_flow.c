@@ -1,4 +1,4 @@
-// passed both
+// passed 
 void foo(){
     label2:
 

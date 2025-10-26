@@ -1,4 +1,4 @@
-// not passed yet
+// passed
 
 int main(){
     int a;

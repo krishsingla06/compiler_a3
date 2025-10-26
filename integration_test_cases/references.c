@@ -1,4 +1,4 @@
-// not passed yet 
+// passed 
 
 int func(){
     int a = 0;

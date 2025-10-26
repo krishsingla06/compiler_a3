@@ -1,4 +1,4 @@
-// not passed yet
+// passed
 
 enum Animal{
     DOG,

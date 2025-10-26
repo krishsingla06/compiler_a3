@@ -1,3 +1,5 @@
+// passed
+
 struct A;
 
 struct A* f(){

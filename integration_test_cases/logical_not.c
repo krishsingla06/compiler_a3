@@ -1,4 +1,4 @@
-//not passed
+// passed
 
 char fun(){
     int a;

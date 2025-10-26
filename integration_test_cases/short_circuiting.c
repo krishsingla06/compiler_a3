@@ -1,4 +1,4 @@
-// logical not is failing
+// passed
 
 float func(){
     int a = 5;
