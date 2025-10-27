@@ -772,6 +772,7 @@ void close_jump_table_file(){
 %type<typeinfo> short_circuited_expression
 %type<typeinfo> short_circuited_assignment_expression
 %type<typeinfo> short_circuited_conditional_expression
+%type<typeinfo> short_circuited_expression_statement
 
 
 %%
@@ -3150,9 +3151,7 @@ assignment_expression
             $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
             TACInstruction* assign_inst = emit(TACOperator(), lhs_type->result, $$->result, new_empty_var(),0); // lhs = rhs
             $$->code.push_back(assign_inst);
-		}
-
-		
+		}		
 		delete $1; delete $3;
 	}
 	;
@@ -4538,6 +4537,12 @@ if_expression
         delete $6;
     }
 
+short_circuited_expression_statement
+    : short_circuited_expression SEMICOLON {
+        $$ = $1;
+    }
+    ;
+
 
 
 
@@ -4647,9 +4652,8 @@ iteration_statement
             backpatch($9->true_list, $2);
         }
         loop_depth--;
-
     }                  
-	| FOR LPAREN expression_statement begin_marker expression_statement {
+	| FOR LPAREN expression_statement begin_marker short_circuited_expression_statement{
         // For loop without increment: for(init; cond; ) body
         // Create labels for conditional jump
         TACOperand* true_label = new_label(2);
@@ -4691,7 +4695,7 @@ iteration_statement
         
         delete $3; delete $5; delete $8;
     }
-	| FOR LPAREN expression_statement begin_marker expression_statement {
+	| FOR LPAREN expression_statement begin_marker short_circuited_expression_statement{
         // For loop with increment: for(init; cond; incr) body
         // Create labels for conditional jump
         TACInstruction* if_inst = emit(TACOperator(TAC_OPERATOR_NOP), new_empty_var(), $5->result, new_empty_var(), 2);
@@ -4707,7 +4711,6 @@ iteration_statement
         // Add init code
         // Add condition code
         $3->code.insert($3->code.end(), $5->code.begin(), $5->code.end());
-
         // Add increment code and jump back to condition
         $3->code.insert($3->code.end(), $8->code.begin(), $8->code.end());
         TACInstruction* goto_condition = emit(TACOperator(TAC_OPERATOR_NOP), $4, new_empty_var(), new_empty_var(), 1);
