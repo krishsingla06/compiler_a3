@@ -531,6 +531,9 @@ void close_jump_table_file(){
     void enter_scope();
     void exit_scope();
     void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
+    void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
+    void insert_static_variable_globally(const string& name, const TypeInfo& type);
+    void insert_guard_variable_globally(const string& guard_name);
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
@@ -1113,7 +1116,11 @@ declaration
                         static_var_guards[mangled_var_name] = guard_name;
                         combinedType.guard_var_name = guard_name;
                         
-                        // 3. Initialize guard variable to 1 (not yet initialized)
+                        // 3. Register static variable and guard in global scope
+                        // hihi insert static variable globally by passing simple name not the mangled name
+                        insert_static_variable_globally(declInfo->name, combinedType);
+                        insert_guard_variable_globally(guard_name);
+                        
                         TACOperand* guard_var = new_identifier(guard_name);
                         
                         // 4. Create labels
@@ -1123,7 +1130,7 @@ declaration
                             TACOperator(TAC_OPERATOR_EQ),
                             new_empty_var(),
                             guard_var,
-                            new_constant("0"),
+                            new_constant("1"),
                             2  // if-goto flag
                         );
                         result->code.push_back(check);
@@ -1151,7 +1158,7 @@ declaration
                         TACInstruction* guard_reset = emit(
                             TACOperator(),
                             guard_var,
-                            new_constant("0"),
+                            new_constant("1"),
                             new_empty_var(),
                             0
                         );
@@ -1193,7 +1200,12 @@ declaration
                 }
 			}
 
-            insert_symbol(declInfo->name, combinedType, declInfo->initType);
+            // if non static then only insert symbol in current scope
+            if (!combinedType.is_static) {
+                insert_symbol(declInfo->name, combinedType, declInfo->initType);
+            }
+
+           // insert_symbol(declInfo->name, combinedType, declInfo->initType);
 
 			// ========== Generate constructor call for class objects ==========
 			if (combinedType.isClass && !combinedType.isArray && combinedType.pointerLevel == 0 && 
@@ -4948,6 +4960,63 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
         cout << " with initializer of type " << initType->toString();
     }
     cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
+}
+
+// Insert a symbol directly into global scope (scope level 0/1)
+void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, const TypeInfo* initType) {
+    // Ensure global scope exists
+    if (scope_stack.empty()) {
+        enter_scope();  // This creates scope level 1 (global scope)
+    }
+    
+    // Access the first (global) scope
+    ScopeContext& global_scope = scope_stack[0];
+    
+    // Check if already exists in global scope
+    if (global_scope.symbols.find(name) != global_scope.symbols.end()) {
+        cout << "Warning: Global symbol '" << name << "' already exists, skipping\n";
+        return;
+    }
+    
+    SymbolEntry entry;
+    entry.name = name;
+    entry.type = type;
+    entry.line = yylineno;
+    entry.scope_level = global_scope.scope_level;  // Will be 1 (global)
+    entry.isConst = false;
+    entry.constValue = 0;
+    entry.mangledName = name;  // For global variables, use the name as-is (already mangled)
+    
+    global_scope.symbols[name] = entry;
+    
+    cout << "Inserted into global scope: " << name << " (" << type.toString() << ")" 
+         << " at scope level " << entry.scope_level << "\n";
+}
+
+
+
+// Insert a static variable into global scope
+void insert_static_variable_globally(const string& name, const TypeInfo& type) {
+    TypeInfo static_type = type;
+    static_type.is_static = true;
+    
+    insert_symbol_at_global_scope(name, static_type, nullptr);
+    
+    cout << "Registered static variable globally: " << name << "\n";
+}
+
+// Insert a guard variable into global scope
+void insert_guard_variable_globally(const string& guard_name) {
+    TypeInfo guard_type;
+    guard_type.baseType = "int";
+    guard_type.pointerLevel = 0;
+    guard_type.isArray = false;
+    guard_type.is_static = true;  // Guard variables are static
+    guard_type.result = new_identifier(guard_name);
+    
+    insert_symbol_at_global_scope(guard_name, guard_type, nullptr);
+    
+    cout << "Registered guard variable globally: " << guard_name << "\n";
 }
 
 bool lookup_symbol(const string& name, SymbolEntry& entry) {
