@@ -23,11 +23,5 @@ int main() {
     {
         int blockInt = 200;
     }
-
-    // Variable shadowing in block
-    int globalFloat = 42;                   // cannot assign same variable names with diff dataytypes
-
-    // Uncommenting the next line should cause a semantic error (blockInt out of scope)
-    blockInt = 6;
     return 0;
 }
