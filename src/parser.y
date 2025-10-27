@@ -701,7 +701,6 @@ void close_jump_table_file(){
 %token <sval> STRING_LITERAL CHAR_LITERAL
 %token ENUM
 %type <declinfo> direct_declarator
-// typedef declarator
 %type<declinfo> typedef_declarator
 %type<declinfo> typedef_direct_declarator
 %type<typeinfo> return_types
@@ -713,27 +712,21 @@ void close_jump_table_file(){
 %type<declinfo> declarator
 %type<declinfo> fun_declarator
 %type<declinfo> fun_direct_declarator
-
 %type<typeinfo> enum_specifier
 %type<typeinfo> parameter_declaration
 %type<declinfo> parameter_declarator
 %type<declinfo> parameter_direct_declarator
-//%type<typelist> parameter_list
 %type<paramlist> parameter_list
 %type<typelist> parameter_type_list
 %type<typeinfo> parameter_type_declarator
 %type<ival> pointer
 %type<opinfo> marker
 %type<ival> reference
-
 %type<typeinfo> declaration_list
 %type<typeinfo> struct_or_union_specifier
 %type<sval> struct_or_union
 %type<typeinfo> class_specifier
 %type<ival> access_specifier
-/* 
-%type<typeinfo> struct_declaration_list
-%type<typeinfo> struct_declaration */
 %type<declinfo> struct_declarator
 %type<decllist> struct_declarator_list
 %type<typeinfo> constant_expression
@@ -758,8 +751,6 @@ void close_jump_table_file(){
 %type<typeinfo> initializer
 %type<sval> unary_operator
 %type<typelist> argument_expression_list
-
-
 %type<typeinfo> statement
 %type<typeinfo> compound_statement
 %type<typeinfo> statement_list
@@ -768,17 +759,14 @@ void close_jump_table_file(){
 %type<typeinfo> jump_statement
 %type<typeinfo> labeled_statement
 %type<typeinfo> expression_statement
-
-%type <typeinfo> if_expression
+%type<typeinfo> if_expression
 %type<opinfo> begin_marker
-
-%type <typeinfo> declaration
-%type <typeinfo> marker_fun_begin
-%type <typeinfo> marker_member_func
-%type <typeinfo> function_definition
-%type <typeinfo> global_declaration
-%type <typeinfo> start
-
+%type<typeinfo> declaration
+%type<typeinfo> marker_fun_begin
+%type<typeinfo> marker_member_func
+%type<typeinfo> function_definition
+%type<typeinfo> global_declaration
+%type<typeinfo> start
 %type<typeinfo> short_circuited_logical_and_expression
 %type<typeinfo> short_circuited_logical_or_expression
 %type<typeinfo> short_circuited_expression
@@ -864,18 +852,13 @@ function_definition
         current_function_return_type = new TypeInfo(returnType); // Store return type for return statements
 
         //-------------------------- Register Function ------------------------------------------
-        // Register function definition
-		//TypeInfo returnType = *$1;
-		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers
-
-
-		
+		returnType.pointerLevel = $2->pointerLevel;  // Handle multi-level pointers		
 		if ($2->isFunction && $2->paramTypes) {
 			insert_function($2->name, returnType, *$2->paramTypes, $2->isVariadic);
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
 
-    } compound_statement {               /* e.g., int f() { ... } */
+    } compound_statement {               
 		
         $$ = new TypeInfo();
 
@@ -897,14 +880,10 @@ function_definition
                                       new_identifier($2->name), 
                                       new_empty_var(), 
                                       new_empty_var(), 0);
-        $$->code.push_back(func_end);
-		
-		// Reset the current function context after function definition completes
+        $$->code.push_back(func_end);		
 		current_function_name = "";
 		current_function_signature = "";
         current_function_return_type = nullptr;
-
-   
         delete $1;
         delete $2;
         delete $5;
@@ -967,7 +946,7 @@ declaration
                     // Check if initializer is a function name
                     if (declInfo->initType->baseType == "function" && !declInfo->initType->identifier.empty()) {
                         string funcName = declInfo->initType->identifier;
-                        
+
                         // Need to match: return type and parameter types
                         TypeInfo expectedReturnType = *combinedType.returnType;
                         vector<TypeInfo> expectedParamTypes;
@@ -1114,7 +1093,12 @@ declaration
                         "' of type '" + combinedType.toString() + "' with value of type '" + 
                         declInfo->initType->toString() + "'";
                     type_error(error_msg);
-				}else{
+				}
+                // else if it is class then print error because there is no copy constructor support yet
+                else if(combinedType.isClass ){
+                    type_error("Initialization of class object '" + declInfo->name + "' requires a copy constructor, which is not supported yet.");
+                }
+                else{
                     // ========== NEW: Handle static variable initialization with guard ==========
                     if (is_function_local_static) {
                         // Function-local static with initializer - needs guard
@@ -1130,14 +1114,6 @@ declaration
                         
                         // 3. Initialize guard variable to 1 (not yet initialized)
                         TACOperand* guard_var = new_identifier(guard_name);
-                        // TACInstruction* guard_init = emit(
-                        //     TACOperator(TAC_OPERATOR_ASSIGN),
-                        //     guard_var,
-                        //     new_constant("1"),
-                        //     new_empty_var(),
-                        //     0
-                        // );
-                        // $$->code.push_back(guard_init);
                         
                         // 4. Create labels
                         
@@ -1184,17 +1160,6 @@ declaration
                         // Backpatch the check instruction to jump to skip_label
                         backpatch({check}, skip_label);
                         
-                        // // 10. Skip label
-                        // TACInstruction* skip = emit(
-                        //     TACOperator(TAC_OPERATOR_NOP),
-                        //     new_empty_var(),
-                        //     new_empty_var(),
-                        //     new_empty_var(),
-                        //     0
-                        // );
-                        // skip->label = skip_label;
-                        //$$->code.push_back(skip);
-                        
                         cout << "Generated guarded initialization for static variable: " << declInfo->name << "\n";
                     } 
                     //case of function pointer handled seperately below
@@ -1231,14 +1196,14 @@ declaration
 
 			// ========== Generate constructor call for class objects ==========
 			if (combinedType.isClass && !combinedType.isArray && combinedType.pointerLevel == 0 && 
-			    !combinedType.isReference && combinedType.classDef) {
+			    !combinedType.isReference && combinedType.classDef && declInfo->initType == nullptr) {
 				// This is a non-array, non-pointer, non-reference class object - call its constructor
 				
 				if (declInfo->hasConstructorArgs) {
 					// Constructor arguments provided - find matching constructor
 					int numArgs = declInfo->constructorArgs.size();
 					bool foundConstructor = false;
-					
+
 					// Add all argument evaluation code first
 					for (auto* instr : declInfo->constructorArgCode) {
 						result->code.push_back(instr);
@@ -1309,11 +1274,9 @@ declaration
 				}
 			}
 			// =================================================================
-
 			// Insert into symbol table with native value storage
-			
 			// Clean up initType after insertion
-			if (declInfo->initType != nullptr) {
+			if (declInfo->initType != nullptr){
 				delete declInfo->initType;
 			}
 			delete declInfo;
@@ -3169,8 +3132,13 @@ assignment_expression
             $$->code.push_back(addr_of_instr);
             TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
             $$->code.push_back(assignInstr);
-
-            
+        }
+        //else if it is class then error
+        else if(lhs_type->isClass || rhs_type->isClass){
+            type_error("Direct assignment of class types is not supported. Use copy constructor or assignment operator.");
+            $$ = new TypeInfo();
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+            $$->baseType = "error";
         }
         else {
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
