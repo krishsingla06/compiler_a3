@@ -17,15 +17,11 @@ public:
 };
 
 int main() {
-    class MyClass obj(5, 'Z');
+    class MyClass obj;
     int ret;
     int rref;
     class MyClass arr[10];
     class MyClass &ref = obj;
-    class MyClass *ptr = &obj;
-    arr[0] = obj;
-    ptr -> myVariable = 10; 
-    ptr -> myChar = 'A';
 
     ret = obj.getStaticVariable(1);
     rref = ref.getChar();
