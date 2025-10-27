@@ -6176,13 +6176,13 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
 
 void type_error(const string& message) {
     string error_msg = "Type Error at line " + to_string(yylineno) + ": " + message;
-    cerr << error_msg << "\n";
+    cerr << "\033[1;31m" << error_msg << "\033[0m\n";
     log_error(error_msg);
 }
 
 void type_warning(const string& message) {
     string warning_msg = "Type Warning at line " + to_string(yylineno) + ": " + message;
-    cerr << warning_msg << "\n";
+    cerr << "\033[1;33m" << warning_msg << "\033[0m\n";
     // Also log warnings to error file
     log_error(warning_msg);
 }
