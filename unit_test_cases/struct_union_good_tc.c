@@ -28,6 +28,7 @@ int main() {
     
     // Declare union variable
     union Data d;
+    struct Point* ptr;
     
     // Access struct members with dot operator
     p1.x = 10;
@@ -42,7 +43,6 @@ int main() {
     d.f = 3.14;
     
     // Declare pointer to struct
-    struct Point* ptr;
     
     // Access struct members with arrow operator
     ptr->x = 100;

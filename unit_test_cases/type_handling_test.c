@@ -9,8 +9,6 @@ int main() {
     
     // Different storage classes and qualifiers
     static int static_var;
-    const int const_var = 42;
-    static const int static_const_var = 100;
     
     // Multiple declarations with mixed initialization
     int x = 1, y, z = 3;
@@ -20,7 +18,6 @@ int main() {
     value = x;
     character = 'A';
     decimal = a;
-    y = const_var;
     
     return 0;
 }

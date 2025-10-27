@@ -6966,7 +6966,7 @@ int main(int argc, char** argv) {
     close_jump_table_file();
 	
 	fclose(f);
-    cout<<"\n\n-------------------------------------------------------------------------\n";
+    /* cout<<"\n\n-------------------------------------------------------------------------\n";
     cout<<"Parsing completed. TAC output written to " << output_tac_filename << "\n";
     cout<<"Error log written to " << error_log_name << "\n";
     cout<<"Debug log written to debug.log\n";
@@ -6976,7 +6976,7 @@ int main(int argc, char** argv) {
     cout<<"-------------------------------------------------------------------------\n";
 
     cout<<"-------------------------------------------------------------------------\n";
-    cout<<"\n\n\n";
+    cout<<"\n\n\n"; */
 	return res;
 }
 
