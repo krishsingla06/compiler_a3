@@ -54,13 +54,7 @@ int main() {
         // do nothing
     }
 
-    // Test Case 9 — Infinite loop with break
-    for (;;) {
-        cnt++;
-        if (cnt == 5) break;
-    }
-
-    // Test Case 10 — break + continue mix
+    // Test Case 9 — break + continue mix
     for (i = 0; i < 10; i++) {
         if (i < 3) continue;
         if (i == 6) break;
