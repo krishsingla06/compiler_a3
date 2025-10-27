@@ -279,6 +279,7 @@ void close_jump_table_file(){
         map<string, struct SymbolEntry> symbols; // symbol table for this scope
         map<string, TypeInfo> typedefs; // typedef table for this scope
         map<string, string> enum_names; // Track enum names defined in this scope (enum_name -> "")
+        vector<string> classObjects; // Track class objects that need destructor calls when scope exits
 
         int scope_level;
         
@@ -1299,6 +1300,12 @@ declaration
 							break;
 						}
 					}
+				}
+				
+				// Track this object for destructor call when scope exits
+				if (!scope_stack.empty()) {
+					scope_stack.back().classObjects.push_back(declInfo->name);
+					cout << "Tracking object '" << declInfo->name << "' for destructor call\n";
 				}
 			}
 			// =================================================================
@@ -4248,6 +4255,45 @@ compound_statement
         $$->next_list = $4->next_list;
         $$->break_list = $4->break_list;
         $$->continue_list = $4->continue_list;
+
+        // Generate destructor calls for class objects before exiting scope
+        if (!scope_stack.empty()) {
+            auto& current_scope = scope_stack.back();
+            // Call destructors in reverse order (LIFO - last constructed, first destroyed)
+            for (auto it = current_scope.classObjects.rbegin(); it != current_scope.classObjects.rend(); ++it) {
+                const string& objName = *it;
+                // Look up the object in the symbol table to get its type
+                auto symIt = current_scope.symbols.find(objName);
+                if (symIt != current_scope.symbols.end()) {
+                    const TypeInfo& objType = symIt->second.type;
+                    if (objType.isClass && objType.classDef) {
+                        // Find the destructor
+                        for (const auto& member : objType.classDef->members) {
+                            if (member.isDestructor) {
+                                // Generate destructor call
+                                TACOperand* obj_addr = new_temp_var();
+                                TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, 
+                                                                   new_identifier(symIt->second.mangledName), 
+                                                                   new_empty_var(), 0);
+                                $$->code.push_back(addr_instr);
+                                
+                                TACInstruction* param_instr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                                    obj_addr, new_empty_var(), new_empty_var(), 0);
+                                $$->code.push_back(param_instr);
+                                
+                                string destructor_name = objType.className + "::" + member.name;
+                                TACInstruction* call_instr = emit(TACOperator(TAC_OPERATOR_CALL), new_empty_var(), 
+                                                                   new_identifier(destructor_name), new_constant("1"), 0);
+                                $$->code.push_back(call_instr);
+                                
+                                cout << "Generated destructor call for object: " << objName << "\n";
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         exit_scope(); 
     }                        /* e.g., { int a; stmt; } */

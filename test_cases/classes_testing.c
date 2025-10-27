@@ -1,20 +1,23 @@
 class MyClass{
-public:
+private:
     static int myVariable;
     char myChar;
 
-    MyClass() {
-        myVariable = 0;
-        myChar = 0;
+public:
+    MyClass(int v, char c) {
+        myVariable = v;
+        myChar = c;
     }
-    ~MyClass() {}
+    ~MyClass() {
+        
+    }
     int getChar() { return myChar; }
 
     int getStaticVariable(int inp) { return myVariable; }
 };
 
 int main() {
-    class MyClass obj();
+    class MyClass obj(5, 'Z');
     int ret;
     int rref;
     class MyClass arr[10];
