@@ -1,17 +1,11 @@
-void printResult(const char* msg, int result) {
-    printf("%s %d\n", msg, result);
-}
-
 int main() {
     int a = 10;
     float b = 5.5;
     char c = 'A';
-    // bool flag = true;                    // bool is not used 
-    // const int CONST_VAL = 100;              // not working
     static int staticVar = 20;
 
-    int* ptr = &a; // pointer to int
-    int ref = a;   // C does not have references, but we can use another variable
+    int* ptr = &a;
+    int ref = a;  
 
     // Arithmetic operators
     int sum = a + (int)b;
