@@ -6,7 +6,7 @@ enum Color { RED, GREEN, BLUE };
 int Color=1;
 int main(){
     enum Color1 { YELLOW, ORANGE, PURPLE , BLUE,RED};
-    int RED=1; // yahan error aana chahiye
+    // int RED=1; //this gives error on uncommenting
     enum Color c = RED; //isko 4 assign hona chahiye
     enum Mood m = GREEN; 
     {
