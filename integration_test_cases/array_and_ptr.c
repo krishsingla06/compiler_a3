@@ -5,6 +5,4 @@ char main(){
     int *ptr;
     arr[0] = 10;
     ptr = arr;
-    return ptr;
-
 }
