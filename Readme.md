@@ -22,7 +22,7 @@
 - function call with arguments
 - goto, break and continue
 - static keywords
-- 
+
 ## Advanced Features
 - Recursive function call
 - Class and object
@@ -351,6 +351,7 @@ or directly use to run all files
 
 ## TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
 ---
+
 
 
 
