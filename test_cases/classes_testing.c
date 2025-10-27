@@ -3,7 +3,7 @@ public:
     static int myVariable;
     char myChar;
 
-    MyClass(int var, char c) {
+    MyClass() {
         myVariable = 0;
         myChar = 0;
     }
@@ -14,7 +14,7 @@ public:
 };
 
 int main() {
-    class MyClass obj;
+    class MyClass obj();
     int ret;
     int rref;
     class MyClass arr[10];

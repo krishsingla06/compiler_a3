@@ -309,9 +309,15 @@ void close_jump_table_file(){
         vector<TypeInfo>* paramTypes;  // Parameter types for functions
         bool isVariadic;        // True if function is variadic
         
+        // Constructor-specific information
+        bool hasConstructorArgs;  // True if constructor arguments are provided
+        vector<TACInstruction*> constructorArgCode;  // TAC code for constructor arguments
+        vector<TACOperand*> constructorArgs;  // The actual constructor argument operands
+        
         DeclaratorInfo() : name(""), pointerLevel(0), 
                           isArray(false), arrayDimensions(), initValue(""), initType(nullptr), isReference(false),
-                          isFunction(false), paramTypes(nullptr), isVariadic(false) {}
+                          isFunction(false), paramTypes(nullptr), isVariadic(false),
+                          hasConstructorArgs(false) {}
                           
         // Add a new array dimension (for multidimensional arrays)
         void addArrayDimension(int size) {
@@ -1226,25 +1232,72 @@ declaration
 			if (combinedType.isClass && !combinedType.isArray && combinedType.pointerLevel == 0 && 
 			    !combinedType.isReference && combinedType.classDef) {
 				// This is a non-array, non-pointer, non-reference class object - call its constructor
-				// Find the no-argument constructor
-				for (const auto& member : combinedType.classDef->members) {
-					if (member.isConstructor && member.paramTypes.empty()) {
-						// Found default constructor - generate call
-						// Pass 'this' pointer (address of the object)
-						TACOperand* obj_addr = new_temp_var();
-						TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
-						result->code.push_back(addr_instr);
-						
-						TACInstruction* param_instr = emit(TACOperator(TAC_OPERATOR_PARAM), obj_addr, new_empty_var(), new_empty_var(), 0);
-						result->code.push_back(param_instr);
-						
-						string constructor_name = combinedType.className + "::" + member.name;
-						TACInstruction* call_instr = emit(TACOperator(TAC_OPERATOR_CALL), new_empty_var(), 
-						                                   new_identifier(constructor_name), new_constant("1"), 0);
-						result->code.push_back(call_instr);
-						
-						cout << "Generated constructor call for object: " << declInfo->name << "\n";
-						break;
+				
+				if (declInfo->hasConstructorArgs) {
+					// Constructor arguments provided - find matching constructor
+					int numArgs = declInfo->constructorArgs.size();
+					bool foundConstructor = false;
+					
+					// Add all argument evaluation code first
+					for (auto* instr : declInfo->constructorArgCode) {
+						result->code.push_back(instr);
+					}
+					
+					// Find constructor with matching number of parameters
+					for (const auto& member : combinedType.classDef->members) {
+						if (member.isConstructor && member.paramTypes.size() == numArgs) {
+							// Found matching constructor
+							// Pass 'this' pointer first
+							TACOperand* obj_addr = new_temp_var();
+							TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
+							result->code.push_back(addr_instr);
+							
+							TACInstruction* this_param = emit(TACOperator(TAC_OPERATOR_PARAM), obj_addr, new_empty_var(), new_empty_var(), 0);
+							result->code.push_back(this_param);
+							
+							// Then pass all constructor arguments
+							for (auto* arg : declInfo->constructorArgs) {
+								TACInstruction* param_instr = emit(TACOperator(TAC_OPERATOR_PARAM), arg, new_empty_var(), new_empty_var(), 0);
+								result->code.push_back(param_instr);
+							}
+							
+							string constructor_name = combinedType.className + "::" + member.name;
+							string numParams = to_string(numArgs + 1);  // +1 for 'this' pointer
+							TACInstruction* call_instr = emit(TACOperator(TAC_OPERATOR_CALL), new_empty_var(), 
+							                                   new_identifier(constructor_name), new_constant(numParams), 0);
+							result->code.push_back(call_instr);
+							
+							cout << "Generated constructor call for object: " << declInfo->name << " with " << numArgs << " arguments\n";
+							foundConstructor = true;
+							break;
+						}
+					}
+					
+					if (!foundConstructor) {
+						type_error(string("No matching constructor found for class ") + combinedType.className + 
+						          " with " + to_string(numArgs) + " arguments");
+					}
+				} else {
+					// No constructor arguments - find default constructor
+					for (const auto& member : combinedType.classDef->members) {
+						if (member.isConstructor && member.paramTypes.empty()) {
+							// Found default constructor - generate call
+							// Pass 'this' pointer (address of the object)
+							TACOperand* obj_addr = new_temp_var();
+							TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
+							result->code.push_back(addr_instr);
+							
+							TACInstruction* param_instr = emit(TACOperator(TAC_OPERATOR_PARAM), obj_addr, new_empty_var(), new_empty_var(), 0);
+							result->code.push_back(param_instr);
+							
+							string constructor_name = combinedType.className + "::" + member.name;
+							TACInstruction* call_instr = emit(TACOperator(TAC_OPERATOR_CALL), new_empty_var(), 
+							                                   new_identifier(constructor_name), new_constant("1"), 0);
+							result->code.push_back(call_instr);
+							
+							cout << "Generated default constructor call for object: " << declInfo->name << "\n";
+							break;
+						}
 					}
 				}
 			}
@@ -1521,6 +1574,26 @@ direct_declarator
 	: IDENTIFIER {                                                 /* e.g., x */  
 		$$ = new DeclaratorInfo();
 		$$->name = *$1;
+		delete $1;
+	}
+	| IDENTIFIER LPAREN argument_expression_list RPAREN {          /* e.g., obj(5, 'Z') - constructor with arguments */
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		$$->hasConstructorArgs = true;
+		
+		// Extract code and arguments from the TypeInfo list
+		for (const auto& argType : *$3) {
+			$$->constructorArgCode.insert($$->constructorArgCode.end(), argType.code.begin(), argType.code.end());
+			$$->constructorArgs.push_back(argType.result);
+		}
+		
+		delete $1;
+		delete $3;
+	}
+	| IDENTIFIER LPAREN RPAREN {                                   /* e.g., obj() - constructor with no arguments */
+		$$ = new DeclaratorInfo();
+		$$->name = *$1;
+		$$->hasConstructorArgs = true;  // Explicit empty constructor call
 		delete $1;
 	}
 	| LPAREN declarator RPAREN {                                   /* e.g., (*fp) for function pointers */

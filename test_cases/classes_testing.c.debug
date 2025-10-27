@@ -43,7 +43,7 @@ DEBUG: Variable obj mangled as v_obj_main_s2 (function: main, signature: , scope
 DEBUG: Variable obj mangled as v_obj_main_s2 (function: main, signature: , scope: 2)
 Variable obj mangled as v_obj_main_s2
 Declared variable: obj (class MyClass) at line 17 in scope 2
-Generated constructor call for object: obj
+Generated constructor call for object: obj with 0 arguments
 DEBUG: Variable ret mangled as v_ret_main_s2 (function: main, signature: , scope: 2)
 DEBUG: Variable ret mangled as v_ret_main_s2 (function: main, signature: , scope: 2)
 Variable ret mangled as v_ret_main_s2
