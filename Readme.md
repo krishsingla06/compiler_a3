@@ -1,9 +1,4 @@
-# Contributions
-- **Krish Singla, 23114050** : 30%
-- **Kritik Vijay, 23114051** : 25%
-- **Arnav Gupta, 23114010** : 25%
-- **Shubham Kataria, 23114092** : 20%
-
+# Fanta-C : Finally, A Non-Terrible Attempt – C!
 
 # Features
 ## Basic Features
@@ -65,11 +60,15 @@ if( a > 0 && b < 5 && c!=0 ){ // If a > 0 is false, then rest code - ```b<5 and 
 
 ## Jump tables
 
-Here rather than implementing the standard way of maintaining arrays of size MAX_CASE_VALUE - MIN_CASE_VALUE + 1, we have implemented jump tables using hash maps for better memory efficiency and for all the values not present in case labels, we jump to default case (-1 in our implementation), and we allowed only positive/negative integer literals and char literals, so default case -1 will not conflict with any case labels.
+We implemented it by standard algo for jump tables : made jump table of (Max_value - Min_value + 1), then  
 
 ``` c
-9: goto jump_table(0,v_x_main_s2) // goto jump_table(table_id, switch_variable)
-19: goto jump_table(1,v_z_main_s2) // look up value of v_z_main_s2 in jump table with id 1
+9: #t1 = 1
+10: #t2 = 2
+11: if v_x_main_s2 < #t1 goto I22 // If it is out of range [Max_value,Min_value] then goto default
+12: if v_x_main_s2 > #t2 goto I22 
+13: #t3 = v_x_main_s2 - #t1 // Subtract min value, to convert to zero based.
+14: goto_jump_table(0,#t3) // Special instruction for jump table
 ```
 
 - We have implemented jump tables for switch-case statements for better efficiency. For this for every switch-case statement we maintain a map of case label value to the corresponding TAC instruction address, and while generating TAC for switch-case statement, we generate jump table for that switch-case statement. Like :
@@ -115,40 +114,59 @@ THE TAC -
 2: v_x_main_s2 = 1
 3: v_y_main_s2 = 0
 4: v_z_main_s2 = 10
+5: v_b_main_s2 = 5
 6: v_c_main_s2 = 3
+7: v_q_main_s2 = 20
 8: v_r_main_s2 = 4
-9: goto jump_table(0,v_x_main_s2)
-10: #t1 = v_b_main_s2 + v_c_main_s2
-11: v_a_main_s2 = #t1
-12: goto I17
-13: #t2 = v_b_main_s2 - v_c_main_s2
-14: v_a_main_s2 = #t2
-15: goto I17
-16: v_a_main_s2 = 0
-17: #t3 = v_y_main_s2 + 1
-18: v_y_main_s2 = #t3
-19: goto jump_table(1,v_z_main_s2)
-20: #t4 = v_q_main_s2 * v_r_main_s2
-21: v_p_main_s2 = #t4
-22: goto I27
-23: #t5 = v_q_main_s2 / v_r_main_s2
-24: v_p_main_s2 = #t5
-25: goto I27
-26: v_p_main_s2 = 0
-27: return 0
-28: end function main
+9: #t1 = 1
+10: #t2 = 2
+11: if v_x_main_s2 < #t1 goto I22
+12: if v_x_main_s2 > #t2 goto I22
+13: #t3 = v_x_main_s2 - #t1
+14: goto_jump_table(0,#t3)
+15: #t4 = v_b_main_s2 + v_c_main_s2
+16: v_a_main_s2 = #t4
+17: goto I22
+18: #t5 = v_b_main_s2 - v_c_main_s2
+19: v_a_main_s2 = #t5
+20: goto I22
+21: v_a_main_s2 = 0
+22: #t6 = v_y_main_s2 + 1
+23: v_y_main_s2 = #t6
+24: #t7 = 10
+25: #t8 = 20
+26: if v_z_main_s2 < #t7 goto I37
+27: if v_z_main_s2 > #t8 goto I37
+28: #t9 = v_z_main_s2 - #t7
+29: goto_jump_table(1,#t9)
+30: #t10 = v_q_main_s2 * v_r_main_s2
+31: v_p_main_s2 = #t10
+32: goto I37
+33: #t11 = v_q_main_s2 / v_r_main_s2
+34: v_p_main_s2 = #t11
+35: goto I37
+36: v_p_main_s2 = 0
+37: return 0
+38: end function main
 ```
 
 ```c
-Jump Table 0:
-  case -1 -> 17 // default case
-  case 1 -> 10
-  case 2 -> 13
-
-Jump Table 1:
-  case -1 -> 27 // default case
-  case 10 -> 20
-  case 20 -> 23
+JUMP TABLE
+Jump ID: 0
+  Label 0: I15
+  Label 1: I18
+Jump ID: 1
+  Label 0: I30
+  Label 1: I37
+  Label 2: I37
+  Label 3: I37
+  Label 4: I37
+  Label 5: I37
+  Label 6: I37
+  Label 7: I37
+  Label 8: I37
+  Label 9: I37
+  Label 10: I33
 ```
 
 
@@ -349,12 +367,17 @@ or directly use to run all files
 ./run.sh
 ```
 
-## TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
+TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
 ---
 
 
 
 
+## Contributions
+- **Krish Singla, 23114050** : 25%
+- **Kritik Vijay, 23114051** : 25%
+- **Arnav Gupta, 23114010** : 25%
+- **Shubham Kataria, 23114092** : 25%
 
 
 
