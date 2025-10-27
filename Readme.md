@@ -273,6 +273,24 @@ The below way of function pointer assignment is not allowed in our language:
 int (*fcnptr) (int, int) = &foo; // not allowed in our language, although valid in C
 ```
 
+- Write class keyword before the object when initializing an object of a class.
+Eg. If you have 
+class A{...}
+then for initializing an object 'a' of class A, write:
+class A a;
+
+- Classes can only be defined in global scope, not inside any function or block scope.
+
+- You cannot make member functions with the same name inside the same class as function overloading is not supported for member functions (to avoid complications).
+
+- Copy constructor is not supported. 
+
+- Initialisation list in constructor is not supported since we have not supported initializer lists in general.
+
+- Default constructor is also not present. But if the user does not call the constructor while creating an object of class, the object is created and we don't throw any error.
+
+- `this` keyword is not supported inside classes.
+
 
 # Build & run
 
