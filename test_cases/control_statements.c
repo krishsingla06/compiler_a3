@@ -34,15 +34,6 @@ int main() {
         i++;
     } while (i < 3);
 
-    // If-else statement
-    if (a > b) {
-        name = "A greater";
-    } else if (a == b) {
-        name = "Equal";
-    } else {
-        name = "B greater";
-    }
-
     // Switch-case
     switch (6) {
         case 1:
