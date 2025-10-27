@@ -5853,6 +5853,21 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->baseType = "int";
             res->isLvalue = false;  // res is not an lvalue
             cout << " -> " << res->toString() << " (pointer comparison)\n";
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
+            res->code.insert(res->code.end(), right.code.begin(), right.code.end());
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
+            res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
+            TACOperand* resultOp = new_temp_var();
+            res->result = resultOp;
+            TACOperator t_op;
+            if(op == "<") t_op = TACOperator(TAC_OPERATOR_LT);
+            else if(op == "<=") t_op = TACOperator(TAC_OPERATOR_LE);
+            else if(op == ">") t_op = TACOperator(TAC_OPERATOR_GT);
+            else if(op == ">=") t_op = TACOperator(TAC_OPERATOR_GE);
+            else if(op == "==") t_op = TACOperator(TAC_OPERATOR_EQ);
+            else if(op == "!=") t_op = TACOperator(TAC_OPERATOR_NE);
+            TACInstruction* instr = emit(t_op, resultOp, temp.second.first, temp.second.second, 0);
+            res->code.push_back(instr);
             return res;
         }
         
