@@ -3,7 +3,7 @@ public:
     static int myVariable;
     char myChar;
 
-    MyClass() {
+    MyClass(int var, char c) {
         myVariable = 0;
         myChar = 0;
     }

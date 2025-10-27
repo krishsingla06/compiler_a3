@@ -1,4 +1,4 @@
-Error log initialized: ../test_cases/classes_testing.C.errors
+Error log initialized: ../test_cases/classes_testing.c.errors
 Starting parser...
 Entering scope level 1
 Access specifier changed to public
@@ -103,4 +103,4 @@ No typedefs defined.
 |                                    ENUM TABLE                                          |
 +-----------------------------------------------------------------------------------------+
 No enums defined.
-Error log closed: ../test_cases/classes_testing.C.errors
+Error log closed: ../test_cases/classes_testing.c.errors

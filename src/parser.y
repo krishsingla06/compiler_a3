@@ -3257,7 +3257,7 @@ class_specifier
 	: CLASS IDENTIFIER LBRACE {
 		// Initialize the global member list for this class
 		current_class_members = new vector<ClassMember>();
-		current_class_being_defined = "class " + *$2;
+		current_class_being_defined = *$2;
 		current_access_specifier = ACCESS_PRIVATE;  // Default for classes
 	} class_declaration_list RBRACE {  // e.g., class MyClass { public: int x; void foo(); };
 		// This defines a new class
@@ -3437,7 +3437,7 @@ class_member_declaration
 		// Generate function begin instruction NOW (before compound_statement)
 		string mangled_name = current_class_being_defined + "::" + *$2;
 		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-		                                   new_identifier(*$2), 
+		                                   new_identifier(mangled_name), 
 		                                   new_empty_var(), 
 		                                   new_empty_var(), 0);
 		$6->code.push_back(func_begin);
@@ -3467,8 +3467,9 @@ class_member_declaration
 		member.code.insert(member.code.end(), $8->code.begin(), $8->code.end());
 		
 		// Generate function end instruction
+		string mangled_name = current_class_being_defined + "::" + *$2;
 		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-		                                new_identifier(*$2), 
+		                                new_identifier(mangled_name), 
 		                                new_empty_var(), 
 		                                new_empty_var(), 0);
 		member.code.push_back(func_end);
@@ -3513,7 +3514,7 @@ class_member_declaration
 		// Generate function begin instruction NOW (before compound_statement)
 		string mangled_name = current_class_being_defined + "::" + *$2;
 		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-		                                   new_identifier(*$2), 
+		                                   new_identifier(mangled_name), 
 		                                   new_empty_var(), 
 		                                   new_empty_var(), 0);
 		$5->code.push_back(func_begin);
@@ -3534,8 +3535,9 @@ class_member_declaration
 		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
 		
 		// Generate function end instruction
+		string mangled_name = current_class_being_defined + "::" + *$2;
 		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-		                                new_identifier(*$2), 
+		                                new_identifier(mangled_name), 
 		                                new_empty_var(), 
 		                                new_empty_var(), 0);
 		member.code.push_back(func_end);
@@ -3589,7 +3591,7 @@ class_member_declaration
 		// Generate function begin instruction NOW (before compound_statement)
 		string mangled_name = current_class_being_defined + "::" + *$1;
 		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-		                                   new_identifier(*$1), 
+		                                   new_identifier(mangled_name), 
 		                                   new_empty_var(), 
 		                                   new_empty_var(), 0);
 		$5->code.push_back(func_begin);
@@ -3619,8 +3621,9 @@ class_member_declaration
 		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
 		
 		// Generate function end instruction
+		string mangled_name = current_class_being_defined + "::" + *$1;
 		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-		                                new_identifier(*$1), 
+		                                new_identifier(mangled_name), 
 		                                new_empty_var(), 
 		                                new_empty_var(), 0);
 		member.code.push_back(func_end);
@@ -3665,7 +3668,7 @@ class_member_declaration
 		// Generate function begin instruction NOW (before compound_statement)
 		string mangled_name = current_class_being_defined + "::" + *$1;
 		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-		                                   new_identifier(*$1), 
+		                                   new_identifier(mangled_name), 
 		                                   new_empty_var(), 
 		                                   new_empty_var(), 0);
 		$4->code.push_back(func_begin);
@@ -3687,8 +3690,9 @@ class_member_declaration
 		member.code.insert(member.code.end(), $6->code.begin(), $6->code.end());
 		
 		// Generate function end instruction
+		string mangled_name = current_class_being_defined + "::" + *$1;
 		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-		                                new_identifier(*$1), 
+		                                new_identifier(mangled_name), 
 		                                new_empty_var(), 
 		                                new_empty_var(), 0);
 		member.code.push_back(func_end);
@@ -3734,7 +3738,7 @@ class_member_declaration
 		string destructor_name = "~" + *$2;
 		string mangled_name = current_class_being_defined + "::" + destructor_name;
 		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-		                                   new_identifier(destructor_name), 
+		                                   new_identifier(mangled_name), 
 		                                   new_empty_var(), 
 		                                   new_empty_var(), 0);
 		$5->code.push_back(func_begin);
@@ -3757,8 +3761,9 @@ class_member_declaration
 		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
 		
 		// Generate function end instruction
+		string mangled_name = current_class_being_defined + "::" + destructor_name;
 		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-		                                new_identifier(destructor_name), 
+		                                new_identifier(mangled_name), 
 		                                new_empty_var(), 
 		                                new_empty_var(), 0);
 		member.code.push_back(func_end);
