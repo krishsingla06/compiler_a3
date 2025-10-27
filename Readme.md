@@ -65,7 +65,7 @@ if( a > 0 && b < 5 && c!=0 ){ // If a > 0 is false, then rest code - ```b<5 and 
 
 ## Jump tables
 
-Here rather than implementing the standard way of maintaining arrays of size MAX_CASE_VALUE - MIN_CASE_VALUE + 1, we have implemented jump tables using hash maps for better memory efficiency and for all the values not present in case labels, we jump to default case (-1 in our implementation), and we allowed only positive integer literals and char literals, so default case -1 will not conflict with any case labels.
+Here rather than implementing the standard way of maintaining arrays of size MAX_CASE_VALUE - MIN_CASE_VALUE + 1, we have implemented jump tables using hash maps for better memory efficiency and for all the values not present in case labels, we jump to default case (-1 in our implementation), and we allowed only positive/negative integer literals and char literals, so default case -1 will not conflict with any case labels.
 
 ``` c
 9: goto jump_table(0,v_x_main_s2) // goto jump_table(table_id, switch_variable)
@@ -351,6 +351,7 @@ or directly use to run all files
 
 ## TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
 ---
+
 
 
 
