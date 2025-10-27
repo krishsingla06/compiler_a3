@@ -4135,7 +4135,6 @@ statement
 
 
 
-
 labeled_statement
 	: IDENTIFIER COLON marker statement                                            /* e.g., label: stmt */{
         $$ = $4;
@@ -4223,6 +4222,82 @@ labeled_statement
         
         delete $6;
     }
+    // also allow case with negative integer literals
+    | CASE MINUS INT_LITERAL  {
+        
+        // Check if we're inside a switch statement
+        if (switch_case_stack.empty()) {
+            type_error("Case label not within a switch statement");
+        } else {
+            // Get integer value
+            int case_value = -$3;
+           // cout<<"Case value: "<<case_value<<"\n";
+            
+            // Check for duplicate case values in current switch
+            map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
+            if (current_switch_map.find(case_value) != current_switch_map.end()) {
+                type_error("Duplicate case value: " + to_string(case_value) + " in switch statement");
+            } else {
+                // Create a label for this case
+                TACOperand* case_label = new_label(0);
+                current_switch_map[case_value] = case_label;
+            }
+            // update min and max case values for switch optimization
+            switch_min_case_stack.back() = min(switch_min_case_stack.back(), case_value);
+            switch_max_case_stack.back() = max(switch_max_case_stack.back(), case_value);
+        }
+    }
+     COLON marker statement                              /* e.g., case -1: stmt */{
+        // Combine code from case expression and statement
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
+
+        // Propagate break statements
+        $$->break_list = $7->break_list;
+        
+        delete $7;
+    }
+    | CASE MINUS CHAR_LITERAL  { 
+        // Check if we're inside a switch statement
+        if (switch_case_stack.empty()) {
+            type_error("Case label not within a switch statement");
+        } else {
+            // Convert char to int if needed
+            int case_value = 0;
+
+            // CHAR_LITERAL is of type string* , we have to convert it to int   
+            case_value = -static_cast<int>((*$3)[1]); // Get negative ASCII value of the character literal
+            //cout << "Case label with negative char literal: " << *$3 << " (ASCII " << case_value << ")\n";
+            
+            // Check for duplicate case values in current switch
+            map<int, TACOperand*>& current_switch_map = switch_case_stack.back();
+            if (current_switch_map.find(case_value) != current_switch_map.end()) {
+                type_error("Duplicate case value: " + to_string(case_value) + " in switch statement");
+            } else {
+                // Create a label for this case
+                TACOperand* case_label = new_label(0);
+                current_switch_map[case_value] = case_label;
+            }
+
+            // update min and max case values for switch optimization
+            switch_min_case_stack.back() = min(switch_min_case_stack.back(), case_value);
+            switch_max_case_stack.back() = max(switch_max_case_stack.back(), case_value);
+
+        }
+    }
+    COLON marker statement                              /* e.g., case -'a': stmt */{
+        // Combine code from case expression and statement
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $7->code.begin(), $7->code.end());
+        
+        // Propagate break statements
+        $$->break_list = $7->break_list;
+        
+        delete $3;
+        delete $7;
+    }
 	| DEFAULT COLON statement {                                               /* e.g., default: stmt */
         // Check if we're inside a switch statement
         if (switch_default_stack.empty()) {
@@ -4245,6 +4320,7 @@ labeled_statement
         }
     }
 	;
+
 
 compound_statement    
   :LBRACE { enter_scope(); insert_current_function_parameters(); } declaration_list statement_list RBRACE {
@@ -4369,12 +4445,10 @@ selection_statement
         delete $4;
     }
 	| SWITCH LPAREN expression {
-        // Validate: expression must be int or char
         if (!is_integer_type($3->baseType) || $3->pointerLevel > 0 || $3->isArray) {
             type_error("Switch expression must be of integer or char type, got: " + $3->toString());
         }
         
-        // Convert char to int if needed
         TACOperand* switch_value = $3->result;
         if ($3->baseType == "char") {
             TACOperand* int_temp = new_temp_var();
@@ -4383,81 +4457,44 @@ selection_statement
             switch_value = int_temp;
         }
         
-        // Allocate a new jump table ID
         int current_table_id = jump_table_counter++;
-        
-        // Push new switch context (empty case map and null default)
         switch_case_stack.push_back(map<int, TACOperand*>());
         switch_default_stack.push_back(nullptr);
         switch_table_id_stack.push_back(current_table_id);
-        // min and max case values for optimization
         switch_min_case_stack.push_back(INT_MAX);
         switch_max_case_stack.push_back(INT_MIN);
-        
-        // Emit: goto jump_table_i[expression.result]
-        // We use flag=4 to indicate this is a jump table instruction
-        // arg1 = jump_table_id (as constant), arg2 = switch_value
-
-        // if switch_value < ____ goto ____ 
-        // if switch_value > ____ goto ____
-        // these 4 fields will be backpatched later during finalization of switch statement
-        // #ti = switch_value - ____ 
-        // goto jump_table_i[#ti]
-
         TACOperand* min_case_operand = new_constant(to_string(switch_min_case_stack.back()));
         TACOperand* max_case_operand = new_constant(to_string(switch_max_case_stack.back()));
-        TACInstruction* check_lower_bound = emit(TACOperator(TAC_OPERATOR_LT), new_empty_var(), switch_value, min_case_operand, 2);
-        TACInstruction* check_upper_bound = emit(TACOperator(TAC_OPERATOR_GT), new_empty_var(), switch_value, max_case_operand, 2);
+        TACOperand* min_val_temp = new_temp_var();
+        TACInstruction* load_min = emit(TACOperator(), min_val_temp, min_case_operand, new_empty_var(), 0);
+        $3->code.push_back(load_min);
+        TACOperand* max_val_temp = new_temp_var();
+        TACInstruction* load_max = emit(TACOperator(), max_val_temp, max_case_operand, new_empty_var(), 0);
+        $3->code.push_back(load_max);
+        TACInstruction* check_lower_bound = emit(TACOperator(TAC_OPERATOR_LT), new_empty_var(), switch_value, min_val_temp, 2);
+        TACInstruction* check_upper_bound = emit(TACOperator(TAC_OPERATOR_GT), new_empty_var(), switch_value, max_val_temp, 2);
         $3->code.push_back(check_lower_bound);
         $3->code.push_back(check_upper_bound);
-        // backpatch these later
         TACOperand* switch_value_minus_min = new_temp_var();
-        TACInstruction* subtract_min = emit(TACOperator(TAC_OPERATOR_SUB), switch_value_minus_min, switch_value, min_case_operand, 0);
+        TACInstruction* subtract_min = emit(TACOperator(TAC_OPERATOR_SUB), switch_value_minus_min, switch_value, min_val_temp, 0);
         $3->code.push_back(subtract_min);
-
-        // goto jump_table_i[switch_value - min_case]
         TACInstruction* goto_jump_table = emit(TACOperator(), 
                                                new_empty_var(),      // result (unused)
                                                new_constant(to_string(current_table_id)),     // arg1: table ID
                                                switch_value_minus_min,         // arg2: expression value - min_case
                                                4);                   // flag=4 for jump table
-
-        // all the above 4 instructions will be updated later during finalization of switch statement
-        $3->code.push_back(goto_jump_table);
-
-        // TACOperand* table_id_operand = new_constant(to_string(current_table_id));
-        // TACInstruction* goto_jump_table = emit(TACOperator(), 
-        //                                        new_empty_var(),      // result (unused)
-        //                                        table_id_operand,     // arg1: table ID
-        //                                        switch_value,         // arg2: expression value
-        //                                        4);                   // flag=4 for jump table
-        // $3->code.push_back(goto_jump_table);
-        
+        $3->code.push_back(goto_jump_table); 
         cout << "Created jump table " << current_table_id << " for switch expression\n";
-        // pop from stacks will be done in finalization of switch statement
-
     }
-    RPAREN statement                              /* e.g., switch (x) { ... } */{
+    RPAREN statement                                                    {
         $$ = new TypeInfo();
-        
-        // Get switch expression code
         $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
-        
-        // Get statement code (contains all case/default labels and their code)
         $$->code.insert($$->code.end(), $6->code.begin(), $6->code.end());
-        
-        // Create end label for switch
         TACOperand* end_label = new_label(0);
-
-        // Backpatch all break statements to end label
-        backpatch($6->break_list, end_label);
-        
-        // Now finalize the jump table
+        backpatch($6->break_list, end_label);        
         int table_id = switch_table_id_stack.back();
         map<int, TACOperand*>& case_map = switch_case_stack.back();
         TACOperand* default_label = switch_default_stack.back();
-        
-        // Overall jump table is resize from min_case to max_case
         int min_case = switch_min_case_stack.back();
         int max_case = switch_max_case_stack.back();
         int table_size = max_case - min_case + 1;
@@ -4465,13 +4502,10 @@ selection_statement
             default_label = end_label; // If no default, jump to end
         }
         int MAX_JUMP_TABLE_SIZE = 1000000;
-        //if table_size is too large, warn and fallback to chained if-else
         if(table_size > MAX_JUMP_TABLE_SIZE){
             type_warning("Jump table size " + to_string(table_size) + " exceeds maximum of " + to_string(MAX_JUMP_TABLE_SIZE) + 
                          ". Falling back to chained if-else for switch statement.");
-            // cleanup
             overall_jump_tables.erase(table_id);
-            // pop from switch stacks
             switch_case_stack.pop_back();
             switch_default_stack.pop_back();
             switch_table_id_stack.pop_back();
@@ -4487,30 +4521,24 @@ selection_statement
             jump_table_entries[index] = case_label;
         }
         overall_jump_tables[table_id] = jump_table_entries;
-        // now the first 4 instructions related to jump table need to be backpatched
-
+        TACInstruction* load_min = $$->code[$3->code.size() - 6];
+        TACInstruction* load_max = $$->code[$3->code.size() - 5];
         TACInstruction* check_lower_bound = $$->code[$3->code.size() - 4];
         TACInstruction* check_upper_bound = $$->code[$3->code.size() - 3];
-        TACInstruction* subtract_min = $$->code[$3->code.size() - 2];
         TACInstruction* goto_jump_table = $$->code[$3->code.size() - 1];
-        // Now change the fields of these instructions like in check lower bound change goto to default label and also subtract min value
-        check_lower_bound->arg2 = new_constant(to_string(min_case));
+        load_min->arg1 = new_constant(to_string(min_case));
+        load_max->arg1 = new_constant(to_string(max_case));
         check_lower_bound->result = default_label; // if less than min_case goto default
-        check_upper_bound->arg2 = new_constant(to_string(max_case));
         check_upper_bound->result = default_label; // if greater than max_case goto default
-        subtract_min->arg2 = new_constant(to_string(min_case));
-        goto_jump_table->flag = 4; // already set
-        // pop from switch stacks
         switch_case_stack.pop_back();
         switch_default_stack.pop_back();
         switch_table_id_stack.pop_back();
         switch_min_case_stack.pop_back();
         switch_max_case_stack.pop_back();
         delete $3; delete $6;
-        }
-        
-    }
-	;
+    }        
+};
+
 
 if_expression 
     : IF LPAREN short_circuited_expression RPAREN  { // making change here for short circuited expressions
@@ -6896,5 +6924,6 @@ int main(int argc, char** argv) {
     cout<<"\n\n\n";
 	return res;
 }
+
 
 
