@@ -3,14 +3,15 @@
 
 int main() {
     int x;
-    
+    int i;
+
     if (1) {
         int if_var;       // If-scope variable
         if_var = 5;       // Should be found
         x = 10;           // Should find outer x
     }
     
-    for (int i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++) {
         int loop_var;     // Loop-scope variable  
         loop_var = i;     // Should be found
         x = i;            // Should find outer x
