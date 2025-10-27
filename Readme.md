@@ -18,7 +18,26 @@
 - Function call with arguments and return statements
 - Pointers
 - Structures
+- printf and scanf
+- function call with arguments
+- goto, break and continue
+- static keywords
 - 
+## Advanced Features
+- Recursive function call
+- Class and object
+- Function call with variable arguments
+- Dynamic memory allocation
+- Function pointer
+- Command line input
+- public, private and protected keywords
+- typedef
+- Reference
+- enum, union
+- File manipulation
+- until loop
+- Multi-level pointers
+- Multi-dimensional arrays
 
 # Important notes
 
@@ -332,6 +351,7 @@ or directly use to run all files
 
 ## TAC code will be generated in `input_file.tac` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
 ---
+
 
 
 
