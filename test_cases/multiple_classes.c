@@ -5,7 +5,11 @@ class A{
         A(int val) {
             a = 0;
         }
-        int getA() { return a; }
+
+        int getA() {
+            return a; 
+        }
+        
 };
 
 class B{

@@ -4,6 +4,22 @@
 - **Arnav Gupta, 23114010** : 25%
 - **Shubham Kataria, 23114092** : 20%
 
+
+# Features
+## Basic Features
+- All arithmetic and logical operators
+- Control flow statements: 
+   - `if-else` statements
+   - `for` loop
+   - `while` loop
+   - `do-while` loop
+   - `switch-case` with `default` and `break`
+   - `goto`, `break` and `continue` statements
+- Function call with arguments and return statements
+- Pointers
+- Structures
+- 
+
 # Important notes
 
 ## Backpatching
@@ -196,12 +212,6 @@ struct Node {
 ```
 
 ## Classes and Objects
-- Write class keyword before the object when initializing an object of a class.
-Eg. If you have 
-class A{...}
-then for initializing an object 'a' of class A, write:
-class A a;
-
 - The default access specifier for class members is private.
 
 - The 3AC generated for calling class member functions includes the class name as a prefix (scope resolution) to the function name to ensure uniqueness. Also, the object pointer (this pointer) is passed as the first argument in the 3AC.
@@ -257,6 +267,8 @@ int func(int a, int b){ // definition should be present
 - But we have allowed struct/union prior declarations without definition (which is also present in standard C/C++).
 
 - For switch-case labels - We only allowed positive integer literals and char literals, because in standard C/C++, case labels must be compile time constants, so we thought users rather than writing ``` case 2+3: ``` should write ``` case 5: ``` which also makes more sense.
+
+- Similar to C and unlike C++, static variables are not allowed inside structs/unions/classes.
 
 - For ellipsis - We allowed defining function with ellipsis, we also allowed calling the function with ellipsis, but inside the function body if we want to use the parameters beyond `...`, those things are not present in *Standard C* also, but implemented in the library `<cstdarg>`, so we didn't implemented that part *varargs* handling. Anyways the grammar supports ellipsis in function definition and function call, and while function call params are pushed onto stack via `PARAM` instruction.
 
