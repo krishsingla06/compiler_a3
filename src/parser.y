@@ -402,6 +402,7 @@ void close_jump_table_file(){
         bool isConstructor;     // true if this is a constructor
         bool isDestructor;      // true if this is a destructor
         vector<TypeInfo> paramTypes;  // For member functions
+        vector<TACInstruction*> code;  // TAC code for inline member functions
         
         ClassMember() : name(""), access(ACCESS_PRIVATE), offset(0), 
                        isMemberFunction(false), isConstructor(false), isDestructor(false) {}
@@ -766,6 +767,7 @@ void close_jump_table_file(){
 
 %type <typeinfo> declaration
 %type <typeinfo> marker_fun_begin
+%type <typeinfo> marker_member_func
 %type <typeinfo> function_definition
 %type <typeinfo> global_declaration
 %type <typeinfo> start
@@ -833,8 +835,7 @@ global_declaration
         $$ = $1;
     }                    
 	| declaration     {
-        $$ = new TypeInfo();
-        // kyunki global declaration ka koi 3AC generate nahi hota
+        $$ = $1;  // Pass through declaration (may contain class TAC)
     }                           	
     ;
 
@@ -909,13 +910,23 @@ marker_fun_begin
         $$ = new TypeInfo();//naya
     }
 
+marker_member_func
+    : /* empty */ {
+        $$ = new TypeInfo();
+    }
+
 
 declaration
 	: return_types SEMICOLON { 
-        $$ = new TypeInfo();
-        delete $1; 
+        $$ = $1;  // Pass through TAC from class definitions
     }                                   /* e.g., extern int; (rare)*/ 
 	| return_types init_declarator_list SEMICOLON {
+		// Initialize result with class TAC from return_types (if any)
+		TypeInfo* result = new TypeInfo();
+		if ($1 && !$1->code.empty()) {
+			result->code = $1->code;  // Copy class member function TAC
+		}
+		
 		// Combine base type with each declarator's type information
 		for (DeclaratorInfo* declInfo : *$2) {
 			TypeInfo combinedType = *$1;  // Start with base type
@@ -1031,9 +1042,8 @@ declaration
 			}
 			
 
-            $$ = new TypeInfo();
+            // Note: result was already created at the beginning of this rule
             combinedType.result = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
-            $$->code = vector<TACInstruction*>();
 
                         
             // Reference-specific validation
@@ -1085,7 +1095,7 @@ declaration
                     // Take address of the initializer
                     TACOperand* ref_var = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
                     TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, ref_var, declInfo->initType->result, new_empty_var(), 0);
-                    $$->code.push_back(addr_inst);
+                    result->code.push_back(addr_inst);
                     
                     combinedType.result = ref_var;
                 }
@@ -1132,16 +1142,16 @@ declaration
                             new_constant("0"),
                             2  // if-goto flag
                         );
-                        $$->code.push_back(check);
+                        result->code.push_back(check);
                         
                         // 6. Include initializer code
-                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), 
+                        result->code.insert(result->code.end(), declInfo->initType->code.begin(), 
                                     declInfo->initType->code.end());
                         
                         // 7. Perform type conversion if needed
                         pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
                             change_type_rhs_to_lhs(combinedType, *declInfo->initType);
-                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                        result->code.insert(result->code.end(), promo.first.begin(), promo.first.end());
                         
                         // 8. Assign to variable
                         TACInstruction* assignInstr = emit(
@@ -1151,7 +1161,7 @@ declaration
                             new_empty_var(), 
                             0
                         );
-                        $$->code.push_back(assignInstr);
+                        result->code.push_back(assignInstr);
                         
                         // 9. Set guard to 0 (initialized)
                         TACInstruction* guard_reset = emit(
@@ -1161,7 +1171,7 @@ declaration
                             new_empty_var(),
                             0
                         );
-                        $$->code.push_back(guard_reset);
+                        result->code.push_back(guard_reset);
 
                         TACOperand* skip_label = new_label(0);
                         // Backpatch the check instruction to jump to skip_label
@@ -1184,33 +1194,61 @@ declaration
                     else if(combinedType.isFunctionPointer){
                         // Function pointer initialization
                         // Just assign the function address (initializer result)
-                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+                        result->code.insert(result->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
                         
                        // assign address of rhs to lhs
                         TACOperand* func_ptr_var = combinedType.result;
                         TACOperand* func_address = new_temp_var();
                         TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, declInfo->initType->result, new_empty_var(), 0);
-                        $$->code.push_back(addr_of_instr);
+                        result->code.push_back(addr_of_instr);
                         TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
-                        $$->code.push_back(assignInstr);
+                        result->code.push_back(assignInstr);
 
 
                     }
                     else {
                         // First, include the code that generates the initializer value (e.g., function call)
-                        $$->code.insert($$->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
+                        result->code.insert(result->code.end(), declInfo->initType->code.begin(), declInfo->initType->code.end());
                         // if implicit conversion allowed, then do it and reflect in 3AC else simply assign
                         pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = change_type_rhs_to_lhs(combinedType, *declInfo->initType);
-                        // append promo.first to $$->code
-                        $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                        // append promo.first to result->code
+                        result->code.insert(result->code.end(), promo.first.begin(), promo.first.end());
                         // now assign promo.second.second to declInfo->name
                         TACInstruction* assignInstr = emit(TACOperator(), promo.second.first, promo.second.second, new_empty_var(), 0);
-                        $$->code.push_back(assignInstr);
+                        result->code.push_back(assignInstr);
                     }
                 }
 			}
 
             insert_symbol(declInfo->name, combinedType, declInfo->initType);
+
+			// ========== Generate constructor call for class objects ==========
+			if (combinedType.isClass && !combinedType.isArray && combinedType.pointerLevel == 0 && 
+			    !combinedType.isReference && combinedType.classDef) {
+				// This is a non-array, non-pointer, non-reference class object - call its constructor
+				// Find the no-argument constructor
+				for (const auto& member : combinedType.classDef->members) {
+					if (member.isConstructor && member.paramTypes.empty()) {
+						// Found default constructor - generate call
+						// Pass 'this' pointer (address of the object)
+						TACOperand* obj_addr = new_temp_var();
+						TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
+						result->code.push_back(addr_instr);
+						
+						TACInstruction* param_instr = emit(TACOperator(TAC_OPERATOR_PARAM), obj_addr, new_empty_var(), new_empty_var(), 0);
+						result->code.push_back(param_instr);
+						
+						string constructor_name = combinedType.className + "::" + member.name;
+						TACInstruction* call_instr = emit(TACOperator(TAC_OPERATOR_CALL), new_empty_var(), 
+						                                   new_identifier(constructor_name), new_constant("1"), 0);
+						result->code.push_back(call_instr);
+						
+						cout << "Generated constructor call for object: " << declInfo->name << "\n";
+						break;
+					}
+				}
+			}
+			// =================================================================
 
 			// Insert into symbol table with native value storage
 			
@@ -1220,6 +1258,7 @@ declaration
 			}
 			delete declInfo;
 		}
+		$$ = result;  // Assign the accumulated result
 		delete $1;
 		delete $2;
 	}                                 /* e.g., int x, *p = NULL, arr[10] = {0}; */
@@ -3224,6 +3263,9 @@ class_specifier
 		// This defines a new class
 		string className = *$2;
 		
+		// Create and return TypeInfo
+		$$ = new TypeInfo();
+		
 		// Use the global member list
 		if (current_class_members) {
 			// Check if all members have unique names (skip constructors/destructors as they can share class name)
@@ -3243,6 +3285,13 @@ class_specifier
 			}
 			
 			if(error_flag == 0) {
+				// Collect TAC code from all member functions
+				for(auto& member : *current_class_members) {
+					if (member.isMemberFunction && !member.code.empty()) {
+						$$->code.insert($$->code.end(), member.code.begin(), member.code.end());
+					}
+				}
+				
 				insert_class(className, *current_class_members, current_scope_level);
 				delete current_class_members;
 				current_class_members = nullptr;
@@ -3257,8 +3306,6 @@ class_specifier
 		// Clear the current class being defined
 		current_class_being_defined = "";
 		
-		// Create and return TypeInfo
-		$$ = new TypeInfo();
 		$$->isClass = true;
 		$$->className = className;
 		$$->classDef = lookup_class(className);
@@ -3307,12 +3354,12 @@ class_member_declaration
 		cout << "Access specifier changed to " << ($1 == ACCESS_PUBLIC ? "public" : 
 		                                           ($1 == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
 	}
-	| type_specifier struct_declarator_list SEMICOLON {
+	| declaration_specifiers struct_declarator_list SEMICOLON {
 		// Data members (similar to struct members but with access control)
 		for (auto declInfo : *$2) {
 			ClassMember member;
 			member.name = declInfo->name;
-			member.type = TypeInfo(*$1); // Base type from type_specifier
+			member.type = TypeInfo(*$1); // Base type from declaration_specifiers
 			member.type.pointerLevel = declInfo->pointerLevel;
 			member.type.isArray = declInfo->isArray;
 			member.type.arrayDimensions = declInfo->arrayDimensions;
@@ -3357,7 +3404,7 @@ class_member_declaration
 		delete $1;
 		delete $2;
 	}
-	| type_specifier IDENTIFIER LPAREN parameter_list RPAREN SEMICOLON {
+	| declaration_specifiers IDENTIFIER LPAREN parameter_list RPAREN SEMICOLON {
 		// Member function declaration
 		ClassMember member;
 		member.name = *$2;
@@ -3383,9 +3430,17 @@ class_member_declaration
 		delete $1;
 		delete $2;
 	}
-	| type_specifier IDENTIFIER LPAREN parameter_list RPAREN {
+	| declaration_specifiers IDENTIFIER LPAREN parameter_list RPAREN marker_member_func {
 		// Before parsing compound_statement, set the return type context
 		current_function_return_type = new TypeInfo(*$1);
+		
+		// Generate function begin instruction NOW (before compound_statement)
+		string mangled_name = current_class_being_defined + "::" + *$2;
+		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+		                                   new_identifier(*$2), 
+		                                   new_empty_var(), 
+		                                   new_empty_var(), 0);
+		$6->code.push_back(func_begin);
 	} compound_statement {
 		// Member function definition (inline)
 		ClassMember member;
@@ -3404,6 +3459,20 @@ class_member_declaration
 			delete $4;
 		}
 		
+		// Function begin was already generated in the marker action
+		// Add it from $6 (the marker action result)
+		member.code.insert(member.code.end(), $6->code.begin(), $6->code.end());
+		
+		// Add compound statement code
+		member.code.insert(member.code.end(), $8->code.begin(), $8->code.end());
+		
+		// Generate function end instruction
+		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+		                                new_identifier(*$2), 
+		                                new_empty_var(), 
+		                                new_empty_var(), 0);
+		member.code.push_back(func_end);
+		
 		current_class_members->push_back(member);
 		
 		cout << "Class member function (inline): " << member.type.toString() << " " << member.name << "()" 
@@ -3416,9 +3485,10 @@ class_member_declaration
 		
 		delete $1;
 		delete $2;
-		delete $7; // compound_statement
+		delete $6; // marker action result
+		delete $8; // compound_statement
 	}
-	| type_specifier IDENTIFIER LPAREN RPAREN SEMICOLON {
+	| declaration_specifiers IDENTIFIER LPAREN RPAREN SEMICOLON {
 		// Member function with no parameters
 		ClassMember member;
 		member.name = *$2;
@@ -3436,9 +3506,17 @@ class_member_declaration
 		delete $1;
 		delete $2;
 	}
-	| type_specifier IDENTIFIER LPAREN RPAREN {
+	| declaration_specifiers IDENTIFIER LPAREN RPAREN marker_member_func {
 		// Before parsing compound_statement, set the return type context
 		current_function_return_type = new TypeInfo(*$1);
+		
+		// Generate function begin instruction NOW (before compound_statement)
+		string mangled_name = current_class_being_defined + "::" + *$2;
+		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+		                                   new_identifier(*$2), 
+		                                   new_empty_var(), 
+		                                   new_empty_var(), 0);
+		$5->code.push_back(func_begin);
 	} compound_statement {
 		// Member function with no parameters (inline)
 		ClassMember member;
@@ -3448,6 +3526,19 @@ class_member_declaration
 		member.isMemberFunction = true;
 		member.isConstructor = false;
 		member.isDestructor = false;
+		
+		// Function begin was already generated in the marker action
+		member.code.insert(member.code.end(), $5->code.begin(), $5->code.end());
+		
+		// Add compound statement code
+		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
+		
+		// Generate function end instruction
+		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+		                                new_identifier(*$2), 
+		                                new_empty_var(), 
+		                                new_empty_var(), 0);
+		member.code.push_back(func_end);
 		
 		current_class_members->push_back(member);
 		
@@ -3461,7 +3552,8 @@ class_member_declaration
 		
 		delete $1;
 		delete $2;
-		delete $6; // compound_statement
+		delete $5; // marker action result
+		delete $7; // compound_statement
 	}
 	| IDENTIFIER LPAREN parameter_list RPAREN SEMICOLON {
 		// Constructor declaration (same name as class, no return type)
@@ -3489,10 +3581,18 @@ class_member_declaration
 		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
 		delete $1;
 	}
-	| IDENTIFIER LPAREN parameter_list RPAREN {
+	| IDENTIFIER LPAREN parameter_list RPAREN marker_member_func {
 		// Before parsing compound_statement, set the return type context for constructor
 		current_function_return_type = new TypeInfo();
 		current_function_return_type->baseType = "void";
+		
+		// Generate function begin instruction NOW (before compound_statement)
+		string mangled_name = current_class_being_defined + "::" + *$1;
+		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+		                                   new_identifier(*$1), 
+		                                   new_empty_var(), 
+		                                   new_empty_var(), 0);
+		$5->code.push_back(func_begin);
 	} compound_statement {
 		// Constructor definition (inline)
 		ClassMember member;
@@ -3512,6 +3612,19 @@ class_member_declaration
 			delete $3;
 		}
 		
+		// Function begin was already generated in the marker action
+		member.code.insert(member.code.end(), $5->code.begin(), $5->code.end());
+		
+		// Add compound statement code
+		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
+		
+		// Generate function end instruction
+		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+		                                new_identifier(*$1), 
+		                                new_empty_var(), 
+		                                new_empty_var(), 0);
+		member.code.push_back(func_end);
+		
 		current_class_members->push_back(member);
 		
 		cout << "Class constructor (inline): " << member.name << "()" 
@@ -3523,7 +3636,8 @@ class_member_declaration
 		current_function_return_type = nullptr;
 		
 		delete $1;
-		delete $6; // compound_statement
+		delete $5; // marker action result
+		delete $7; // compound_statement
 	}
 	| IDENTIFIER LPAREN RPAREN SEMICOLON {
 		// Constructor with no parameters
@@ -3543,10 +3657,18 @@ class_member_declaration
 		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
 		delete $1;
 	}
-	| IDENTIFIER LPAREN RPAREN {
+	| IDENTIFIER LPAREN RPAREN marker_member_func {
 		// Before parsing compound_statement, set the return type context for constructor
 		current_function_return_type = new TypeInfo();
 		current_function_return_type->baseType = "void";
+		
+		// Generate function begin instruction NOW (before compound_statement)
+		string mangled_name = current_class_being_defined + "::" + *$1;
+		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+		                                   new_identifier(*$1), 
+		                                   new_empty_var(), 
+		                                   new_empty_var(), 0);
+		$4->code.push_back(func_begin);
 	} compound_statement {
 		// Constructor with no parameters (inline)
 		ClassMember member;
@@ -3557,6 +3679,19 @@ class_member_declaration
 		member.isMemberFunction = true;
 		member.isConstructor = true;
 		member.isDestructor = false;
+		
+		// Function begin was already generated in the marker action
+		member.code.insert(member.code.end(), $4->code.begin(), $4->code.end());
+		
+		// Add compound statement code
+		member.code.insert(member.code.end(), $6->code.begin(), $6->code.end());
+		
+		// Generate function end instruction
+		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+		                                new_identifier(*$1), 
+		                                new_empty_var(), 
+		                                new_empty_var(), 0);
+		member.code.push_back(func_end);
 		
 		current_class_members->push_back(member);
 		
@@ -3569,7 +3704,8 @@ class_member_declaration
 		current_function_return_type = nullptr;
 		
 		delete $1;
-		delete $5; // compound_statement
+		delete $4; // marker action result
+		delete $6; // compound_statement
 	}
 	| BIT_NOT IDENTIFIER LPAREN RPAREN SEMICOLON {
 		// Destructor declaration (~ClassName())
@@ -3589,14 +3725,24 @@ class_member_declaration
 		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
 		delete $2;
 	}
-	| BIT_NOT IDENTIFIER LPAREN RPAREN {
+	| BIT_NOT IDENTIFIER LPAREN RPAREN marker_member_func {
 		// Before parsing compound_statement, set the return type context for destructor
 		current_function_return_type = new TypeInfo();
 		current_function_return_type->baseType = "void";
+		
+		// Generate function begin instruction NOW (before compound_statement)
+		string destructor_name = "~" + *$2;
+		string mangled_name = current_class_being_defined + "::" + destructor_name;
+		TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
+		                                   new_identifier(destructor_name), 
+		                                   new_empty_var(), 
+		                                   new_empty_var(), 0);
+		$5->code.push_back(func_begin);
 	} compound_statement {
 		// Destructor definition (inline)
+		string destructor_name = "~" + *$2;
 		ClassMember member;
-		member.name = *$2;
+		member.name = destructor_name;
 		member.type = TypeInfo();
 		member.type.baseType = "void";
 		member.access = current_access_specifier;
@@ -3604,9 +3750,22 @@ class_member_declaration
 		member.isConstructor = false;
 		member.isDestructor = true;
 		
+		// Function begin was already generated in the marker action
+		member.code.insert(member.code.end(), $5->code.begin(), $5->code.end());
+		
+		// Add compound statement code
+		member.code.insert(member.code.end(), $7->code.begin(), $7->code.end());
+		
+		// Generate function end instruction
+		TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
+		                                new_identifier(destructor_name), 
+		                                new_empty_var(), 
+		                                new_empty_var(), 0);
+		member.code.push_back(func_end);
+		
 		current_class_members->push_back(member);
 		
-		cout << "Class destructor (inline): ~" << member.name << "()" 
+		cout << "Class destructor (inline): " << member.name << "()" 
 		     << " with access " << (member.access == ACCESS_PUBLIC ? "public" : 
 		                            (member.access == ACCESS_PROTECTED ? "protected" : "private")) << "\n";
 		
@@ -3615,7 +3774,8 @@ class_member_declaration
 		current_function_return_type = nullptr;
 		
 		delete $2;
-		delete $6; // compound_statement
+		delete $5; // marker action result
+		delete $7; // compound_statement
 	}
 	;
 
@@ -6331,16 +6491,16 @@ bool check_member_access(ClassMember* member, AccessSpecifier contextAccess) {
     }
     
     // Private and protected members need to be accessed from within the class
-    // For simplicity, we'll allow access for now and just issue warnings
+    // For simplicity, we'll allow access for now and just issue errors
     // A complete implementation would track the current class context
     if (member->access == ACCESS_PRIVATE) {
-        type_warning("Accessing private member '" + member->name + "'");
-        return true;  // Allow but warn
+        type_error("Accessing private member '" + member->name + "'");
+        return true;  // Allow but error
     }
     
     if (member->access == ACCESS_PROTECTED) {
-        type_warning("Accessing protected member '" + member->name + "'");
-        return true;  // Allow but warn
+        type_error("Accessing protected member '" + member->name + "'");
+        return true;  // Allow but error
     }
     
     return true;

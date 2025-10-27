@@ -5,12 +5,6 @@
 - **Shubham Kataria, 23114092** : 25%
 
 # Important notes
-## Class
-Write class keyword before the object when initializing an object of a class.
-Eg. If you have 
-class A{...}
-then for initializing an object 'a' of class A write:
-class A a;
 
 ## Backpatching
 
@@ -200,6 +194,17 @@ struct Node {
    struct Point* p; // valid
 };
 ```
+
+## Classes and Objects
+- Write class keyword before the object when initializing an object of a class.
+Eg. If you have 
+class A{...}
+then for initializing an object 'a' of class A, write:
+class A a;
+
+- The default access specifier for class members is private.
+
+- The 3AC generated for calling class member functions includes the class name as a prefix (scope resolution) to the function name to ensure uniqueness. Also, the object pointer (this pointer) is passed as the first argument in the 3AC.
 
 
 
