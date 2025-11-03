@@ -7,14 +7,21 @@ int foo(int x,int y){
 }
 
 int main(){
+    
     int a;
     int b;
     float c;
     char d;
     int e;
+
     a=3;
     b=4;
     a = b+c+foo(a,b);
+
+    {
+        int x;
+    }
+   
     {
         int innera;
         int arr[10];

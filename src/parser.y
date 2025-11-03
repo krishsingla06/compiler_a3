@@ -31,6 +31,9 @@ std::ofstream debug_file;
 // Symbol table file stream
 std::ofstream symtab_file;
 
+// Global symbol table file stream
+std::ofstream global_symtab_file;
+
 // Function table file stream
 std::ofstream function_table_file;
 // Jump table file stream
@@ -94,6 +97,14 @@ void init_function_table_file(const char* input_filename) {
     }
 }
 
+void init_global_symtab_file(const char* input_filename) {
+    string global_symtab_filename = string(input_filename) + ".globalsymtab";
+    global_symtab_file.open(global_symtab_filename);
+    if (!global_symtab_file.is_open()) {
+        cerr << "Warning: Could not open global symbol table file: " << global_symtab_filename << endl;
+    }
+}
+
 void inti_jump_table_file(const char* input_filename) {
     string jump_table_filename = string(input_filename) + ".jumptab";
     jump_table_file.open(jump_table_filename);
@@ -113,6 +124,12 @@ void close_function_table_file(){
     // Placeholder for function table file closur
     if (function_table_file.is_open()) {
         function_table_file.close();
+    }
+}
+
+void close_global_symtab_file() {
+    if (global_symtab_file.is_open()) {
+        global_symtab_file.close();
     }
 }
 
@@ -449,6 +466,7 @@ void close_jump_table_file(){
 
 %code {
     // Stack of scope contexts for different scopes
+    map<string, SymbolEntry> global_symbol_table;
     vector<ScopeContext> scope_stack;
     int current_scope_level = 0;
     
@@ -4973,52 +4991,6 @@ void exit_scope() {
         symtab_file <<"\n\n\n\n\n";
     }
 }
-/* 
-void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
-    if (scope_stack.empty()) {
-        enter_scope();
-    }
-    
-    auto& current_scope = scope_stack.back();
-    
-    // Check for redeclaration
-    if (current_scope.symbols.find(name) != current_scope.symbols.end()) {
-        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' already declared in current scope";
-        cerr << error_msg << "\n";
-        log_error(error_msg);
-        return;
-    }
-    
-    SymbolEntry entry;
-    entry.name = name;
-    entry.type = type;
-    entry.line = yylineno;
-    entry.scope_level = current_scope_level;
-    entry.isConst = false;  // Regular variables are not const
-    entry.constValue = 0;
-    
-    // Generate mangled name using the format v_name_funname_signature_scopenum
-    // Use the current function context if available
-    entry.mangledName = mangle_variable_name(name, current_scope_level, 
-                                            current_function_name, current_function_signature);
-                                            
-    cout << "Variable " << name << " mangled as " << entry.mangledName << "\n";
-    
-    // Type check initialization if present
-    if (initType != nullptr) {
-        if (!check_initialization_compatibility(type, *initType)) {
-            cerr << "Error at line " << yylineno << ": Type mismatch in initialization of variable '" << name << "'\n";
-        }
-    }
-    
-    current_scope.symbols[name] = entry;
-    
-    cout << "Declared variable: " << name << " (" << type.toString() << ")";
-    if (initType != nullptr) {
-        cout << " with initializer of type " << initType->toString();
-    }
-    cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
-} */
 
 
 void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
@@ -5092,7 +5064,9 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
             cerr << "Error at line " << yylineno << ": Type mismatch in initialization of variable '" << name << "'\n";
         }
     }
+
     
+    global_symbol_table[entry.mangledName] = entry;
     current_scope.symbols[name] = entry;
     
     cout << "Declared variable: " << name << " (" << type.toString() << ")";
@@ -5263,6 +5237,66 @@ void displaySymbolTable() {
         }
         symtab_file.flush(); // Ensure immediate write
     }
+}
+
+void displayGlobalSymbolTable() {
+    if (!global_symtab_file.is_open()) {
+        cerr << "Error: Global symbol table file is not open\n";
+        return;
+    }
+    
+    global_symtab_file << "\n";
+    global_symtab_file << "+=========================================================================================+\n";
+    global_symtab_file << "|                              GLOBAL SYMBOL TABLE                                        |\n";
+    global_symtab_file << "+=========================================================================================+\n";
+    
+    if (global_symbol_table.empty()) {
+        global_symtab_file << "| (empty - no symbols)                                                                    |\n";
+        global_symtab_file << "+=========================================================================================+\n";
+        return;
+    }
+    
+    global_symtab_file << "\nTotal Symbols: " << global_symbol_table.size() << "\n\n";
+    global_symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+    global_symtab_file << "| Name                | Mangled Name                    | Type        | Location | Offset  |\n";
+    global_symtab_file << "+-----------------------------------------------------------------------------------------+\n";
+    
+    // Simply iterate through all symbols
+    for (auto& pair : global_symbol_table) {
+        SymbolEntry* entry = &pair.second;
+        
+        // Format name (max 20 chars)
+        string name = entry->name;
+        if (name.length() > 19) name = name.substr(0, 16) + "...";
+        
+        // Format mangled name (max 32 chars)
+        string mangled = pair.first;
+        if (mangled.length() > 31) mangled = mangled.substr(0, 28) + "...";
+        
+        // Format type (max 12 chars)
+        string type = entry->type.toString();
+        if (type.length() > 11) type = type.substr(0, 8) + "...";
+        
+        // Location string
+        string location;
+        if (entry->location == SymbolEntry::VAR_GLOBAL) {
+            location = "GLOBAL";
+        } else if (entry->location == SymbolEntry::VAR_PARAM) {
+            location = "PARAM#" + to_string(entry->paramNumber);
+        } else {
+            location = "LOCAL";
+        }
+        
+        // Print row
+        global_symtab_file << "| " << left << setw(19) << name 
+                          << " | " << setw(31) << mangled
+                          << " | " << setw(11) << type
+                          << " | " << setw(8) << location
+                          << " | " << setw(7) << entry->stackOffset << " |\n";
+    }
+    
+    global_symtab_file << "+-----------------------------------------------------------------------------------------+\n\n";
+    global_symtab_file.flush();  // Ensure immediate write
 }
 
 // Basically exact type match kar rha hai
@@ -7154,6 +7188,7 @@ int main(int argc, char** argv) {
     redirect_cout_to_debug();  // Redirect all cout to debug file
     init_symtab_file(argv[1]); // Initialize symbol table file
     init_function_table_file(argv[1]); // Initialize function table file
+    init_global_symtab_file(argv[1]); // Initialize global symbol table file
     inti_jump_table_file(argv[1]); // Initialize jump table file
 	
 	FILE* f = fopen(argv[1], "r");
@@ -7196,6 +7231,10 @@ int main(int argc, char** argv) {
 	display_typedef_table();
 	// Display enum table
 	display_enum_table();
+	
+	// Display global symbol table
+	displayGlobalSymbolTable();
+	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
@@ -7207,6 +7246,7 @@ int main(int argc, char** argv) {
     close_debug_file();
     close_symtab_file();
     close_function_table_file();
+    close_global_symtab_file();
     close_jump_table_file();
 	
 	fclose(f);

@@ -125,26 +125,42 @@ Variable #t9 mangled as v_#t9_main_s2 [LOCAL]
 Declared variable: #t9 (int) at line 17 in scope 2
 Entering scope level 3
 Function main parameter space: 0 bytes
+DEBUG: Variable x mangled as v_x_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable x at offset -48 (size: 4 bytes)
+DEBUG: Variable x mangled as v_x_main_s3 (function: main, signature: , scope: 3)
+Variable x mangled as v_x_main_s3 [LOCAL]
+Declared variable: x (int) at line 19 in scope 3
+Compound statement with declarations and statements
+Entering scope level 3
+Function main parameter space: 0 bytes
+DEBUG: Variable x mangled as v_x_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable x at offset -52 (size: 4 bytes)
+DEBUG: Variable x mangled as v_x_main_s3 (function: main, signature: , scope: 3)
+Variable x mangled as v_x_main_s3 [LOCAL]
+Declared variable: x (int) at line 22 in scope 3
+Compound statement with declarations and statements
+Entering scope level 3
+Function main parameter space: 0 bytes
 DEBUG: Variable innera mangled as v_innera_main_s3 (function: main, signature: , scope: 3)
-Allocated local variable innera at offset -48 (size: 4 bytes)
+Allocated local variable innera at offset -56 (size: 4 bytes)
 DEBUG: Variable innera mangled as v_innera_main_s3 (function: main, signature: , scope: 3)
 Variable innera mangled as v_innera_main_s3 [LOCAL]
-Declared variable: innera (int) at line 19 in scope 3
+Declared variable: innera (int) at line 25 in scope 3
 DEBUG: Variable arr mangled as v_arr_main_s3 (function: main, signature: , scope: 3)
-Allocated local variable arr at offset -448 (size: 400 bytes)
+Allocated local variable arr at offset -456 (size: 400 bytes)
 DEBUG: Variable arr mangled as v_arr_main_s3 (function: main, signature: , scope: 3)
 Variable arr mangled as v_arr_main_s3 [LOCAL]
-Declared variable: arr (int[10]) at line 20 in scope 3
+Declared variable: arr (int[10]) at line 26 in scope 3
 DEBUG: Variable innerc mangled as v_innerc_main_s3 (function: main, signature: , scope: 3)
-Allocated local variable innerc at offset -452 (size: 4 bytes)
+Allocated local variable innerc at offset -460 (size: 4 bytes)
 DEBUG: Variable innerc mangled as v_innerc_main_s3 (function: main, signature: , scope: 3)
 Variable innerc mangled as v_innerc_main_s3 [LOCAL]
-Declared variable: innerc (char) at line 21 in scope 3
+Declared variable: innerc (char) at line 27 in scope 3
 DEBUG: Variable innerd mangled as v_innerd_main_s3 (function: main, signature: , scope: 3)
-Allocated local variable innerd at offset -456 (size: 4 bytes)
+Allocated local variable innerd at offset -464 (size: 4 bytes)
 DEBUG: Variable innerd mangled as v_innerd_main_s3 (function: main, signature: , scope: 3)
 Variable innerd mangled as v_innerd_main_s3 [LOCAL]
-Declared variable: innerd (int) at line 22 in scope 3
+Declared variable: innerd (int) at line 28 in scope 3
 Found variable: innera of type int
 Integer literal: 5 (type: int)
 Compound statement with declarations and statements
@@ -152,15 +168,15 @@ Found function name: foo
 Found variable: a of type int
 Found variable: b of type int
 Found exact function match: foo_i_i
-Allocated local variable #t10 at offset -460 (size: 4 bytes)
+Allocated local variable #t10 at offset -468 (size: 4 bytes)
 DEBUG: Variable #t10 mangled as v_#t10_main_s2 (function: main, signature: , scope: 2)
 Variable #t10 mangled as v_#t10_main_s2 [LOCAL]
-Declared variable: #t10 (int) at line 25 in scope 2
+Declared variable: #t10 (int) at line 31 in scope 2
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 460 bytes
+  - Local variables: 468 bytes
   - Parameters: 0 bytes
-  - Total: 460 bytes
+  - Total: 468 bytes
 TAC code appended to k.tac
 yyparse() returned 0
 

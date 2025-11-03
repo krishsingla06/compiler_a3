@@ -1,0 +1,36 @@
+
++=========================================================================================+
+|                              GLOBAL SYMBOL TABLE                                        |
++=========================================================================================+
+
+Total Symbols: 24
+
++-----------------------------------------------------------------------------------------+
+| Name                | Mangled Name                    | Type        | Location | Offset  |
++-----------------------------------------------------------------------------------------+
+| #t10                | v_#t10_main_s2                  | int         | LOCAL    | -468    |
+| #t1                 | v_#t1_foo_i_i_s2                | int         | LOCAL    | -12     |
+| #t2                 | v_#t2_foo_i_i_s2                | int         | LOCAL    | -16     |
+| #t3                 | v_#t3_foo_i_i_s2                | int         | LOCAL    | -20     |
+| #t4                 | v_#t4_main_s2                   | float       | LOCAL    | -24     |
+| #t5                 | v_#t5_main_s2                   | float       | LOCAL    | -28     |
+| #t6                 | v_#t6_main_s2                   | int         | LOCAL    | -32     |
+| #t7                 | v_#t7_main_s2                   | float       | LOCAL    | -36     |
+| #t8                 | v_#t8_main_s2                   | float       | LOCAL    | -40     |
+| #t9                 | v_#t9_main_s2                   | int         | LOCAL    | -44     |
+| a                   | v_a_main_s2                     | int         | LOCAL    | -4      |
+| arr                 | v_arr_main_s3                   | int[10]     | LOCAL    | -456    |
+| b                   | v_b_main_s2                     | int         | LOCAL    | -8      |
+| c                   | v_c_main_s2                     | float       | LOCAL    | -12     |
+| d                   | v_d_main_s2                     | char        | LOCAL    | -16     |
+| e                   | v_e_main_s2                     | int         | LOCAL    | -20     |
+| innera              | v_innera_main_s3                | int         | LOCAL    | -56     |
+| innerc              | v_innerc_main_s3                | char        | LOCAL    | -460    |
+| innerd              | v_innerd_main_s3                | int         | LOCAL    | -464    |
+| p                   | v_p_foo_i_i_s2                  | int         | LOCAL    | -4      |
+| q                   | v_q_foo_i_i_s2                  | int         | LOCAL    | -8      |
+| x                   | v_x_foo_i_i_s2                  | int         | PARAM#0  | 0       |
+| x                   | v_x_main_s3                     | int         | LOCAL    | -52     |
+| y                   | v_y_foo_i_i_s2                  | int         | PARAM#1  | 4       |
++-----------------------------------------------------------------------------------------+
+
