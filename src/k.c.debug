@@ -1,0 +1,102 @@
+Error log initialized: k.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: foo with 2 parameters
+Registered function: foo as foo_i_i returning int
+Function definition: foo registered
+Entering scope level 2
+Allocated parameter x (param #0) at offset 0
+DEBUG: Variable x mangled as v_x_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable x mangled as v_x_foo_i_i_s2 [PARAM]
+Declared variable: x (int) at line 1 in scope 2
+Inserted function parameter: x (int)
+Allocated parameter y (param #1) at offset 4
+DEBUG: Variable y mangled as v_y_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable y mangled as v_y_foo_i_i_s2 [PARAM]
+Declared variable: y (int) at line 1 in scope 2
+Inserted function parameter: y (int)
+Function foo_i_i parameter space: 8 bytes
+DEBUG: Variable p mangled as v_p_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Allocated local variable p at offset -4 (size: 4 bytes)
+DEBUG: Variable p mangled as v_p_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable p mangled as v_p_foo_i_i_s2 [LOCAL]
+Declared variable: p (int) at line 2 in scope 2
+DEBUG: Variable q mangled as v_q_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Allocated local variable q at offset -8 (size: 4 bytes)
+DEBUG: Variable q mangled as v_q_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable q mangled as v_q_foo_i_i_s2 [LOCAL]
+Declared variable: q (int) at line 3 in scope 2
+Found variable: p of type int
+Integer literal: 1 (type: int)
+Found variable: q of type int
+Integer literal: 2 (type: int)
+Found variable: p of type int
+Found variable: q of type int
+Binary operation: int + int -> int (numeric arithmetic)
+Found variable: x of type int
+Binary operation: int + int -> int (numeric arithmetic)
+Found variable: y of type int
+Binary operation: int + int -> int (numeric arithmetic)
+Compound statement with declarations and statements
+Function foo stack frame:
+  - Local variables: 8 bytes
+  - Parameters: 8 bytes
+  - Total: 16 bytes
+Start rule: Global declaration has 8 TAC instructions
+TAC code written to k.tac
+Function declarator: main with no parameters
+Registered function: main as main returning int
+Function definition: main registered
+Entering scope level 2
+Function main parameter space: 0 bytes
+DEBUG: Variable a mangled as v_a_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable a at offset -4 (size: 4 bytes)
+DEBUG: Variable a mangled as v_a_main_s2 (function: main, signature: , scope: 2)
+Variable a mangled as v_a_main_s2 [LOCAL]
+Declared variable: a (int) at line 10 in scope 2
+DEBUG: Variable b mangled as v_b_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable b at offset -8 (size: 4 bytes)
+DEBUG: Variable b mangled as v_b_main_s2 (function: main, signature: , scope: 2)
+Variable b mangled as v_b_main_s2 [LOCAL]
+Declared variable: b (int) at line 11 in scope 2
+DEBUG: Variable c mangled as v_c_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable c at offset -12 (size: 4 bytes)
+DEBUG: Variable c mangled as v_c_main_s2 (function: main, signature: , scope: 2)
+Variable c mangled as v_c_main_s2 [LOCAL]
+Declared variable: c (float) at line 12 in scope 2
+DEBUG: Variable d mangled as v_d_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable d at offset -16 (size: 4 bytes)
+DEBUG: Variable d mangled as v_d_main_s2 (function: main, signature: , scope: 2)
+Variable d mangled as v_d_main_s2 [LOCAL]
+Declared variable: d (char) at line 13 in scope 2
+DEBUG: Variable e mangled as v_e_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable e at offset -20 (size: 4 bytes)
+DEBUG: Variable e mangled as v_e_main_s2 (function: main, signature: , scope: 2)
+Variable e mangled as v_e_main_s2 [LOCAL]
+Declared variable: e (int) at line 14 in scope 2
+Found variable: a of type int
+Integer literal: 3 (type: int)
+Found variable: b of type int
+Integer literal: 4 (type: int)
+Found function name: foo
+Found variable: a of type int
+Found variable: b of type int
+Found exact function match: foo_i_i
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 20 bytes
+  - Parameters: 0 bytes
+  - Total: 20 bytes
+TAC code appended to k.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+Error log closed: k.c.errors

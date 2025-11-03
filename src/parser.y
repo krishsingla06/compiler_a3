@@ -342,7 +342,18 @@ void close_jump_table_file(){
         bool isConst;        // Track if this is a constant (for enumerators)
         int constValue;      // Value for constant enumerators
         
-        SymbolEntry() : line(0), scope_level(0), isConst(false), constValue(0) {}
+        // NEW FIELDS FOR ASSEMBLY GENERATION
+        enum VarLocation {
+            VAR_GLOBAL,      // Global variable
+            VAR_LOCAL,       // Local variable (on stack)
+            VAR_PARAM        // Function parameter
+        };
+        VarLocation location;     // Where this variable is stored
+        int paramNumber;          // Parameter number (0-based) if VAR_PARAM, else -1
+        int stackOffset;          // Offset from $fp for locals/params (in bytes)
+        
+        SymbolEntry() : line(0), scope_level(0), isConst(false), constValue(0),
+        location(VAR_GLOBAL), paramNumber(-1), stackOffset(0) {}
     };
     
     // Function parameter structure
@@ -362,7 +373,13 @@ void close_jump_table_file(){
         int line;                 // Declaration line
         bool isVariadic;        // True if function is variadic
         
-        FunctionEntry() : line(0) {}
+        // NEW FIELDS FOR ASSEMBLY GENERATION
+        int localVarSpace;        // Total space needed for local variables (bytes)
+        int paramSpace;           // Total space needed for parameters (bytes)
+        int totalStackFrameSize;  // Total stack frame size (bytes)
+        
+        FunctionEntry() : line(0), isVariadic(false), 
+        localVarSpace(0), paramSpace(0), totalStackFrameSize(0) {}
     };
 
     struct SwitchLabel {
@@ -456,7 +473,11 @@ void close_jump_table_file(){
     // Current function context for variable name mangling
     string current_function_name = "";
     string current_function_signature = "";
+    string current_function_mangled_name = "";  // stores the mangled name of current function
     TypeInfo* current_function_return_type = nullptr;
+    int current_local_offset = 0;  // Offset for local variables in current function
+    bool inserting_parameters = false;  // Flag to track if we're inserting function parameters
+    int current_param_number = 0;  // Track parameter number during insertion
 
     int static_guard_counter = 0;  // Counter for static initialization guards
     map<string, string> static_var_guards;  // Maps static var name -> guard variable name
@@ -669,6 +690,9 @@ void close_jump_table_file(){
 
     bool canExplicitlyConvert(const TypeInfo& from, const TypeInfo& to);
 
+    // Helper functions for MIPS assembly generation
+    int get_type_size(const TypeInfo& type);
+    void allocate_local_variable(SymbolEntry& entry);
     
 }
 
@@ -861,7 +885,8 @@ function_definition
 			insert_function($2->name, returnType, *$2->paramTypes, $2->isVariadic);
 			cout << "Function definition: " << $2->name << " registered\n";
 		}
-
+        
+        current_function_mangled_name = mangled_name; 
     } compound_statement {               
 		
         $$ = new TypeInfo();
@@ -885,9 +910,25 @@ function_definition
                                       new_empty_var(), 
                                       new_empty_var(), 0);
         $$->code.push_back(func_end);		
+
+        if (!current_function_mangled_name.empty()) {
+            auto it = function_table.find(current_function_mangled_name);
+            if (it != function_table.end()) {
+                it->second.localVarSpace = current_local_offset;
+                it->second.totalStackFrameSize = it->second.localVarSpace + it->second.paramSpace;
+                
+                cout << "Function " << it->second.originalName << " stack frame:\n";
+                cout << "  - Local variables: " << it->second.localVarSpace << " bytes\n";
+                cout << "  - Parameters: " << it->second.paramSpace << " bytes\n";
+                cout << "  - Total: " << it->second.totalStackFrameSize << " bytes\n";
+            }
+        }
+
 		current_function_name = "";
 		current_function_signature = "";
+        current_function_mangled_name = "";
         current_function_return_type = nullptr;
+        current_local_offset = 0;
         delete $1;
         delete $2;
         delete $5;
@@ -1205,7 +1246,6 @@ declaration
                 insert_symbol(declInfo->name, combinedType, declInfo->initType);
             }
 
-           // insert_symbol(declInfo->name, combinedType, declInfo->initType);
 
 			// ========== Generate constructor call for class objects ==========
 			if (combinedType.isClass && !combinedType.isArray && combinedType.pointerLevel == 0 && 
@@ -4915,7 +4955,7 @@ void exit_scope() {
         symtab_file <<"\n\n\n\n\n";
     }
 }
-
+/* 
 void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
     if (scope_stack.empty()) {
         enter_scope();
@@ -4960,7 +5000,90 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
         cout << " with initializer of type " << initType->toString();
     }
     cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
+} */
+
+
+void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType) {
+    if (scope_stack.empty()) {
+        enter_scope();
+    }
+    
+    auto& current_scope = scope_stack.back();
+    
+    // Check for redeclaration
+    if (current_scope.symbols.find(name) != current_scope.symbols.end()) {
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + name + "' already declared in current scope";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
+        return;
+    }
+    
+    SymbolEntry entry;
+    entry.name = name;
+    entry.type = type;
+    entry.line = yylineno;
+    entry.scope_level = current_scope_level;
+    entry.isConst = false;
+    entry.constValue = 0;
+    
+    // Determine variable location based on context
+    if (inserting_parameters) {
+        // This is a function parameter
+        entry.location = SymbolEntry::VAR_PARAM;
+        entry.paramNumber = current_param_number++;
+        
+        // Calculate parameter offset (parameters at positive offsets from $fp)
+        int paramSize = get_type_size(type);
+        paramSize = ((paramSize + 3) / 4) * 4;  // Align to 4 bytes
+        
+        // In MIPS, first param is at offset 0, second at offset 4, etc.
+        entry.stackOffset = entry.paramNumber * 4;  // Simplified - you can calculate actual size
+        
+        cout << "Allocated parameter " << name << " (param #" << entry.paramNumber 
+             << ") at offset " << entry.stackOffset << "\n";
+    }
+    else if (current_scope_level == 1) {
+        // Global scope
+        entry.location = SymbolEntry::VAR_GLOBAL;
+        entry.stackOffset = 0;
+        entry.paramNumber = -1;
+    }
+    else if (current_function_name.empty()) {
+        // Not in a function, but not global - treat as global
+        entry.location = SymbolEntry::VAR_GLOBAL;
+        entry.stackOffset = 0;
+        entry.paramNumber = -1;
+    }
+    else {
+        // Inside a function - allocate on stack as local variable
+        allocate_local_variable(entry);
+    }
+    
+    // Generate mangled name
+    entry.mangledName = mangle_variable_name(name, current_scope_level, 
+                                            current_function_name, current_function_signature);
+                                            
+    cout << "Variable " << name << " mangled as " << entry.mangledName 
+         << " [" << (entry.location == SymbolEntry::VAR_GLOBAL ? "GLOBAL" : 
+                    entry.location == SymbolEntry::VAR_PARAM ? "PARAM" : "LOCAL")
+         << "]\n";
+    
+    // Type check initialization if present
+    if (initType != nullptr) {
+        if (!check_initialization_compatibility(type, *initType)) {
+            cerr << "Error at line " << yylineno << ": Type mismatch in initialization of variable '" << name << "'\n";
+        }
+    }
+    
+    current_scope.symbols[name] = entry;
+    
+    cout << "Declared variable: " << name << " (" << type.toString() << ")";
+    if (initType != nullptr) {
+        cout << " with initializer of type " << initType->toString();
+    }
+    cout << " at line " << yylineno << " in scope " << current_scope_level << "\n";
 }
+
 
 // Insert a symbol directly into global scope (scope level 0/1)
 void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, const TypeInfo* initType) {
@@ -5100,10 +5223,23 @@ void displaySymbolTable() {
             symtab_file << "+-----------------------------------------------------------------------------------------+\n";
             
             // Display variables with their type information and mangled names
+            // Display variables with their type information and mangled names
             for (const auto& entry : scope.symbols) {
                 symtab_file << "  - " << entry.second.name << " (" << entry.second.type.toString() 
-                     << ") declared at line " << entry.second.line
-                     << " [mangled: " << entry.second.mangledName << "]" << "\n";
+                    << ") declared at line " << entry.second.line
+                    << " [mangled: " << entry.second.mangledName << "]";
+                
+                // Display location info
+                if (entry.second.location == SymbolEntry::VAR_GLOBAL) {
+                    symtab_file << " [GLOBAL]";
+                } else if (entry.second.location == SymbolEntry::VAR_PARAM) {
+                    symtab_file << " [PARAM #" << entry.second.paramNumber 
+                            << ", offset: " << entry.second.stackOffset << "]";
+                } else if (entry.second.location == SymbolEntry::VAR_LOCAL) {
+                    symtab_file << " [LOCAL, offset: " << entry.second.stackOffset << "]";
+                }
+                
+                symtab_file << "\n";
             }
             symtab_file << "+-----------------------------------------------------------------------------------------+\n";
         }
@@ -6455,7 +6591,18 @@ void display_function_table() {
             for (const FunctionParam& param : func.parameters) {
                 function_table_file << param.type.toString() << " ";
             }
-            function_table_file << "\n|   Declared at line: " << func.line << "\n";
+            if (func.isVariadic) {
+                function_table_file << "...";
+            }
+            function_table_file << "\n";
+            
+            // Display stack frame information
+            function_table_file << "|   Stack Frame:\n";
+            function_table_file << "|     - Parameter space: " << func.paramSpace << " bytes\n";
+            function_table_file << "|     - Local var space: " << func.localVarSpace << " bytes\n";
+            function_table_file << "|     - Total frame size: " << func.totalStackFrameSize << " bytes\n";
+            
+            function_table_file << "|   Declared at line: " << func.line << "\n";
             function_table_file << "+-----------------------------------------------------------------------------------------+\n";
         }
         function_table_file.flush();
@@ -6463,14 +6610,62 @@ void display_function_table() {
 }
 
 void insert_current_function_parameters() {
+    // Set flag to indicate we're inserting parameters
+    inserting_parameters = true;
+    current_param_number = 0;  // Reset parameter counter
+    
     // Insert stored function parameters into the current (function body) scope
     for (const auto& param : current_function_parameters) {
         insert_symbol(param.first, param.second);
         cout << "Inserted function parameter: " << param.first << " (" << param.second.toString() << ")\n";
     }
+    
+    // Reset flag after inserting all parameters
+    inserting_parameters = false;
+    
+    // Update the function table with parameter space using mangled name (O(1) lookup)
+    if (!current_function_mangled_name.empty()) {
+        auto it = function_table.find(current_function_mangled_name);
+        if (it != function_table.end()) {
+            it->second.paramSpace = current_param_number * 4;  // Simplified calculation
+            cout << "Function " << current_function_mangled_name << " parameter space: " 
+                 << it->second.paramSpace << " bytes\n";
+        } else {
+            type_warning("Could not find function entry for " + current_function_mangled_name + " to update parameter space");
+        }
+    }
+
+
     // Clear the parameters after insertion
     current_function_parameters.clear();
 }
+
+
+// Get size of a type in bytes for stack allocation
+int get_type_size(const TypeInfo& type) {
+    if (type.isArray) {
+        int totalElements = 1;
+        for (int dim : type.arrayDimensions) {
+            totalElements *= dim;
+        }
+        return totalElements * getSize(type);
+    }
+    return getSize(type);
+}
+
+// Allocate space for a local variable
+void allocate_local_variable(SymbolEntry& entry) {
+    int size = get_type_size(entry.type);
+    size = ((size + 3) / 4) * 4;  // Align to 4 bytes
+    current_local_offset += size;
+    entry.stackOffset = -current_local_offset;  // Negative offset from $fp
+    entry.location = SymbolEntry::VAR_LOCAL;
+    
+    cout << "Allocated local variable " << entry.name << " at offset " 
+         << entry.stackOffset << " (size: " << size << " bytes)\n";
+}
+
+//----------------------------------------------------------------------------
 
 // Error logging functions implementation
 void init_error_log(const string& filename) {
@@ -6940,7 +7135,6 @@ int main(int argc, char** argv) {
 	cout << "yyparse() returned " << res << "\n";
 	
 	// Display the new scope-based symbol table
-	//displaySymbolTable();
 	
 	// Display function table
 	display_function_table();
