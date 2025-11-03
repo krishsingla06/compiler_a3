@@ -14,5 +14,13 @@ int main(){
     int e;
     a=3;
     b=4;
+    a = b+c+foo(a,b);
+    {
+        int innera;
+        int arr[10];
+        char innerc;
+        int innerd;
+        innera=5;
+    }
     return foo(a,b);
 }

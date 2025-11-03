@@ -694,6 +694,9 @@ void close_jump_table_file(){
     int get_type_size(const TypeInfo& type);
     void allocate_local_variable(SymbolEntry& entry);
     
+    // Helper function to create typed temporary variables
+    TACOperand* new_typed_temp_var(const string& baseType, int pointerLevel = 0, bool isAddress = false);
+    
 }
 
 
@@ -1219,7 +1222,7 @@ declaration
                         
                        // assign address of rhs to lhs
                         TACOperand* func_ptr_var = combinedType.result;
-                        TACOperand* func_address = new_temp_var();
+                        TACOperand* func_address = new_typed_temp_var("int", 0, true); // address operation
                         TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, declInfo->initType->result, new_empty_var(), 0);
                         result->code.push_back(addr_of_instr);
                         TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
@@ -1267,7 +1270,7 @@ declaration
 						if (member.isConstructor && member.paramTypes.size() == numArgs) {
 							// Found matching constructor
 							// Pass 'this' pointer first
-							TACOperand* obj_addr = new_temp_var();
+							TACOperand* obj_addr = new_typed_temp_var("int", 0, true); // address operation
 							TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
 							result->code.push_back(addr_instr);
 							
@@ -1302,7 +1305,7 @@ declaration
 						if (member.isConstructor && member.paramTypes.empty()) {
 							// Found default constructor - generate call
 							// Pass 'this' pointer (address of the object)
-							TACOperand* obj_addr = new_temp_var();
+							TACOperand* obj_addr = new_typed_temp_var("int", 0, true); // address operation
 							TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, combinedType.result, new_empty_var(), 0);
 							result->code.push_back(addr_instr);
 							
@@ -1909,7 +1912,7 @@ primary_expression
                 
                 // The reference variable stores an address, dereference it
                 TACOperand* ref_var = new_identifier(entry.mangledName);
-                TACOperand* temp = new_temp_var();
+                TACOperand* temp = new_typed_temp_var($$->baseType, $$->pointerLevel); // dereference result
                 TACInstruction* deref_inst = emit(TAC_OPERATOR_DEREF, temp, ref_var, new_empty_var(), 0);
                 $$->code.push_back(deref_inst);
                 $$->result = temp;
@@ -2064,17 +2067,20 @@ postfix_expression
 
             int size_of_base = getSize(*$$);
             
-            TACOperand* offset = new_temp_var();
+            // offset = index * size (integer arithmetic)
+            TACOperand* offset = new_typed_temp_var("int");
             TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
 
-            // base address is &base->result
-
-            TACOperand* base_addr = new_temp_var();
+            // base_addr = &base (address operation)
+            TACOperand* base_addr = new_typed_temp_var("int", 0, true);
             TACInstruction* i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
 
-            TACOperand* address = new_temp_var();
+            // address = base_addr + offset (pointer arithmetic)
+            TACOperand* address = new_typed_temp_var("int", 0, true);
             TACInstruction* i2 = emit(TAC_OPERATOR_ADD, address, base_addr, offset,0);
-            $$->result = new_temp_var();
+            
+            // result = *address (dereference - type depends on base element type)
+            $$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
             TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, $$->result, address, new_empty_var(),0);
             $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
             $$->code.insert($$->code.end(), index->code.begin(), index->code.end());
@@ -2129,7 +2135,8 @@ postfix_expression
 					
 					// Generate call to member function (use mangled name with class prefix)
 					string mangledName = classDef->name + "::" + methodName;
-					$$->result = new_temp_var();
+                    // Call result (type depends on member function return type)
+					$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 					TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 					                                 $$->result, 
 					                                 new_identifier(mangledName),
@@ -2157,10 +2164,12 @@ postfix_expression
 				// Generate 3AC for indirect function call
 				$$->code = base->code;
                 TACOperand* func_ptr = base->result; // Function pointer variable
-                TACOperand* dereferenced_func = new_temp_var();
+                // Dereference function pointer (address operation)
+                TACOperand* dereferenced_func = new_typed_temp_var("int", 0, true);
                 TACInstruction* derefInstr = emit(TAC_OPERATOR_DEREF, dereferenced_func, func_ptr, new_empty_var(), 0);
                 $$->code.push_back(derefInstr);
-				$$->result = new_temp_var();
+                // Call result (type depends on function return type)
+				$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 				TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 				                            $$->result, 
 				                            dereferenced_func,
@@ -2176,8 +2185,8 @@ postfix_expression
 				$$ = new TypeInfo(func->returnType);
 				$$->isLiteral = false;
 				cout << "Function call: " << base->identifier << "() -> " << $$->toString() << "\n";
-                // Generate the call instruction
-                $$->result = new_temp_var();
+                // Generate the call instruction (result type depends on function return type)
+                $$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
                 TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
                                             $$->result, 
                                             new_identifier(func->mangledName), 
@@ -2270,7 +2279,8 @@ postfix_expression
 						
 						// Generate call to member function (use mangled name with class prefix)
 						string mangledName = classDef->name + "::" + methodName;
-						$$->result = new_temp_var();
+                        // Call result (type depends on member function return type)
+						$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 						TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 						                                 $$->result, 
 						                                 new_identifier(mangledName),
@@ -2347,7 +2357,7 @@ postfix_expression
 							}
 							
 							// Pass address of the argument
-							TACOperand* addr = new_temp_var();
+							TACOperand* addr = new_typed_temp_var("int", 0, true); // address operation
 							TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
 							$$->code.push_back(addr_inst);
 							
@@ -2373,10 +2383,12 @@ postfix_expression
 					
 					// Generate indirect call instruction
                     TACOperand* func_ptr = base->result; // Function pointer variable
-                    TACOperand* dereferenced_func = new_temp_var();
+                    // Dereference function pointer (address operation)
+                    TACOperand* dereferenced_func = new_typed_temp_var("int", 0, true);
                     TACInstruction* derefInstr = emit(TAC_OPERATOR_DEREF, dereferenced_func, func_ptr, new_empty_var(), 0);
                     $$->code.push_back(derefInstr);
-					$$->result = new_temp_var();
+                    // Call result (type depends on function return type)
+					$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 					TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
 					                            $$->result, 
 					                            dereferenced_func,
@@ -2433,7 +2445,7 @@ postfix_expression
                             }
                             
                             // Pass address of the argument
-                            TACOperand* addr = new_temp_var();
+                            TACOperand* addr = new_typed_temp_var("int", 0, true); // address operation
                             TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
                             $$->code.push_back(addr_inst);
                             
@@ -2463,8 +2475,8 @@ postfix_expression
                     }
                 }
 
-                // Now generate the call instruction
-                $$->result = new_temp_var();
+                // Now generate the call instruction (result type depends on function return type)
+                $$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
                 TACInstruction* callInstr = emit(TACOperator(TAC_OPERATOR_CALL), 
                                             $$->result, 
                                             new_identifier(func->mangledName),
@@ -2538,8 +2550,8 @@ postfix_expression
 						$$->memberFunctionName = memberName;
 						$$->memberFunctionClass = classDef;
 						
-						// Calculate object address and store it
-						$$->objectAddress = new_temp_var();
+						// Calculate object address and store it (address operation)
+						$$->objectAddress = new_typed_temp_var("int", 0, true);
 						TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), $$->objectAddress, base->result, new_empty_var(), 0);
 						$$->code.push_back(addr_instr);
 						
@@ -2561,17 +2573,19 @@ postfix_expression
 						// TAC: Calculate member address
 						$$->code = base->code;
 						
-						TACOperand* base_addr = new_temp_var();
+                        // base_addr = &base (address operation)
+						TACOperand* base_addr = new_typed_temp_var("int", 0, true);
 						TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
 						$$->code.push_back(addr_instr);
 						
-						TACOperand* member_addr = new_temp_var();
+                        // member_addr = base_addr + offset (address arithmetic)
+						TACOperand* member_addr = new_typed_temp_var("int", 0, true);
 						TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base_addr, 
 						                                    new_constant(to_string(member->offset)), 0);
 						$$->code.push_back(offset_instr);
 						
-						// The result is the dereferenced member address
-						$$->result = new_temp_var();
+						// result = *member_addr (dereference - type depends on member type)
+						$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 						TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 						$$->code.push_back(deref_instr);
 						
@@ -2609,17 +2623,19 @@ postfix_expression
 					
 					$$->code = base->code;
 					
-					TACOperand* base_addr = new_temp_var();
+                    // base_addr = &base (address operation)
+					TACOperand* base_addr = new_typed_temp_var("int", 0, true);
 					TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
 					$$->code.push_back(addr_instr);
 					
-					TACOperand* member_addr = new_temp_var();
+                    // member_addr = base_addr + offset (address arithmetic)
+					TACOperand* member_addr = new_typed_temp_var("int", 0, true);
 					TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base_addr, 
 					                                    new_constant(to_string(member->offset)), 0);
 					$$->code.push_back(offset_instr);
 					
-					// The result is the dereferenced member address
-					$$->result = new_temp_var();
+					// result = *member_addr (dereference - type depends on member type)
+					$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 					$$->code.push_back(deref_instr);
 					
@@ -2697,13 +2713,14 @@ postfix_expression
 						
 						$$->code = base->code;
 						
-						TACOperand* member_addr = new_temp_var();
+                        // member_addr = base_result + offset (pointer already, just add offset)
+						TACOperand* member_addr = new_typed_temp_var("int", 0, true);
 						TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base->result, 
 						                                    new_constant(to_string(member->offset)), 0);
 						$$->code.push_back(offset_instr);
 						
-						// The result is the dereferenced member address
-						$$->result = new_temp_var();
+						// result = *member_addr (dereference - type depends on member type)
+						$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 						TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 						$$->code.push_back(deref_instr);
 						
@@ -2737,13 +2754,14 @@ postfix_expression
 					
 					$$->code = base->code;
 					
-					TACOperand* member_addr = new_temp_var();
+                    // member_addr = base_result + offset (pointer already, just add offset)
+					TACOperand* member_addr = new_typed_temp_var("int", 0, true);
 					TACInstruction* offset_instr = emit(TACOperator(TAC_OPERATOR_ADD), member_addr, base->result, 
 					                                    new_constant(to_string(member->offset)), 0);
 					$$->code.push_back(offset_instr);
 					
-					// The result is the dereferenced member address
-					$$->result = new_temp_var();
+					// result = *member_addr (dereference - type depends on member type)
+					$$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
 					TACInstruction* deref_instr = emit(TACOperator(TAC_OPERATOR_DEREF), $$->result, member_addr, new_empty_var(), 0);
 					$$->code.push_back(deref_instr);
 					
@@ -2799,9 +2817,9 @@ unary_expression
 		$$->baseType = "int";  // sizeof always returns int
 		$$->isLiteral = true;
 
-        // 3AC code for sizeof
+        // 3AC code for sizeof (result is int)
         int size = getSize(*$2);
-        $$->result = new_temp_var();
+        $$->result = new_typed_temp_var("int");
         TACInstruction* sizeInstr = emit(TACOperator(), $$->result, new_constant(to_string(size)), new_empty_var(), 0);
         $$->code = vector<TACInstruction*>();
         
@@ -2817,9 +2835,9 @@ unary_expression
         $$->baseType = "int";  // sizeof always returns int
         $$->isLiteral = true;
 
-        // 3AC code for sizeof(type)
+        // 3AC code for sizeof(type) (result is int)
         int size = getSize(*$3);
-        $$->result = new_temp_var();
+        $$->result = new_typed_temp_var("int");
         TACInstruction* sizeInstr = emit(TACOperator(), $$->result, new_constant(to_string(size)), new_empty_var(), 0);
         $$->code = vector<TACInstruction*>();
         $$->code.push_back(sizeInstr);
@@ -2858,7 +2876,7 @@ cast_expression
             cout << "Casting from " << source_type->toString() << " to " << target_type->toString() << "\n";
             // Generate 3AC for casting by simply one instruction
             $$->code = source_type->code;
-            TACOperand* result_op = new_temp_var();
+            TACOperand* result_op = new_typed_temp_var($$->baseType, $$->pointerLevel); // cast result
             TACOperand* target_type_op = new_type(target_type->toString());
             TACInstruction* cast_instr = emit(TAC_OPERATOR_CAST, result_op, source_type->result, target_type_op,0);
             $$->code.push_back(cast_instr);
@@ -2916,16 +2934,16 @@ shift_expression
             TACOperand* left_op = $1->result;
             TACOperand* right_op = $3->result;
             if($1->baseType == "char"){
-                left_op = new_temp_var();
+                left_op = new_typed_temp_var("int"); // promoted to int
                 TACInstruction* promo = emit(TAC_OPERATOR_CAST, left_op, $1->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             if($3->baseType == "char"){
-                right_op = new_temp_var();
+                right_op = new_typed_temp_var("int"); // promoted to int
                 TACInstruction* promo = emit(TAC_OPERATOR_CAST, right_op, $3->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
-            TACOperand* result_op = new_temp_var();
+            TACOperand* result_op = new_typed_temp_var("int"); // shift result is int
             TACInstruction* shift_instr = emit(TAC_OPERATOR_LEFT_SHIFT, result_op, left_op, right_op,0);
             $$->code.push_back(shift_instr);
 
@@ -2947,16 +2965,16 @@ shift_expression
             TACOperand* left_op = $1->result;
             TACOperand* right_op = $3->result;
             if($1->baseType == "char"){
-                left_op = new_temp_var();
+                left_op = new_typed_temp_var("int"); // promoted to int
                 TACInstruction* promo = emit(TAC_OPERATOR_CAST, left_op, $1->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
             if($3->baseType == "char"){
-                right_op = new_temp_var();
+                right_op = new_typed_temp_var("int"); // promoted to int
                 TACInstruction* promo = emit(TAC_OPERATOR_CAST, right_op, $3->result, new_type("int"),0);
                 $$->code.push_back(promo);
             }
-            TACOperand* result_op = new_temp_var();
+            TACOperand* result_op = new_typed_temp_var("int"); // shift result is int
             TACInstruction* shift_instr = emit(TAC_OPERATOR_RIGHT_SHIFT, result_op, left_op, right_op,0);
             $$->code.push_back(shift_instr);
 		}
@@ -3046,8 +3064,8 @@ logical_and_expression
             $$->isLvalue = false;
             cout << "Logical AND: " << left->toString() << " && " << right->toString() << " -> int\n";
 
-            
-            $$->result = new_temp_var();
+            // Logical operations result in int
+            $$->result = new_typed_temp_var("int");
             $$->code = left->code;
             $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
 
@@ -3103,7 +3121,7 @@ logical_or_expression
             $$->isLiteral = false;
             $$->isLvalue = false;
             cout << "Bitwise OR: " << left->toString() << " | " << right->toString() << " -> int\n";
-            $$->result = new_temp_var();
+            $$->result = new_typed_temp_var("int"); // bitwise OR result is int (non short-circuit)
             $$->code = left->code;
             $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
             TACOperand* true_label = new_label(2);
@@ -3180,7 +3198,7 @@ assignment_expression
             //$$->code = lhs_type->code; //seems redundant
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             TACOperand* func_ptr_var = lhs_type->result;
-            TACOperand* func_address = new_temp_var();
+            TACOperand* func_address = new_typed_temp_var("int", 0, true); // address operation
             TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, rhs_type->result, new_empty_var(), 0);
             $$->code.push_back(addr_of_instr);
             TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
@@ -4005,7 +4023,7 @@ short_circuited_logical_and_expression
             cout << "Short circuted Logical AND: " << left->toString() << " && " << right->toString() << " -> int\n";
 
             
-            $$->result = new_temp_var();
+            $$->result = new_typed_temp_var("int"); // logical AND result is int
             $$->code = left->code;
             $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
 
@@ -4044,7 +4062,7 @@ short_circuited_logical_or_expression
             $$->isLiteral = false;
             $$->isLvalue = false;
             cout << "Bitwise OR: " << left->toString() << " | " << right->toString() << " -> int\n";
-            $$->result = new_temp_var();
+            $$->result = new_typed_temp_var("int"); // bitwise OR result is int (short-circuit)
             $$->code = left->code;
             $$->code.insert($$->code.end(), right->code.begin(), right->code.end());
             
@@ -4366,7 +4384,7 @@ compound_statement
                         for (const auto& member : objType.classDef->members) {
                             if (member.isDestructor) {
                                 // Generate destructor call
-                                TACOperand* obj_addr = new_temp_var();
+                                TACOperand* obj_addr = new_typed_temp_var("int", 0, true); // address operation
                                 TACInstruction* addr_instr = emit(TAC_OPERATOR_ADDR_OF, obj_addr, 
                                                                    new_identifier(symIt->second.mangledName), 
                                                                    new_empty_var(), 0);
@@ -4470,7 +4488,7 @@ selection_statement
         
         TACOperand* switch_value = $3->result;
         if ($3->baseType == "char") {
-            TACOperand* int_temp = new_temp_var();
+            TACOperand* int_temp = new_typed_temp_var("int"); // char promoted to int
             TACInstruction* cast_inst = emit(TAC_OPERATOR_CAST, int_temp, $3->result, new_type("int"), 0);
             $3->code.push_back(cast_inst);
             switch_value = int_temp;
@@ -4484,17 +4502,17 @@ selection_statement
         switch_max_case_stack.push_back(INT_MIN);
         TACOperand* min_case_operand = new_constant(to_string(switch_min_case_stack.back()));
         TACOperand* max_case_operand = new_constant(to_string(switch_max_case_stack.back()));
-        TACOperand* min_val_temp = new_temp_var();
+        TACOperand* min_val_temp = new_typed_temp_var("int"); // switch bounds are int
         TACInstruction* load_min = emit(TACOperator(), min_val_temp, min_case_operand, new_empty_var(), 0);
         $3->code.push_back(load_min);
-        TACOperand* max_val_temp = new_temp_var();
+        TACOperand* max_val_temp = new_typed_temp_var("int"); // switch bounds are int
         TACInstruction* load_max = emit(TACOperator(), max_val_temp, max_case_operand, new_empty_var(), 0);
         $3->code.push_back(load_max);
         TACInstruction* check_lower_bound = emit(TACOperator(TAC_OPERATOR_LT), new_empty_var(), switch_value, min_val_temp, 2);
         TACInstruction* check_upper_bound = emit(TACOperator(TAC_OPERATOR_GT), new_empty_var(), switch_value, max_val_temp, 2);
         $3->code.push_back(check_lower_bound);
         $3->code.push_back(check_upper_bound);
-        TACOperand* switch_value_minus_min = new_temp_var();
+        TACOperand* switch_value_minus_min = new_typed_temp_var("int"); // switch offset is int
         TACInstruction* subtract_min = emit(TACOperator(TAC_OPERATOR_SUB), switch_value_minus_min, switch_value, min_val_temp, 0);
         $3->code.push_back(subtract_min);
         TACInstruction* goto_jump_table = emit(TACOperator(), 
@@ -5554,7 +5572,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     // if lhs is void pointer, and rhs is pointer, then allow
     if (left.baseType == "void" && left.pointerLevel > 0 && right.pointerLevel > 0) {
         
-        TACOperand* right_temp = new_temp_var();
+        TACOperand* right_temp = new_typed_temp_var("void", left.pointerLevel); // void pointer cast
         string targetTypeStr = "void";
         for (int i = 0; i < left.pointerLevel; i++) {
             targetTypeStr += "*";
@@ -5567,7 +5585,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     //if rhs is void pointer, and lhs is pointer, then allow
     if (right.baseType == "void" && right.pointerLevel > 0 && left.pointerLevel > 0) {
         
-        TACOperand* right_temp = new_temp_var();
+        TACOperand* right_temp = new_typed_temp_var(left.baseType, left.pointerLevel); // pointer cast
         string targetTypeStr = left.baseType;
         for (int i = 0; i < left.pointerLevel; i++) {
             targetTypeStr += "*";
@@ -5580,7 +5598,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     //if rhs is array and lhs is pointer, then do array to pointer decay
     if (right.isArray && left.pointerLevel > 0 && right.baseType == left.baseType && left.pointerLevel == (right.pointerLevel + right.arrayDimensions.size())) {
         TypeInfo decayedType = array_to_pointer_conversion(right);
-        TACOperand* right_temp = new_temp_var();
+        TACOperand* right_temp = new_typed_temp_var(decayedType.baseType, decayedType.pointerLevel); // array decay
         string targetTypeStr = decayedType.baseType;
         for (int i = 0; i < decayedType.pointerLevel; i++) {
             targetTypeStr += "*";
@@ -5594,7 +5612,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     if (left.baseType == "float" && left.pointerLevel == 0 && !left.isArray && right.pointerLevel == 0 && !right.isArray) {
         // If right is not float, cast it to float
         if (right.baseType != "float" && right.baseType != "error") {
-            TACOperand* right_temp = new_temp_var();
+            TACOperand* right_temp = new_typed_temp_var("float"); // cast to float
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left.result, right_temp}};
@@ -5606,7 +5624,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
         
         // If right is char, cast it to int
         if (right.baseType != "int" && right.baseType != "error") {
-            TACOperand* right_temp = new_temp_var();
+            TACOperand* right_temp = new_typed_temp_var("int"); // cast to int
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left.result, right_temp}};
@@ -5618,7 +5636,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
         cout<<"Hello ji\n";
 
         if( right.baseType != "char" && right.baseType != "error") {
-            TACOperand* right_temp = new_temp_var();
+            TACOperand* right_temp = new_typed_temp_var("char"); // cast to char
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("char"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left.result, right_temp}};
@@ -5641,7 +5659,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
         
         // If left is not float, cast it to float
         if (left.baseType != "float" && left.baseType != "error") {
-            TACOperand* left_temp = new_temp_var();
+            TACOperand* left_temp = new_typed_temp_var("float"); // promote to float
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("float"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left_temp, right.result}}; 
@@ -5650,7 +5668,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
         
         // If right is not float, cast it to float
         if (right.baseType != "float" && right.baseType != "error") {
-            TACOperand* right_temp = new_temp_var();
+            TACOperand* right_temp = new_typed_temp_var("float"); // promote to float
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("float"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left.result, right_temp}};
@@ -5663,7 +5681,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
         
         // If left is char, cast it to int
         if (left.baseType == "char") {
-            TACOperand* left_temp = new_temp_var();
+            TACOperand* left_temp = new_typed_temp_var("int"); // promote to int
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left_temp, right.result}};
@@ -5672,7 +5690,7 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
         
         // If right is char, cast it to int
         if (right.baseType == "char") {
-            TACOperand* right_temp = new_temp_var();
+            TACOperand* right_temp = new_typed_temp_var("int"); // promote to int
             TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
             res->code.push_back(castInstr);
             return {res->code, {left.result, right_temp}};
@@ -5682,8 +5700,8 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
     // Both char, res is int (C promotion rules)
     else if (left.baseType == "char" && right.baseType == "char") {
         res->baseType = "int";
-        TACOperand* left_temp = new_temp_var();
-        TACOperand* right_temp = new_temp_var();
+        TACOperand* left_temp = new_typed_temp_var("int"); // promote to int
+        TACOperand* right_temp = new_typed_temp_var("int"); // promote to int
         
         TACInstruction* castInstr1 = emit(TACOperator(TAC_OPERATOR_CAST), left_temp, left.result, new_type("int"), 0);
         TACInstruction* castInstr2 = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
@@ -5698,6 +5716,38 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promote_types(const 
     
     
     return {res->code, {left.result, right.result}};
+}
+
+// Helper function to create typed temporary variables and add them to symbol table
+TACOperand* new_typed_temp_var(const string& baseType, int pointerLevel, bool isAddress) {
+    // Create the temporary variable
+    TACOperand* temp = new_temp_var();
+    
+    // Create TypeInfo for the temporary
+    TypeInfo tempType;
+    
+    if (isAddress) {
+        // For address operations (&x, pointer arithmetic), treat as int pointer
+        tempType.baseType = "int";  // Addresses are treated as integers
+        tempType.pointerLevel = 0;   // But represented as int, not pointer
+    } else if (pointerLevel > 0) {
+        // This is a pointer temporary
+        tempType.baseType = baseType;
+        tempType.pointerLevel = pointerLevel;
+    } else {
+        // Regular temporary (int, float, char)
+        tempType.baseType = baseType;
+        tempType.pointerLevel = 0;
+    }
+    
+    tempType.isArray = false;
+    tempType.isLvalue = false;
+    tempType.isLiteral = false;
+    
+    // Add to symbol table as local variable
+    insert_symbol(temp->value, tempType, nullptr);
+    
+    return temp;
 }
 
 TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, const string& op) {
@@ -5730,7 +5780,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->code = left.code;
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
             res->code.insert(res->code.end(), promo.first.begin(), promo.first.end());
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var(res->baseType); // arithmetic result
             res->result = resultOp;
             TACOperator tacOp;
             if (op == "+") {
@@ -5756,7 +5806,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             // if right is char, promote to int
             TACOperand* rightOperand = right.result;
             if (right.baseType == "char") {
-                TACOperand* right_temp = new_temp_var();
+                TACOperand* right_temp = new_typed_temp_var("int"); // char promoted to int
                 TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type("int"), 0);
                 res->code.push_back(castInstr);
                 rightOperand = right_temp;
@@ -5774,10 +5824,10 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             }else{}
             int _size = getSize(res2);
 
-            TACOperand* scaledOffset = new_temp_var();
+            TACOperand* scaledOffset = new_typed_temp_var("int"); // pointer offset arithmetic
             TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, rightOperand, new_identifier(to_string(_size)), 0);
 
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var(res->baseType, res->pointerLevel); // pointer result
             res->result = resultOp;
             TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, left.result, scaledOffset, 0);
             res->code.push_back(scaleInstr);
@@ -5808,9 +5858,9 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
                 res2.pointerLevel -= 1;
             }else{}
             int _size = getSize(res2);
-            TACOperand* scaledOffset = new_temp_var();
+            TACOperand* scaledOffset = new_typed_temp_var("int"); // pointer offset arithmetic
             TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, left.result, new_identifier(to_string(_size)), 0);
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var(res->baseType, res->pointerLevel); // pointer result
             res->result = resultOp;
 
             TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_ADD), resultOp, right.result, scaledOffset, 0);
@@ -5840,9 +5890,9 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
                 res2.pointerLevel -= 1;
             }else{}
             int _size = getSize(res2);
-            TACOperand* scaledOffset = new_temp_var();
+            TACOperand* scaledOffset = new_typed_temp_var("int"); // pointer offset arithmetic
             TACInstruction* scaleInstr = emit(TACOperator(TAC_OPERATOR_MUL), scaledOffset, right.result, new_identifier(to_string(_size)), 0);
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var(res->baseType, res->pointerLevel); // pointer result
             res->result = resultOp;
             TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, scaledOffset, 0);
             res->code.push_back(scaleInstr);
@@ -5864,7 +5914,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             cout << " -> " << res->toString() << " (pointer difference)\n";
             res->code.insert(res->code.end(), left.code.begin(), left.code.end());
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var("int"); // pointer difference is int
             res->result = resultOp;
             TACInstruction* instr = emit(TACOperator(TAC_OPERATOR_SUB), resultOp, left.result, right.result, 0);
             res->code.push_back(instr);
@@ -5916,7 +5966,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         res->code = left.code;
         res->code.insert(res->code.end(), right.code.begin(), right.code.end());
         res->code.insert(res->code.end(), promo.first.begin(), promo.first.end());
-        TACOperand* resultOp = new_temp_var();
+        TACOperand* resultOp = new_typed_temp_var(res->baseType); // multiplication/division result
         res->result = resultOp;
         TACOperator tacOp;
         if (op == "*") {
@@ -5948,7 +5998,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
             res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var("int"); // numeric comparison result is int
             res->result = resultOp;
             TACOperator t_op;
             if(op == "<") t_op = TACOperator(TAC_OPERATOR_LT);
@@ -5993,7 +6043,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
             res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
-            TACOperand* resultOp = new_temp_var();
+            TACOperand* resultOp = new_typed_temp_var("int"); // pointer comparison result is int
             res->result = resultOp;
             TACOperator t_op;
             if(op == "<") t_op = TACOperator(TAC_OPERATOR_LT);
@@ -6051,7 +6101,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
         res->code.insert(res->code.end(), right.code.begin(), right.code.end());    
         pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> temp = promote_types(left, right);
         res->code.insert(res->code.end(), temp.first.begin(), temp.first.end());
-        TACOperand* resultOp = new_temp_var();
+        TACOperand* resultOp = new_typed_temp_var("int"); // bitwise result is int
         res->result = resultOp;
         TACOperator t_op = op == "&" ? TACOperator(TAC_OPERATOR_BIT_AND) : (op == "|" ? TACOperator(TAC_OPERATOR_BIT_OR) : TACOperator(TAC_OPERATOR_BIT_XOR));
         TACInstruction* instr = emit(t_op, resultOp, temp.second.first, temp.second.second, 0);
@@ -6095,16 +6145,16 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
 
         if (res->baseType == "char") {
             res->baseType = "int";
-            TACOperand* temp = new_temp_var();
+            TACOperand* temp = new_typed_temp_var("int"); // char promoted to int
             TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_CAST), temp, operand.result, new_type("int"),0);
-            TACOperand* temp2 = new_temp_var();
+            TACOperand* temp2 = new_typed_temp_var("int"); // unary minus result
             res->result = temp2;    
             TACInstruction* i2 = emit(tacop, res->result, temp, new_empty_var(),0);
 
             res->code.push_back(i1);
             res->code.push_back(i2);
         }else{
-            TACOperand* temp = new_temp_var();
+            TACOperand* temp = new_typed_temp_var(res->baseType); // unary operation result
             res->result = temp;    
             TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
             res->code.push_back(i1);
@@ -6142,7 +6192,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         TACOperator tacop;
         if(op == "++") tacop.type = TAC_OPERATOR_ADD;
         else tacop.type = TAC_OPERATOR_SUB;
-        TACOperand* temp = new_temp_var();
+        TACOperand* temp = new_typed_temp_var(res->baseType); // increment/decrement result
         res->result = temp;    
         TACInstruction* i1 = emit(tacop, res->result, operand.result, new_constant("1"),0);
         TACInstruction* i2 = emit(TACOperator(), operand.result, res->result, new_empty_var(),0); // Store back to the original variable
@@ -6169,7 +6219,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         res->isLvalue = false;  // res is not an lvalue
         cout << " -> " << res->toString() << " (boolean as int)\n";
 
-        TACOperand* temp = new_temp_var();
+        TACOperand* temp = new_typed_temp_var("int"); // logical NOT result is int
         res->result = temp;    
         TACOperand* firstgoto = new_label(2); 
         TACOperand* secondgoto = new_label(4);
@@ -6222,7 +6272,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         cout << " -> " << res->toString() << "\n";
         TACOperator tacop;
         tacop.type = TAC_OPERATOR_BIT_NOT;
-        TACOperand* temp = new_temp_var();
+        TACOperand* temp = new_typed_temp_var("int"); // bitwise NOT result is int
         res->result = temp;
         TACInstruction* i1 = emit(tacop, res->result, operand.result, new_empty_var(),0);
         res->code = operand.code;
@@ -6254,7 +6304,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         cout << " -> " << res->toString() << "\n";
 
         res->code = operand.code;
-        TACOperand* temp = new_temp_var();
+        TACOperand* temp = new_typed_temp_var(res->baseType, res->pointerLevel, true); // address-of operation
         res->result = temp;
         TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_ADDR_OF), res->result, operand.result, new_empty_var(),0);
         res->code.push_back(i1);
@@ -6294,7 +6344,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         res->isLvalue = true;
         cout << " -> " << res->toString() << "\n";
         res->code = operand.code;
-        TACOperand* temp = new_temp_var();
+        TACOperand* temp = new_typed_temp_var(res->baseType, res->pointerLevel); // dereference result
         res->result = temp;
         TACInstruction* i1 = emit(TACOperator(TAC_OPERATOR_DEREF), res->result, operand.result, new_empty_var(),0);
         res->code.push_back(i1);

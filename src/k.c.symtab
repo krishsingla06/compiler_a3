@@ -10,16 +10,64 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 6 [mangled: v_#t1_foo_i_i_s2] [LOCAL, offset: -12]
+  - #t2 (int) declared at line 6 [mangled: v_#t2_foo_i_i_s2] [LOCAL, offset: -16]
+  - #t3 (int) declared at line 6 [mangled: v_#t3_foo_i_i_s2] [LOCAL, offset: -20]
   - p (int) declared at line 2 [mangled: v_p_foo_i_i_s2] [LOCAL, offset: -4]
   - q (int) declared at line 3 [mangled: v_q_foo_i_i_s2] [LOCAL, offset: -8]
   - x (int) declared at line 1 [mangled: v_x_foo_i_i_s2] [PARAM #0, offset: 0]
   - y (int) declared at line 1 [mangled: v_y_foo_i_i_s2] [PARAM #1, offset: 4]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
+  - #t1 (int)
+  - #t2 (int)
+  - #t3 (int)
   - p (int)
   - q (int)
   - x (int)
   - y (int)
+
+
+
+
+
+Exiting scope level 3
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t4 (float) declared at line 17 [mangled: v_#t4_main_s2] [LOCAL, offset: -24]
+  - #t5 (float) declared at line 17 [mangled: v_#t5_main_s2] [LOCAL, offset: -28]
+  - #t6 (int) declared at line 17 [mangled: v_#t6_main_s2] [LOCAL, offset: -32]
+  - #t7 (float) declared at line 17 [mangled: v_#t7_main_s2] [LOCAL, offset: -36]
+  - #t8 (float) declared at line 17 [mangled: v_#t8_main_s2] [LOCAL, offset: -40]
+  - #t9 (int) declared at line 17 [mangled: v_#t9_main_s2] [LOCAL, offset: -44]
+  - a (int) declared at line 10 [mangled: v_a_main_s2] [LOCAL, offset: -4]
+  - b (int) declared at line 11 [mangled: v_b_main_s2] [LOCAL, offset: -8]
+  - c (float) declared at line 12 [mangled: v_c_main_s2] [LOCAL, offset: -12]
+  - d (char) declared at line 13 [mangled: v_d_main_s2] [LOCAL, offset: -16]
+  - e (int) declared at line 14 [mangled: v_e_main_s2] [LOCAL, offset: -20]
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 3 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - arr (int[10]) declared at line 20 [mangled: v_arr_main_s3] [LOCAL, offset: -448]
+  - innera (int) declared at line 19 [mangled: v_innera_main_s3] [LOCAL, offset: -48]
+  - innerc (char) declared at line 21 [mangled: v_innerc_main_s3] [LOCAL, offset: -452]
+  - innerd (int) declared at line 22 [mangled: v_innerd_main_s3] [LOCAL, offset: -456]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 3:
+  - arr (int[10])
+  - innera (int)
+  - innerc (char)
+  - innerd (int)
 
 
 
@@ -37,6 +85,13 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+  - #t10 (int) declared at line 25 [mangled: v_#t10_main_s2] [LOCAL, offset: -460]
+  - #t4 (float) declared at line 17 [mangled: v_#t4_main_s2] [LOCAL, offset: -24]
+  - #t5 (float) declared at line 17 [mangled: v_#t5_main_s2] [LOCAL, offset: -28]
+  - #t6 (int) declared at line 17 [mangled: v_#t6_main_s2] [LOCAL, offset: -32]
+  - #t7 (float) declared at line 17 [mangled: v_#t7_main_s2] [LOCAL, offset: -36]
+  - #t8 (float) declared at line 17 [mangled: v_#t8_main_s2] [LOCAL, offset: -40]
+  - #t9 (int) declared at line 17 [mangled: v_#t9_main_s2] [LOCAL, offset: -44]
   - a (int) declared at line 10 [mangled: v_a_main_s2] [LOCAL, offset: -4]
   - b (int) declared at line 11 [mangled: v_b_main_s2] [LOCAL, offset: -8]
   - c (float) declared at line 12 [mangled: v_c_main_s2] [LOCAL, offset: -12]
@@ -44,6 +99,13 @@ Exiting scope level 2
   - e (int) declared at line 14 [mangled: v_e_main_s2] [LOCAL, offset: -20]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
+  - #t10 (int)
+  - #t4 (float)
+  - #t5 (float)
+  - #t6 (int)
+  - #t7 (float)
+  - #t8 (float)
+  - #t9 (int)
   - a (int)
   - b (int)
   - c (float)

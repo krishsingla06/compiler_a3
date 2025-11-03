@@ -32,16 +32,28 @@ Found variable: q of type int
 Integer literal: 2 (type: int)
 Found variable: p of type int
 Found variable: q of type int
-Binary operation: int + int -> int (numeric arithmetic)
+Binary operation: int + intAllocated local variable #t1 at offset -12 (size: 4 bytes)
+DEBUG: Variable #t1 mangled as v_#t1_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable #t1 mangled as v_#t1_foo_i_i_s2 [LOCAL]
+Declared variable: #t1 (int) at line 6 in scope 2
+ -> int (numeric arithmetic)
 Found variable: x of type int
-Binary operation: int + int -> int (numeric arithmetic)
+Binary operation: int + intAllocated local variable #t2 at offset -16 (size: 4 bytes)
+DEBUG: Variable #t2 mangled as v_#t2_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable #t2 mangled as v_#t2_foo_i_i_s2 [LOCAL]
+Declared variable: #t2 (int) at line 6 in scope 2
+ -> int (numeric arithmetic)
 Found variable: y of type int
-Binary operation: int + int -> int (numeric arithmetic)
+Binary operation: int + intAllocated local variable #t3 at offset -20 (size: 4 bytes)
+DEBUG: Variable #t3 mangled as v_#t3_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable #t3 mangled as v_#t3_foo_i_i_s2 [LOCAL]
+Declared variable: #t3 (int) at line 6 in scope 2
+ -> int (numeric arithmetic)
 Compound statement with declarations and statements
 Function foo stack frame:
-  - Local variables: 8 bytes
+  - Local variables: 20 bytes
   - Parameters: 8 bytes
-  - Total: 16 bytes
+  - Total: 28 bytes
 Start rule: Global declaration has 8 TAC instructions
 TAC code written to k.tac
 Function declarator: main with no parameters
@@ -78,15 +90,77 @@ Found variable: a of type int
 Integer literal: 3 (type: int)
 Found variable: b of type int
 Integer literal: 4 (type: int)
+Found variable: a of type int
+Found variable: b of type int
+Found variable: c of type float
+Binary operation: int + floatAllocated local variable #t4 at offset -24 (size: 4 bytes)
+DEBUG: Variable #t4 mangled as v_#t4_main_s2 (function: main, signature: , scope: 2)
+Variable #t4 mangled as v_#t4_main_s2 [LOCAL]
+Declared variable: #t4 (float) at line 17 in scope 2
+Allocated local variable #t5 at offset -28 (size: 4 bytes)
+DEBUG: Variable #t5 mangled as v_#t5_main_s2 (function: main, signature: , scope: 2)
+Variable #t5 mangled as v_#t5_main_s2 [LOCAL]
+Declared variable: #t5 (float) at line 17 in scope 2
+ -> float (numeric arithmetic)
 Found function name: foo
 Found variable: a of type int
 Found variable: b of type int
 Found exact function match: foo_i_i
+Allocated local variable #t6 at offset -32 (size: 4 bytes)
+DEBUG: Variable #t6 mangled as v_#t6_main_s2 (function: main, signature: , scope: 2)
+Variable #t6 mangled as v_#t6_main_s2 [LOCAL]
+Declared variable: #t6 (int) at line 17 in scope 2
+Binary operation: float + intAllocated local variable #t7 at offset -36 (size: 4 bytes)
+DEBUG: Variable #t7 mangled as v_#t7_main_s2 (function: main, signature: , scope: 2)
+Variable #t7 mangled as v_#t7_main_s2 [LOCAL]
+Declared variable: #t7 (float) at line 17 in scope 2
+Allocated local variable #t8 at offset -40 (size: 4 bytes)
+DEBUG: Variable #t8 mangled as v_#t8_main_s2 (function: main, signature: , scope: 2)
+Variable #t8 mangled as v_#t8_main_s2 [LOCAL]
+Declared variable: #t8 (float) at line 17 in scope 2
+ -> float (numeric arithmetic)
+Allocated local variable #t9 at offset -44 (size: 4 bytes)
+DEBUG: Variable #t9 mangled as v_#t9_main_s2 (function: main, signature: , scope: 2)
+Variable #t9 mangled as v_#t9_main_s2 [LOCAL]
+Declared variable: #t9 (int) at line 17 in scope 2
+Entering scope level 3
+Function main parameter space: 0 bytes
+DEBUG: Variable innera mangled as v_innera_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable innera at offset -48 (size: 4 bytes)
+DEBUG: Variable innera mangled as v_innera_main_s3 (function: main, signature: , scope: 3)
+Variable innera mangled as v_innera_main_s3 [LOCAL]
+Declared variable: innera (int) at line 19 in scope 3
+DEBUG: Variable arr mangled as v_arr_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable arr at offset -448 (size: 400 bytes)
+DEBUG: Variable arr mangled as v_arr_main_s3 (function: main, signature: , scope: 3)
+Variable arr mangled as v_arr_main_s3 [LOCAL]
+Declared variable: arr (int[10]) at line 20 in scope 3
+DEBUG: Variable innerc mangled as v_innerc_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable innerc at offset -452 (size: 4 bytes)
+DEBUG: Variable innerc mangled as v_innerc_main_s3 (function: main, signature: , scope: 3)
+Variable innerc mangled as v_innerc_main_s3 [LOCAL]
+Declared variable: innerc (char) at line 21 in scope 3
+DEBUG: Variable innerd mangled as v_innerd_main_s3 (function: main, signature: , scope: 3)
+Allocated local variable innerd at offset -456 (size: 4 bytes)
+DEBUG: Variable innerd mangled as v_innerd_main_s3 (function: main, signature: , scope: 3)
+Variable innerd mangled as v_innerd_main_s3 [LOCAL]
+Declared variable: innerd (int) at line 22 in scope 3
+Found variable: innera of type int
+Integer literal: 5 (type: int)
+Compound statement with declarations and statements
+Found function name: foo
+Found variable: a of type int
+Found variable: b of type int
+Found exact function match: foo_i_i
+Allocated local variable #t10 at offset -460 (size: 4 bytes)
+DEBUG: Variable #t10 mangled as v_#t10_main_s2 (function: main, signature: , scope: 2)
+Variable #t10 mangled as v_#t10_main_s2 [LOCAL]
+Declared variable: #t10 (int) at line 25 in scope 2
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 20 bytes
+  - Local variables: 460 bytes
   - Parameters: 0 bytes
-  - Total: 20 bytes
+  - Total: 460 bytes
 TAC code appended to k.tac
 yyparse() returned 0
 

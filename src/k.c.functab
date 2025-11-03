@@ -7,8 +7,8 @@
 |   Parameters: int int 
 |   Stack Frame:
 |     - Parameter space: 8 bytes
-|     - Local var space: 8 bytes
-|     - Total frame size: 16 bytes
+|     - Local var space: 20 bytes
+|     - Total frame size: 28 bytes
 |   Declared at line: 1
 +-----------------------------------------------------------------------------------------+
 | Function: main (main)
@@ -16,7 +16,7 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 20 bytes
-|     - Total frame size: 20 bytes
+|     - Local var space: 460 bytes
+|     - Total frame size: 460 bytes
 |   Declared at line: 9
 +-----------------------------------------------------------------------------------------+
