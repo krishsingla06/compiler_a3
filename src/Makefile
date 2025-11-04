@@ -7,5 +7,5 @@ parser.tab.c parser.tab.h: parser.y
 lex.yy.c: lexer.l
 	flex -w lexer.l
 
-a.exe: parser.tab.c lex.yy.c tac.cpp
-	g++ -w -o parser parser.tab.c lex.yy.c tac.cpp -lfl
+a.exe: parser.tab.c lex.yy.c tac.cpp mips_generator.cpp descriptors.cpp
+	g++ -w -o parser parser.tab.c lex.yy.c tac.cpp mips_generator.cpp descriptors.cpp -lfl

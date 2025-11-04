@@ -1,0 +1,20 @@
+    # ======================================
+    #   MIPS Assembly Code Generation
+    #   (Stub Implementation)
+    # ======================================
+
+    # Total TAC instructions: 4
+
+.data
+    # Data section stub - global variables would go here
+
+.text
+.globl main
+    # Text section stub - code would go here
+
+    # TAC instruction 0: main
+    # TAC instruction 1: v_a_main_s2
+    # TAC instruction 2: v_a_main_s2
+    # TAC instruction 3: main
+
+    # End of stub code

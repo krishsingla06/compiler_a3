@@ -1,6 +1,7 @@
 %{
 #include <bits/stdc++.h>
 #include<iomanip>
+#include "mips_generator.h"
 using namespace std;
 
 /* Make sure yylex is visible as a C function */
@@ -478,6 +479,17 @@ void close_jump_table_file(){
     // Inner scopes shadow outer scopes by adding to the end of the vector
     map<string, vector<ClassDef>> class_table;
     
+    // Helper function for MIPS generator to access variable offsets
+    extern "C" int get_variable_offset(const char* var_name) {
+        cout<<"Getting offset for variable: " << var_name << "\n";
+        string name(var_name);
+        auto it = global_symbol_table.find(name);
+        if (it != global_symbol_table.end()) {
+            return it->second.stackOffset;
+        }
+        return 0;
+    }
+    
     // Function symbol table
     map<string, FunctionEntry> function_table;
     
@@ -547,6 +559,9 @@ void close_jump_table_file(){
 
     // Global variable to store the output TAC filename
     string output_tac_filename = "Final.tac";  // Default fallback
+    
+    // Global collection of all TAC instructions for MIPS generation
+    vector<TACInstruction*> all_tac_instructions;
     
     // Struct/Union management functions
     void insert_struct_union(const string& name, bool isUnion, const vector<StructMember>& members, int scope_level);
@@ -830,6 +845,9 @@ start
         $$->code = vector<TACInstruction*>();
         $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
        
+       // Collect all TAC instructions
+       all_tac_instructions.insert(all_tac_instructions.end(), $$->code.begin(), $$->code.end());
+       
        // Debug output
        cout << "Start rule: Global declaration has " << $$->code.size() << " TAC instructions\n";
       
@@ -853,6 +871,9 @@ start
         $$->code = vector<TACInstruction*>();
         $$->code.insert($$->code.end(), $1->code.begin(), $1->code.end());
         $$->code.insert($$->code.end(), $2->code.begin(), $2->code.end());
+
+        // Collect all TAC instructions
+        all_tac_instructions.insert(all_tac_instructions.end(), $2->code.begin(), $2->code.end());
 
         // append this also to final.tac
 
@@ -6463,6 +6484,11 @@ string mangle_function_name(const string& funcName, const vector<TypeInfo>& para
 
 // Generate a mangled name for a variable using format: v_name_funname_signature_scopenum
 string mangle_variable_name(const string& varName, int scopeLevel, const string& currentFuncName, const string& funcSignature) {
+    
+    if (!varName.empty() && varName[0] == '#') {
+        return varName;
+    }
+    
     string mangledName = "v_" + varName;
     
     // Add function name if available (non-global variable)
@@ -7235,6 +7261,36 @@ int main(int argc, char** argv) {
 	// Display global symbol table
 	displayGlobalSymbolTable();
 	
+	// Generate MIPS assembly code
+	cout << "\n\nGenerating MIPS assembly code...\n";
+	cout << "Total TAC instructions collected: " << all_tac_instructions.size() << "\n";
+	
+	// Create both debug and clean output files
+	string mips_filename = base_name + ".asm"; 
+	string clean_mips_filename = base_name + ".clean.asm";
+	
+	ofstream mips_file(mips_filename);
+	ofstream clean_mips_file(clean_mips_filename);
+	
+	if (mips_file.is_open()) {
+		if (clean_mips_file.is_open()) {
+			// Generate with both debug and clean output
+			MIPSGenerator mips_gen(mips_file, &clean_mips_file);
+			mips_gen.generate(all_tac_instructions);
+			clean_mips_file.close();
+			cout << "Clean MIPS assembly code (no debug) written to " << clean_mips_filename << "\n";
+		} else {
+			// Generate with only debug output
+			MIPSGenerator mips_gen(mips_file);
+			mips_gen.generate(all_tac_instructions);
+			cerr << "Warning: Could not open clean MIPS output file\n";
+		}
+		mips_file.close();
+		cout << "MIPS assembly code (with debug) written to " << mips_filename << "\n";
+	} else {
+		cerr << "Error: Could not open MIPS output file\n";
+	}
+	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {
 		exit_scope();
@@ -7242,7 +7298,7 @@ int main(int argc, char** argv) {
 	
 	// Close error log
 	close_error_log();
-    restore_cout_to_console();  // Restore cout to console before closing debug file
+    restore_cout_to_console();  
     close_debug_file();
     close_symtab_file();
     close_function_table_file();
@@ -7252,6 +7308,7 @@ int main(int argc, char** argv) {
 	fclose(f);
     cout<<"\n\n-------------------------------------------------------------------------\n";
     cout<<"Parsing completed. TAC output written to " << output_tac_filename << "\n";
+    cout<<"MIPS assembly written to " << base_name << ".asm\n";
     cout<<"Error log written to " << error_log_name << "\n";
     cout<<"Debug log written to debug.log\n";
     cout<<"Symbol table log written to symtab.log\n";
