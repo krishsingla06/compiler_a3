@@ -143,7 +143,6 @@ string get_operator_string(TACOperatorType op) {
     case TAC_OPERATOR_LEFT_SHIFT: return "<<";
     case TAC_OPERATOR_RIGHT_SHIFT: return ">>";
     case TAC_OPERATOR_BIT_NOT: return "~";
-    case TAC_OPERATOR_ASSIGN: return "=";
     case TAC_OPERATOR_ADDR_OF: return "&";
     default: return "";
     }

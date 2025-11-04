@@ -74,12 +74,21 @@
 // int x=1;
 // int y=2;
 
+int foo(int x,int y){
+    int p;
+    int q;
+    p=1;
+    q=2;
+    return p+q+x+y;
+}
+
 int main(int m,int n){
     int p;
     int q;
     //static int s;
-    p = m<n;
-    return p;
+    p = m+n;
+    q = m-n;
+    return foo(p,q);
 }
 
 // int main() {

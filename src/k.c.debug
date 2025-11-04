@@ -1,6 +1,58 @@
 Error log initialized: k.c.errors
 Starting parser...
 Entering scope level 1
+Function declarator: foo with 2 parameters
+Registered function: foo as foo_i_i returning int
+Function definition: foo registered
+Entering scope level 2
+Allocated parameter x (param #0) at offset 8
+DEBUG: Variable x mangled as v_x_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable x mangled as v_x_foo_i_i_s2 [PARAM]
+Declared variable: x (int) at line 77 in scope 2
+Inserted function parameter: x (int)
+Allocated parameter y (param #1) at offset 12
+DEBUG: Variable y mangled as v_y_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable y mangled as v_y_foo_i_i_s2 [PARAM]
+Declared variable: y (int) at line 77 in scope 2
+Inserted function parameter: y (int)
+Function foo_i_i parameter space: 8 bytes
+DEBUG: Variable p mangled as v_p_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Allocated local variable p at offset -4 (size: 4 bytes)
+DEBUG: Variable p mangled as v_p_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable p mangled as v_p_foo_i_i_s2 [LOCAL]
+Declared variable: p (int) at line 78 in scope 2
+DEBUG: Variable q mangled as v_q_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Allocated local variable q at offset -8 (size: 4 bytes)
+DEBUG: Variable q mangled as v_q_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable q mangled as v_q_foo_i_i_s2 [LOCAL]
+Declared variable: q (int) at line 79 in scope 2
+Found variable: p of type int
+Integer literal: 1 (type: int)
+Found variable: q of type int
+Integer literal: 2 (type: int)
+Found variable: p of type int
+Found variable: q of type int
+Binary operation: int + intAllocated local variable #t1 at offset -12 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (int) at line 82 in scope 2
+ -> int (numeric arithmetic)
+Found variable: x of type int
+Binary operation: int + intAllocated local variable #t2 at offset -16 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 82 in scope 2
+ -> int (numeric arithmetic)
+Found variable: y of type int
+Binary operation: int + intAllocated local variable #t3 at offset -20 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 82 in scope 2
+ -> int (numeric arithmetic)
+Compound statement with declarations and statements
+Function foo stack frame:
+  - Local variables: 20 bytes
+  - Parameters: 8 bytes
+  - Total: 36 bytes
+Start rule: Global declaration has 8 TAC instructions
+TAC code written to k.tac
 Function declarator: main with 2 parameters
 Registered function: main as main_i_i returning int
 Function definition: main registered
@@ -8,39 +60,51 @@ Entering scope level 2
 Allocated parameter m (param #0) at offset 8
 DEBUG: Variable m mangled as v_m_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Variable m mangled as v_m_main_i_i_s2 [PARAM]
-Declared variable: m (int) at line 77 in scope 2
+Declared variable: m (int) at line 85 in scope 2
 Inserted function parameter: m (int)
 Allocated parameter n (param #1) at offset 12
 DEBUG: Variable n mangled as v_n_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Variable n mangled as v_n_main_i_i_s2 [PARAM]
-Declared variable: n (int) at line 77 in scope 2
+Declared variable: n (int) at line 85 in scope 2
 Inserted function parameter: n (int)
 Function main_i_i parameter space: 8 bytes
 DEBUG: Variable p mangled as v_p_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Allocated local variable p at offset -4 (size: 4 bytes)
 DEBUG: Variable p mangled as v_p_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Variable p mangled as v_p_main_i_i_s2 [LOCAL]
-Declared variable: p (int) at line 78 in scope 2
+Declared variable: p (int) at line 86 in scope 2
 DEBUG: Variable q mangled as v_q_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Allocated local variable q at offset -8 (size: 4 bytes)
 DEBUG: Variable q mangled as v_q_main_i_i_s2 (function: main, signature: i_i, scope: 2)
 Variable q mangled as v_q_main_i_i_s2 [LOCAL]
-Declared variable: q (int) at line 79 in scope 2
+Declared variable: q (int) at line 87 in scope 2
 Found variable: p of type int
 Found variable: m of type int
 Found variable: n of type int
-Binary operation: int < int -> int (numeric comparison)
-Allocated local variable #t1 at offset -12 (size: 4 bytes)
-Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 81 in scope 2
+Binary operation: int + intAllocated local variable #t4 at offset -12 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 89 in scope 2
+ -> int (numeric arithmetic)
+Found variable: q of type int
+Found variable: m of type int
+Found variable: n of type int
+Binary operation: int - intAllocated local variable #t5 at offset -16 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 90 in scope 2
+ -> int (numeric arithmetic)
+Found function name: foo
 Found variable: p of type int
+Found variable: q of type int
+Found exact function match: foo_i_i
+Allocated local variable #t6 at offset -20 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 91 in scope 2
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 12 bytes
+  - Local variables: 20 bytes
   - Parameters: 8 bytes
-  - Total: 28 bytes
-Start rule: Global declaration has 9 TAC instructions
-TAC code written to k.tac
+  - Total: 36 bytes
+TAC code appended to k.tac
 yyparse() returned 0
 
 +-----------------------------------------------------------------------------------------+
@@ -55,11 +119,19 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 9
+Total TAC instructions collected: 18
+Getting offset for variable: v_x_foo_i_i_s2
+Getting offset for variable: v_y_foo_i_i_s2
+Getting offset for variable: v_p_foo_i_i_s2
+Getting offset for variable: v_q_foo_i_i_s2
+Getting offset for variable: #t1
+Getting offset for variable: #t2
+Getting offset for variable: #t3
 Getting offset for variable: v_m_main_i_i_s2
 Getting offset for variable: v_n_main_i_i_s2
-Getting offset for variable: #t1
-Getting offset for variable: #t1
+Getting offset for variable: #t5
+Getting offset for variable: v_q_main_i_i_s2
+Getting offset for variable: #t4
 Getting offset for variable: v_p_main_i_i_s2
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm

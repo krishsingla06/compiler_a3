@@ -6750,7 +6750,6 @@ void insert_current_function_parameters() {
         }
     }
 
-
     // Clear the parameters after insertion
     current_function_parameters.clear();
 }
