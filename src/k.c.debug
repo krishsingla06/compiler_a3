@@ -29,17 +29,17 @@ Declared variable: q (int) at line 79 in scope 2
 Found variable: p of type int
 Found variable: m of type int
 Found variable: n of type int
-Binary operation: int + intAllocated local variable #t1 at offset -12 (size: 4 bytes)
+Binary operation: int < int -> int (numeric comparison)
+Allocated local variable #t1 at offset -12 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
 Declared variable: #t1 (int) at line 81 in scope 2
- -> int (numeric arithmetic)
 Found variable: p of type int
 Compound statement with declarations and statements
 Function main stack frame:
   - Local variables: 12 bytes
   - Parameters: 8 bytes
   - Total: 28 bytes
-Start rule: Global declaration has 5 TAC instructions
+Start rule: Global declaration has 9 TAC instructions
 TAC code written to k.tac
 yyparse() returned 0
 
@@ -55,9 +55,10 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 5
+Total TAC instructions collected: 9
 Getting offset for variable: v_m_main_i_i_s2
 Getting offset for variable: v_n_main_i_i_s2
+Getting offset for variable: #t1
 Getting offset for variable: #t1
 Getting offset for variable: v_p_main_i_i_s2
 Clean MIPS assembly code (no debug) written to k.clean.asm

@@ -49,11 +49,11 @@ TACOperand* new_type(string value);
 TACOperand* new_string(string value);
 
 enum TACOperatorType {
-    TAC_OPERATOR_ADD = 0,
-    TAC_OPERATOR_SUB,
-    TAC_OPERATOR_MUL,
-    TAC_OPERATOR_DIV,
-    TAC_OPERATOR_MOD,
+    TAC_OPERATOR_ADD = 0, // ok 
+    TAC_OPERATOR_SUB, // ok
+    TAC_OPERATOR_MUL, // ok
+    TAC_OPERATOR_DIV, //ok
+    TAC_OPERATOR_MOD, //ok
     TAC_OPERATOR_UMINUS,
 
     TAC_OPERATOR_EQ,

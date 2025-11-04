@@ -267,11 +267,29 @@ int MIPSGenerator::calculate_stack_frame_size(const string& func_name) {
 void MIPSGenerator::translate_instruction(TACInstruction* instr) {
     if (!instr) return;
     
+    // Emit label if this instruction has one
+    if (instr->label && instr->label->type == TAC_OPERAND_LABEL) {
+        emit_label("I" + instr->label->value);
+    }
+    
     // Debug: Print current descriptor state
     print_descriptors();
     
     // Handle different operation types based on flag and op
-    if (instr->flag == 0 && instr->op.type == TAC_OPERATOR_NOP) {
+    // IMPORTANT: Check flags FIRST before checking op types!
+    if (instr->flag == 1) {
+        // Unconditional jump - basic block boundary
+        emit_comment("Unconditional jump - spilling dirty registers");
+        spill_all_dirty();
+        translate_jump(instr);
+    }
+    else if (instr->flag == 2) {
+        // Conditional jump: if arg1 op arg2 goto result
+        emit_comment("Conditional jump - spilling dirty registers");
+        spill_all_dirty();
+        translate_comparison(instr);
+    }
+    else if (instr->flag == 0 && instr->op.type == TAC_OPERATOR_NOP) {
         // Assignment: result = arg1
         translate_assignment(instr);
     }
@@ -281,6 +299,14 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
              instr->op.type == TAC_OPERATOR_DIV ||
              instr->op.type == TAC_OPERATOR_MOD) {
         translate_arithmetic(instr);
+    }
+    else if (instr->op.type == TAC_OPERATOR_EQ ||
+             instr->op.type == TAC_OPERATOR_NE ||
+             instr->op.type == TAC_OPERATOR_LT ||
+             instr->op.type == TAC_OPERATOR_GT ||
+             instr->op.type == TAC_OPERATOR_LE ||
+             instr->op.type == TAC_OPERATOR_GE) {
+        translate_comparison(instr);
     }
     else if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
         emit_label(instr->result->value);
@@ -299,18 +325,6 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         generate_function_epilogue(current_function);
         
         emit_comment("End of function: " + current_function);
-    }
-    else if (instr->flag == 1) {
-        // Unconditional jump - basic block boundary
-        emit_comment("Unconditional jump - spilling dirty registers");
-        spill_all_dirty();
-        translate_jump(instr);
-    }
-    else if (instr->flag == 2) {
-        // Conditional jump - basic block boundary
-        emit_comment("Conditional jump - spilling dirty registers");
-        spill_all_dirty();
-        translate_jump(instr);
     }
     else if (instr->op.type == TAC_OPERATOR_CALL) {
         // Function call - spill dirty registers
@@ -342,8 +356,26 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     
     emit_comment("Assignment: " + dest + " = " + src);
     
-    // Check if source is a constant
-    if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+    // Check if source is a constant (either marked as constant or is a numeric value)
+    bool is_constant = (instr->arg1->type == TAC_OPERAND_CONSTANT);
+    
+    // Also check if it's a numeric literal (workaround for parser not setting CONSTANT type)
+    if (!is_constant && !src.empty()) {
+        bool is_numeric = true;
+        size_t start = 0;
+        if (src[0] == '-' || src[0] == '+') start = 1;  // Handle sign
+        for (size_t i = start; i < src.length(); i++) {
+            if (!isdigit(src[i])) {
+                is_numeric = false;
+                break;
+            }
+        }
+        if (is_numeric && src.length() > start) {
+            is_constant = true;
+        }
+    }
+    
+    if (is_constant) {
         // Load immediate into register
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + src);
@@ -446,11 +478,165 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
 
 
 void MIPSGenerator::translate_comparison(TACInstruction* instr) {
-    // Stub
+    // Two cases:
+    // 1. flag == 2: if arg1 op arg2 goto result (conditional branch)
+    // 2. flag == 0: result = arg1 op arg2 (comparison result stored in variable)
+    
+    string src1 = instr->arg1->value;
+    string src2 = instr->arg2->value;
+    
+    if (instr->flag == 2) {
+        // Conditional branch: if arg1 op arg2 goto label
+        string target_label = instr->result->value;
+        
+        string op_name;
+        string branch_instr;
+        
+        switch (instr->op.type) {
+            case TAC_OPERATOR_EQ:
+                op_name = "==";
+                branch_instr = "beq";  // branch if equal
+                break;
+            case TAC_OPERATOR_NE:
+                op_name = "!=";
+                branch_instr = "bne";  // branch if not equal
+                break;
+            case TAC_OPERATOR_LT:
+                op_name = "<";
+                branch_instr = "blt";  // branch if less than
+                break;
+            case TAC_OPERATOR_GT:
+                op_name = ">";
+                branch_instr = "bgt";  // branch if greater than
+                break;
+            case TAC_OPERATOR_LE:
+                op_name = "<=";
+                branch_instr = "ble";  // branch if less than or equal
+                break;
+            case TAC_OPERATOR_GE:
+                op_name = ">=";
+                branch_instr = "bge";  // branch if greater than or equal
+                break;
+            default:
+                op_name = "??";
+                branch_instr = "beq";
+                break;
+        }
+        
+        emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label);
+        
+        // Get operands into registers
+        string reg1, reg2;
+        
+        // Handle first operand
+        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+            reg1 = allocate_register_with_spilling();
+            emit("li " + reg1 + ", " + src1);
+            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+        } else {
+            reg1 = ensure_in_register(src1);
+            emit_comment("DEBUG: " + src1 + " in " + reg1);
+        }
+        
+        // Handle second operand
+        if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
+            reg2 = allocate_register_with_spilling();
+            emit("li " + reg2 + ", " + src2);
+            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
+        } else {
+            reg2 = ensure_in_register(src2);
+            emit_comment("DEBUG: " + src2 + " in " + reg2);
+        }
+        
+        // Emit branch instruction
+        emit(branch_instr + " " + reg1 + ", " + reg2 + ", I" + target_label);
+        emit_comment("Branch to I" + target_label + " if condition true");
+        
+    } else {
+        // Comparison result stored in variable: result = arg1 op arg2
+        string dest = instr->result->value;
+        
+        string op_name;
+        string set_instr;
+        
+        switch (instr->op.type) {
+            case TAC_OPERATOR_EQ:
+                op_name = "==";
+                set_instr = "seq";  // set if equal
+                break;
+            case TAC_OPERATOR_NE:
+                op_name = "!=";
+                set_instr = "sne";  // set if not equal
+                break;
+            case TAC_OPERATOR_LT:
+                op_name = "<";
+                set_instr = "slt";  // set if less than
+                break;
+            case TAC_OPERATOR_GT:
+                op_name = ">";
+                set_instr = "sgt";  // set if greater than
+                break;
+            case TAC_OPERATOR_LE:
+                op_name = "<=";
+                set_instr = "sle";  // set if less than or equal
+                break;
+            case TAC_OPERATOR_GE:
+                op_name = ">=";
+                set_instr = "sge";  // set if greater than or equal
+                break;
+            default:
+                op_name = "??";
+                set_instr = "seq";
+                break;
+        }
+        
+        emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
+        
+        // Get operands into registers
+        string reg1, reg2;
+        
+        // Handle first operand
+        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+            reg1 = allocate_register_with_spilling();
+            emit("li " + reg1 + ", " + src1);
+            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+        } else {
+            reg1 = ensure_in_register(src1);
+            emit_comment("DEBUG: " + src1 + " in " + reg1);
+        }
+        
+        // Handle second operand
+        if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
+            reg2 = allocate_register_with_spilling();
+            emit("li " + reg2 + ", " + src2);
+            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
+        } else {
+            reg2 = ensure_in_register(src2);
+            emit_comment("DEBUG: " + src2 + " in " + reg2);
+        }
+        
+        // Allocate destination register
+        string dest_reg = allocate_register_with_spilling();
+        
+        // Generate comparison (result: 1 if true, 0 if false)
+        emit(set_instr + " " + dest_reg + ", " + reg1 + ", " + reg2);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
+        
+        emit_comment("DEBUG: " + dest + " = comparison result in " + dest_reg + " (dirty)");
+    }
 }
 
 void MIPSGenerator::translate_jump(TACInstruction* instr) {
-    // Stub
+    // Unconditional jump: goto label
+    if (instr->flag == 1) {
+        string target_label = instr->result->value;
+        emit_comment("Unconditional jump to I" + target_label);
+        emit("j I" + target_label);
+    }
 }
 
 void MIPSGenerator::translate_call(TACInstruction* instr) {

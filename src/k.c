@@ -78,7 +78,7 @@ int main(int m,int n){
     int p;
     int q;
     //static int s;
-    p = m+n;
+    p = m<n;
     return p;
 }
 
