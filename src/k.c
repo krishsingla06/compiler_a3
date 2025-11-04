@@ -76,20 +76,23 @@
 
 int foo(int x,int y){
     int p;
-    int q;
-    p=1;
-    q=2;
-    return p+q+x+y;
+    p = !(x);
+    return 0;
 }
 
-int main(int m,int n){
-    int p;
-    int q;
-    //static int s;
-    p = m+n;
-    q = m-n;
-    return foo(p,q);
+int main(){
+    foo(5,10);
 }
+
+
+// int main(int m,int n){
+//     int p;
+//     int q;
+//     //static int s;
+//     p = m+n;
+//     q = m-n;
+//     return foo(p,q);
+// }
 
 // int main() {
 //     int a = 1;

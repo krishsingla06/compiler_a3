@@ -2,23 +2,13 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: foo (foo_i_i)
-|   Return type: int
-|   Parameters: int int 
-|   Stack Frame:
-|     - Parameter space: 8 bytes
-|     - Local var space: 8 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 24 bytes
-|   Declared at line: 77
-+-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 4 bytes
+|     - Local var space: 44 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 12 bytes
-|   Declared at line: 83
+|     - Total frame size: 52 bytes
+|   Declared at line: 2
 +-----------------------------------------------------------------------------------------+

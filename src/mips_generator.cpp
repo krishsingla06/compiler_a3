@@ -308,6 +308,14 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
              instr->op.type == TAC_OPERATOR_GE) {
         translate_comparison(instr);
     }
+    else if (instr->op.type == TAC_OPERATOR_BIT_AND ||
+             instr->op.type == TAC_OPERATOR_BIT_OR ||
+             instr->op.type == TAC_OPERATOR_BIT_XOR ||
+             instr->op.type == TAC_OPERATOR_LEFT_SHIFT ||
+             instr->op.type == TAC_OPERATOR_RIGHT_SHIFT ||
+             instr->op.type == TAC_OPERATOR_BIT_NOT) {
+        translate_bitwise(instr);
+    }
     else if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
         emit_label(instr->result->value);
         emit_comment("Function: " + instr->result->value);
@@ -484,6 +492,7 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
     
     string src1 = instr->arg1->value;
     string src2 = instr->arg2->value;
+
     
     if (instr->flag == 2) {
         // Conditional branch: if arg1 op arg2 goto label
@@ -491,6 +500,7 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
         
         string op_name;
         string branch_instr;
+
         
         switch (instr->op.type) {
             case TAC_OPERATOR_EQ:
@@ -521,6 +531,37 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
                 op_name = "??";
                 branch_instr = "beq";
                 break;
+        }
+
+        // if src2 is empty then it is a unary comparison (e.g., if arg1 != 0)
+
+        if(src2.empty()) {
+            // Unary comparison against zero
+            emit_comment("if " + src1 + " " + op_name + " 0 goto I" + target_label);
+            
+            // Get operand into register
+            string reg1;
+            
+            if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+                reg1 = allocate_register_with_spilling();
+                emit("li " + reg1 + ", " + src1);
+                emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+            } else {
+                reg1 = ensure_in_register(src1);
+                emit_comment("DEBUG: " + src1 + " in " + reg1);
+            }
+            
+            // Emit branch instruction against zero
+            if (instr->op.type == TAC_OPERATOR_NE) {
+                emit("bne " + reg1 + ", $zero, I" + target_label);
+            } else if (instr->op.type == TAC_OPERATOR_EQ) {
+                emit("beq " + reg1 + ", $zero, I" + target_label);
+            } else {
+                // For other comparisons, treat as not equal to zero
+                emit("bne " + reg1 + ", $zero, I" + target_label);
+            }
+            emit_comment("Branch to I" + target_label + " if condition true");
+            return;
         }
         
         emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label);
@@ -628,6 +669,168 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
         
         emit_comment("DEBUG: " + dest + " = comparison result in " + dest_reg + " (dirty)");
     }
+}
+
+void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
+    // Bitwise operations: result = arg1 op arg2
+    // Handles: &, |, ^, <<, >>, ~ (unary)
+    
+    if (!instr->result) return;
+    
+    string dest = instr->result->value;
+    
+    // Check if it's unary bitwise NOT
+    if (instr->op.type == TAC_OPERATOR_BIT_NOT) {
+        // Unary: result = ~arg1
+        if (!instr->arg1) return;
+        
+        string src = instr->arg1->value;
+        emit_comment(dest + " = ~" + src);
+        
+        // Get source into register
+        string src_reg;
+        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+            src_reg = allocate_register_with_spilling();
+            emit("li " + src_reg + ", " + src);
+            emit_comment("DEBUG: Loaded constant " + src + " into " + src_reg);
+        } else {
+            src_reg = ensure_in_register(src);
+            emit_comment("DEBUG: " + src + " in " + src_reg);
+        }
+        
+        // Allocate destination register
+        string dest_reg = allocate_register_with_spilling();
+        
+        // MIPS bitwise NOT: nor with $zero (since ~x = x NOR 0)
+        emit("nor " + dest_reg + ", " + src_reg + ", $zero");
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
+        
+        emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
+        return;
+    }
+    
+    // Binary bitwise operations
+    if (!instr->arg1 || !instr->arg2) return;
+    
+    string src1 = instr->arg1->value;
+    string src2 = instr->arg2->value;
+    
+    string op_name;
+    string mips_instr;
+    
+    switch (instr->op.type) {
+        case TAC_OPERATOR_BIT_AND:
+            op_name = "&";
+            mips_instr = "and";
+            break;
+        case TAC_OPERATOR_BIT_OR:
+            op_name = "|";
+            mips_instr = "or";
+            break;
+        case TAC_OPERATOR_BIT_XOR:
+            op_name = "^";
+            mips_instr = "xor";
+            break;
+        case TAC_OPERATOR_LEFT_SHIFT:
+            op_name = "<<";
+            mips_instr = "sll";  // Shift left logical
+            break;
+        case TAC_OPERATOR_RIGHT_SHIFT:
+            op_name = ">>";
+            mips_instr = "srl";  // Shift right logical (unsigned)
+            break;
+        default:
+            op_name = "??";
+            mips_instr = "add";
+            break;
+    }
+    
+    emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
+    
+    // Get first operand into register
+    string reg1;
+    if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+        reg1 = allocate_register_with_spilling();
+        emit("li " + reg1 + ", " + src1);
+        emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+    } else {
+        // Check if it's a numeric literal (workaround for parser)
+        bool is_numeric = !src1.empty() && (isdigit(src1[0]) || src1[0] == '-');
+        if (is_numeric) {
+            reg1 = allocate_register_with_spilling();
+            emit("li " + reg1 + ", " + src1);
+            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+        } else {
+            reg1 = ensure_in_register(src1);
+            emit_comment("DEBUG: " + src1 + " in " + reg1);
+        }
+    }
+    
+    // Handle second operand
+    // For shifts, if arg2 is constant, we can use immediate shift instructions
+    if ((instr->op.type == TAC_OPERATOR_LEFT_SHIFT || 
+         instr->op.type == TAC_OPERATOR_RIGHT_SHIFT) &&
+        (instr->arg2->type == TAC_OPERAND_CONSTANT || isdigit(src2[0]))) {
+        // Shift with immediate value
+        string dest_reg = allocate_register_with_spilling();
+        
+        // sll/srl dest, src, shamt (shamt is immediate 0-31)
+        emit(mips_instr + " " + dest_reg + ", " + reg1 + ", " + src2);
+        emit_comment("DEBUG: Shift by constant " + src2);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
+        
+        emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
+        return;
+    }
+    
+    // Get second operand into register
+    string reg2;
+    if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
+        reg2 = allocate_register_with_spilling();
+        emit("li " + reg2 + ", " + src2);
+        emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
+    } else {
+        // Check if it's a numeric literal
+        bool is_numeric = !src2.empty() && (isdigit(src2[0]) || src2[0] == '-');
+        if (is_numeric) {
+            reg2 = allocate_register_with_spilling();
+            emit("li " + reg2 + ", " + src2);
+            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
+        } else {
+            reg2 = ensure_in_register(src2);
+            emit_comment("DEBUG: " + src2 + " in " + reg2);
+        }
+    }
+    
+    // Allocate destination register
+    string dest_reg = allocate_register_with_spilling();
+    
+    // Generate instruction
+    if (instr->op.type == TAC_OPERATOR_LEFT_SHIFT || 
+        instr->op.type == TAC_OPERATOR_RIGHT_SHIFT) {
+        // Variable shift: sllv/srlv (shift left/right logical variable)
+        mips_instr = (instr->op.type == TAC_OPERATOR_LEFT_SHIFT) ? "sllv" : "srlv";
+        emit(mips_instr + " " + dest_reg + ", " + reg1 + ", " + reg2);
+        emit_comment("DEBUG: Variable shift");
+    } else {
+        // and, or, xor
+        emit(mips_instr + " " + dest_reg + ", " + reg1 + ", " + reg2);
+    }
+    
+    // Update descriptors
+    reg_desc.add_var_to_reg(dest_reg, dest);
+    storage_desc.set_location(dest, dest_reg);
+    reg_allocator.mark_dirty(dest_reg);
+    
+    emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
 }
 
 void MIPSGenerator::translate_jump(TACInstruction* instr) {

@@ -61,6 +61,7 @@ private:
     void translate_assignment(TACInstruction* instr);
     void translate_arithmetic(TACInstruction* instr);
     void translate_comparison(TACInstruction* instr);
+    void translate_bitwise(TACInstruction* instr);
     void translate_jump(TACInstruction* instr);
     void translate_call(TACInstruction* instr);
     void translate_return(TACInstruction* instr);

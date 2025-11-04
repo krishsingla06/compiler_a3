@@ -7,79 +7,60 @@
 
 I1:
 foo_i_i:
-    addiu $sp, $sp, -44
-    sw $ra, 40($sp)
-    sw $fp, 36($sp)
-    addiu $fp, $sp, 36
+    addiu $sp, $sp, -32
+    sw $ra, 28($sp)
+    sw $fp, 24($sp)
+    addiu $fp, $sp, 24
 
 
 I2:
-    li $t0, 1
+    lw $t0, 8($fp)
+    bne $t0, $zero, I4
 
 I3:
-    li $t1, 2
+    j I6
 
 I4:
-    add $t2, $t0, $t1
+    li $t1, 0
 
 I5:
-    lw $t3, 8($fp)
-    add $t4, $t2, $t3
+    sw $t1, -8($fp)
+    j I7
 
 I6:
-    lw $t5, 12($fp)
-    add $t6, $t4, $t5
+    li $t2, 1
 
 I7:
-    sw $t0, -4($fp)
-    sw $t1, -8($fp)
-    sw $t2, -12($fp)
-    sw $t4, -16($fp)
-    sw $t6, -20($fp)
 
 I8:
+    sw $t2, -8($fp)
+    sw $t2, -4($fp)
+
+I9:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
-    addiu $sp, $sp, 44
+    addiu $sp, $sp, 32
     jr $ra
 
-I9:
-main_i_i:
-    addiu $sp, $sp, -44
-    sw $ra, 40($sp)
-    sw $fp, 36($sp)
-    addiu $fp, $sp, 36
-
-
 I10:
-    lw $t7, 8($fp)
-    lw $t8, 12($fp)
-    add $t9, $t7, $t8
+main:
+    addiu $sp, $sp, -20
+    sw $ra, 16($sp)
+    sw $fp, 12($sp)
+    addiu $fp, $sp, 12
+
 
 I11:
 
 I12:
-    sub $t0, $t7, $t8
 
 I13:
 
 I14:
-
-I15:
-
-I16:
-    sw $t0, -16($fp)
-    sw $t0, -8($fp)
-    sw $t9, -12($fp)
-    sw $t9, -4($fp)
-
-I17:
-
-I18:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
-    addiu $sp, $sp, 44
+    addiu $sp, $sp, 20
     jr $ra
 
