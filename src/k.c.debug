@@ -78,7 +78,6 @@ No enums defined.
 
 Generating MIPS assembly code...
 Total TAC instructions collected: 14
-Getting offset for variable: v_x_foo_i_i_s2
 Getting offset for variable: #t1
 Getting offset for variable: #t1
 Getting offset for variable: v_p_foo_i_i_s2

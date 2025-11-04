@@ -6742,6 +6742,12 @@ void insert_current_function_parameters() {
     if (!current_function_mangled_name.empty()) {
         auto it = function_table.find(current_function_mangled_name);
         if (it != function_table.end()) {
+            // set parameter list as current_function_parameters
+            it->second.parameters.clear();
+            for (const auto& param : current_function_parameters) {
+                it->second.parameters.emplace_back(param.first, param.second);
+            }
+            
             it->second.paramSpace = current_param_number * 4;  // Simplified calculation
             cout << "Function " << current_function_mangled_name << " parameter space: " 
                  << it->second.paramSpace << " bytes\n";
@@ -6788,6 +6794,24 @@ int get_function_stack_frame_size(const string& mangledName) {
         return it->second.totalStackFrameSize;
     }
     return 0; // Function not found
+}
+
+int get_function_param_count(const string& mangledName) {
+    auto it = function_table.find(mangledName);
+    if (it != function_table.end()) {
+        return it->second.parameters.size();
+    }
+    return 0; // Function not found
+}
+
+string get_function_param_name(const string& mangledName, int param_index) {
+    auto it = function_table.find(mangledName);
+    if (it != function_table.end()) {
+        if (param_index >= 0 && param_index < it->second.parameters.size()) {
+            return it->second.parameters[param_index].name;
+        }
+    }
+    return ""; // Parameter not found
 }
 
 //----------------------------------------------------------------------------

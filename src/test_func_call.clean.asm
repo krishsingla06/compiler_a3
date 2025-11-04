@@ -7,10 +7,11 @@
 
 I1:
 add_i_i:
-    addiu $sp, $sp, -32
-    sw $ra, 28($sp)
-    sw $fp, 24($sp)
-    addiu $fp, $sp, 24
+    addiu $sp, $sp, -24
+    sw $ra, 20($sp)
+    sw $fp, 16($sp)
+    addiu $fp, $sp, 16
+
 
 
 I2:
@@ -29,15 +30,16 @@ I5:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
-    addiu $sp, $sp, 32
+    addiu $sp, $sp, 24
     jr $ra
 
 I6:
 multiply_i_i_i_i_i:
-    addiu $sp, $sp, -56
-    sw $ra, 52($sp)
-    sw $fp, 48($sp)
-    addiu $fp, $sp, 48
+    addiu $sp, $sp, -48
+    sw $ra, 44($sp)
+    sw $fp, 40($sp)
+    addiu $fp, $sp, 40
+
 
 
 I7:
@@ -71,15 +73,15 @@ I13:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
-    addiu $sp, $sp, 56
+    addiu $sp, $sp, 48
     jr $ra
 
 I14:
 main:
-    addiu $sp, $sp, -36
-    sw $ra, 32($sp)
-    sw $fp, 28($sp)
-    addiu $fp, $sp, 28
+    addiu $sp, $sp, -28
+    sw $ra, 24($sp)
+    sw $fp, 20($sp)
+    addiu $fp, $sp, 20
 
 
 I15:
@@ -87,6 +89,7 @@ I15:
 I16:
 
 I17:
+    addiu $sp, $sp, -16
     li $t0, 10
     sw $t0, 8($sp)
     move $a0, $t0
@@ -94,6 +97,7 @@ I17:
     sw $t0, 12($sp)
     move $a1, $t0
     jal add_i_i
+    addiu $sp, $sp, 16
     move $t0, $v0
 
 I18:
@@ -111,6 +115,7 @@ I23:
 I24:
     sw $t0, -12($fp)
     sw $t0, -4($fp)
+    addiu $sp, $sp, -28
     li $t0, 6
     sw $t0, 8($sp)
     move $a0, $t0
@@ -126,6 +131,7 @@ I24:
     li $t0, 2
     sw $t0, 24($sp)
     jal multiply_i_i_i_i_i
+    addiu $sp, $sp, 28
     move $t0, $v0
 
 I25:
@@ -144,6 +150,6 @@ I28:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
-    addiu $sp, $sp, 36
+    addiu $sp, $sp, 28
     jr $ra
 

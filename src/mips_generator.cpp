@@ -6,6 +6,8 @@
 // Extern declaration to access helper function from parser.y
 extern "C" int get_variable_offset(const char* var_name);
 int get_function_stack_frame_size(const string& mangledName);
+int get_function_param_count(const string& mangledName);
+string get_function_param_name(const string& mangledName, int param_index);
 /*
  * MIPS Stack Frame Layout:
  * 
@@ -264,6 +266,50 @@ int MIPSGenerator::calculate_stack_frame_size(const string& func_name) {
     return frame_size;
 }
 
+void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, int num_params) {
+    emit_comment("=== Initialize Parameter Descriptors ===");
+    
+    // For each parameter:
+    // 1. First 4 params: register ($a0-$a3) AND memory (+8($fp), +12($fp), +16($fp), +20($fp))
+    // 2. Params 5+: only memory (+24($fp), +28($fp), ...)
+    
+    for (int i = 0; i < num_params; i++) {
+        string param_name = get_function_param_name(func_name, i);
+        
+        if (param_name.empty()) {
+            emit_comment("WARNING: Could not get parameter name for param " + to_string(i));
+            continue;
+        }
+        
+        // Mangle the parameter name to match TAC format: v_<name>_<func>_s2
+        string mangled_param = "v_" + param_name + "_" + func_name + "_s2";
+        
+        int stack_offset = 8 + (i * 4);  // +8($fp), +12($fp), +16($fp), ...
+        string memory_loc = "memory:" + to_string(stack_offset) + "($fp)";
+        
+        // Add memory location for ALL parameters
+        storage_desc.add_location(mangled_param, memory_loc);
+        emit_comment("DEBUG: Parameter " + to_string(i) + " (" + mangled_param + ") at " + to_string(stack_offset) + "($fp)");
+        
+        // For first 4 parameters, also add register location
+        if (i < 4) {
+            string arg_reg = "$a" + to_string(i);
+            
+            // Add to register descriptor
+            reg_desc.add_var_to_reg(arg_reg, mangled_param);
+            
+            // Add to storage descriptor
+            storage_desc.add_location(mangled_param, arg_reg);
+            
+            emit_comment("DEBUG: Parameter " + to_string(i) + " (" + mangled_param + ") also in " + arg_reg);
+        }
+    }
+    
+    emit_comment("=== End Parameter Initialization ===");
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+}
+
 void MIPSGenerator::translate_instruction(TACInstruction* instr) {
     if (!instr) return;
     
@@ -323,6 +369,12 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         
         // Generate function prologue
         generate_function_prologue(current_function);
+        
+        // Initialize parameter descriptors (register and memory locations)
+        int num_params = get_function_param_count(current_function);
+        if (num_params > 0) {
+            initialize_parameter_descriptors(current_function, num_params);
+        }
     }
     else if (instr->op.type == TAC_OPERATOR_FUNC_END) {
         // Basic block boundary - spill all dirty registers
@@ -939,7 +991,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     // Calculate space needed for parameters
     // We need space for ALL parameters (even first 4 that go in registers)
     // Each param needs 4 bytes, plus 8 bytes for $ra and old $fp of callee
-    int param_space = (num_args > 0) ? (num_args * 4) : 0;
+    int param_space = (num_args > 0) ? (num_args * 4 + 8) : 8;
     
     // Allocate space for parameters on stack
     if (param_space > 0) {
@@ -967,9 +1019,10 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             emit_comment("DEBUG: Param " + to_string(i) + " (" + param + ") in " + param_reg);
         }
         
-        // Store on stack at +8($sp), +12($sp), +16($sp), ... (after allocation)
+        // Store on stack at 8($sp), 12($sp), 16($sp), ... (after allocation)
         // These will become +8($fp), +12($fp), +16($fp) in the callee
-        int stack_offset = (i * 4);
+        // The +8 accounts for $ra and old $fp that callee will save
+        int stack_offset = 8 + (i * 4);
         emit("sw " + param_reg + ", " + to_string(stack_offset) + "($sp)");
         emit_comment("DEBUG: Stored param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
         

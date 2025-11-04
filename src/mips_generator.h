@@ -58,6 +58,7 @@ private:
     
     void generate_function_prologue(const string& func_name);
     void generate_function_epilogue(const string& func_name);
+    void initialize_parameter_descriptors(const string& func_name, int num_params);
     int calculate_stack_frame_size(const string& func_name);
     
     void translate_instruction(TACInstruction* instr);

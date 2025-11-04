@@ -20,16 +20,23 @@ add_i_i:
     # Function: add_i_i
     # === Function Prologue for add_i_i ===
     # Frame size: 24 bytes
-    addiu $sp, $sp, -32
-    # Allocate 32 bytes (8 for $ra+$fp, 24 for locals/temps)
-    sw $ra, 28($sp)
+    addiu $sp, $sp, -24
+    # Allocate 24 bytes (8 for $ra+$fp, 24 for locals/temps)
+    sw $ra, 20($sp)
     # Save return address at 28($sp)
-    sw $fp, 24($sp)
+    sw $fp, 16($sp)
     # Save old frame pointer at 24($sp)
-    addiu $fp, $sp, 24
+    addiu $fp, $sp, 16
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
+
+    # === Initialize Parameter Descriptors ===
+    # DEBUG: Parameter 0 (v_param0_add_i_i_s2) at 8($fp)
+    # DEBUG: Parameter 0 (v_param0_add_i_i_s2) also in $a0
+    # DEBUG: Parameter 1 (v_param1_add_i_i_s2) at 12($fp)
+    # DEBUG: Parameter 1 (v_param1_add_i_i_s2) also in $a1
+    # === End Parameter Initialization ===
 
 
     # TAC: 2: #t1 = v_a_add_i_i_s2 + v_b_add_i_i_s2
@@ -37,6 +44,8 @@ I2:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
     # --- End Storage Descriptor ---
     # #t1 = v_a_add_i_i_s2 add v_b_add_i_i_s2
     lw $t0, 8($fp)
@@ -59,6 +68,8 @@ I3:
     # #t1: [$t2]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
     # --- End Storage Descriptor ---
     # Assignment: v_sum_add_i_i_s2 = #t1
     # DEBUG: #t1 already in $t2
@@ -75,6 +86,8 @@ I4:
     # #t1: [$t2]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
     # v_sum_add_i_i_s2: [$t2]
     # --- End Storage Descriptor ---
     # Return - spilling dirty registers
@@ -99,6 +112,8 @@ I5:
     # #t1: [$t2, memory:-8($fp)]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # --- End Storage Descriptor ---
     # End of function - spilling dirty registers
@@ -110,8 +125,8 @@ I5:
     # Restore return address
     lw $fp, 0($fp)
     # Restore old frame pointer
-    addiu $sp, $sp, 32
-    # Deallocate frame (32 bytes)
+    addiu $sp, $sp, 24
+    # Deallocate frame (24 bytes)
     jr $ra
     # Return to caller
     # === End of Epilogue ===
@@ -128,22 +143,36 @@ I6:
     # #t1: [$t2, memory:-8($fp)]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # --- End Storage Descriptor ---
 multiply_i_i_i_i_i:
     # Function: multiply_i_i_i_i_i
     # === Function Prologue for multiply_i_i_i_i_i ===
     # Frame size: 48 bytes
-    addiu $sp, $sp, -56
-    # Allocate 56 bytes (8 for $ra+$fp, 48 for locals/temps)
-    sw $ra, 52($sp)
+    addiu $sp, $sp, -48
+    # Allocate 48 bytes (8 for $ra+$fp, 48 for locals/temps)
+    sw $ra, 44($sp)
     # Save return address at 52($sp)
-    sw $fp, 48($sp)
+    sw $fp, 40($sp)
     # Save old frame pointer at 48($sp)
-    addiu $fp, $sp, 48
+    addiu $fp, $sp, 40
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
+
+    # === Initialize Parameter Descriptors ===
+    # DEBUG: Parameter 0 (v_param0_multiply_i_i_i_i_i_s2) at 8($fp)
+    # DEBUG: Parameter 0 (v_param0_multiply_i_i_i_i_i_s2) also in $a0
+    # DEBUG: Parameter 1 (v_param1_multiply_i_i_i_i_i_s2) at 12($fp)
+    # DEBUG: Parameter 1 (v_param1_multiply_i_i_i_i_i_s2) also in $a1
+    # DEBUG: Parameter 2 (v_param2_multiply_i_i_i_i_i_s2) at 16($fp)
+    # DEBUG: Parameter 2 (v_param2_multiply_i_i_i_i_i_s2) also in $a2
+    # DEBUG: Parameter 3 (v_param3_multiply_i_i_i_i_i_s2) at 20($fp)
+    # DEBUG: Parameter 3 (v_param3_multiply_i_i_i_i_i_s2) also in $a3
+    # DEBUG: Parameter 4 (v_param4_multiply_i_i_i_i_i_s2) at 24($fp)
+    # === End Parameter Initialization ===
 
 
     # TAC: 7: #t2 = v_x_multiply_i_i_i_i_i_s2 * v_y_multiply_i_i_i_i_i_s2
@@ -157,6 +186,13 @@ I7:
     # #t1: [$t2, memory:-8($fp)]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # --- End Storage Descriptor ---
     # #t2 = v_x_multiply_i_i_i_i_i_s2 mul v_y_multiply_i_i_i_i_i_s2
@@ -184,6 +220,13 @@ I8:
     # #t2: [$t5]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_x_multiply_i_i_i_i_i_s2: [$t3]
     # v_y_multiply_i_i_i_i_i_s2: [$t4]
@@ -217,6 +260,13 @@ I9:
     # #t3: [$t8]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
     # v_x_multiply_i_i_i_i_i_s2: [$t3]
@@ -250,6 +300,13 @@ I10:
     # #t4: [$t9]
     # v_a_add_i_i_s2: [$t0]
     # v_b_add_i_i_s2: [$t1]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
     # v_x_multiply_i_i_i_i_i_s2: [$t3]
@@ -287,6 +344,13 @@ I11:
     # #t4: [$t9]
     # #t5: [$t1]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
     # v_x_multiply_i_i_i_i_i_s2: [$t3]
@@ -318,6 +382,13 @@ I12:
     # #t4: [$t9]
     # #t5: [$t1]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -363,6 +434,13 @@ I13:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -379,8 +457,8 @@ I13:
     # Restore return address
     lw $fp, 0($fp)
     # Restore old frame pointer
-    addiu $sp, $sp, 56
-    # Deallocate frame (56 bytes)
+    addiu $sp, $sp, 48
+    # Deallocate frame (48 bytes)
     jr $ra
     # Return to caller
     # === End of Epilogue ===
@@ -407,6 +485,13 @@ I14:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -418,13 +503,13 @@ main:
     # Function: main
     # === Function Prologue for main ===
     # Frame size: 28 bytes
-    addiu $sp, $sp, -36
-    # Allocate 36 bytes (8 for $ra+$fp, 28 for locals/temps)
-    sw $ra, 32($sp)
+    addiu $sp, $sp, -28
+    # Allocate 28 bytes (8 for $ra+$fp, 28 for locals/temps)
+    sw $ra, 24($sp)
     # Save return address at 32($sp)
-    sw $fp, 28($sp)
+    sw $fp, 20($sp)
     # Save old frame pointer at 28($sp)
-    addiu $fp, $sp, 28
+    addiu $fp, $sp, 20
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
@@ -451,6 +536,13 @@ I15:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -482,6 +574,13 @@ I16:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -513,6 +612,13 @@ I17:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # v_extra_multiply_i_i_i_i_i_s2: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -523,6 +629,8 @@ I17:
     # Function call - spilling dirty registers
     # DEBUG: No dirty registers to spill
     # Call add_i_i with 2 arguments
+    addiu $sp, $sp, -16
+    # DEBUG: Allocate 16 bytes for 2 parameters + $ra/$fp
     # DEBUG: Spilling register $t0 due to register pressure
     li $t0, 10
     # DEBUG: Loaded constant param 0 = 10
@@ -538,6 +646,8 @@ I17:
     # DEBUG: Copied param 1 to $a1
     jal add_i_i
     # DEBUG: Called add_i_i
+    addiu $sp, $sp, 16
+    # DEBUG: Deallocate 16 bytes of parameter space
     move $t0, $v0
     # DEBUG: Return value from $v0 to $t0
     # DEBUG: #t6 = return value in $t0 (dirty)
@@ -563,6 +673,13 @@ I18:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
     # v_w_multiply_i_i_i_i_i_s2: [$t7]
@@ -595,6 +712,13 @@ I19:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -627,6 +751,13 @@ I20:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -659,6 +790,13 @@ I21:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -691,6 +829,13 @@ I22:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -723,6 +868,13 @@ I23:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -755,6 +907,13 @@ I24:
     # #t4: [$t9, memory:-16($fp)]
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -770,6 +929,8 @@ I24:
     sw $t0, -4($fp)
     # DEBUG: Spilled v_result1_main_s2 from $t0 to memory at -4($fp)
     # Call multiply_i_i_i_i_i with 5 arguments
+    addiu $sp, $sp, -28
+    # DEBUG: Allocate 28 bytes for 5 parameters + $ra/$fp
     # DEBUG: Spilling register $t0 due to register pressure
     li $t0, 6
     # DEBUG: Loaded constant param 0 = 6
@@ -801,6 +962,8 @@ I24:
     # DEBUG: Stored param 4 on stack at 24($sp)
     jal multiply_i_i_i_i_i
     # DEBUG: Called multiply_i_i_i_i_i
+    addiu $sp, $sp, 28
+    # DEBUG: Deallocate 28 bytes of parameter space
     move $t0, $v0
     # DEBUG: Return value from $v0 to $t0
     # DEBUG: #t7 = return value in $t0 (dirty)
@@ -827,6 +990,13 @@ I25:
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [memory:-12($fp)]
     # #t7: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [memory:-4($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
     # v_sum_add_i_i_s2: [$t2, memory:-4($fp)]
@@ -861,6 +1031,13 @@ I26:
     # #t5: [$t1, memory:-20($fp)]
     # #t6: [memory:-12($fp)]
     # #t7: [$t0]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [memory:-4($fp)]
     # v_result2_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [$t1, memory:-4($fp)]
@@ -903,6 +1080,13 @@ I27:
     # #t6: [memory:-12($fp)]
     # #t7: [$t0]
     # #t8: [$t2]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t1, memory:-4($fp)]
     # v_result2_main_s2: [$t0]
     # v_result_multiply_i_i_i_i_i_s2: [memory:-4($fp)]
@@ -948,6 +1132,13 @@ I28:
     # #t6: [memory:-12($fp)]
     # #t7: [$t0, memory:-16($fp)]
     # #t8: [$t2, memory:-20($fp)]
+    # v_param0_add_i_i_s2: [$a0, memory:8($fp)]
+    # v_param0_multiply_i_i_i_i_i_s2: [$a0, memory:8($fp)]
+    # v_param1_add_i_i_s2: [$a1, memory:12($fp)]
+    # v_param1_multiply_i_i_i_i_i_s2: [$a1, memory:12($fp)]
+    # v_param2_multiply_i_i_i_i_i_s2: [$a2, memory:16($fp)]
+    # v_param3_multiply_i_i_i_i_i_s2: [$a3, memory:20($fp)]
+    # v_param4_multiply_i_i_i_i_i_s2: [memory:24($fp)]
     # v_result1_main_s2: [$t1, memory:-4($fp)]
     # v_result2_main_s2: [$t0, memory:-8($fp)]
     # v_result_multiply_i_i_i_i_i_s2: [memory:-4($fp)]
@@ -966,8 +1157,8 @@ I28:
     # Restore return address
     lw $fp, 0($fp)
     # Restore old frame pointer
-    addiu $sp, $sp, 36
-    # Deallocate frame (36 bytes)
+    addiu $sp, $sp, 28
+    # Deallocate frame (28 bytes)
     jr $ra
     # Return to caller
     # === End of Epilogue ===
