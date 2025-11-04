@@ -10,10 +10,10 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 79 [mangled: #t1] [LOCAL, offset: -8]
-  - p (int) declared at line 78 [mangled: v_p_foo_i_i_s2] [LOCAL, offset: -4]
-  - x (int) declared at line 77 [mangled: v_x_foo_i_i_s2] [PARAM #0, offset: 8]
-  - y (int) declared at line 77 [mangled: v_y_foo_i_i_s2] [PARAM #1, offset: 12]
+  - #t1 (int) declared at line 108 [mangled: #t1] [LOCAL, offset: -8]
+  - p (int) declared at line 107 [mangled: v_p_foo_i_i_s2] [LOCAL, offset: -4]
+  - x (int) declared at line 106 [mangled: v_x_foo_i_i_s2] [PARAM #0, offset: 8]
+  - y (int) declared at line 106 [mangled: v_y_foo_i_i_s2] [PARAM #1, offset: 12]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
@@ -37,10 +37,14 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t2 (int) declared at line 84 [mangled: #t2] [LOCAL, offset: -4]
+  - #t2 (int) declared at line 114 [mangled: #t2] [LOCAL, offset: -12]
+  - p (int) declared at line 113 [mangled: v_p_main_s2] [LOCAL, offset: -4]
+  - q (int) declared at line 113 [mangled: v_q_main_s2] [LOCAL, offset: -8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t2 (int)
+  - p (int)
+  - q (int)
 
 
 

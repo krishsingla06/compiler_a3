@@ -50,6 +50,9 @@ private:
     string current_function;
     int current_stack_size;
     
+    // For tracking parameters during function calls
+    vector<string> pending_params;  // Parameters pushed in order (param instructions)
+    
     void generate_data_section();
     void generate_text_section(const vector<TACInstruction*>& tac_instructions);
     

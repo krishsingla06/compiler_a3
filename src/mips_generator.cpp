@@ -11,13 +11,13 @@ int get_function_stack_frame_size(const string& mangledName);
  * 
  *   Higher Addresses
  *   ┌─────────────────────────┐
- *   │  Param 5, 6, 7...       │  +20($fp), +24($fp), ...  (if >4 params)
+ *   │  Param 3, 4, 5...       │  +20($fp), +24($fp), ...  (if >4 params)
  *   ├─────────────────────────┤
- *   │  Param 4                │  +16($fp)
+ *   │  Param 2                │  +16($fp)
  *   ├─────────────────────────┤
- *   │  Param 3                │  +12($fp)
+ *   │  Param 1                │  +12($fp)
  *   ├─────────────────────────┤
- *   │  Param 2                │  +8($fp)
+ *   │  Param  0               │  +8($fp)
  *   ├─────────────────────────┤
  *   │  Return Address ($ra)   │  +4($fp)
  *   ├─────────────────────────┤
@@ -204,22 +204,22 @@ void MIPSGenerator::generate_function_prologue(const string& func_name) {
     
     // Step 1: Allocate space for entire frame (locals + temps + $ra + old $fp)
     // Total space = frame_size + 8 (8 bytes for $ra and old $fp)
-    int total_frame = frame_size + 8;
+    int total_frame = frame_size;
     emit("addiu $sp, $sp, -" + to_string(total_frame));
     emit_comment("Allocate " + to_string(total_frame) + " bytes (8 for $ra+$fp, " + 
                  to_string(frame_size) + " for locals/temps)");
     
     // Step 2: Save return address at offset (frame_size + 4) from new $sp
-    emit("sw $ra, " + to_string(frame_size + 4) + "($sp)");
+    emit("sw $ra, " + to_string(frame_size - 4) + "($sp)");
     emit_comment("Save return address at " + to_string(frame_size + 4) + "($sp)");
     
     // Step 3: Save old frame pointer at offset (frame_size) from new $sp
-    emit("sw $fp, " + to_string(frame_size) + "($sp)");
+    emit("sw $fp, " + to_string(frame_size - 8) + "($sp)");
     emit_comment("Save old frame pointer at " + to_string(frame_size) + "($sp)");
     
     // Step 4: Set new frame pointer
     // $fp should point to where we saved old $fp
-    emit("addiu $fp, $sp, " + to_string(frame_size));
+    emit("addiu $fp, $sp, " + to_string(frame_size - 8));
     emit_comment("Set new frame pointer (points to saved old $fp)");
     
     emit_comment("=== End of Prologue ===");
@@ -232,7 +232,7 @@ void MIPSGenerator::generate_function_epilogue(const string& func_name) {
     emit_comment("=== Function Epilogue for " + func_name + " ===");
     
     int frame_size = calculate_stack_frame_size(func_name);
-    int total_frame = frame_size + 8;
+    int total_frame = frame_size;
     
     // Step 1: Move $sp back to where $fp is (where old $fp is saved)
     emit("move $sp, $fp");
@@ -334,6 +334,10 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         
         emit_comment("End of function: " + current_function);
     }
+    else if (instr->op.type == TAC_OPERATOR_PARAM) {
+        // Parameter setup for function call
+        translate_param(instr);
+    }
     else if (instr->op.type == TAC_OPERATOR_CALL) {
         // Function call - spill dirty registers
         emit_comment("Function call - spilling dirty registers");
@@ -402,13 +406,42 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     
     // Source is a variable - check if it's already in a register
     if (storage_desc.is_in_register(src)) {
-        // Source is in a register - just update descriptors!
+        // Source is in a register
         string src_reg = storage_desc.get_register(src);
         emit_comment("DEBUG: " + src + " already in " + src_reg);
         
-        // Add dest to the same register (both variables share the register now)
+        // Check if dest is already in some register - if so, we need to invalidate that register
+        if (storage_desc.is_in_register(dest)) {
+            string old_dest_reg = storage_desc.get_register(dest);
+            
+            // If dest is in a different register, we need to handle it
+            if (old_dest_reg != src_reg) {
+                // Get all variables in the old dest register
+                set<string> vars_in_old_reg = reg_desc.get_vars_in_reg(old_dest_reg);
+                
+                emit_comment("DEBUG: " + dest + " was in " + old_dest_reg + ", spilling all variables in that register");
+                
+                // Spill all variables in that register if dirty
+                if (reg_allocator.is_dirty(old_dest_reg)) {
+                    for (const string& var : vars_in_old_reg) {
+                        int offset = get_offset(var);
+                        emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
+                        emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
+                        storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                    }
+                }
+                
+                // Remove all variables from the old register's descriptors
+                for (const string& var : vars_in_old_reg) {
+                    storage_desc.remove_location(var, old_dest_reg);
+                }
+                reg_desc.clear_reg(old_dest_reg);
+            }
+        }
+        
+        // Now assign dest to src_reg
         reg_desc.add_var_to_reg(src_reg, dest);
-        storage_desc.add_location(dest, src_reg);
+        storage_desc.set_location(dest, src_reg);  // Use set_location to replace old location
         
         // Mark register as dirty if dest is different from src
         if (dest != src) {
@@ -419,9 +452,37 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         // Source is not in register - need to load it first
         string src_reg = ensure_in_register(src);
         
+        // Check if dest is already in some register - if so, invalidate that register
+        if (storage_desc.is_in_register(dest)) {
+            string old_dest_reg = storage_desc.get_register(dest);
+            
+            if (old_dest_reg != src_reg) {
+                // Get all variables in the old dest register
+                set<string> vars_in_old_reg = reg_desc.get_vars_in_reg(old_dest_reg);
+                
+                emit_comment("DEBUG: " + dest + " was in " + old_dest_reg + ", spilling all variables in that register");
+                
+                // Spill all variables in that register if dirty
+                if (reg_allocator.is_dirty(old_dest_reg)) {
+                    for (const string& var : vars_in_old_reg) {
+                        int offset = get_offset(var);
+                        emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
+                        emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
+                        storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                    }
+                }
+                
+                // Remove all variables from the old register's descriptors
+                for (const string& var : vars_in_old_reg) {
+                    storage_desc.remove_location(var, old_dest_reg);
+                }
+                reg_desc.clear_reg(old_dest_reg);
+            }
+        }
+        
         // Update descriptors
         reg_desc.add_var_to_reg(src_reg, dest);
-        storage_desc.add_location(dest, src_reg);
+        storage_desc.set_location(dest, src_reg);  // Use set_location to replace old location
         reg_allocator.mark_dirty(src_reg);
         
         emit_comment("DEBUG: " + dest + " loaded in " + src_reg + " (dirty)");
@@ -842,16 +903,144 @@ void MIPSGenerator::translate_jump(TACInstruction* instr) {
     }
 }
 
+void MIPSGenerator::translate_param(TACInstruction* instr) {
+    // TAC: param <value>
+    // Collect parameters in order (they come in reverse order in TAC)
+    if (!instr->result) return;
+    
+    string param = instr->result->value;
+    emit_comment("param " + param);
+    
+    // Add to pending params list (params come in reverse order in TAC)
+    pending_params.push_back(param);
+    emit_comment("DEBUG: Collected parameter #" + to_string(pending_params.size()) + ": " + param);
+}
+
 void MIPSGenerator::translate_call(TACInstruction* instr) {
-    // Stub
+    // TAC: result = call function_name, num_args
+    if (!instr->arg1) return;
+    
+    string func_name = instr->arg1->value;
+    int num_args = 0;
+    if (instr->arg2) {
+        num_args = stoi(instr->arg2->value);
+    }
+    
+    emit_comment("Call " + func_name + " with " + to_string(num_args) + " arguments");
+    
+    // Process parameters (they're in pending_params in reverse order)
+    // Reverse them to get correct order: first param at index 0
+    vector<string> params;
+    for (int i = pending_params.size() - 1; i >= 0; i--) {
+        params.push_back(pending_params[i]);
+    }
+    pending_params.clear();
+    
+    // Calculate space needed for parameters
+    // We need space for ALL parameters (even first 4 that go in registers)
+    // Each param needs 4 bytes, plus 8 bytes for $ra and old $fp of callee
+    int param_space = (num_args > 0) ? (num_args * 4) : 0;
+    
+    // Allocate space for parameters on stack
+    if (param_space > 0) {
+        emit("addiu $sp, $sp, -" + to_string(param_space));
+        emit_comment("DEBUG: Allocate " + to_string(param_space) + " bytes for " + to_string(num_args) + " parameters + $ra/$fp");
+    }
+    
+    // Pass first 4 params in $a0-$a3 AND store on stack
+    // Params 5+ only on stack
+    for (int i = 0; i < num_args; i++) {
+        string param = params[i];
+        
+        // Get parameter value into a register
+        string param_reg;
+        
+        // Check if it's a constant
+        bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
+        
+        if (is_constant) {
+            param_reg = allocate_register_with_spilling();
+            emit("li " + param_reg + ", " + param);
+            emit_comment("DEBUG: Loaded constant param " + to_string(i) + " = " + param);
+        } else {
+            param_reg = ensure_in_register(param);
+            emit_comment("DEBUG: Param " + to_string(i) + " (" + param + ") in " + param_reg);
+        }
+        
+        // Store on stack at +8($sp), +12($sp), +16($sp), ... (after allocation)
+        // These will become +8($fp), +12($fp), +16($fp) in the callee
+        int stack_offset = (i * 4);
+        emit("sw " + param_reg + ", " + to_string(stack_offset) + "($sp)");
+        emit_comment("DEBUG: Stored param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
+        
+        // Also copy to $a0-$a3 for first 4 params
+        if (i < 4) {
+            string arg_reg = "$a" + to_string(i);
+            if (param_reg != arg_reg) {
+                emit("move " + arg_reg + ", " + param_reg);
+                emit_comment("DEBUG: Copied param " + to_string(i) + " to " + arg_reg);
+            }
+        }
+    }
+    
+    // Call the function
+    emit("jal " + func_name);
+    emit_comment("DEBUG: Called " + func_name);
+    
+    // Deallocate parameter space after call returns
+    if (param_space > 0) {
+        emit("addiu $sp, $sp, " + to_string(param_space));
+        emit_comment("DEBUG: Deallocate " + to_string(param_space) + " bytes of parameter space");
+    }
+    
+    // Get return value from $v0 (if there's a result)
+    if (instr->result) {
+        string dest = instr->result->value;
+        string dest_reg = allocate_register_with_spilling();
+        
+        emit("move " + dest_reg + ", $v0");
+        emit_comment("DEBUG: Return value from $v0 to " + dest_reg);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
+        
+        emit_comment("DEBUG: " + dest + " = return value in " + dest_reg + " (dirty)");
+    }
 }
 
 void MIPSGenerator::translate_return(TACInstruction* instr) {
-    // Stub
-}
-
-void MIPSGenerator::translate_param(TACInstruction* instr) {
-    // Stub
+    // TAC: return <value>
+    
+    if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+        string ret_val = instr->result->value;
+        emit_comment("return " + ret_val);
+        
+        // Get return value into a register
+        string ret_reg;
+        
+        // Check if it's a constant
+        bool is_constant = !ret_val.empty() && (isdigit(ret_val[0]) || ret_val[0] == '-');
+        
+        if (is_constant) {
+            emit("li $v0, " + ret_val);
+            emit_comment("DEBUG: Return constant " + ret_val + " in $v0");
+        } else {
+            ret_reg = ensure_in_register(ret_val);
+            emit_comment("DEBUG: " + ret_val + " in " + ret_reg);
+            
+            // Move to $v0 if not already there
+            if (ret_reg != "$v0") {
+                emit("move $v0, " + ret_reg);
+                emit_comment("DEBUG: Moved return value to $v0");
+            }
+        }
+    } else {
+        emit_comment("return (void)");
+    }
+    
+    // Note: Epilogue will be generated by FUNC_END handler
 }
 
 string MIPSGenerator::get_mips_label(TACOperand* label) {

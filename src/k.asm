@@ -20,13 +20,13 @@ foo_i_i:
     # Function: foo_i_i
     # === Function Prologue for foo_i_i ===
     # Frame size: 24 bytes
-    addiu $sp, $sp, -32
-    # Allocate 32 bytes (8 for $ra+$fp, 24 for locals/temps)
-    sw $ra, 28($sp)
+    addiu $sp, $sp, -24
+    # Allocate 24 bytes (8 for $ra+$fp, 24 for locals/temps)
+    sw $ra, 20($sp)
     # Save return address at 28($sp)
-    sw $fp, 24($sp)
+    sw $fp, 16($sp)
     # Save old frame pointer at 24($sp)
-    addiu $fp, $sp, 24
+    addiu $fp, $sp, 16
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
@@ -136,6 +136,9 @@ I8:
     # DEBUG: Spilled #t1 from $t2 to memory at -8($fp)
     sw $t2, -4($fp)
     # DEBUG: Spilled v_p_foo_i_i_s2 from $t2 to memory at -4($fp)
+    # return 0
+    li $v0, 0
+    # DEBUG: Return constant 0 in $v0
 
     # TAC: 9: end function foo_i_i
 I9:
@@ -158,8 +161,8 @@ I9:
     # Restore return address
     lw $fp, 0($fp)
     # Restore old frame pointer
-    addiu $sp, $sp, 32
-    # Deallocate frame (32 bytes)
+    addiu $sp, $sp, 24
+    # Deallocate frame (24 bytes)
     jr $ra
     # Return to caller
     # === End of Epilogue ===
@@ -180,20 +183,20 @@ I10:
 main:
     # Function: main
     # === Function Prologue for main ===
-    # Frame size: 12 bytes
+    # Frame size: 20 bytes
     addiu $sp, $sp, -20
-    # Allocate 20 bytes (8 for $ra+$fp, 12 for locals/temps)
+    # Allocate 20 bytes (8 for $ra+$fp, 20 for locals/temps)
     sw $ra, 16($sp)
-    # Save return address at 16($sp)
+    # Save return address at 24($sp)
     sw $fp, 12($sp)
-    # Save old frame pointer at 12($sp)
+    # Save old frame pointer at 20($sp)
     addiu $fp, $sp, 12
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
 
-    # TAC: 11: param 5
+    # TAC: 11: param v_p_main_s2
 I11:
     # --- Register Descriptor ---
     # $t0: [v_x_foo_i_i_s2]
@@ -205,9 +208,10 @@ I11:
     # v_p_foo_i_i_s2: [$t2, memory:-4($fp)]
     # v_x_foo_i_i_s2: [$t0]
     # --- End Storage Descriptor ---
-    # TODO: Implement TAC op type 26
+    # param v_p_main_s2
+    # DEBUG: Collected parameter #1: v_p_main_s2
 
-    # TAC: 12: param 10
+    # TAC: 12: param v_q_main_s2
 I12:
     # --- Register Descriptor ---
     # $t0: [v_x_foo_i_i_s2]
@@ -219,7 +223,8 @@ I12:
     # v_p_foo_i_i_s2: [$t2, memory:-4($fp)]
     # v_x_foo_i_i_s2: [$t0]
     # --- End Storage Descriptor ---
-    # TODO: Implement TAC op type 26
+    # param v_q_main_s2
+    # DEBUG: Collected parameter #2: v_q_main_s2
 
     # TAC: 13: #t2 = call foo_i_i, 2
 I13:
@@ -235,6 +240,30 @@ I13:
     # --- End Storage Descriptor ---
     # Function call - spilling dirty registers
     # DEBUG: No dirty registers to spill
+    # Call foo_i_i with 2 arguments
+    addiu $sp, $sp, -8
+    # DEBUG: Allocate 8 bytes for 2 parameters + $ra/$fp
+    lw $t3, -8($fp)
+    # DEBUG: Loaded v_q_main_s2 from memory at -8($fp)
+    # DEBUG: Param 0 (v_q_main_s2) in $t3
+    sw $t3, 0($sp)
+    # DEBUG: Stored param 0 on stack at 0($sp)
+    move $a0, $t3
+    # DEBUG: Copied param 0 to $a0
+    lw $t4, -4($fp)
+    # DEBUG: Loaded v_p_main_s2 from memory at -4($fp)
+    # DEBUG: Param 1 (v_p_main_s2) in $t4
+    sw $t4, 4($sp)
+    # DEBUG: Stored param 1 on stack at 4($sp)
+    move $a1, $t4
+    # DEBUG: Copied param 1 to $a1
+    jal foo_i_i
+    # DEBUG: Called foo_i_i
+    addiu $sp, $sp, 8
+    # DEBUG: Deallocate 8 bytes of parameter space
+    move $t5, $v0
+    # DEBUG: Return value from $v0 to $t5
+    # DEBUG: #t2 = return value in $t5 (dirty)
 
     # TAC: 14: end function main
 I14:
@@ -242,14 +271,22 @@ I14:
     # $t0: [v_x_foo_i_i_s2]
     # $t1: [#t1]
     # $t2: [#t1, v_p_foo_i_i_s2]
+    # $t3: [v_q_main_s2]
+    # $t4: [v_p_main_s2]
+    # $t5: [#t2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [$t2, memory:-8($fp)]
+    # #t2: [$t5]
     # v_p_foo_i_i_s2: [$t2, memory:-4($fp)]
+    # v_p_main_s2: [$t4]
+    # v_q_main_s2: [$t3]
     # v_x_foo_i_i_s2: [$t0]
     # --- End Storage Descriptor ---
     # End of function - spilling dirty registers
-    # DEBUG: No dirty registers to spill
+    # DEBUG: Spilling 1 dirty registers
+    sw $t5, -12($fp)
+    # DEBUG: Spilled #t2 from $t5 to memory at -12($fp)
     # === Function Epilogue for main ===
     move $sp, $fp
     # Move $sp to $fp (where old $fp is saved)

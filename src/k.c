@@ -74,15 +74,6 @@
 // int x=1;
 // int y=2;
 
-int foo(int x,int y){
-    int p;
-    p = !(x);
-    return 0;
-}
-
-int main(){
-    foo(5,10);
-}
 
 
 // int main(int m,int n){
@@ -109,3 +100,30 @@ int main(){
     
 //     return result;
 // }
+
+
+// ------------------------------------
+int foo(int x,int y){
+    int p;
+    p = !(x);
+    return 0;
+}
+
+int main(){
+    int p,q;
+    foo(p,q);
+}
+// ------------------------------------
+
+
+// ------------------------------------
+// Important: Test register descriptor consistency after assignments
+// Correct output, tested.
+// int main(){
+//     int x;
+//     int y;
+//     x=1;
+//     y=x;
+//     y++;
+// }
+
