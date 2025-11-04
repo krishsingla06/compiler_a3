@@ -2,7 +2,7 @@
     #   MIPS Assembly Code Generation
     # ======================================
 
-    # Total TAC instructions: 27
+    # Total TAC instructions: 5
 
 .data
     # Global variables
@@ -10,917 +10,102 @@
 .text
 .globl main
 
-    # TAC: 1: function begin : main
+    # TAC: 1: function begin : main_i_i
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # --- End Storage Descriptor ---
-main:
-    # Function: main
+main_i_i:
+    # Function: main_i_i
+    # === Function Prologue for main_i_i ===
+    # Frame size: 28 bytes
+    addiu $sp, $sp, -36
+    # Allocate 36 bytes (8 for $ra+$fp, 28 for locals/temps)
+    sw $ra, 32($sp)
+    # Save return address at 32($sp)
+    sw $fp, 28($sp)
+    # Save old frame pointer at 28($sp)
+    addiu $fp, $sp, 28
+    # Set new frame pointer (points to saved old $fp)
+    # === End of Prologue ===
+    # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
-    # TAC: 2: v_a_main_s2 = 1
+
+    # TAC: 2: #t1 = v_m_main_i_i_s2 + v_n_main_i_i_s2
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # --- End Storage Descriptor ---
-    # Assignment: v_a_main_s2 = 1
-    li $t0, 1
-    # DEBUG: v_a_main_s2 = constant 1 loaded in $t0 (dirty)
+    # #t1 = v_m_main_i_i_s2 add v_n_main_i_i_s2
+    lw $t0, 8($fp)
+    # DEBUG: Loaded v_m_main_i_i_s2 from memory at 8($fp)
+    # DEBUG: v_m_main_i_i_s2 in $t0
+    lw $t1, 12($fp)
+    # DEBUG: Loaded v_n_main_i_i_s2 from memory at 12($fp)
+    # DEBUG: v_n_main_i_i_s2 in $t1
+    add $t2, $t0, $t1
+    # DEBUG: #t1 = result in $t2 (dirty)
 
-    # TAC: 3: v_b_main_s2 = 2
+    # TAC: 3: v_p_main_i_i_s2 = #t1
     # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
+    # $t0: [v_m_main_i_i_s2]
+    # $t1: [v_n_main_i_i_s2]
+    # $t2: [#t1] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
+    # #t1: [$t2]
+    # v_m_main_i_i_s2: [$t0]
+    # v_n_main_i_i_s2: [$t1]
     # --- End Storage Descriptor ---
-    # Assignment: v_b_main_s2 = 2
-    li $t1, 2
-    # DEBUG: v_b_main_s2 = constant 2 loaded in $t1 (dirty)
+    # Assignment: v_p_main_i_i_s2 = #t1
+    # DEBUG: #t1 already in $t2
+    # DEBUG: v_p_main_i_i_s2 now also in $t2 (dirty)
 
-    # TAC: 4: v_c_main_s2 = 3
+    # TAC: 4: return v_p_main_i_i_s2
     # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
+    # $t0: [v_m_main_i_i_s2]
+    # $t1: [v_n_main_i_i_s2]
+    # $t2: [#t1, v_p_main_i_i_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # Assignment: v_c_main_s2 = 3
-    li $t2, 3
-    # DEBUG: v_c_main_s2 = constant 3 loaded in $t2 (dirty)
-
-    # TAC: 5: v_d_main_s2 = 4
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Assignment: v_d_main_s2 = 4
-    li $t3, 4
-    # DEBUG: v_d_main_s2 = constant 4 loaded in $t3 (dirty)
-
-    # TAC: 6: v_e_main_s2 = 5
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # --- End Storage Descriptor ---
-    # Assignment: v_e_main_s2 = 5
-    li $t4, 5
-    # DEBUG: v_e_main_s2 = constant 5 loaded in $t4 (dirty)
-
-    # TAC: 7: v_f_main_s2 = 6
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # --- End Storage Descriptor ---
-    # Assignment: v_f_main_s2 = 6
-    li $t5, 6
-    # DEBUG: v_f_main_s2 = constant 6 loaded in $t5 (dirty)
-
-    # TAC: 8: v_g_main_s2 = 7
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # --- End Storage Descriptor ---
-    # Assignment: v_g_main_s2 = 7
-    li $t6, 7
-    # DEBUG: v_g_main_s2 = constant 7 loaded in $t6 (dirty)
-
-    # TAC: 9: v_h_main_s2 = 8
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # --- End Storage Descriptor ---
-    # Assignment: v_h_main_s2 = 8
-    li $t7, 8
-    # DEBUG: v_h_main_s2 = constant 8 loaded in $t7 (dirty)
-
-    # TAC: 10: v_i_main_s2 = 9
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # --- End Storage Descriptor ---
-    # Assignment: v_i_main_s2 = 9
-    li $t8, 9
-    # DEBUG: v_i_main_s2 = constant 9 loaded in $t8 (dirty)
-
-    # TAC: 11: v_j_main_s2 = 10
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # v_i_main_s2: [$t8]
-    # --- End Storage Descriptor ---
-    # Assignment: v_j_main_s2 = 10
-    li $t9, 10
-    # DEBUG: v_j_main_s2 = constant 10 loaded in $t9 (dirty)
-
-    # TAC: 12: v_k_main_s2 = 11
-    # --- Register Descriptor ---
-    # $t0: [v_a_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # v_i_main_s2: [$t8]
-    # v_j_main_s2: [$t9]
-    # --- End Storage Descriptor ---
-    # Assignment: v_k_main_s2 = 11
-    # DEBUG: Spilling register $t0 due to register pressure
-    sw $t0, -4($fp)
-    # DEBUG: Spilled v_a_main_s2 from $t0 to memory at -4($fp)
-    li $t0, 11
-    # DEBUG: v_k_main_s2 = constant 11 loaded in $t0 (dirty)
-
-    # TAC: 13: v_l_main_s2 = 12
-    # --- Register Descriptor ---
-    # $t0: [v_k_main_s2] (dirty)
-    # $t1: [v_b_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [$t1]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # v_i_main_s2: [$t8]
-    # v_j_main_s2: [$t9]
-    # v_k_main_s2: [$t0]
-    # --- End Storage Descriptor ---
-    # Assignment: v_l_main_s2 = 12
-    # DEBUG: Spilling register $t1 due to register pressure
-    sw $t1, -8($fp)
-    # DEBUG: Spilled v_b_main_s2 from $t1 to memory at -8($fp)
-    li $t1, 12
-    # DEBUG: v_l_main_s2 = constant 12 loaded in $t1 (dirty)
-
-    # TAC: 14: #t1 = v_a_main_s2 + v_b_main_s2
-    # --- Register Descriptor ---
-    # $t0: [v_k_main_s2] (dirty)
-    # $t1: [v_l_main_s2] (dirty)
-    # $t2: [v_c_main_s2] (dirty)
-    # $t3: [v_d_main_s2] (dirty)
-    # $t4: [v_e_main_s2] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [$t2]
-    # v_d_main_s2: [$t3]
-    # v_e_main_s2: [$t4]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # v_i_main_s2: [$t8]
-    # v_j_main_s2: [$t9]
-    # v_k_main_s2: [$t0]
-    # v_l_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # #t1 = v_a_main_s2 add v_b_main_s2
-    # DEBUG: Spilling register $t2 due to register pressure
-    sw $t2, -12($fp)
-    # DEBUG: Spilled v_c_main_s2 from $t2 to memory at -12($fp)
-    lw $t2, -4($fp)
-    # DEBUG: Loaded v_a_main_s2 from memory at -4($fp)
-    # DEBUG: v_a_main_s2 in $t2
-    # DEBUG: Spilling register $t3 due to register pressure
-    sw $t3, -16($fp)
-    # DEBUG: Spilled v_d_main_s2 from $t3 to memory at -16($fp)
-    lw $t3, -8($fp)
-    # DEBUG: Loaded v_b_main_s2 from memory at -8($fp)
-    # DEBUG: v_b_main_s2 in $t3
-    # DEBUG: Spilling register $t4 due to register pressure
-    sw $t4, -20($fp)
-    # DEBUG: Spilled v_e_main_s2 from $t4 to memory at -20($fp)
-    add $t4, $t2, $t3
-    # DEBUG: #t1 = result in $t4 (dirty)
-
-    # TAC: 15: #t2 = v_c_main_s2 + v_d_main_s2
-    # --- Register Descriptor ---
-    # $t0: [v_k_main_s2] (dirty)
-    # $t1: [v_l_main_s2] (dirty)
-    # $t2: [v_a_main_s2] (dirty)
-    # $t3: [v_b_main_s2] (dirty)
-    # $t4: [#t1] (dirty)
-    # $t5: [v_f_main_s2] (dirty)
-    # $t6: [v_g_main_s2] (dirty)
-    # $t7: [v_h_main_s2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t4]
-    # v_a_main_s2: [$t2, memory:-4($fp)]
-    # v_b_main_s2: [$t3, memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [$t5]
-    # v_g_main_s2: [$t6]
-    # v_h_main_s2: [$t7]
-    # v_i_main_s2: [$t8]
-    # v_j_main_s2: [$t9]
-    # v_k_main_s2: [$t0]
-    # v_l_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # #t2 = v_c_main_s2 add v_d_main_s2
-    # DEBUG: Spilling register $t5 due to register pressure
-    sw $t5, -24($fp)
-    # DEBUG: Spilled v_f_main_s2 from $t5 to memory at -24($fp)
-    lw $t5, -12($fp)
-    # DEBUG: Loaded v_c_main_s2 from memory at -12($fp)
-    # DEBUG: v_c_main_s2 in $t5
-    # DEBUG: Spilling register $t6 due to register pressure
-    sw $t6, -28($fp)
-    # DEBUG: Spilled v_g_main_s2 from $t6 to memory at -28($fp)
-    lw $t6, -16($fp)
-    # DEBUG: Loaded v_d_main_s2 from memory at -16($fp)
-    # DEBUG: v_d_main_s2 in $t6
-    # DEBUG: Spilling register $t7 due to register pressure
-    sw $t7, -32($fp)
-    # DEBUG: Spilled v_h_main_s2 from $t7 to memory at -32($fp)
-    add $t7, $t5, $t6
-    # DEBUG: #t2 = result in $t7 (dirty)
-
-    # TAC: 16: #t3 = #t1 + #t2
-    # --- Register Descriptor ---
-    # $t0: [v_k_main_s2] (dirty)
-    # $t1: [v_l_main_s2] (dirty)
-    # $t2: [v_a_main_s2] (dirty)
-    # $t3: [v_b_main_s2] (dirty)
-    # $t4: [#t1] (dirty)
-    # $t5: [v_c_main_s2] (dirty)
-    # $t6: [v_d_main_s2] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [v_i_main_s2] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t4]
-    # #t2: [$t7]
-    # v_a_main_s2: [$t2, memory:-4($fp)]
-    # v_b_main_s2: [$t3, memory:-8($fp)]
-    # v_c_main_s2: [$t5, memory:-12($fp)]
-    # v_d_main_s2: [$t6, memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [$t8]
-    # v_j_main_s2: [$t9]
-    # v_k_main_s2: [$t0]
-    # v_l_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # #t3 = #t1 add #t2
-    # DEBUG: #t1 in $t4
-    # DEBUG: #t2 in $t7
-    # DEBUG: Spilling register $t8 due to register pressure
-    sw $t8, -36($fp)
-    # DEBUG: Spilled v_i_main_s2 from $t8 to memory at -36($fp)
-    add $t8, $t4, $t7
-    # DEBUG: #t3 = result in $t8 (dirty)
-
-    # TAC: 17: #t4 = v_e_main_s2 + v_f_main_s2
-    # --- Register Descriptor ---
-    # $t0: [v_k_main_s2] (dirty)
-    # $t1: [v_l_main_s2] (dirty)
-    # $t2: [v_a_main_s2] (dirty)
-    # $t3: [v_b_main_s2] (dirty)
-    # $t4: [#t1] (dirty)
-    # $t5: [v_c_main_s2] (dirty)
-    # $t6: [v_d_main_s2] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [#t3] (dirty)
-    # $t9: [v_j_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t4]
-    # #t2: [$t7]
-    # #t3: [$t8]
-    # v_a_main_s2: [$t2, memory:-4($fp)]
-    # v_b_main_s2: [$t3, memory:-8($fp)]
-    # v_c_main_s2: [$t5, memory:-12($fp)]
-    # v_d_main_s2: [$t6, memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [memory:-36($fp)]
-    # v_j_main_s2: [$t9]
-    # v_k_main_s2: [$t0]
-    # v_l_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # #t4 = v_e_main_s2 add v_f_main_s2
-    # DEBUG: Spilling register $t9 due to register pressure
-    sw $t9, -40($fp)
-    # DEBUG: Spilled v_j_main_s2 from $t9 to memory at -40($fp)
-    lw $t9, -20($fp)
-    # DEBUG: Loaded v_e_main_s2 from memory at -20($fp)
-    # DEBUG: v_e_main_s2 in $t9
-    # DEBUG: Spilling register $t0 due to register pressure
-    sw $t0, -44($fp)
-    # DEBUG: Spilled v_k_main_s2 from $t0 to memory at -44($fp)
-    lw $t0, -24($fp)
-    # DEBUG: Loaded v_f_main_s2 from memory at -24($fp)
-    # DEBUG: v_f_main_s2 in $t0
-    # DEBUG: Spilling register $t1 due to register pressure
-    sw $t1, -48($fp)
-    # DEBUG: Spilled v_l_main_s2 from $t1 to memory at -48($fp)
-    add $t1, $t9, $t0
-    # DEBUG: #t4 = result in $t1 (dirty)
-
-    # TAC: 18: #t5 = #t3 + #t4
-    # --- Register Descriptor ---
-    # $t0: [v_f_main_s2] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [v_a_main_s2] (dirty)
-    # $t3: [v_b_main_s2] (dirty)
-    # $t4: [#t1] (dirty)
-    # $t5: [v_c_main_s2] (dirty)
-    # $t6: [v_d_main_s2] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [#t3] (dirty)
-    # $t9: [v_e_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t4]
-    # #t2: [$t7]
-    # #t3: [$t8]
-    # #t4: [$t1]
-    # v_a_main_s2: [$t2, memory:-4($fp)]
-    # v_b_main_s2: [$t3, memory:-8($fp)]
-    # v_c_main_s2: [$t5, memory:-12($fp)]
-    # v_d_main_s2: [$t6, memory:-16($fp)]
-    # v_e_main_s2: [$t9, memory:-20($fp)]
-    # v_f_main_s2: [$t0, memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [memory:-36($fp)]
-    # v_j_main_s2: [memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t5 = #t3 add #t4
-    # DEBUG: #t3 in $t8
-    # DEBUG: #t4 in $t1
-    # DEBUG: Spilling register $t2 due to register pressure
-    sw $t2, -4($fp)
-    # DEBUG: Spilled v_a_main_s2 from $t2 to memory at -4($fp)
-    add $t2, $t8, $t1
-    # DEBUG: #t5 = result in $t2 (dirty)
-
-    # TAC: 19: #t6 = v_g_main_s2 + v_h_main_s2
-    # --- Register Descriptor ---
-    # $t0: [v_f_main_s2] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [#t5] (dirty)
-    # $t3: [v_b_main_s2] (dirty)
-    # $t4: [#t1] (dirty)
-    # $t5: [v_c_main_s2] (dirty)
-    # $t6: [v_d_main_s2] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [#t3] (dirty)
-    # $t9: [v_e_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t4]
-    # #t2: [$t7]
-    # #t3: [$t8]
-    # #t4: [$t1]
-    # #t5: [$t2]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [$t3, memory:-8($fp)]
-    # v_c_main_s2: [$t5, memory:-12($fp)]
-    # v_d_main_s2: [$t6, memory:-16($fp)]
-    # v_e_main_s2: [$t9, memory:-20($fp)]
-    # v_f_main_s2: [$t0, memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [memory:-36($fp)]
-    # v_j_main_s2: [memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t6 = v_g_main_s2 add v_h_main_s2
-    # DEBUG: Spilling register $t3 due to register pressure
-    sw $t3, -8($fp)
-    # DEBUG: Spilled v_b_main_s2 from $t3 to memory at -8($fp)
-    lw $t3, -28($fp)
-    # DEBUG: Loaded v_g_main_s2 from memory at -28($fp)
-    # DEBUG: v_g_main_s2 in $t3
-    # DEBUG: Spilling register $t4 due to register pressure
-    sw $t4, -56($fp)
-    # DEBUG: Spilled #t1 from $t4 to memory at -56($fp)
-    lw $t4, -32($fp)
-    # DEBUG: Loaded v_h_main_s2 from memory at -32($fp)
-    # DEBUG: v_h_main_s2 in $t4
-    # DEBUG: Spilling register $t5 due to register pressure
-    sw $t5, -12($fp)
-    # DEBUG: Spilled v_c_main_s2 from $t5 to memory at -12($fp)
-    add $t5, $t3, $t4
-    # DEBUG: #t6 = result in $t5 (dirty)
-
-    # TAC: 20: #t7 = #t5 + #t6
-    # --- Register Descriptor ---
-    # $t0: [v_f_main_s2] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [#t5] (dirty)
-    # $t3: [v_g_main_s2] (dirty)
-    # $t4: [v_h_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [v_d_main_s2] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [#t3] (dirty)
-    # $t9: [v_e_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t2: [$t7]
-    # #t3: [$t8]
-    # #t4: [$t1]
-    # #t5: [$t2]
-    # #t6: [$t5]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [$t6, memory:-16($fp)]
-    # v_e_main_s2: [$t9, memory:-20($fp)]
-    # v_f_main_s2: [$t0, memory:-24($fp)]
-    # v_g_main_s2: [$t3, memory:-28($fp)]
-    # v_h_main_s2: [$t4, memory:-32($fp)]
-    # v_i_main_s2: [memory:-36($fp)]
-    # v_j_main_s2: [memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t7 = #t5 add #t6
-    # DEBUG: #t5 in $t2
-    # DEBUG: #t6 in $t5
-    # DEBUG: Spilling register $t6 due to register pressure
-    sw $t6, -16($fp)
-    # DEBUG: Spilled v_d_main_s2 from $t6 to memory at -16($fp)
-    add $t6, $t2, $t5
-    # DEBUG: #t7 = result in $t6 (dirty)
-
-    # TAC: 21: #t8 = v_i_main_s2 + v_j_main_s2
-    # --- Register Descriptor ---
-    # $t0: [v_f_main_s2] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [#t5] (dirty)
-    # $t3: [v_g_main_s2] (dirty)
-    # $t4: [v_h_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [#t2] (dirty)
-    # $t8: [#t3] (dirty)
-    # $t9: [v_e_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t2: [$t7]
-    # #t3: [$t8]
-    # #t4: [$t1]
-    # #t5: [$t2]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [$t9, memory:-20($fp)]
-    # v_f_main_s2: [$t0, memory:-24($fp)]
-    # v_g_main_s2: [$t3, memory:-28($fp)]
-    # v_h_main_s2: [$t4, memory:-32($fp)]
-    # v_i_main_s2: [memory:-36($fp)]
-    # v_j_main_s2: [memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t8 = v_i_main_s2 add v_j_main_s2
-    # DEBUG: Spilling register $t7 due to register pressure
-    sw $t7, -60($fp)
-    # DEBUG: Spilled #t2 from $t7 to memory at -60($fp)
-    lw $t7, -36($fp)
-    # DEBUG: Loaded v_i_main_s2 from memory at -36($fp)
-    # DEBUG: v_i_main_s2 in $t7
-    # DEBUG: Spilling register $t8 due to register pressure
-    sw $t8, -64($fp)
-    # DEBUG: Spilled #t3 from $t8 to memory at -64($fp)
-    lw $t8, -40($fp)
-    # DEBUG: Loaded v_j_main_s2 from memory at -40($fp)
-    # DEBUG: v_j_main_s2 in $t8
-    # DEBUG: Spilling register $t9 due to register pressure
-    sw $t9, -20($fp)
-    # DEBUG: Spilled v_e_main_s2 from $t9 to memory at -20($fp)
-    add $t9, $t7, $t8
-    # DEBUG: #t8 = result in $t9 (dirty)
-
-    # TAC: 22: #t9 = #t7 + #t8
-    # --- Register Descriptor ---
-    # $t0: [v_f_main_s2] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [#t5] (dirty)
-    # $t3: [v_g_main_s2] (dirty)
-    # $t4: [v_h_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [v_i_main_s2] (dirty)
-    # $t8: [v_j_main_s2] (dirty)
-    # $t9: [#t8] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [$t1]
-    # #t5: [$t2]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # #t8: [$t9]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [$t0, memory:-24($fp)]
-    # v_g_main_s2: [$t3, memory:-28($fp)]
-    # v_h_main_s2: [$t4, memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t9 = #t7 add #t8
-    # DEBUG: #t7 in $t6
-    # DEBUG: #t8 in $t9
-    # DEBUG: Spilling register $t0 due to register pressure
-    sw $t0, -24($fp)
-    # DEBUG: Spilled v_f_main_s2 from $t0 to memory at -24($fp)
-    add $t0, $t6, $t9
-    # DEBUG: #t9 = result in $t0 (dirty)
-
-    # TAC: 23: #t10 = v_k_main_s2 + v_l_main_s2
-    # --- Register Descriptor ---
-    # $t0: [#t9] (dirty)
-    # $t1: [#t4] (dirty)
-    # $t2: [#t5] (dirty)
-    # $t3: [v_g_main_s2] (dirty)
-    # $t4: [v_h_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [v_i_main_s2] (dirty)
-    # $t8: [v_j_main_s2] (dirty)
-    # $t9: [#t8] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [$t1]
-    # #t5: [$t2]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # #t8: [$t9]
-    # #t9: [$t0]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [$t3, memory:-28($fp)]
-    # v_h_main_s2: [$t4, memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [memory:-44($fp)]
-    # v_l_main_s2: [memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t10 = v_k_main_s2 add v_l_main_s2
-    # DEBUG: Spilling register $t1 due to register pressure
-    sw $t1, -68($fp)
-    # DEBUG: Spilled #t4 from $t1 to memory at -68($fp)
-    lw $t1, -44($fp)
-    # DEBUG: Loaded v_k_main_s2 from memory at -44($fp)
-    # DEBUG: v_k_main_s2 in $t1
-    # DEBUG: Spilling register $t2 due to register pressure
-    sw $t2, -72($fp)
-    # DEBUG: Spilled #t5 from $t2 to memory at -72($fp)
-    lw $t2, -48($fp)
-    # DEBUG: Loaded v_l_main_s2 from memory at -48($fp)
-    # DEBUG: v_l_main_s2 in $t2
-    # DEBUG: Spilling register $t3 due to register pressure
-    sw $t3, -28($fp)
-    # DEBUG: Spilled v_g_main_s2 from $t3 to memory at -28($fp)
-    add $t3, $t1, $t2
-    # DEBUG: #t10 = result in $t3 (dirty)
-
-    # TAC: 24: #t11 = #t9 + #t10
-    # --- Register Descriptor ---
-    # $t0: [#t9] (dirty)
-    # $t1: [v_k_main_s2] (dirty)
-    # $t2: [v_l_main_s2] (dirty)
-    # $t3: [#t10] (dirty)
-    # $t4: [v_h_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [v_i_main_s2] (dirty)
-    # $t8: [v_j_main_s2] (dirty)
-    # $t9: [#t8] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t10: [$t3]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [memory:-68($fp)]
-    # #t5: [memory:-72($fp)]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # #t8: [$t9]
-    # #t9: [$t0]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [$t4, memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [$t1, memory:-44($fp)]
-    # v_l_main_s2: [$t2, memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # #t11 = #t9 add #t10
-    # DEBUG: #t9 in $t0
-    # DEBUG: #t10 in $t3
-    # DEBUG: Spilling register $t4 due to register pressure
-    sw $t4, -32($fp)
-    # DEBUG: Spilled v_h_main_s2 from $t4 to memory at -32($fp)
-    add $t4, $t0, $t3
-    # DEBUG: #t11 = result in $t4 (dirty)
-
-    # TAC: 25: v_result_main_s2 = #t11
-    # --- Register Descriptor ---
-    # $t0: [#t9] (dirty)
-    # $t1: [v_k_main_s2] (dirty)
-    # $t2: [v_l_main_s2] (dirty)
-    # $t3: [#t10] (dirty)
-    # $t4: [#t11] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [v_i_main_s2] (dirty)
-    # $t8: [v_j_main_s2] (dirty)
-    # $t9: [#t8] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t10: [$t3]
-    # #t11: [$t4]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [memory:-68($fp)]
-    # #t5: [memory:-72($fp)]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # #t8: [$t9]
-    # #t9: [$t0]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [$t1, memory:-44($fp)]
-    # v_l_main_s2: [$t2, memory:-48($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: v_result_main_s2 = #t11
-    # DEBUG: #t11 already in $t4
-    # DEBUG: v_result_main_s2 now also in $t4 (dirty)
-
-    # TAC: 26: return v_result_main_s2
-    # --- Register Descriptor ---
-    # $t0: [#t9] (dirty)
-    # $t1: [v_k_main_s2] (dirty)
-    # $t2: [v_l_main_s2] (dirty)
-    # $t3: [#t10] (dirty)
-    # $t4: [#t11, v_result_main_s2] (dirty)
-    # $t5: [#t6] (dirty)
-    # $t6: [#t7] (dirty)
-    # $t7: [v_i_main_s2] (dirty)
-    # $t8: [v_j_main_s2] (dirty)
-    # $t9: [#t8] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t10: [$t3]
-    # #t11: [$t4]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [memory:-68($fp)]
-    # #t5: [memory:-72($fp)]
-    # #t6: [$t5]
-    # #t7: [$t6]
-    # #t8: [$t9]
-    # #t9: [$t0]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [$t1, memory:-44($fp)]
-    # v_l_main_s2: [$t2, memory:-48($fp)]
-    # v_result_main_s2: [$t4]
+    # #t1: [$t2]
+    # v_m_main_i_i_s2: [$t0]
+    # v_n_main_i_i_s2: [$t1]
+    # v_p_main_i_i_s2: [$t2]
     # --- End Storage Descriptor ---
     # Return - spilling dirty registers
-    # DEBUG: Spilling 10 dirty registers
-    sw $t0, -88($fp)
-    # DEBUG: Spilled #t9 from $t0 to memory at -88($fp)
-    sw $t1, -44($fp)
-    # DEBUG: Spilled v_k_main_s2 from $t1 to memory at -44($fp)
-    sw $t2, -48($fp)
-    # DEBUG: Spilled v_l_main_s2 from $t2 to memory at -48($fp)
-    sw $t3, -92($fp)
-    # DEBUG: Spilled #t10 from $t3 to memory at -92($fp)
-    sw $t4, -96($fp)
-    # DEBUG: Spilled #t11 from $t4 to memory at -96($fp)
-    sw $t4, -52($fp)
-    # DEBUG: Spilled v_result_main_s2 from $t4 to memory at -52($fp)
-    sw $t5, -76($fp)
-    # DEBUG: Spilled #t6 from $t5 to memory at -76($fp)
-    sw $t6, -80($fp)
-    # DEBUG: Spilled #t7 from $t6 to memory at -80($fp)
-    sw $t7, -36($fp)
-    # DEBUG: Spilled v_i_main_s2 from $t7 to memory at -36($fp)
-    sw $t8, -40($fp)
-    # DEBUG: Spilled v_j_main_s2 from $t8 to memory at -40($fp)
-    sw $t9, -84($fp)
-    # DEBUG: Spilled #t8 from $t9 to memory at -84($fp)
+    # DEBUG: Spilling 1 dirty registers
+    sw $t2, -12($fp)
+    # DEBUG: Spilled #t1 from $t2 to memory at -12($fp)
+    sw $t2, -4($fp)
+    # DEBUG: Spilled v_p_main_i_i_s2 from $t2 to memory at -4($fp)
 
-    # TAC: 27: end function main
+    # TAC: 5: end function main_i_i
     # --- Register Descriptor ---
-    # $t0: [#t9]
-    # $t1: [v_k_main_s2]
-    # $t2: [v_l_main_s2]
-    # $t3: [#t10]
-    # $t4: [#t11, v_result_main_s2]
-    # $t5: [#t6]
-    # $t6: [#t7]
-    # $t7: [v_i_main_s2]
-    # $t8: [v_j_main_s2]
-    # $t9: [#t8]
+    # $t0: [v_m_main_i_i_s2]
+    # $t1: [v_n_main_i_i_s2]
+    # $t2: [#t1, v_p_main_i_i_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [memory:-56($fp)]
-    # #t10: [$t3, memory:-92($fp)]
-    # #t11: [$t4, memory:-96($fp)]
-    # #t2: [memory:-60($fp)]
-    # #t3: [memory:-64($fp)]
-    # #t4: [memory:-68($fp)]
-    # #t5: [memory:-72($fp)]
-    # #t6: [$t5, memory:-76($fp)]
-    # #t7: [$t6, memory:-80($fp)]
-    # #t8: [$t9, memory:-84($fp)]
-    # #t9: [$t0, memory:-88($fp)]
-    # v_a_main_s2: [memory:-4($fp)]
-    # v_b_main_s2: [memory:-8($fp)]
-    # v_c_main_s2: [memory:-12($fp)]
-    # v_d_main_s2: [memory:-16($fp)]
-    # v_e_main_s2: [memory:-20($fp)]
-    # v_f_main_s2: [memory:-24($fp)]
-    # v_g_main_s2: [memory:-28($fp)]
-    # v_h_main_s2: [memory:-32($fp)]
-    # v_i_main_s2: [$t7, memory:-36($fp)]
-    # v_j_main_s2: [$t8, memory:-40($fp)]
-    # v_k_main_s2: [$t1, memory:-44($fp)]
-    # v_l_main_s2: [$t2, memory:-48($fp)]
-    # v_result_main_s2: [$t4, memory:-52($fp)]
+    # #t1: [$t2, memory:-12($fp)]
+    # v_m_main_i_i_s2: [$t0]
+    # v_n_main_i_i_s2: [$t1]
+    # v_p_main_i_i_s2: [$t2, memory:-4($fp)]
     # --- End Storage Descriptor ---
     # End of function - spilling dirty registers
     # DEBUG: No dirty registers to spill
-    # End of function: main
+    # === Function Epilogue for main_i_i ===
+    move $sp, $fp
+    # Move $sp to $fp (where old $fp is saved)
+    lw $ra, 4($fp)
+    # Restore return address
+    lw $fp, 0($fp)
+    # Restore old frame pointer
+    addiu $sp, $sp, 36
+    # Deallocate frame (36 bytes)
+    jr $ra
+    # Return to caller
+    # === End of Epilogue ===
+    # End of function: main_i_i
 
     # End of code

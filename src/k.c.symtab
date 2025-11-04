@@ -10,56 +10,18 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 69 [mangled: #t1] [LOCAL, offset: -56]
-  - #t10 (int) declared at line 69 [mangled: #t10] [LOCAL, offset: -92]
-  - #t11 (int) declared at line 69 [mangled: #t11] [LOCAL, offset: -96]
-  - #t2 (int) declared at line 69 [mangled: #t2] [LOCAL, offset: -60]
-  - #t3 (int) declared at line 69 [mangled: #t3] [LOCAL, offset: -64]
-  - #t4 (int) declared at line 69 [mangled: #t4] [LOCAL, offset: -68]
-  - #t5 (int) declared at line 69 [mangled: #t5] [LOCAL, offset: -72]
-  - #t6 (int) declared at line 69 [mangled: #t6] [LOCAL, offset: -76]
-  - #t7 (int) declared at line 69 [mangled: #t7] [LOCAL, offset: -80]
-  - #t8 (int) declared at line 69 [mangled: #t8] [LOCAL, offset: -84]
-  - #t9 (int) declared at line 69 [mangled: #t9] [LOCAL, offset: -88]
-  - a (int) declared at line 52 [mangled: v_a_main_s2] [LOCAL, offset: -4]
-  - b (int) declared at line 52 [mangled: v_b_main_s2] [LOCAL, offset: -8]
-  - c (int) declared at line 52 [mangled: v_c_main_s2] [LOCAL, offset: -12]
-  - d (int) declared at line 52 [mangled: v_d_main_s2] [LOCAL, offset: -16]
-  - e (int) declared at line 52 [mangled: v_e_main_s2] [LOCAL, offset: -20]
-  - f (int) declared at line 52 [mangled: v_f_main_s2] [LOCAL, offset: -24]
-  - g (int) declared at line 52 [mangled: v_g_main_s2] [LOCAL, offset: -28]
-  - h (int) declared at line 52 [mangled: v_h_main_s2] [LOCAL, offset: -32]
-  - i (int) declared at line 52 [mangled: v_i_main_s2] [LOCAL, offset: -36]
-  - j (int) declared at line 52 [mangled: v_j_main_s2] [LOCAL, offset: -40]
-  - k (int) declared at line 52 [mangled: v_k_main_s2] [LOCAL, offset: -44]
-  - l (int) declared at line 52 [mangled: v_l_main_s2] [LOCAL, offset: -48]
-  - result (int) declared at line 53 [mangled: v_result_main_s2] [LOCAL, offset: -52]
+  - #t1 (int) declared at line 81 [mangled: #t1] [LOCAL, offset: -12]
+  - m (int) declared at line 77 [mangled: v_m_main_i_i_s2] [PARAM #0, offset: 8]
+  - n (int) declared at line 77 [mangled: v_n_main_i_i_s2] [PARAM #1, offset: 12]
+  - p (int) declared at line 78 [mangled: v_p_main_i_i_s2] [LOCAL, offset: -4]
+  - q (int) declared at line 79 [mangled: v_q_main_i_i_s2] [LOCAL, offset: -8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
-  - #t10 (int)
-  - #t11 (int)
-  - #t2 (int)
-  - #t3 (int)
-  - #t4 (int)
-  - #t5 (int)
-  - #t6 (int)
-  - #t7 (int)
-  - #t8 (int)
-  - #t9 (int)
-  - a (int)
-  - b (int)
-  - c (int)
-  - d (int)
-  - e (int)
-  - f (int)
-  - g (int)
-  - h (int)
-  - i (int)
-  - j (int)
-  - k (int)
-  - l (int)
-  - result (int)
+  - m (int)
+  - n (int)
+  - p (int)
+  - q (int)
 
 
 

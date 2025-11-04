@@ -911,7 +911,7 @@ function_definition
         TACOperand* func_label = new_identifier(mangled_name);
         //$3 = new TypeInfo(); //naya
         TACInstruction* func_begin = emit(TACOperator(TAC_OPERATOR_FUNC_BEGIN), 
-                                       new_identifier($2->name), 
+                                       new_identifier(mangled_name),
                                        new_empty_var(), 
                                        new_empty_var(), 0);
         $3->code.push_back(func_begin);
@@ -945,10 +945,10 @@ function_definition
             TACOperand* end_label = new_label(0);
             backpatch($5->next_list, end_label);
         }
-        
+        string mangled_name = current_function_mangled_name;
         // Generate function end instruction
         TACInstruction* func_end = emit(TACOperator(TAC_OPERATOR_FUNC_END), 
-                                      new_identifier($2->name), 
+                                      new_identifier(mangled_name),
                                       new_empty_var(), 
                                       new_empty_var(), 0);
         $$->code.push_back(func_end);		
@@ -957,7 +957,7 @@ function_definition
             auto it = function_table.find(current_function_mangled_name);
             if (it != function_table.end()) {
                 it->second.localVarSpace = current_local_offset;
-                it->second.totalStackFrameSize = it->second.localVarSpace + it->second.paramSpace;
+                it->second.totalStackFrameSize = it->second.localVarSpace + it->second.paramSpace+8; // +8 for saved $fp and return address
                 
                 cout << "Function " << it->second.originalName << " stack frame:\n";
                 cout << "  - Local variables: " << it->second.localVarSpace << " bytes\n";
@@ -1286,6 +1286,8 @@ declaration
             // if non static then only insert symbol in current scope
             if (!combinedType.is_static) {
                 insert_symbol(declInfo->name, combinedType, declInfo->initType);
+            }else{
+                insert_static_variable_globally(declInfo->name, combinedType);
             }
 
 
@@ -5048,7 +5050,7 @@ void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* ini
         paramSize = ((paramSize + 3) / 4) * 4;  // Align to 4 bytes
         
         // In MIPS, first param is at offset 0, second at offset 4, etc.
-        entry.stackOffset = entry.paramNumber * 4;  // Simplified - you can calculate actual size
+        entry.stackOffset = entry.paramNumber * 4 + 8;  // Simplified - you can calculate actual size
         
         cout << "Allocated parameter " << name << " (param #" << entry.paramNumber 
              << ") at offset " << entry.stackOffset << "\n";
@@ -5124,6 +5126,8 @@ void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, con
     entry.mangledName = name;  // For global variables, use the name as-is (already mangled)
     
     global_scope.symbols[name] = entry;
+    global_symbol_table[entry.mangledName] = entry;
+
     
     cout << "Inserted into global scope: " << name << " (" << type.toString() << ")" 
          << " at scope level " << entry.scope_level << "\n";
@@ -6710,6 +6714,7 @@ void display_function_table() {
             function_table_file << "|   Stack Frame:\n";
             function_table_file << "|     - Parameter space: " << func.paramSpace << " bytes\n";
             function_table_file << "|     - Local var space: " << func.localVarSpace << " bytes\n";
+            function_table_file << "|     - 8 byte for ra and fp\n";
             function_table_file << "|     - Total frame size: " << func.totalStackFrameSize << " bytes\n";
             
             function_table_file << "|   Declared at line: " << func.line << "\n";
@@ -6773,6 +6778,17 @@ void allocate_local_variable(SymbolEntry& entry) {
     
     cout << "Allocated local variable " << entry.name << " at offset " 
          << entry.stackOffset << " (size: " << size << " bytes)\n";
+}
+
+// ----------------------------------------------------------------------------
+
+// give function's total stack frame size by mangled name
+int get_function_stack_frame_size(const string& mangledName) {
+    auto it = function_table.find(mangledName);
+    if (it != function_table.end()) {
+        return it->second.totalStackFrameSize;
+    }
+    return 0; // Function not found
 }
 
 //----------------------------------------------------------------------------

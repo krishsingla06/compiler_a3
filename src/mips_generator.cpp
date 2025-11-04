@@ -5,6 +5,41 @@
 
 // Extern declaration to access helper function from parser.y
 extern "C" int get_variable_offset(const char* var_name);
+int get_function_stack_frame_size(const string& mangledName);
+/*
+ * MIPS Stack Frame Layout:
+ * 
+ *   Higher Addresses
+ *   ┌─────────────────────────┐
+ *   │  Param 5, 6, 7...       │  +20($fp), +24($fp), ...  (if >4 params)
+ *   ├─────────────────────────┤
+ *   │  Param 4                │  +16($fp)
+ *   ├─────────────────────────┤
+ *   │  Param 3                │  +12($fp)
+ *   ├─────────────────────────┤
+ *   │  Param 2                │  +8($fp)
+ *   ├─────────────────────────┤
+ *   │  Return Address ($ra)   │  +4($fp)
+ *   ├─────────────────────────┤
+ *   │  Old Frame Pointer      │   0($fp)  ← $fp points here
+ *   ├═════════════════════════┤
+ *   │  Local Variable 1       │  -4($fp)
+ *   ├─────────────────────────┤
+ *   │  Temp #t1               │  -8($fp)
+ *   ├─────────────────────────┤
+ *   │  Local Variable 2       │  -12($fp)
+ *   ├─────────────────────────┤
+ *   │  Temp #t2               │  -16($fp)
+ *   └─────────────────────────┘  ← $sp
+ *   Lower Addresses
+ * 
+ * Notes:
+ * - Parameters 1-4 are passed in $a0-$a3
+ * - Parameters 5+ are allocated space on stack at positive offsets from $fp
+ * - All parameters have stack space allocated (even if passed in registers)
+ * - Locals and temps are interleaved at negative offsets from $fp
+ * - Frame pointer ($fp) points to the saved old $fp location
+ */
 
 // NOTE: This is a stub implementation that outputs MIPS-style comments
 // The actual implementation requires access to TypeInfo and SymbolEntry
@@ -160,15 +195,73 @@ void MIPSGenerator::generate_text_section(const vector<TACInstruction*>& tac_ins
 }
 
 void MIPSGenerator::generate_function_prologue(const string& func_name) {
-    // Stub
+    emit_comment("=== Function Prologue for " + func_name + " ===");
+    
+    // Calculate frame size (locals + temps)
+    int frame_size = calculate_stack_frame_size(func_name);
+    
+    emit_comment("Frame size: " + to_string(frame_size) + " bytes");
+    
+    // Step 1: Allocate space for entire frame (locals + temps + $ra + old $fp)
+    // Total space = frame_size + 8 (8 bytes for $ra and old $fp)
+    int total_frame = frame_size + 8;
+    emit("addiu $sp, $sp, -" + to_string(total_frame));
+    emit_comment("Allocate " + to_string(total_frame) + " bytes (8 for $ra+$fp, " + 
+                 to_string(frame_size) + " for locals/temps)");
+    
+    // Step 2: Save return address at offset (frame_size + 4) from new $sp
+    emit("sw $ra, " + to_string(frame_size + 4) + "($sp)");
+    emit_comment("Save return address at " + to_string(frame_size + 4) + "($sp)");
+    
+    // Step 3: Save old frame pointer at offset (frame_size) from new $sp
+    emit("sw $fp, " + to_string(frame_size) + "($sp)");
+    emit_comment("Save old frame pointer at " + to_string(frame_size) + "($sp)");
+    
+    // Step 4: Set new frame pointer
+    // $fp should point to where we saved old $fp
+    emit("addiu $fp, $sp, " + to_string(frame_size));
+    emit_comment("Set new frame pointer (points to saved old $fp)");
+    
+    emit_comment("=== End of Prologue ===");
+    emit_comment("Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp");
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
 }
 
 void MIPSGenerator::generate_function_epilogue(const string& func_name) {
-    // Stub
+    emit_comment("=== Function Epilogue for " + func_name + " ===");
+    
+    int frame_size = calculate_stack_frame_size(func_name);
+    int total_frame = frame_size + 8;
+    
+    // Step 1: Move $sp back to where $fp is (where old $fp is saved)
+    emit("move $sp, $fp");
+    emit_comment("Move $sp to $fp (where old $fp is saved)");
+
+    
+    // Step 3: Restore return address from 4($sp)
+    emit("lw $ra, 4($fp)");
+    emit_comment("Restore return address");
+
+    // Step 2: Restore old frame pointer from 0($sp) [which is 0($fp)]
+    emit("lw $fp, 0($fp)");
+    emit_comment("Restore old frame pointer");
+    
+    // Step 4: Pop the entire frame (deallocate the space we allocated in prologue)
+    emit("addiu $sp, $sp, " + to_string(total_frame));
+    emit_comment("Deallocate frame (" + to_string(total_frame) + " bytes)");
+    
+    // Step 5: Return to caller
+    emit("jr $ra");
+    emit_comment("Return to caller");
+    
+    emit_comment("=== End of Epilogue ===");
 }
 
 int MIPSGenerator::calculate_stack_frame_size(const string& func_name) {
-    return 0; // Stub
+    // Use external function to get stack frame size
+    int frame_size = get_function_stack_frame_size(func_name);
+    return frame_size;
 }
 
 void MIPSGenerator::translate_instruction(TACInstruction* instr) {
@@ -193,11 +286,18 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         emit_label(instr->result->value);
         emit_comment("Function: " + instr->result->value);
         current_function = instr->result->value;
+        
+        // Generate function prologue
+        generate_function_prologue(current_function);
     }
     else if (instr->op.type == TAC_OPERATOR_FUNC_END) {
         // Basic block boundary - spill all dirty registers
         emit_comment("End of function - spilling dirty registers");
         spill_all_dirty();
+        
+        // Generate function epilogue
+        generate_function_epilogue(current_function);
+        
         emit_comment("End of function: " + current_function);
     }
     else if (instr->flag == 1) {
