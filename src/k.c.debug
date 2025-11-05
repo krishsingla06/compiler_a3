@@ -6,50 +6,29 @@ Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
+DEBUG: Variable m mangled as v_m_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable m at offset -400 (size: 400 bytes)
+DEBUG: Variable m mangled as v_m_main_s2 (function: main, signature: , scope: 2)
+Variable m mangled as v_m_main_s2 [LOCAL]
+Declared variable: m (int[10]) at line 182 in scope 2
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable x at offset -4 (size: 4 bytes)
+Allocated local variable x at offset -404 (size: 4 bytes)
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Variable x mangled as v_x_main_s2 [LOCAL]
-Declared variable: x (int**) at line 176 in scope 2
-DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable y at offset -8 (size: 4 bytes)
-DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
-Variable y mangled as v_y_main_s2 [LOCAL]
-Declared variable: y (int*) at line 177 in scope 2
-Found variable: x of type int**
-Unary operation: *int** -> int*
-Allocated local variable #t1 at offset -12 (size: 4 bytes)
+Declared variable: x (int*) at line 184 in scope 2
+Found variable: x of type int*
+Unary operation: *int* -> int
+Allocated local variable #t1 at offset -408 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int*) at line 179 in scope 2
-Found variable: y of type int*
-Krish
-Found variable: y of type int*
-Unary operation: *int* -> int
-Allocated local variable #t2 at offset -16 (size: 4 bytes)
-Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (int) at line 180 in scope 2
-Integer literal: 10 (type: int)
-Krish
-Found variable: x of type int**
-Unary operation: *int** -> int*
-Allocated local variable #t3 at offset -20 (size: 4 bytes)
-Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int*) at line 181 in scope 2
-Unary operation: *int* -> int
-Allocated local variable #t4 at offset -24 (size: 4 bytes)
-Variable #t4 mangled as #t4 [LOCAL]
-Declared variable: #t4 (int) at line 181 in scope 2
-Integer literal: 20 (type: int)
+Declared variable: #t1 (int) at line 185 in scope 2
+Integer literal: 1 (type: int)
 Krish
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 24 bytes
+  - Local variables: 408 bytes
   - Parameters: 0 bytes
-  - Total: 32 bytes
-Start rule: Global declaration has 9 TAC instructions
-Krish2
-Krish2
-Krish2
+  - Total: 416 bytes
+Start rule: Global declaration has 4 TAC instructions
 TAC code written to k.tac
 yyparse() returned 0
 
@@ -65,12 +44,9 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 9
+Total TAC instructions collected: 4
 Getting offset for variable: v_x_main_s2
-Krish2
-Getting offset for variable: v_y_main_s2
-Krish2
-Krish2
+Getting offset for variable: 1
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

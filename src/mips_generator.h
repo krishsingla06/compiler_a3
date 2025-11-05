@@ -91,6 +91,7 @@ private:
     void translate_bitwise(TACInstruction* instr);
     void translate_address_of(TACInstruction* instr);
     void translate_dereference(TACInstruction* instr);
+    void translate_store_indirect(TACInstruction* instr);
     void translate_jump(TACInstruction* instr);
     void translate_call(TACInstruction* instr);
     void translate_return(TACInstruction* instr);

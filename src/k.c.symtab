@@ -10,20 +10,14 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int*) declared at line 179 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 180 [mangled: #t2] [LOCAL, offset: -16]
-  - #t3 (int*) declared at line 181 [mangled: #t3] [LOCAL, offset: -20]
-  - #t4 (int) declared at line 181 [mangled: #t4] [LOCAL, offset: -24]
-  - x (int**) declared at line 176 [mangled: v_x_main_s2] [LOCAL, offset: -4]
-  - y (int*) declared at line 177 [mangled: v_y_main_s2] [LOCAL, offset: -8]
+  - #t1 (int) declared at line 185 [mangled: #t1] [LOCAL, offset: -408]
+  - m (int[10]) declared at line 182 [mangled: v_m_main_s2] [LOCAL, offset: -400]
+  - x (int*) declared at line 184 [mangled: v_x_main_s2] [LOCAL, offset: -404]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - #t1 (int*)
-  - #t2 (int)
-  - #t3 (int*)
-  - #t4 (int)
-  - x (int**)
-  - y (int*)
+  - #t1 (int)
+  - m (int[10])
+  - x (int*)
 
 
 
