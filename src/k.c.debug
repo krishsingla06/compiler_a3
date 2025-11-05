@@ -1,61 +1,64 @@
 Error log initialized: k.c.errors
 Starting parser...
 Entering scope level 1
+Function declarator: foo with 2 parameters
+Registered function: foo as foo_i_i returning int
+Function definition: foo registered
+Entering scope level 2
+Allocated parameter a (param #0) at offset 8
+DEBUG: Variable a mangled as v_a_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable a mangled as v_a_foo_i_i_s2 [PARAM]
+Declared variable: a (int) at line 228 in scope 2
+Inserted function parameter: a (int)
+Allocated parameter b (param #1) at offset 12
+DEBUG: Variable b mangled as v_b_foo_i_i_s2 (function: foo, signature: i_i, scope: 2)
+Variable b mangled as v_b_foo_i_i_s2 [PARAM]
+Declared variable: b (int) at line 228 in scope 2
+Inserted function parameter: b (int)
+Function foo_i_i parameter space: 8 bytes
+Found variable: a of type int
+Found variable: b of type int
+Binary operation: int + intAllocated local variable #t1 at offset -4 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (int) at line 229 in scope 2
+ -> int (numeric arithmetic)
+Compound statement with declarations and statements
+Function foo stack frame:
+  - Local variables: 4 bytes
+  - Parameters: 8 bytes
+  - Total: 20 bytes
+Start rule: Global declaration has 4 TAC instructions
+TAC code written to k.tac
 Function declarator: main with no parameters
 Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
-DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable arr at offset -36 (size: 36 bytes)
-DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
-Variable arr mangled as v_arr_main_s2 [LOCAL]
-Declared variable: arr (int[3]) at line 219 in scope 2
+Integer literal: 10 (type: int)
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable x at offset -40 (size: 4 bytes)
+Allocated local variable x at offset -4 (size: 4 bytes)
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Variable x mangled as v_x_main_s2 [LOCAL]
-Declared variable: x (int) at line 220 in scope 2
+Declared variable: x (int) with initializer of type int at line 233 in scope 2
+Integer literal: 20 (type: int)
 DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable y at offset -44 (size: 4 bytes)
+Allocated local variable y at offset -8 (size: 4 bytes)
 DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
 Variable y mangled as v_y_main_s2 [LOCAL]
-Declared variable: y (int) at line 220 in scope 2
-DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable z at offset -48 (size: 4 bytes)
-DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
-Variable z mangled as v_z_main_s2 [LOCAL]
-Declared variable: z (int) at line 220 in scope 2
+Declared variable: y (int) with initializer of type int at line 234 in scope 2
+Found function name: foo
 Found variable: x of type int
-Unary operation: &int -> int*
-Allocated local variable #t1 at offset -52 (size: 4 bytes)
-Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 221 in scope 2
-DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable ptr at offset -56 (size: 4 bytes)
-DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
-Variable ptr mangled as v_ptr_main_s2 [LOCAL]
-Declared variable: ptr (int*) with initializer of type int* at line 221 in scope 2
-Found variable: ptr of type int*
-Unary operation: *int* -> int
-Allocated local variable #t2 at offset -60 (size: 4 bytes)
+Found variable: y of type int
+Found exact function match: foo_i_i
+Allocated local variable #t2 at offset -12 (size: 4 bytes)
 Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (int) at line 222 in scope 2
-Integer literal: 10 (type: int)
-Krish
-Found variable: x of type int
-Found variable: ptr of type int*
-Unary operation: *int* -> int
-Allocated local variable #t3 at offset -64 (size: 4 bytes)
-Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int) at line 223 in scope 2
+Declared variable: #t2 (int) at line 235 in scope 2
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 64 bytes
+  - Local variables: 12 bytes
   - Parameters: 0 bytes
-  - Total: 72 bytes
-Start rule: Global declaration has 8 TAC instructions
-TAC code written to k.tac
+  - Total: 20 bytes
+TAC code appended to k.tac
 yyparse() returned 0
 
 +-----------------------------------------------------------------------------------------+
@@ -70,8 +73,13 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 8
+Total TAC instructions collected: 12
+Getting offset for variable: #t1
 Getting offset for variable: v_x_main_s2
+Getting offset for variable: v_y_main_s2
+Getting offset for variable: v_y_main_s2
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: #t2
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

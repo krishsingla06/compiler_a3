@@ -120,6 +120,10 @@ void MIPSRegisterAllocator::mark_dirty(const string& reg) {
     dirty_regs.insert(reg);
 }
 
+void MIPSRegisterAllocator::clear_dirty(const string& reg) {
+    dirty_regs.erase(reg);
+}
+
 bool MIPSRegisterAllocator::is_dirty(const string& reg) {
     return dirty_regs.find(reg) != dirty_regs.end();
 }
@@ -494,9 +498,21 @@ void MIPSGenerator::generate_function_epilogue(const string& func_name) {
 }
 
 int MIPSGenerator::calculate_stack_frame_size(const string& func_name) {
-    // Use external function to get stack frame size
+    // Use external function to get stack frame size for locals and temps
     int frame_size = get_function_stack_frame_size(func_name);
-    return frame_size;
+    
+    // Add space for saving caller-saved registers ($t0-$t9 = 10 registers)
+    // Each register needs 4 bytes
+    int register_save_space = 10 * 4;  // 40 bytes for $t0-$t9
+    
+    // Also add space for $ra (4 bytes) and old $fp (4 bytes)
+    int control_save_space = 0;  // $ra + old $fp // get_function_stack_frame_size already accounts for these
+    
+    // Total frame size
+    int total_frame_size = frame_size + register_save_space + control_save_space;
+    
+    
+    return total_frame_size;
 }
 
 void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, int num_params) {
@@ -1266,6 +1282,41 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     }
     
     emit_comment("Call " + func_name + " with " + to_string(num_args) + " arguments");
+    
+    // ===== CALLER-SAVE: Save all dirty $t0-$t9 registers before call =====
+    emit_comment("=== Caller-Save: Spill dirty registers before call ===");
+    vector<string> saved_regs;  // Track which registers we saved
+    
+    for (int i = 0; i <= 9; i++) {
+        string reg = "$t" + to_string(i);
+        
+        // Check if this register is dirty (has been modified)
+        if (reg_allocator.is_dirty(reg)) {
+            // Get the variable(s) stored in this register
+            set<string> vars = reg_desc.get_vars_in_reg(reg);
+            
+            if (!vars.empty()) {
+                for (const string& var : vars) {
+                    // Spill to memory using existing offset
+                    int offset = get_offset(var);
+                    emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Saved " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
+                    
+                    // Update storage descriptor: variable is now in memory with exact location
+                    storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+                }
+                saved_regs.push_back(reg);
+            }
+            
+            // Clear dirty flag for this register
+            reg_allocator.clear_dirty(reg);
+        }
+        
+        // Clear the register descriptor completely (assume destroyed by call)
+        reg_desc.clear_reg(reg);
+    }
+    
+    emit_comment("=== End Caller-Save (saved " + to_string(saved_regs.size()) + " registers) ===");
     
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0

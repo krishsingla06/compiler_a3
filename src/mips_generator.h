@@ -43,6 +43,7 @@ public:
     void free_reg(const string& reg);
     string get_reg_for_var(const string& var);  // Simplified - no TypeInfo parameter
     void mark_dirty(const string& reg);
+    void clear_dirty(const string& reg);  // Clear dirty flag for specific register
     bool is_dirty(const string& reg);
     set<string> get_dirty_regs();
     void clear_all();

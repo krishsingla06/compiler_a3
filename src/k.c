@@ -215,10 +215,22 @@
 //     // return node1.p;
 // }
 
+// int main(){
+//     int arr[3];
+//     int x,y,z;
+//     int *ptr = &x;
+//     *ptr = 10;
+//     x = *ptr;
+// }
+
+//-----------------------------
+
+int foo(int a, int b){
+    return a + b;
+}
+
 int main(){
-    int arr[3];
-    int x,y,z;
-    int *ptr = &x;
-    *ptr = 10;
-    x = *ptr;
+    int x = 10;
+    int y = 20;
+    return foo(x, y);
 }
