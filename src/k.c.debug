@@ -80,10 +80,11 @@ Generating MIPS assembly code...
 Total TAC instructions collected: 14
 Getting offset for variable: #t1
 Getting offset for variable: #t1
+Getting offset for variable: #t1
+Getting offset for variable: #t1
 Getting offset for variable: v_p_foo_i_i_s2
 Getting offset for variable: v_q_main_s2
 Getting offset for variable: v_p_main_s2
-Getting offset for variable: #t2
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

@@ -14,6 +14,19 @@ using namespace std;
 class TACInstruction;
 class TACOperand;
 
+// Basic Block structure
+struct BasicBlock {
+    int id;                          // Block ID (B1, B2, ...)
+    int start_index;                 // Starting TAC instruction index
+    int end_index;                   // Ending TAC instruction index (inclusive)
+    vector<int> successors;          // IDs of successor blocks
+    vector<int> predecessors;        // IDs of predecessor blocks
+    bool ends_with_jump;             // True if block ends with goto/branch
+    bool ends_with_return;           // True if block ends with return
+    
+    BasicBlock() : id(0), start_index(0), end_index(0), 
+                   ends_with_jump(false), ends_with_return(false) {}
+};
 
 // Register allocator for MIPS registers (Simplified stub version)
 class MIPSRegisterAllocator {
@@ -53,8 +66,18 @@ private:
     // For tracking parameters during function calls
     vector<string> pending_params;  // Parameters pushed in order (param instructions)
     
+    // Basic block management
+    vector<BasicBlock> basic_blocks;
+    map<int, int> instr_to_block;    // Maps instruction index to block ID
+    int current_block_id;
+    
     void generate_data_section();
     void generate_text_section(const vector<TACInstruction*>& tac_instructions);
+    
+    // Basic block analysis
+    void analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions);
+    void clear_all_registers();
+    void emit_block_label(int block_id, int start_idx, int end_idx);
     
     void generate_function_prologue(const string& func_name);
     void generate_function_epilogue(const string& func_name);

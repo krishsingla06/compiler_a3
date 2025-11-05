@@ -2,6 +2,7 @@
 #include "tac.h"
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 // Extern declaration to access helper function from parser.y
 extern "C" int get_variable_offset(const char* var_name);
@@ -142,7 +143,130 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
-    : output(out), clean_output(clean_out) {
+    : output(out), clean_output(clean_out), current_block_id(0) {
+}
+
+void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions) {
+    emit_comment("======================================");
+    emit_comment("  Basic Block Analysis");
+    emit_comment("======================================");
+    
+    basic_blocks.clear();
+    instr_to_block.clear();
+    
+    set<int> leaders;  // Instruction indices that start a basic block
+    set<string> jump_targets;  // Labels that are actually targeted by jumps
+    
+    // First pass: collect all jump targets
+    for (size_t i = 0; i < tac_instructions.size(); i++) {
+        TACInstruction* instr = tac_instructions[i];
+        
+        // For conditional jumps (flag == 2), result is the target label
+        if (instr->flag == 2 && instr->result && instr->result->type == TAC_OPERAND_LABEL) {
+            jump_targets.insert(instr->result->value);
+        }
+        
+        // For unconditional jumps (flag == 1), result is the target label (NOT arg1!)
+        if (instr->flag == 1 && instr->result && instr->result->type == TAC_OPERAND_LABEL) {
+            jump_targets.insert(instr->result->value);
+        }
+    }
+    
+    // Second pass: identify leaders
+    leaders.insert(0); // First instruction is always a leader
+    
+    for (size_t i = 0; i < tac_instructions.size(); i++) {
+        TACInstruction* instr = tac_instructions[i];
+        
+        // An instruction is a leader if it's the target of a jump
+        if (instr->label && instr->label->type == TAC_OPERAND_LABEL) {
+            string label_name = instr->label->value;
+            if (jump_targets.find(label_name) != jump_targets.end()) {
+                leaders.insert(i);
+            }
+        }
+        
+        // Instruction after a jump/branch/return is a leader
+        if (instr->flag == 1 || instr->flag == 2 || 
+            instr->op.type == TAC_OPERATOR_RETURN ||
+            instr->op.type == TAC_OPERATOR_FUNC_END) {
+            if (i + 1 < tac_instructions.size()) {
+                leaders.insert(i + 1);
+            }
+        }
+        
+        // Function begin is a leader
+        if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
+            leaders.insert(i);
+        }
+    }
+    
+    // Create basic blocks from leaders
+    vector<int> leader_list(leaders.begin(), leaders.end());
+    sort(leader_list.begin(), leader_list.end());
+    
+    for (size_t i = 0; i < leader_list.size(); i++) {
+        BasicBlock block;
+        block.id = i + 1;  // B1, B2, ...
+        block.start_index = leader_list[i];
+        
+        if (i + 1 < leader_list.size()) {
+            block.end_index = leader_list[i + 1] - 1;
+        } else {
+            block.end_index = tac_instructions.size() - 1;
+        }
+        
+        // Check how block ends
+        TACInstruction* last_instr = tac_instructions[block.end_index];
+        if (last_instr->flag == 1 || last_instr->flag == 2) {
+            block.ends_with_jump = true;
+        }
+        if (last_instr->op.type == TAC_OPERATOR_RETURN ||
+            last_instr->op.type == TAC_OPERATOR_FUNC_END) {
+            block.ends_with_return = true;
+        }
+        
+        // Map each instruction to its block
+        for (int idx = block.start_index; idx <= block.end_index; idx++) {
+            instr_to_block[idx] = block.id;
+        }
+        
+        basic_blocks.push_back(block);
+        
+        emit_comment("Block B" + to_string(block.id) + ": i" + 
+                     to_string(block.start_index) + "-i" + to_string(block.end_index));
+    }
+    
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+}
+
+void MIPSGenerator::clear_all_registers() {
+    // Clear all temporary registers and their descriptors
+    for (int i = 0; i <= 9; i++) {
+        string reg = "$t" + to_string(i);
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        for (const string& var : vars) {
+            storage_desc.remove_location(var, reg);
+        }
+        reg_desc.clear_reg(reg);
+    }
+    // Clear argument registers
+    for (int i = 0; i <= 3; i++) {
+        string reg = "$a" + to_string(i);
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        for (const string& var : vars) {
+            storage_desc.remove_location(var, reg);
+        }
+        reg_desc.clear_reg(reg);
+    }
+    reg_allocator.clear_all();
+}
+
+void MIPSGenerator::emit_block_label(int block_id, int start_idx, int end_idx) {
+    string block_label = "B" + to_string(block_id) + "_i" + 
+                         to_string(start_idx) + "_i" + to_string(end_idx);
+    emit_comment("=== " + block_label + " ===");
 }
 
 void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
@@ -155,6 +279,9 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     emit_comment("Total TAC instructions: " + to_string(tac_instructions.size()));
     output << "\n";
     if (clean_output) *clean_output << "\n";
+    
+    // Analyze basic blocks
+    analyze_basic_blocks(tac_instructions);
     
     // Data section
     output << ".data\n";
@@ -171,15 +298,55 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     output << "\n";
     if (clean_output) *clean_output << "\n";
     
-    // Process each TAC instruction
-    for (size_t i = 0; i < tac_instructions.size(); i++) {
-        TACInstruction* instr = tac_instructions[i];
+    // Process each basic block
+    for (const BasicBlock& block : basic_blocks) {
+        emit_comment("======================================");
+        emit_block_label(block.id, block.start_index, block.end_index);
+        emit_comment("======================================");
         
-        // Emit TAC as comment for debugging (using existing function from tac.h)
-        emit_comment("TAC: " + get_TAC_instruction_string(instr));
+        // Clear all registers at the start of each basic block
+        clear_all_registers();
+        emit_comment("Registers cleared at block start");
         
-        // Translate to MIPS
-        translate_instruction(instr);
+        // Process instructions in this basic block
+        for (int i = block.start_index; i <= block.end_index; i++) {
+            TACInstruction* instr = tac_instructions[i];
+            
+            // Emit TAC as comment for debugging
+            emit_comment("TAC " + to_string(i) + ": " + get_TAC_instruction_string(instr));
+            
+            // Emit label if this instruction has one
+            if (instr->label && instr->label->type == TAC_OPERAND_LABEL) {
+                emit_label("I" + instr->label->value);
+            }
+            
+            // Debug: Print current descriptor state
+            print_descriptors();
+            
+            // If this is the last instruction in the block and it's a jump/return,
+            // spill all dirty registers BEFORE translating it
+            bool is_last_instr = (i == block.end_index);
+            bool is_control_flow = (instr->flag == 1 || instr->flag == 2 || 
+                                   instr->op.type == TAC_OPERATOR_RETURN);
+            
+            if (is_last_instr && is_control_flow) {
+                emit_comment("Spilling before control flow instruction");
+                spill_all_dirty();
+            }
+            
+            // Translate to MIPS
+            translate_instruction(instr);
+            
+            output << "\n";
+            if (clean_output) *clean_output << "\n";
+        }
+        
+        // Spill any remaining dirty registers at the end of the block
+        // (for blocks that don't end with control flow)
+        if (!block.ends_with_jump && !block.ends_with_return) {
+            emit_comment("End of block B" + to_string(block.id) + " - spilling all registers");
+            spill_all_dirty();
+        }
         
         output << "\n";
         if (clean_output) *clean_output << "\n";
@@ -313,26 +480,17 @@ void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, in
 void MIPSGenerator::translate_instruction(TACInstruction* instr) {
     if (!instr) return;
     
-    // Emit label if this instruction has one
-    if (instr->label && instr->label->type == TAC_OPERAND_LABEL) {
-        emit_label("I" + instr->label->value);
-    }
-    
-    // Debug: Print current descriptor state
-    print_descriptors();
+    // Note: Labels and basic block boundaries are now handled at a higher level
+    // in the generate() function. This function just translates individual instructions.
     
     // Handle different operation types based on flag and op
     // IMPORTANT: Check flags FIRST before checking op types!
     if (instr->flag == 1) {
-        // Unconditional jump - basic block boundary
-        emit_comment("Unconditional jump - spilling dirty registers");
-        spill_all_dirty();
+        // Unconditional jump
         translate_jump(instr);
     }
     else if (instr->flag == 2) {
         // Conditional jump: if arg1 op arg2 goto result
-        emit_comment("Conditional jump - spilling dirty registers");
-        spill_all_dirty();
         translate_comparison(instr);
     }
     else if (instr->flag == 0 && instr->op.type == TAC_OPERATOR_NOP) {
@@ -376,33 +534,21 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
             initialize_parameter_descriptors(current_function, num_params);
         }
     }
-    else if (instr->op.type == TAC_OPERATOR_FUNC_END) {
-        // Basic block boundary - spill all dirty registers
-        emit_comment("End of function - spilling dirty registers");
-        spill_all_dirty();
-        
-        // Generate function epilogue
-        generate_function_epilogue(current_function);
-        
-        emit_comment("End of function: " + current_function);
-    }
     else if (instr->op.type == TAC_OPERATOR_PARAM) {
         // Parameter setup for function call
         translate_param(instr);
     }
     else if (instr->op.type == TAC_OPERATOR_CALL) {
-        // Function call - spill dirty registers
-        emit_comment("Function call - spilling dirty registers");
-        spill_all_dirty();
+        // Function call
         translate_call(instr);
     }
     else if (instr->op.type == TAC_OPERATOR_RETURN) {
-        // Return - spill dirty registers
-        emit_comment("Return - spilling dirty registers");
-        spill_all_dirty();
+        // Return
         translate_return(instr);
     }
     else if (instr->op.type == TAC_OPERATOR_FUNC_END) {
+        // Basic block boundary - generate function epilogue
+        generate_function_epilogue(current_function);
         emit_comment("End of function: " + current_function);
     }
     else {
@@ -443,6 +589,16 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         // Load immediate into register
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + src);
+        
+        // Check if dest was previously in another register - if so, remove it from there
+        if (storage_desc.is_in_register(dest)) {
+            string old_reg = storage_desc.get_register(dest);
+            if (old_reg != reg) {
+                // Remove dest from the old register descriptor
+                reg_desc.remove_var_from_reg(old_reg, dest);
+                emit_comment("DEBUG: Removed " + dest + " from old register " + old_reg);
+            }
+        }
         
         // Update descriptors - keep in register ONLY (not in memory yet)
         reg_desc.clear_reg(reg);

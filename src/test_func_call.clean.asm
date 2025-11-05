@@ -1,5 +1,6 @@
 
 
+
 .data
 
 .text
@@ -14,17 +15,24 @@ add_i_i:
 
 
 
+
 I2:
     lw $t0, 8($fp)
     lw $t1, 12($fp)
     add $t2, $t0, $t1
 
+    sw $t2, -8($fp)
+
 I3:
+    lw $t0, -8($fp)
+
+    sw $t0, -8($fp)
+    sw $t0, -4($fp)
 
 I4:
-    sw $t2, -8($fp)
-    sw $t2, -4($fp)
-    move $v0, $t2
+    lw $t0, -4($fp)
+    move $v0, $t0
+
 
 I5:
     move $sp, $fp
@@ -32,6 +40,7 @@ I5:
     lw $fp, 0($fp)
     addiu $sp, $sp, 24
     jr $ra
+
 
 I6:
 multiply_i_i_i_i_i:
@@ -42,32 +51,45 @@ multiply_i_i_i_i_i:
 
 
 
+
 I7:
-    lw $t3, 8($fp)
-    lw $t4, 12($fp)
-    mul $t5, $t3, $t4
+    lw $t0, 8($fp)
+    lw $t1, 12($fp)
+    mul $t2, $t0, $t1
+
+    sw $t2, -8($fp)
 
 I8:
-    lw $t6, 16($fp)
-    lw $t7, 20($fp)
-    mul $t8, $t6, $t7
+    lw $t0, 16($fp)
+    lw $t1, 20($fp)
+    mul $t2, $t0, $t1
+
+    sw $t2, -12($fp)
 
 I9:
-    add $t9, $t5, $t8
+    lw $t0, -8($fp)
+    lw $t1, -12($fp)
+    add $t2, $t0, $t1
+
+    sw $t2, -16($fp)
 
 I10:
-    lw $t0, 24($fp)
-    add $t1, $t9, $t0
+    lw $t0, -16($fp)
+    lw $t1, 24($fp)
+    add $t2, $t0, $t1
+
+    sw $t2, -20($fp)
 
 I11:
+    lw $t0, -20($fp)
+
+    sw $t0, -20($fp)
+    sw $t0, -4($fp)
 
 I12:
-    sw $t1, -20($fp)
-    sw $t1, -4($fp)
-    sw $t5, -8($fp)
-    sw $t8, -12($fp)
-    sw $t9, -16($fp)
-    move $v0, $t1
+    lw $t0, -4($fp)
+    move $v0, $t0
+
 
 I13:
     move $sp, $fp
@@ -75,6 +97,7 @@ I13:
     lw $fp, 0($fp)
     addiu $sp, $sp, 48
     jr $ra
+
 
 I14:
 main:
@@ -84,9 +107,12 @@ main:
     addiu $fp, $sp, 20
 
 
+
 I15:
 
+
 I16:
+
 
 I17:
     addiu $sp, $sp, -16
@@ -100,21 +126,30 @@ I17:
     addiu $sp, $sp, 16
     move $t0, $v0
 
+    sw $t0, -12($fp)
+
 I18:
+    lw $t0, -12($fp)
+
+    sw $t0, -12($fp)
+    sw $t0, -4($fp)
 
 I19:
 
+
 I20:
+
 
 I21:
 
+
 I22:
+
 
 I23:
 
+
 I24:
-    sw $t0, -12($fp)
-    sw $t0, -4($fp)
     addiu $sp, $sp, -28
     li $t0, 6
     sw $t0, 8($sp)
@@ -134,17 +169,25 @@ I24:
     addiu $sp, $sp, 28
     move $t0, $v0
 
+    sw $t0, -16($fp)
+
 I25:
+    lw $t0, -16($fp)
 
-I26:
-    lw $t1, -4($fp)
-    add $t2, $t1, $t0
-
-I27:
     sw $t0, -16($fp)
     sw $t0, -8($fp)
+
+I26:
+    lw $t0, -4($fp)
+    lw $t1, -8($fp)
+    add $t2, $t0, $t1
+
     sw $t2, -20($fp)
-    move $v0, $t2
+
+I27:
+    lw $t0, -20($fp)
+    move $v0, $t0
+
 
 I28:
     move $sp, $fp
@@ -152,4 +195,5 @@ I28:
     lw $fp, 0($fp)
     addiu $sp, $sp, 28
     jr $ra
+
 
