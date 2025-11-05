@@ -10,7 +10,7 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - x (int) declared at line 240 [mangled: v_x_print_int_i_s2] [PARAM #0, offset: 8]
+  - x (int) declared at line 1 [mangled: v_x_print_int_i_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - x (int)
@@ -30,54 +30,20 @@ Exiting scope level 2
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
-| (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
-
-
-
-
-
-Exiting scope level 2
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 251 [mangled: #t1] [LOCAL, offset: -12]
-  - #t10 (int) declared at line 265 [mangled: #t10] [LOCAL, offset: -56]
-  - #t11 (int) declared at line 266 [mangled: #t11] [LOCAL, offset: -60]
-  - #t2 (int) declared at line 253 [mangled: #t2] [LOCAL, offset: -24]
-  - #t3 (int) declared at line 256 [mangled: #t3] [LOCAL, offset: -28]
-  - #t4 (int) declared at line 257 [mangled: #t4] [LOCAL, offset: -32]
-  - #t5 (int) declared at line 258 [mangled: #t5] [LOCAL, offset: -36]
-  - #t6 (int) declared at line 259 [mangled: #t6] [LOCAL, offset: -40]
-  - #t7 (int) declared at line 261 [mangled: #t7] [LOCAL, offset: -44]
-  - #t8 (int) declared at line 262 [mangled: #t8] [LOCAL, offset: -48]
-  - #t9 (int) declared at line 264 [mangled: #t9] [LOCAL, offset: -52]
-  - ptr (int*) declared at line 252 [mangled: v_ptr_main_s2] [LOCAL, offset: -20]
-  - x (int) declared at line 249 [mangled: v_x_main_s2] [LOCAL, offset: -4]
-  - y (int) declared at line 250 [mangled: v_y_main_s2] [LOCAL, offset: -8]
-  - z (int) declared at line 251 [mangled: v_z_main_s2] [LOCAL, offset: -16]
+  - #t1 (int) declared at line 8 [mangled: #t1] [LOCAL, offset: -12]
+  - #t2 (int) declared at line 10 [mangled: #t2] [LOCAL, offset: -20]
+  - #t3 (int) declared at line 11 [mangled: #t3] [LOCAL, offset: -24]
+  - #t4 (int) declared at line 12 [mangled: #t4] [LOCAL, offset: -28]
+  - x (int) declared at line 6 [mangled: v_x_main_s2] [LOCAL, offset: -4]
+  - y (int) declared at line 7 [mangled: v_y_main_s2] [LOCAL, offset: -8]
+  - z (int) declared at line 8 [mangled: v_z_main_s2] [LOCAL, offset: -16]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
-  - #t10 (int)
-  - #t11 (int)
   - #t2 (int)
   - #t3 (int)
   - #t4 (int)
-  - #t5 (int)
-  - #t6 (int)
-  - #t7 (int)
-  - #t8 (int)
-  - #t9 (int)
-  - ptr (int*)
   - x (int)
   - y (int)
   - z (int)

@@ -1283,6 +1283,143 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     
     emit_comment("Call " + func_name + " with " + to_string(num_args) + " arguments");
     
+    // ===== SPECIAL HANDLING FOR BUILT-IN FUNCTIONS =====
+    // Check if it's a built-in (handle name mangling: print_int_i, print_int, etc.)
+    bool is_print_int = (func_name.find("print_int") == 0);
+    bool is_print_string = (func_name.find("print_string") == 0);
+    
+    if (is_print_int) {
+        emit_comment("=== Built-in print_int function ===");
+        
+        // Get the single parameter
+        if (!pending_params.empty()) {
+            string param = pending_params[pending_params.size() - 1];
+            pending_params.clear();
+            
+            // Load parameter into $a0
+            bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
+            if (is_constant) {
+                emit("li $a0, " + param);
+            } else {
+                string param_reg = ensure_in_register(param);
+                if (param_reg != "$a0") {
+                    emit("move $a0, " + param_reg);
+                }
+            }
+            
+            // Syscall 1: print integer
+            emit("li $v0, 1");
+            emit("syscall");
+            emit_comment("=== End print_int ===");
+        }
+        return;
+    }
+    
+    if (is_print_string) {
+        emit_comment("=== Built-in print_string function ===");
+        
+        // Get the single parameter (string address)
+        if (!pending_params.empty()) {
+            string param = pending_params[pending_params.size() - 1];
+            pending_params.clear();
+            
+            // Load string address into $a0
+            string param_reg = ensure_in_register(param);
+            if (param_reg != "$a0") {
+                emit("move $a0, " + param_reg);
+            }
+            
+            // Syscall 4: print string
+            emit("li $v0, 4");
+            emit("syscall");
+            emit_comment("=== End print_string ===");
+        }
+        return;
+    }
+    
+    if (is_print_string || func_name.find("print_newline") == 0) {
+        emit_comment("=== Built-in print_newline function ===");
+        pending_params.clear();
+        
+        // Print a newline character (ASCII 10)
+        emit("li $a0, 10");      // ASCII code for newline
+        emit("li $v0, 11");      // Syscall 11: print character
+        emit("syscall");
+        emit_comment("=== End print_newline ===");
+        return;
+    }
+    
+    // ===== SPECIAL HANDLING FOR PRINTF =====
+    if (func_name == "printf") {
+        emit_comment("=== Built-in printf function ===");
+        
+        // Process parameters (they're in pending_params in reverse order)
+        vector<string> params;
+        for (int i = pending_params.size() - 1; i >= 0; i--) {
+            params.push_back(pending_params[i]);
+        }
+        pending_params.clear();
+        
+        if (params.empty()) {
+            emit_comment("ERROR: printf called with no arguments");
+            return;
+        }
+        
+        // First parameter is the format string
+        string format_param = params[0];
+        
+        // Check if it's a string literal or a variable containing a string address
+        if (!format_param.empty() && format_param[0] == '"') {
+            // It's a direct string literal - add it and get label
+            string str_label = add_string_literal(format_param);
+            emit("la $a0, " + str_label);
+            emit_comment("Load format string address");
+        } else {
+            // It's a variable containing string address
+            string str_reg = ensure_in_register(format_param);
+            if (str_reg != "$a0") {
+                emit("move $a0, " + str_reg);
+            }
+            emit_comment("Format string address in $a0");
+        }
+        
+        // For now, implement simple printf that only prints integers
+        // printf("format", value1, value2, ...)
+        // We'll print each value as an integer
+        
+        // Print the format string first (syscall 4)
+        emit("li $v0, 4");
+        emit_comment("Syscall 4: print string");
+        emit("syscall");
+        
+        // Print each subsequent argument as an integer
+        for (size_t i = 1; i < params.size(); i++) {
+            string param = params[i];
+            
+            // Get parameter value into $a0
+            bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
+            
+            if (is_constant) {
+                emit("li $a0, " + param);
+                emit_comment("Load integer constant " + param);
+            } else {
+                string param_reg = ensure_in_register(param);
+                if (param_reg != "$a0") {
+                    emit("move $a0, " + param_reg);
+                }
+                emit_comment("Load integer value from " + param);
+            }
+            
+            // Print integer (syscall 1)
+            emit("li $v0, 1");
+            emit_comment("Syscall 1: print integer");
+            emit("syscall");
+        }
+        
+        emit_comment("=== End printf ===");
+        return;  // Don't do normal function call processing
+    }
+    
     // ===== CALLER-SAVE: Save all dirty $t0-$t9 registers before call =====
     emit_comment("=== Caller-Save: Spill dirty registers before call ===");
     vector<string> saved_regs;  // Track which registers we saved
@@ -1307,7 +1444,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                 }
                 saved_regs.push_back(reg);
             }
-            
+
             // Clear dirty flag for this register
             reg_allocator.clear_dirty(reg);
         }

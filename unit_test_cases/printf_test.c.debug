@@ -1,0 +1,6 @@
+Error log initialized: ../unit_test_cases/printf_test.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: printf with 2 parameters
+Registered function: printf as printf_cp1_i returning void
+Function definition: printf registered

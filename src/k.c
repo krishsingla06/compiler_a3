@@ -225,12 +225,46 @@
 
 //-----------------------------
 
-int foo(int a, int b){
-    return a + b;
+// int foo(int a, int b){
+//     return a + b;
+// }
+
+// int main(){
+//     int x = 10;
+//     int y = 20;
+//     return foo(x, y);
+// }
+
+//--------------------------------
+
+int print_int(int x) {
+    return 0;
 }
 
-int main(){
+int print_newline() {
+    return 0;
+}
+
+int main() {
     int x = 10;
     int y = 20;
-    return foo(x, y);
+    int z = x + y;
+    int *ptr;
+    ptr = &z;
+
+    
+    print_int(z);
+    print_newline();
+    print_int(x);
+    print_newline();
+
+    print_int(y);
+    print_newline();
+
+    z=z*2;
+    print_int(z);
+    print_newline();
+
+    
+    return z;
 }

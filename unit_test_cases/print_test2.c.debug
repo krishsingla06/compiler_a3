@@ -1,4 +1,4 @@
-Error log initialized: k.c.errors
+Error log initialized: ../unit_test_cases/print_test2.c.errors
 Starting parser...
 Entering scope level 1
 Function declarator: print_int with 1 parameters
@@ -8,7 +8,7 @@ Entering scope level 2
 Allocated parameter x (param #0) at offset 8
 DEBUG: Variable x mangled as v_x_print_int_i_s2 (function: print_int, signature: i, scope: 2)
 Variable x mangled as v_x_print_int_i_s2 [PARAM]
-Declared variable: x (int) at line 240 in scope 2
+Declared variable: x (int) at line 1 in scope 2
 Inserted function parameter: x (int)
 Function print_int_i parameter space: 4 bytes
 Integer literal: 0 (type: int)
@@ -18,7 +18,7 @@ Function print_int stack frame:
   - Parameters: 4 bytes
   - Total: 12 bytes
 Start rule: Global declaration has 3 TAC instructions
-TAC code written to k.tac
+TAC code written to ../unit_test_cases/print_test2.tac
 Function declarator: print_newline with no parameters
 Registered function: print_newline as print_newline returning int
 Function definition: print_newline registered
@@ -30,7 +30,7 @@ Function print_newline stack frame:
   - Local variables: 0 bytes
   - Parameters: 0 bytes
   - Total: 8 bytes
-TAC code appended to k.tac
+TAC code appended to ../unit_test_cases/print_test2.tac
 Function declarator: main with no parameters
 Registered function: main as main returning int
 Function definition: main registered
@@ -41,97 +41,67 @@ DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable x at offset -4 (size: 4 bytes)
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Variable x mangled as v_x_main_s2 [LOCAL]
-Declared variable: x (int) with initializer of type int at line 249 in scope 2
+Declared variable: x (int) with initializer of type int at line 10 in scope 2
 Integer literal: 20 (type: int)
 DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable y at offset -8 (size: 4 bytes)
 DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
 Variable y mangled as v_y_main_s2 [LOCAL]
-Declared variable: y (int) with initializer of type int at line 250 in scope 2
+Declared variable: y (int) with initializer of type int at line 11 in scope 2
 Found variable: x of type int
 Found variable: y of type int
 Binary operation: int + intAllocated local variable #t1 at offset -12 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 251 in scope 2
+Declared variable: #t1 (int) at line 12 in scope 2
  -> int (numeric arithmetic)
 DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable z at offset -16 (size: 4 bytes)
 DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
 Variable z mangled as v_z_main_s2 [LOCAL]
-Declared variable: z (int) with initializer of type int at line 251 in scope 2
-DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable ptr at offset -20 (size: 4 bytes)
-DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
-Variable ptr mangled as v_ptr_main_s2 [LOCAL]
-Declared variable: ptr (int*) at line 252 in scope 2
-Found variable: ptr of type int*
-Found variable: z of type int
-Unary operation: &int -> int*
-Allocated local variable #t2 at offset -24 (size: 4 bytes)
-Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (int) at line 253 in scope 2
+Declared variable: z (int) with initializer of type int at line 12 in scope 2
 Found function name: print_int
 Found variable: z of type int
 Found exact function match: print_int_i
-Allocated local variable #t3 at offset -28 (size: 4 bytes)
-Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int) at line 256 in scope 2
+Allocated local variable #t2 at offset -20 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 14 in scope 2
 Found function name: print_newline
 Found exact function match: print_newline
 Function call: print_newline() -> int
-Allocated local variable #t4 at offset -32 (size: 4 bytes)
-Variable #t4 mangled as #t4 [LOCAL]
-Declared variable: #t4 (int) at line 257 in scope 2
+Allocated local variable #t3 at offset -24 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 15 in scope 2
 Found function name: print_int
 Found variable: x of type int
 Found exact function match: print_int_i
-Allocated local variable #t5 at offset -36 (size: 4 bytes)
-Variable #t5 mangled as #t5 [LOCAL]
-Declared variable: #t5 (int) at line 258 in scope 2
+Allocated local variable #t4 at offset -28 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 16 in scope 2
 Found function name: print_newline
 Found exact function match: print_newline
 Function call: print_newline() -> int
-Allocated local variable #t6 at offset -40 (size: 4 bytes)
-Variable #t6 mangled as #t6 [LOCAL]
-Declared variable: #t6 (int) at line 259 in scope 2
+Allocated local variable #t5 at offset -32 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 17 in scope 2
 Found function name: print_int
 Found variable: y of type int
 Found exact function match: print_int_i
-Allocated local variable #t7 at offset -44 (size: 4 bytes)
+Allocated local variable #t6 at offset -36 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 18 in scope 2
+Found function name: print_newline
+Found exact function match: print_newline
+Function call: print_newline() -> int
+Allocated local variable #t7 at offset -40 (size: 4 bytes)
 Variable #t7 mangled as #t7 [LOCAL]
-Declared variable: #t7 (int) at line 261 in scope 2
-Found function name: print_newline
-Found exact function match: print_newline
-Function call: print_newline() -> int
-Allocated local variable #t8 at offset -48 (size: 4 bytes)
-Variable #t8 mangled as #t8 [LOCAL]
-Declared variable: #t8 (int) at line 262 in scope 2
-Found variable: z of type int
-Found variable: z of type int
-Integer literal: 2 (type: int)
-Binary operation: int * intAllocated local variable #t9 at offset -52 (size: 4 bytes)
-Variable #t9 mangled as #t9 [LOCAL]
-Declared variable: #t9 (int) at line 264 in scope 2
- -> int (numeric arithmetic)
-Found function name: print_int
-Found variable: z of type int
-Found exact function match: print_int_i
-Allocated local variable #t10 at offset -56 (size: 4 bytes)
-Variable #t10 mangled as #t10 [LOCAL]
-Declared variable: #t10 (int) at line 265 in scope 2
-Found function name: print_newline
-Found exact function match: print_newline
-Function call: print_newline() -> int
-Allocated local variable #t11 at offset -60 (size: 4 bytes)
-Variable #t11 mangled as #t11 [LOCAL]
-Declared variable: #t11 (int) at line 266 in scope 2
+Declared variable: #t7 (int) at line 19 in scope 2
 Found variable: z of type int
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 60 bytes
+  - Local variables: 40 bytes
   - Parameters: 0 bytes
-  - Total: 68 bytes
-TAC code appended to k.tac
+  - Total: 48 bytes
+TAC code appended to ../unit_test_cases/print_test2.tac
 yyparse() returned 0
 
 +-----------------------------------------------------------------------------------------+
@@ -146,17 +116,11 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 29
-Getting offset for variable: v_z_main_s2
+Total TAC instructions collected: 22
 Getting offset for variable: v_x_main_s2
-Getting offset for variable: v_x_main_s2
+Getting offset for variable: v_y_main_s2
 Getting offset for variable: #t1
 Getting offset for variable: v_z_main_s2
-Getting offset for variable: #t2
-Getting offset for variable: v_ptr_main_s2
-Getting offset for variable: v_y_main_s2
-Getting offset for variable: #t9
-Getting offset for variable: v_z_main_s2
-Clean MIPS assembly code (no debug) written to k.clean.asm
-MIPS assembly code (with debug) written to k.asm
-Error log closed: k.c.errors
+Clean MIPS assembly code (no debug) written to ../unit_test_cases/print_test2.clean.asm
+MIPS assembly code (with debug) written to ../unit_test_cases/print_test2.asm
+Error log closed: ../unit_test_cases/print_test2.c.errors

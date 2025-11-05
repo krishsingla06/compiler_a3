@@ -50,10 +50,10 @@ I6:
 
 I7:
 main:
-    addiu $sp, $sp, -108
-    sw $ra, 104($sp)
-    sw $fp, 100($sp)
-    addiu $fp, $sp, 100
+    addiu $sp, $sp, -88
+    sw $ra, 84($sp)
+    sw $fp, 80($sp)
+    addiu $fp, $sp, 80
 
 
 I8:
@@ -68,78 +68,50 @@ I10:
 I11:
 
 I12:
-    sw $t0, -4($fp)
-    addiu $t0, $fp, -16
 
 I13:
-
-I14:
-
-I15:
     move $a0, $t2
     li $v0, 1
     syscall
 
-I16:
+I14:
     li $a0, 10
     li $v0, 11
     syscall
 
-I17:
+I15:
 
-I18:
-    lw $t3, -4($fp)
-    move $a0, $t3
+I16:
+    move $a0, $t0
     li $v0, 1
     syscall
 
-I19:
+I17:
     li $a0, 10
     li $v0, 11
     syscall
 
-I20:
+I18:
 
-I21:
+I19:
     move $a0, $t1
     li $v0, 1
     syscall
 
-I22:
+I20:
     li $a0, 10
     li $v0, 11
     syscall
 
-I23:
-    li $t4, 2
-    mul $t4, $t2, $t4
-
-I24:
+I21:
+    sw $t0, -4($fp)
+    sw $t1, -8($fp)
     sw $t2, -12($fp)
     sw $t2, -16($fp)
-
-I25:
-
-I26:
-    move $a0, $t4
-    li $v0, 1
-    syscall
-
-I27:
-    li $a0, 10
-    li $v0, 11
-    syscall
-
-I28:
-    sw $t0, -24($fp)
-    sw $t0, -20($fp)
-    sw $t1, -8($fp)
-    sw $t4, -52($fp)
-    sw $t4, -16($fp)
-    move $v0, $t4
+    move $v0, $t2
 
 
-I29:
+I22:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
