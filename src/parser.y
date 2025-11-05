@@ -3225,6 +3225,15 @@ assignment_expression
             $$ = new TypeInfo(*lhs_type);
             $$->isLvalue = false;
             $$->code = lhs_type->code;
+            // in LHS code, change the last instruction from dereference to simple load
+            if(!$$->code.empty()){
+                TACInstruction* last_instr = $$->code.back();
+                if(last_instr->op.type == TAC_OPERATOR_DEREF){
+                    // change to load indirect
+                    // jugaad: actually we need to change to NOP, because we want the address to store into 
+                    last_instr->op.type = TAC_OPERATOR_NOP;
+                }
+            }
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);

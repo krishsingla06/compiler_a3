@@ -8,13 +8,13 @@ Total Symbols: 8
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -20     |
-| #t2                 | #t2                             | int         | LOCAL    | -24     |
-| #t3                 | #t3                             | int         | LOCAL    | -28     |
-| #t4                 | #t4                             | int         | LOCAL    | -32     |
-| a                   | v_a_main_s2                     | int         | LOCAL    | -4      |
-| b                   | v_b_main_s2                     | int         | LOCAL    | -8      |
-| c                   | v_c_main_s2                     | int         | LOCAL    | -12     |
-| str                 | v_str_main_s2                   | char*       | LOCAL    | -16     |
+| #t1                 | #t1                             | int         | LOCAL    | -52     |
+| #t2                 | #t2                             | int         | LOCAL    | -60     |
+| #t3                 | #t3                             | int         | LOCAL    | -64     |
+| arr                 | v_arr_main_s2                   | int[3]      | LOCAL    | -36     |
+| ptr                 | v_ptr_main_s2                   | int*        | LOCAL    | -56     |
+| x                   | v_x_main_s2                     | int         | LOCAL    | -40     |
+| y                   | v_y_main_s2                     | int         | LOCAL    | -44     |
+| z                   | v_z_main_s2                     | int         | LOCAL    | -48     |
 +-----------------------------------------------------------------------------------------+
 

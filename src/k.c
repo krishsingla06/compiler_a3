@@ -189,13 +189,36 @@
 //     //*x=1;
 // }
 
+// int main(){
+//     int a,b,c;
+//     char* str = "Hello, World!";
+//     a = 10          ;//→  li $t0, 10
+//     b = 20          ;//→  li $t1, 20
+//     c = a + b + 30  ;//→  add $t2, $t0, $t1
+//     if (c > 50)     ;//→  li $t4, 50
+//     c = c - 10      ;//→  li $t1, 10
+//                     //   sub $t1, $t0, $t1
+// }
+
+// struct Node {
+//     int data;
+//     int more_data;
+//     int p;
+// };
+
+// int main(){
+//     struct Node node1;
+//     node1.data = 10;
+//     return 0;
+//     // node1.more_data = 20;
+//     // node1.p = node1.data + node1.more_data;
+//     // return node1.p;
+// }
+
 int main(){
-    int a,b,c;
-    char* str = "Hello, World!";
-    a = 10          ;//→  li $t0, 10
-    b = 20          ;//→  li $t1, 20
-    c = a + b + 30  ;//→  add $t2, $t0, $t1
-    if (c > 50)     ;//→  li $t4, 50
-    c = c - 10      ;//→  li $t1, 10
-                    //   sub $t1, $t0, $t1
+    int arr[3];
+    int x,y,z;
+    int *ptr = &x;
+    *ptr = 10;
+    x = *ptr;
 }

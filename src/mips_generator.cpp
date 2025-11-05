@@ -468,24 +468,23 @@ void MIPSGenerator::generate_function_epilogue(const string& func_name) {
     emit_comment("=== Function Epilogue for " + func_name + " ===");
     
     int frame_size = calculate_stack_frame_size(func_name);
-    int total_frame = frame_size;
     
     // Step 1: Move $sp back to where $fp is (where old $fp is saved)
     emit("move $sp, $fp");
     emit_comment("Move $sp to $fp (where old $fp is saved)");
 
-    
-    // Step 3: Restore return address from 4($sp)
+    // Step 2: Restore return address from 4($fp)
     emit("lw $ra, 4($fp)");
     emit_comment("Restore return address");
 
-    // Step 2: Restore old frame pointer from 0($sp) [which is 0($fp)]
+    // Step 3: Restore old frame pointer from 0($fp)
     emit("lw $fp, 0($fp)");
     emit_comment("Restore old frame pointer");
     
-    // Step 4: Pop the entire frame (deallocate the space we allocated in prologue)
-    emit("addiu $sp, $sp, " + to_string(total_frame));
-    emit_comment("Deallocate frame (" + to_string(total_frame) + " bytes)");
+    // Step 4: Deallocate the saved $ra and $fp (8 bytes)
+    // Since we moved $sp to $fp, we only need to skip past the saved $ra and $fp
+    emit("addiu $sp, $sp, 8");
+    emit_comment("Deallocate saved $ra and $fp (8 bytes)");
     
     // Step 5: Return to caller
     emit("jr $ra");
@@ -1213,59 +1212,18 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
     // TAC: *(arg1) = arg2
     // MIPS: Store value (arg2) through pointer (arg1)
     
-    string ptr = instr->result->value;
-    string value = instr->arg1->value;
+    string ptr = instr->result->value;      // FIXED: arg1 is the pointer
+    string value = instr->arg1->value;    // FIXED: arg2 is the value
     
     emit_comment("*" + ptr + " = " + value);
     
-    // Get pointer address into a register
-    string ptr_reg;
-    if (storage_desc.is_in_register(ptr)) {
-        ptr_reg = storage_desc.get_register(ptr);
-        emit_comment("DEBUG: Pointer " + ptr + " already in " + ptr_reg);
-    } else {
-        // Load pointer from memory
-        ptr_reg = reg_allocator.allocate_temp_reg();
-        if (reg_allocator.is_reg_allocated(ptr_reg)) {
-            spill_register(ptr_reg);
-        }
-        int offset = get_offset(ptr);
-        emit("lw " + ptr_reg + ", " + to_string(offset) + "($fp)");
-        emit_comment("DEBUG: Loaded pointer " + ptr + " from memory at " + to_string(offset) + "($fp)");
-        
-        // Update descriptors for pointer
-        reg_desc.add_var_to_reg(ptr_reg, ptr);
-        storage_desc.add_location(ptr, ptr_reg);
-    }
+    // Get pointer address into a register using smart helper
+    string ptr_reg = load_operand_to_register(instr->result);
+    emit_comment("DEBUG: Pointer " + ptr + " in " + ptr_reg);
     
-    // Get value to store into a register
-    string value_reg;
-    if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
-        // Load constant
-        value_reg = reg_allocator.allocate_temp_reg();
-        if (reg_allocator.is_reg_allocated(value_reg)) {
-            spill_register(value_reg);
-        }
-        emit("li " + value_reg + ", " + value);
-        emit_comment("DEBUG: Loaded constant " + value + " into " + value_reg);
-        // Don't update descriptors for constant-only register
-    } else if (storage_desc.is_in_register(value)) {
-        value_reg = storage_desc.get_register(value);
-        emit_comment("DEBUG: Value " + value + " already in " + value_reg);
-    } else {
-        // Load value from memory
-        value_reg = reg_allocator.allocate_temp_reg();
-        if (reg_allocator.is_reg_allocated(value_reg)) {
-            spill_register(value_reg);
-        }
-        int offset = get_offset(value);
-        emit("lw " + value_reg + ", " + to_string(offset) + "($fp)");
-        emit_comment("DEBUG: Loaded value " + value + " from memory at " + to_string(offset) + "($fp)");
-        
-        // Update descriptors for value
-        reg_desc.add_var_to_reg(value_reg, value);
-        storage_desc.add_location(value, value_reg);
-    }
+    // Get value to store into a register using smart helper (handles constants, strings, variables)
+    string value_reg = load_operand_to_register(instr->arg1);
+    emit_comment("DEBUG: Value " + value + " in " + value_reg);
     
     // Store value through pointer: sw $value, 0($ptr)
     emit("sw " + value_reg + ", 0(" + ptr_reg + ")");
