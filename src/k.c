@@ -172,15 +172,30 @@
 
 // }
 
-int main(){
+//int main(){
     // int **x;
     // int *y;
     // //(x+3)=x; // error
     // *(x)=y;
     // *y=10;
     // **x=20;
-        int m[10];
+//}
 
-    int *x;
-    *x=1;
+// int main(){
+//     int m[10];
+//     int *x;
+//     int y;
+//     y=*x;
+//     //*x=1;
+// }
+
+int main(){
+    int a,b,c;
+    char* str = "Hello, World!";
+    a = 10          ;//→  li $t0, 10
+    b = 20          ;//→  li $t1, 20
+    c = a + b + 30  ;//→  add $t2, $t0, $t1
+    if (c > 50)     ;//→  li $t4, 50
+    c = c - 10      ;//→  li $t1, 10
+                    //   sub $t1, $t0, $t1
 }

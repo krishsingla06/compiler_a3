@@ -1,0 +1,61 @@
+Error log initialized: string_test.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: main with no parameters
+Registered function: main as main returning int
+Function definition: main registered
+Entering scope level 2
+Function main parameter space: 0 bytes
+DEBUG: Variable msg1 mangled as v_msg1_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable msg1 at offset -4 (size: 4 bytes)
+DEBUG: Variable msg1 mangled as v_msg1_main_s2 (function: main, signature: , scope: 2)
+Variable msg1 mangled as v_msg1_main_s2 [LOCAL]
+Declared variable: msg1 (char*) at line 2 in scope 2
+DEBUG: Variable msg2 mangled as v_msg2_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable msg2 at offset -8 (size: 4 bytes)
+DEBUG: Variable msg2 mangled as v_msg2_main_s2 (function: main, signature: , scope: 2)
+Variable msg2 mangled as v_msg2_main_s2 [LOCAL]
+Declared variable: msg2 (char*) at line 3 in scope 2
+DEBUG: Variable msg3 mangled as v_msg3_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable msg3 at offset -12 (size: 4 bytes)
+DEBUG: Variable msg3 mangled as v_msg3_main_s2 (function: main, signature: , scope: 2)
+Variable msg3 mangled as v_msg3_main_s2 [LOCAL]
+Declared variable: msg3 (char*) at line 4 in scope 2
+Found variable: msg1 of type char*
+String literal: "Hello World" (type: string)
+Hello ji
+Found variable: msg2 of type char*
+String literal: "Testing string literals" (type: string)
+Hello ji
+Found variable: msg3 of type char*
+String literal: "Hello World" (type: string)
+Hello ji
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 12 bytes
+  - Parameters: 0 bytes
+  - Total: 20 bytes
+Start rule: Global declaration has 6 TAC instructions
+TAC code written to string_test.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+
+
+Generating MIPS assembly code...
+Total TAC instructions collected: 6
+Getting offset for variable: v_msg1_main_s2
+Getting offset for variable: v_msg2_main_s2
+Getting offset for variable: v_msg3_main_s2
+Clean MIPS assembly code (no debug) written to string_test.clean.asm
+MIPS assembly code (with debug) written to string_test.asm
+Error log closed: string_test.c.errors

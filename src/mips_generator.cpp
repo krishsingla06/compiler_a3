@@ -143,7 +143,7 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
-    : output(out), clean_output(clean_out), current_block_id(0) {
+    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0) {
 }
 
 void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions) {
@@ -280,15 +280,14 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     output << "\n";
     if (clean_output) *clean_output << "\n";
     
+    // Collect strings and constants for data section
+    collect_data_section_items(tac_instructions);
+    
     // Analyze basic blocks
     analyze_basic_blocks(tac_instructions);
     
     // Data section
-    output << ".data\n";
-    if (clean_output) *clean_output << ".data\n";
-    emit_comment("Global variables");
-    output << "\n";
-    if (clean_output) *clean_output << "\n";
+    generate_data_section();
     
     // Text section
     output << ".text\n";
@@ -355,8 +354,76 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     emit_comment("End of code");
 }
 
+void MIPSGenerator::collect_data_section_items(const vector<TACInstruction*>& tac_instructions) {
+    emit_comment("======================================");
+    emit_comment("  Collecting Data Section Items");
+    emit_comment("======================================");
+    
+    // Scan through all TAC instructions to find string literals
+    for (const auto* instr : tac_instructions) {
+        if (!instr) continue;
+        
+        // Check if any operand is a string literal
+        if (instr->result && instr->result->type == TAC_OPERAND_STRING) {
+            add_string_literal(instr->result->value);
+        }
+        if (instr->arg1 && instr->arg1->type == TAC_OPERAND_STRING) {
+            add_string_literal(instr->arg1->value);
+        }
+        if (instr->arg2 && instr->arg2->type == TAC_OPERAND_STRING) {
+            add_string_literal(instr->arg2->value);
+        }
+    }
+    
+    emit_comment("Found " + to_string(string_literals.size()) + " string literals");
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+}
+
+string MIPSGenerator::add_string_literal(const string& content) {
+    // Check if this string already exists
+    for (const auto& pair : string_literals) {
+        if (pair.first == content) {
+            return pair.second;  // Return existing label
+        }
+    }
+    
+    // Create new label for this string
+    string label = "str_" + to_string(next_string_id++);
+    string_literals[content] = label;
+    
+    emit_comment("Added string literal: " + label + " = \"" + content + "\"");
+    
+    return label;
+}
+
 void MIPSGenerator::generate_data_section() {
-    // Stub
+    output << ".data\n";
+    if (clean_output) *clean_output << ".data\n";
+    
+    emit_comment("String Literals");
+    
+    // Emit all string literals
+    for (const auto& pair : string_literals) {
+        string content = pair.first;
+        const string& label = pair.second;
+        
+        // Strip surrounding quotes if present (parser includes them)
+        if (content.length() >= 2 && content[0] == '"' && content[content.length()-1] == '"') {
+            content = content.substr(1, content.length() - 2);
+        }
+        
+        // Emit label and string
+        output << label << ": .asciiz \"" << content << "\"\n";
+        if (clean_output) *clean_output << label << ": .asciiz \"" << content << "\"\n";
+    }
+    
+    if (string_literals.empty()) {
+        emit_comment("(no string literals)");
+    }
+    
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
 }
 
 void MIPSGenerator::generate_text_section(const vector<TACInstruction*>& tac_instructions) {
@@ -579,6 +646,25 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     
     emit_comment("Assignment: " + dest + " = " + src);
     
+    // Check if source is a string literal
+    if (instr->arg1->type == TAC_OPERAND_STRING) {
+        // Load address of string literal
+        string str_label = add_string_literal(src);  // Get or create label
+        string reg = allocate_register_with_spilling();
+        
+        emit("la " + reg + ", " + str_label);
+        emit_comment("DEBUG: Loaded address of string \"" + src + "\" into " + reg);
+        
+        // Update descriptors
+        reg_desc.clear_reg(reg);
+        reg_desc.add_var_to_reg(reg, dest);
+        storage_desc.set_location(dest, reg);
+        reg_allocator.mark_dirty(reg);
+        
+        emit_comment("DEBUG: " + dest + " = &" + str_label + " in " + reg + " (dirty)");
+        return;
+    }
+    
     // Check if source is a constant (either marked as constant or is a numeric value)
     bool is_constant = (instr->arg1->type == TAC_OPERAND_CONSTANT);
     
@@ -729,28 +815,12 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
     
     emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
     
-    // Get operands into registers
-    string reg1, reg2;
+    // Get operands into registers using the smart helper
+    string reg1 = load_operand_to_register(instr->arg1);
+    emit_comment("DEBUG: " + src1 + " in " + reg1);
     
-    // Handle first operand
-    if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
-        reg1 = allocate_register_with_spilling();
-        emit("li " + reg1 + ", " + src1);
-        emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-    } else {
-        reg1 = ensure_in_register(src1);
-        emit_comment("DEBUG: " + src1 + " in " + reg1);
-    }
-    
-    // Handle second operand
-    if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
-        reg2 = allocate_register_with_spilling();
-        emit("li " + reg2 + ", " + src2);
-        emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
-    } else {
-        reg2 = ensure_in_register(src2);
-        emit_comment("DEBUG: " + src2 + " in " + reg2);
-    }
+    string reg2 = load_operand_to_register(instr->arg2);
+    emit_comment("DEBUG: " + src2 + " in " + reg2);
     
     // Allocate destination register
     string dest_reg = allocate_register_with_spilling();
@@ -847,28 +917,12 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
         
         emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label);
         
-        // Get operands into registers
-        string reg1, reg2;
+        // Get operands into registers using smart helper
+        string reg1 = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: " + src1 + " in " + reg1);
         
-        // Handle first operand
-        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
-            reg1 = allocate_register_with_spilling();
-            emit("li " + reg1 + ", " + src1);
-            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-        } else {
-            reg1 = ensure_in_register(src1);
-            emit_comment("DEBUG: " + src1 + " in " + reg1);
-        }
-        
-        // Handle second operand
-        if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
-            reg2 = allocate_register_with_spilling();
-            emit("li " + reg2 + ", " + src2);
-            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
-        } else {
-            reg2 = ensure_in_register(src2);
-            emit_comment("DEBUG: " + src2 + " in " + reg2);
-        }
+        string reg2 = load_operand_to_register(instr->arg2);
+        emit_comment("DEBUG: " + src2 + " in " + reg2);
         
         // Emit branch instruction
         emit(branch_instr + " " + reg1 + ", " + reg2 + ", I" + target_label);
@@ -914,28 +968,12 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
         
         emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
         
-        // Get operands into registers
-        string reg1, reg2;
+        // Get operands into registers using smart helper
+        string reg1 = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: " + src1 + " in " + reg1);
         
-        // Handle first operand
-        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
-            reg1 = allocate_register_with_spilling();
-            emit("li " + reg1 + ", " + src1);
-            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-        } else {
-            reg1 = ensure_in_register(src1);
-            emit_comment("DEBUG: " + src1 + " in " + reg1);
-        }
-        
-        // Handle second operand
-        if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
-            reg2 = allocate_register_with_spilling();
-            emit("li " + reg2 + ", " + src2);
-            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
-        } else {
-            reg2 = ensure_in_register(src2);
-            emit_comment("DEBUG: " + src2 + " in " + reg2);
-        }
+        string reg2 = load_operand_to_register(instr->arg2);
+        emit_comment("DEBUG: " + src2 + " in " + reg2);
         
         // Allocate destination register
         string dest_reg = allocate_register_with_spilling();
@@ -1032,24 +1070,9 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
     
     emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
     
-    // Get first operand into register
-    string reg1;
-    if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
-        reg1 = allocate_register_with_spilling();
-        emit("li " + reg1 + ", " + src1);
-        emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-    } else {
-        // Check if it's a numeric literal (workaround for parser)
-        bool is_numeric = !src1.empty() && (isdigit(src1[0]) || src1[0] == '-');
-        if (is_numeric) {
-            reg1 = allocate_register_with_spilling();
-            emit("li " + reg1 + ", " + src1);
-            emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-        } else {
-            reg1 = ensure_in_register(src1);
-            emit_comment("DEBUG: " + src1 + " in " + reg1);
-        }
-    }
+    // Get first operand into register using smart helper
+    string reg1 = load_operand_to_register(instr->arg1);
+    emit_comment("DEBUG: " + src1 + " in " + reg1);
     
     // Handle second operand
     // For shifts, if arg2 is constant, we can use immediate shift instructions
@@ -1072,24 +1095,9 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
         return;
     }
     
-    // Get second operand into register
-    string reg2;
-    if (instr->arg2->type == TAC_OPERAND_CONSTANT) {
-        reg2 = allocate_register_with_spilling();
-        emit("li " + reg2 + ", " + src2);
-        emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
-    } else {
-        // Check if it's a numeric literal
-        bool is_numeric = !src2.empty() && (isdigit(src2[0]) || src2[0] == '-');
-        if (is_numeric) {
-            reg2 = allocate_register_with_spilling();
-            emit("li " + reg2 + ", " + src2);
-            emit_comment("DEBUG: Loaded constant " + src2 + " into " + reg2);
-        } else {
-            reg2 = ensure_in_register(src2);
-            emit_comment("DEBUG: " + src2 + " in " + reg2);
-        }
-    }
+    // Get second operand into register using smart helper
+    string reg2 = load_operand_to_register(instr->arg2);
+    emit_comment("DEBUG: " + src2 + " in " + reg2);
     
     // Allocate destination register
     string dest_reg = allocate_register_with_spilling();
@@ -1446,6 +1454,55 @@ string MIPSGenerator::ensure_in_register(const string& var) {
 
 string MIPSGenerator::get_reg(const string& var) {
     return ensure_in_register(var);
+}
+
+string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
+    // Load an operand (constant, variable, or temp) into a register
+    // Returns the register containing the value
+    
+    if (!operand) {
+        emit_comment("ERROR: Null operand in load_operand_to_register");
+        return "$t0";  // Fallback
+    }
+    
+    string value = operand->value;
+    
+    // Handle constants
+    if (operand->type == TAC_OPERAND_CONSTANT) {
+        string reg = allocate_register_with_spilling();
+        emit("li " + reg + ", " + value);
+        emit_comment("DEBUG: Loaded constant " + value + " into " + reg);
+        return reg;  // Don't add to descriptors (temporary use only)
+    }
+    
+    // Handle string literals
+    if (operand->type == TAC_OPERAND_STRING) {
+        string str_label = add_string_literal(value);
+        string reg = allocate_register_with_spilling();
+        emit("la " + reg + ", " + str_label);
+        emit_comment("DEBUG: Loaded address of string \"" + value + "\" into " + reg);
+        return reg;  // Don't add to descriptors (temporary use only)
+    }
+    
+    // Check if it's a numeric literal (workaround for parser not always setting CONSTANT type)
+    bool is_numeric = !value.empty();
+    size_t start = 0;
+    if (!value.empty() && (value[0] == '-' || value[0] == '+')) start = 1;
+    for (size_t i = start; i < value.length(); i++) {
+        if (!isdigit(value[i])) {
+            is_numeric = false;
+            break;
+        }
+    }
+    if (is_numeric && value.length() > start) {
+        string reg = allocate_register_with_spilling();
+        emit("li " + reg + ", " + value);
+        emit_comment("DEBUG: Loaded numeric literal " + value + " into " + reg);
+        return reg;  // Don't add to descriptors (temporary use only)
+    }
+    
+    // It's a variable or temp - use ensure_in_register
+    return ensure_in_register(value);
 }
 
 string MIPSGenerator::allocate_register_with_spilling() {

@@ -71,7 +71,14 @@ private:
     map<int, int> instr_to_block;    // Maps instruction index to block ID
     int current_block_id;
     
+    // Data section management
+    map<string, string> string_literals;  // Maps string content to label (str_0, str_1, ...)
+    int next_string_id;
+    
     void generate_data_section();
+    void collect_data_section_items(const vector<TACInstruction*>& tac_instructions);
+    string add_string_literal(const string& content);  // Add string, return label
+    
     void generate_text_section(const vector<TACInstruction*>& tac_instructions);
     
     // Basic block analysis
@@ -113,6 +120,7 @@ private:
     void spill_register(const string& reg);  // Write back all vars in register to memory
     void spill_all_dirty();  // Write back all dirty registers to memory
     string ensure_in_register(const string& var);  // Ensure var is in a register
+    string load_operand_to_register(TACOperand* operand);  // Load operand (constant or variable) into register
     void print_descriptors();  // Debug: Print current state of descriptors
     
 public:

@@ -10,28 +10,14 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 10 [mangled: #t1] [LOCAL, offset: -20]
-  - #t2 (int) declared at line 11 [mangled: #t2] [LOCAL, offset: -24]
-  - #t3 (int) declared at line 13 [mangled: #t3] [LOCAL, offset: -28]
-  - #t4 (int) declared at line 14 [mangled: #t4] [LOCAL, offset: -32]
-  - #t5 (int) declared at line 14 [mangled: #t5] [LOCAL, offset: -36]
-  - #t6 (int) declared at line 16 [mangled: #t6] [LOCAL, offset: -40]
-  - ptr1 (int*) declared at line 4 [mangled: v_ptr1_main_s2] [LOCAL, offset: -12]
-  - ptr2 (int*) declared at line 5 [mangled: v_ptr2_main_s2] [LOCAL, offset: -16]
-  - x (int) declared at line 2 [mangled: v_x_main_s2] [LOCAL, offset: -4]
-  - y (int) declared at line 3 [mangled: v_y_main_s2] [LOCAL, offset: -8]
+  - msg1 (char*) declared at line 2 [mangled: v_msg1_main_s2] [LOCAL, offset: -4]
+  - msg2 (char*) declared at line 3 [mangled: v_msg2_main_s2] [LOCAL, offset: -8]
+  - msg3 (char*) declared at line 4 [mangled: v_msg3_main_s2] [LOCAL, offset: -12]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - #t1 (int)
-  - #t2 (int)
-  - #t3 (int)
-  - #t4 (int)
-  - #t5 (int)
-  - #t6 (int)
-  - ptr1 (int*)
-  - ptr2 (int*)
-  - x (int)
-  - y (int)
+  - msg1 (char*)
+  - msg2 (char*)
+  - msg3 (char*)
 
 
 

@@ -7,8 +7,8 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 408 bytes
+|     - Local var space: 32 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 416 bytes
-|   Declared at line: 175
+|     - Total frame size: 40 bytes
+|   Declared at line: 192
 +-----------------------------------------------------------------------------------------+
