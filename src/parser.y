@@ -2105,6 +2105,7 @@ postfix_expression
 			$$->isLiteral = false;
 			// Array subscript result is an lvalue if the base is an lvalue
 			$$->isLvalue = base->isLvalue;
+            $$->isDereferenced = true; // Result is dereferenced value
 
             int size_of_base = getSize(*$$);
             
@@ -2123,7 +2124,7 @@ postfix_expression
             // result = *address (dereference - type depends on base element type)
             $$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
             TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, $$->result, address, new_empty_var(),0);
-            $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
+           // $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
             $$->code.insert($$->code.end(), index->code.begin(), index->code.end());
             $$->code.push_back(i1);
             $$->code.push_back(i_base);
@@ -3280,6 +3281,7 @@ assignment_expression
             $$->baseType = "error";
         }
         else {
+            cout<<"Simple assignment from " << rhs_type->toString() << " to " << lhs_type->toString() << "\n";
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
 			$$->isLvalue = false;  // Result of assignment is not an lvalue in C
             pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
@@ -6796,7 +6798,10 @@ int get_type_size(const TypeInfo& type) {
         for (int dim : type.arrayDimensions) {
             totalElements *= dim;
         }
-        return totalElements * getSize(type);
+        TypeInfo elementType = type;
+        elementType.isArray = false;
+        elementType.arrayDimensions.clear();
+        return totalElements * getSize(elementType);
     }
     return getSize(type);
 }

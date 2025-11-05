@@ -50,96 +50,45 @@ I6:
 
 I7:
 main:
-    addiu $sp, $sp, -108
-    sw $ra, 104($sp)
-    sw $fp, 100($sp)
-    addiu $fp, $sp, 100
+    addiu $sp, $sp, -880
+    sw $ra, 876($sp)
+    sw $fp, 872($sp)
+    addiu $fp, $sp, 872
 
 
 I8:
-    li $t0, 10
+    li $t0, 5
+    li $t1, 80
+    mul $t2, $t0, $t1
 
 I9:
-    li $t1, 20
+    addiu $t0, $fp, -800
 
 I10:
-    add $t2, $t0, $t1
+    add $t3, $t0, $t2
 
 I11:
+    lw $t1, 0($t3)
 
 I12:
-    sw $t0, -4($fp)
-    addiu $t0, $fp, -16
+    li $t4, 3
+    li $t5, 4
+    mul $t6, $t4, $t5
 
 I13:
+    sw $t2, -804($fp)
+    addiu $t2, $fp, -816
 
 I14:
+    add $t7, $t2, $t6
 
 I15:
-    move $a0, $t2
-    li $v0, 1
-    syscall
 
 I16:
-    li $a0, 10
-    li $v0, 11
-    syscall
+    li $t8, 1
+    sw $t8, 0($t7)
 
 I17:
-
-I18:
-    lw $t3, -4($fp)
-    move $a0, $t3
-    li $v0, 1
-    syscall
-
-I19:
-    li $a0, 10
-    li $v0, 11
-    syscall
-
-I20:
-
-I21:
-    move $a0, $t1
-    li $v0, 1
-    syscall
-
-I22:
-    li $a0, 10
-    li $v0, 11
-    syscall
-
-I23:
-    li $t4, 2
-    mul $t4, $t2, $t4
-
-I24:
-    sw $t2, -12($fp)
-    sw $t2, -16($fp)
-
-I25:
-
-I26:
-    move $a0, $t4
-    li $v0, 1
-    syscall
-
-I27:
-    li $a0, 10
-    li $v0, 11
-    syscall
-
-I28:
-    sw $t0, -24($fp)
-    sw $t0, -20($fp)
-    sw $t1, -8($fp)
-    sw $t4, -52($fp)
-    sw $t4, -16($fp)
-    move $v0, $t4
-
-
-I29:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

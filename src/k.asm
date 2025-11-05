@@ -2,7 +2,7 @@
     #   MIPS Assembly Code Generation
     # ======================================
 
-    # Total TAC instructions: 29
+    # Total TAC instructions: 17
 
     # ======================================
     #   Collecting Data Section Items
@@ -16,8 +16,7 @@
     # Block B2: i2-i2
     # Block B3: i3-i4
     # Block B4: i5-i5
-    # Block B5: i6-i27
-    # Block B6: i28-i28
+    # Block B5: i6-i16
 
 .data
     # String Literals
@@ -165,7 +164,7 @@ I6:
 
 
     # ======================================
-    # === B5_i6_i27 ===
+    # === B5_i6_i16 ===
     # ======================================
     # Registers cleared at block start
     # TAC 6: 7: function begin : main
@@ -178,494 +177,255 @@ I7:
 main:
     # Function: main
     # === Function Prologue for main ===
-    # Frame size: 108 bytes
-    addiu $sp, $sp, -108
-    # Allocate 108 bytes (8 for $ra+$fp, 108 for locals/temps)
-    sw $ra, 104($sp)
-    # Save return address at 112($sp)
-    sw $fp, 100($sp)
-    # Save old frame pointer at 108($sp)
-    addiu $fp, $sp, 100
+    # Frame size: 880 bytes
+    addiu $sp, $sp, -880
+    # Allocate 880 bytes (8 for $ra+$fp, 880 for locals/temps)
+    sw $ra, 876($sp)
+    # Save return address at 884($sp)
+    sw $fp, 872($sp)
+    # Save old frame pointer at 880($sp)
+    addiu $fp, $sp, 872
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
 
-    # TAC 7: 8: v_x_main_s2 = 10
+    # TAC 7: 8: #t1 = 5 * 80
 I8:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_x_main_s2 = 10
-    li $t0, 10
-    # DEBUG: v_x_main_s2 = constant 10 loaded in $t0 (dirty)
-
-    # TAC 8: 9: v_y_main_s2 = 20
-I9:
-    # --- Register Descriptor ---
-    # $t0: [v_x_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_x_main_s2: [$t0]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: v_y_main_s2 = 20
-    li $t1, 20
-    # DEBUG: v_y_main_s2 = constant 20 loaded in $t1 (dirty)
-
-    # TAC 9: 10: #t1 = v_x_main_s2 + v_y_main_s2
-I10:
-    # --- Register Descriptor ---
-    # $t0: [v_x_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_x_main_s2: [$t0]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # --- End Storage Descriptor ---
-    # #t1 = v_x_main_s2 add v_y_main_s2
-    # DEBUG: v_x_main_s2 in $t0
-    # DEBUG: v_y_main_s2 in $t1
-    add $t2, $t0, $t1
+    # #t1 = 5 mul 80
+    li $t0, 5
+    # DEBUG: Loaded constant 5 into $t0
+    # DEBUG: 5 in $t0
+    li $t1, 80
+    # DEBUG: Loaded constant 80 into $t1
+    # DEBUG: 80 in $t1
+    mul $t2, $t0, $t1
     # DEBUG: #t1 = result in $t2 (dirty)
 
-    # TAC 10: 11: v_z_main_s2 = #t1
-I11:
+    # TAC 8: 9: #t2 = & v_arr_main_s2
+I9:
     # --- Register Descriptor ---
-    # $t0: [v_x_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
+    # $t0: [<CONSTANT>]
+    # $t1: [<CONSTANT>]
     # $t2: [#t1] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [$t2]
-    # v_x_main_s2: [$t0]
+    # <CONSTANT>: [$t1]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
     # --- End Storage Descriptor ---
-    # Assignment: v_z_main_s2 = #t1
-    # DEBUG: #t1 already in $t2
-    # DEBUG: v_z_main_s2 now also in $t2 (dirty)
+    # #t2 = &v_arr_main_s2
+    addiu $t0, $fp, -800
+    # DEBUG: #t2 = address of v_arr_main_s2 at -800($fp)
+    # DEBUG: #t2 (pointer) in $t0 (dirty)
 
-    # TAC 11: 12: #t2 = & v_z_main_s2
-I12:
+    # TAC 9: 10: #t3 = #t2 + #t1
+I10:
     # --- Register Descriptor ---
-    # $t0: [v_x_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [$t2]
-    # v_x_main_s2: [$t0]
+    # #t2: [$t0]
+    # <CONSTANT>: [$t1]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
     # --- End Storage Descriptor ---
-    # #t2 = &v_z_main_s2
-    sw $t0, -4($fp)
-    addiu $t0, $fp, -16
-    # DEBUG: #t2 = address of v_z_main_s2 at -16($fp)
-    # DEBUG: #t2 (pointer) in $t0 (dirty)
+    # #t3 = #t2 add #t1
+    # DEBUG: #t2 in $t0
+    # DEBUG: #t1 in $t2
+    add $t3, $t0, $t2
+    # DEBUG: #t3 = result in $t3 (dirty)
 
-    # TAC 12: 13: v_ptr_main_s2 = #t2
+    # TAC 10: 11: #t4 = * #t3
+I11:
+    # --- Register Descriptor ---
+    # $t0: [#t2] (dirty)
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1] (dirty)
+    # $t3: [#t3] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t2]
+    # #t2: [$t0]
+    # #t3: [$t3]
+    # <CONSTANT>: [$t1]
+    # v_x_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # #t4 = *#t3
+    # DEBUG: Pointer #t3 already in $t3
+    lw $t1, 0($t3)
+    # DEBUG: Dereferenced *#t3 into $t1
+    # DEBUG: #t4 = *#t3 in $t1 (dirty)
+
+    # TAC 11: 12: #t5 = 3 * 4
+I12:
+    # --- Register Descriptor ---
+    # $t0: [#t2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t1] (dirty)
+    # $t3: [#t3] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t2]
+    # #t2: [$t0]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # <CONSTANT>: [$t1]
+    # v_x_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # #t5 = 3 mul 4
+    li $t4, 3
+    # DEBUG: Loaded constant 3 into $t4
+    # DEBUG: 3 in $t4
+    li $t5, 4
+    # DEBUG: Loaded constant 4 into $t5
+    # DEBUG: 4 in $t5
+    mul $t6, $t4, $t5
+    # DEBUG: #t5 = result in $t6 (dirty)
+
+    # TAC 12: 13: #t6 = & #t4
 I13:
     # --- Register Descriptor ---
     # $t0: [#t2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t1] (dirty)
+    # $t3: [#t3] (dirty)
+    # $t4: [<CONSTANT>]
+    # $t5: [<CONSTANT>]
+    # $t6: [#t5] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [$t2]
     # #t2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # #t5: [$t6]
+    # <CONSTANT>: [$t5]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
     # --- End Storage Descriptor ---
-    # Assignment: v_ptr_main_s2 = #t2
-    # DEBUG: #t2 already in $t0
-    # DEBUG: v_ptr_main_s2 now also in $t0 (dirty)
+    # #t6 = &#t4
+    sw $t2, -804($fp)
+    addiu $t2, $fp, -816
+    # DEBUG: #t6 = address of #t4 at -816($fp)
+    # DEBUG: #t6 (pointer) in $t2 (dirty)
 
-    # TAC 13: 14: param v_z_main_s2
+    # TAC 13: 14: #t7 = #t6 + #t5
 I14:
     # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t6] (dirty)
+    # $t3: [#t3] (dirty)
+    # $t4: [<CONSTANT>]
+    # $t5: [<CONSTANT>]
+    # $t6: [#t5] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t2]
+    # #t1: [memory:#t1]
     # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # #t5: [$t6]
+    # #t6: [$t2]
+    # <CONSTANT>: [$t5]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
     # --- End Storage Descriptor ---
-    # param v_z_main_s2
-    # DEBUG: Collected parameter #1: v_z_main_s2
+    # #t7 = #t6 add #t5
+    # DEBUG: #t6 in $t2
+    # DEBUG: #t5 in $t6
+    add $t7, $t2, $t6
+    # DEBUG: #t7 = result in $t7 (dirty)
 
-    # TAC 14: 15: #t3 = call print_int_i, 1
+    # TAC 14: 15: #t8 = #t7
 I15:
     # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t6] (dirty)
+    # $t3: [#t3] (dirty)
+    # $t4: [<CONSTANT>]
+    # $t5: [<CONSTANT>]
+    # $t6: [#t5] (dirty)
+    # $t7: [#t7] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t2]
+    # #t1: [memory:#t1]
     # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # #t5: [$t6]
+    # #t6: [$t2]
+    # #t7: [$t7]
+    # <CONSTANT>: [$t5]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
     # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    move $a0, $t2
-    li $v0, 1
-    syscall
-    # === End print_int ===
+    # Assignment: #t8 = #t7
+    # DEBUG: #t7 already in $t7
+    # DEBUG: #t8 now also in $t7 (dirty)
 
-    # TAC 15: 16: #t4 = call print_newline, 0
+    # TAC 15: 16: *(#t8) = 1
 I16:
     # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t6] (dirty)
+    # $t3: [#t3] (dirty)
+    # $t4: [<CONSTANT>]
+    # $t5: [<CONSTANT>]
+    # $t6: [#t5] (dirty)
+    # $t7: [#t7, #t8] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t2]
+    # #t1: [memory:#t1]
     # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # #t5: [$t6]
+    # #t6: [$t2]
+    # #t7: [$t7]
+    # #t8: [$t7]
+    # <CONSTANT>: [$t5]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
     # --- End Storage Descriptor ---
-    # Call print_newline with 0 arguments
-    # === Built-in print_newline function ===
-    li $a0, 10
-    li $v0, 11
-    syscall
-    # === End print_newline ===
+    # *#t8 = 1
+    # DEBUG: Pointer #t8 in $t7
+    li $t8, 1
+    # DEBUG: Loaded constant 1 into $t8
+    # DEBUG: Value 1 in $t8
+    sw $t8, 0($t7)
+    # DEBUG: Stored 1 through pointer #t8
 
-    # TAC 16: 17: param v_x_main_s2
+    # TAC 16: 17: end function main
 I17:
     # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [#t4] (dirty)
+    # $t2: [#t6] (dirty)
+    # $t3: [#t3] (dirty)
+    # $t4: [<CONSTANT>]
+    # $t5: [<CONSTANT>]
+    # $t6: [#t5] (dirty)
+    # $t7: [#t7, #t8] (dirty)
+    # $t8: [<CONSTANT>]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t2]
+    # #t1: [memory:#t1]
     # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
+    # #t3: [$t3]
+    # #t4: [$t1]
+    # #t5: [$t6]
+    # #t6: [$t2]
+    # #t7: [$t7]
+    # #t8: [$t7]
+    # <CONSTANT>: [$t8]
     # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # param v_x_main_s2
-    # DEBUG: Collected parameter #1: v_x_main_s2
-
-    # TAC 17: 18: #t5 = call print_int_i, 1
-I18:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    lw $t3, -4($fp)
-    # DEBUG: Loaded v_x_main_s2 from memory at -4($fp)
-    move $a0, $t3
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # TAC 18: 19: #t6 = call print_newline, 0
-I19:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Call print_newline with 0 arguments
-    # === Built-in print_newline function ===
-    li $a0, 10
-    li $v0, 11
-    syscall
-    # === End print_newline ===
-
-    # TAC 19: 20: param v_y_main_s2
-I20:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # param v_y_main_s2
-    # DEBUG: Collected parameter #1: v_y_main_s2
-
-    # TAC 20: 21: #t7 = call print_int_i, 1
-I21:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    move $a0, $t1
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # TAC 21: 22: #t8 = call print_newline, 0
-I22:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Call print_newline with 0 arguments
-    # === Built-in print_newline function ===
-    li $a0, 10
-    li $v0, 11
-    syscall
-    # === End print_newline ===
-
-    # TAC 22: 23: #t9 = v_z_main_s2 * 2
-I23:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # #t9 = v_z_main_s2 mul 2
-    # DEBUG: v_z_main_s2 in $t2
-    li $t4, 2
-    # DEBUG: Loaded constant 2 into $t4
-    # DEBUG: 2 in $t4
-    mul $t4, $t2, $t4
-    # DEBUG: #t9 = result in $t4 (dirty)
-
-    # TAC 23: 24: v_z_main_s2 = #t9
-I24:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t2: [#t1, v_z_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # $t4: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t2]
-    # #t2: [$t0]
-    # #t9: [$t4]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t2]
-    # --- End Storage Descriptor ---
-    # Assignment: v_z_main_s2 = #t9
-    # DEBUG: #t9 already in $t4
-    # DEBUG: v_z_main_s2 was in $t2, spilling all variables in that register
-    sw $t2, -12($fp)
-    # DEBUG: Spilled #t1 from $t2 to memory at -12($fp)
-    sw $t2, -16($fp)
-    # DEBUG: Spilled v_z_main_s2 from $t2 to memory at -16($fp)
-    # DEBUG: v_z_main_s2 now also in $t4 (dirty)
-
-    # TAC 24: 25: param v_z_main_s2
-I25:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # $t4: [#t9, v_z_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [$t0]
-    # #t9: [$t4]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t4]
-    # --- End Storage Descriptor ---
-    # param v_z_main_s2
-    # DEBUG: Collected parameter #1: v_z_main_s2
-
-    # TAC 25: 26: #t10 = call print_int_i, 1
-I26:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # $t4: [#t9, v_z_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [$t0]
-    # #t9: [$t4]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t4]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    move $a0, $t4
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # TAC 26: 27: #t11 = call print_newline, 0
-I27:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # $t4: [#t9, v_z_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [$t0]
-    # #t9: [$t4]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t4]
-    # --- End Storage Descriptor ---
-    # Call print_newline with 0 arguments
-    # === Built-in print_newline function ===
-    li $a0, 10
-    li $v0, 11
-    syscall
-    # === End print_newline ===
-
-    # TAC 27: 28: return v_z_main_s2
-I28:
-    # --- Register Descriptor ---
-    # $t0: [#t2, v_ptr_main_s2] (dirty)
-    # $t1: [v_y_main_s2] (dirty)
-    # $t3: [v_x_main_s2]
-    # $t4: [#t9, v_z_main_s2] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [$t0]
-    # #t9: [$t4]
-    # v_ptr_main_s2: [$t0]
-    # v_x_main_s2: [$t3, memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [$t1]
-    # v_z_main_s2: [$t4]
-    # --- End Storage Descriptor ---
-    # Spilling before control flow instruction
-    # DEBUG: Spilling 4 dirty registers
-    sw $t0, -24($fp)
-    # DEBUG: Spilled #t2 from $t0 to memory at -24($fp)
-    sw $t0, -20($fp)
-    # DEBUG: Spilled v_ptr_main_s2 from $t0 to memory at -20($fp)
-    sw $t1, -8($fp)
-    # DEBUG: Spilled v_y_main_s2 from $t1 to memory at -8($fp)
-    sw $t4, -52($fp)
-    # DEBUG: Spilled #t9 from $t4 to memory at -52($fp)
-    sw $t4, -16($fp)
-    # DEBUG: Spilled v_z_main_s2 from $t4 to memory at -16($fp)
-    # return v_z_main_s2
-    # DEBUG: v_z_main_s2 in $t4
-    move $v0, $t4
-    # DEBUG: Moved return value to $v0
-
-
-    # ======================================
-    # === B6_i28_i28 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 28: 29: end function main
-I29:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-24($fp)]
-    # #t9: [memory:-52($fp)]
-    # v_ptr_main_s2: [memory:-20($fp)]
-    # v_x_main_s2: [memory:v_x_main_s2]
-    # v_x_print_int_i_s2: [memory:8($fp)]
-    # v_y_main_s2: [memory:-8($fp)]
-    # v_z_main_s2: [memory:-16($fp)]
     # --- End Storage Descriptor ---
     # === Function Epilogue for main ===
     move $sp, $fp

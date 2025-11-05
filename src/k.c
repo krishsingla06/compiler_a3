@@ -1,3 +1,10 @@
+int print_int(int x) {
+    return 0;
+}
+
+int print_newline() {
+    return 0;
+}
 
 // -------------------------------------
 // Rigorous test: Variable declarations, assignments, arithmetic operations, nested scopes and function calls
@@ -215,13 +222,43 @@
 //     // return node1.p;
 // }
 
-// int main(){
-//     int arr[3];
-//     int x,y,z;
-//     int *ptr = &x;
-//     *ptr = 10;
-//     x = *ptr;
-// }
+int main(){
+    int arr[10][20];
+    arr[5][3]=1;
+    // arr[5][1]=2;
+    // print_int(arr[0][0]);
+    // print_newline();
+    // print_int(arr[5][1]);
+    // print_newline();
+    // arr[1] = 20;
+    // arr[0] = 2;
+    // arr[2] = 200;
+    // print_int(arr[0][1]);
+    // print_newline();
+    // print_int(arr[1][1]);
+    // print_newline();
+    // print_int(arr[2]);
+    // print_newline();
+    // int x,y,z;
+    // int *ptr = &x;
+    // *ptr = 10;
+    // print_int(*ptr);
+    // print_newline();
+    // x = *ptr+100;
+    // print_int(x);
+    // print_newline();
+    // arr[0] = x;
+    // arr[1] = x + 10;
+    // arr[2] = x + 20;
+    // //arr[2] = arr[0] + arr[1]; // expected 230
+    // print_int(arr[0]);
+    // print_newline();
+    // print_int(arr[1]);
+    // print_newline();
+    // print_int(arr[2]);
+    // print_newline();
+    //return arr[2];
+}
 
 //-----------------------------
 
@@ -232,39 +269,33 @@
 // int main(){
 //     int x = 10;
 //     int y = 20;
-//     return foo(x, y);
+//     int z = foo(x, y);
+//     print_int(z);
+//     print_newline();
 // }
 
 //--------------------------------
 
-int print_int(int x) {
-    return 0;
-}
-
-int print_newline() {
-    return 0;
-}
-
-int main() {
-    int x = 10;
-    int y = 20;
-    int z = x + y;
-    int *ptr;
-    ptr = &z;
+// int main() {
+//     int x = 10;
+//     int y = 20;
+//     int z = x + y;
+//     int *ptr;
+//     ptr = &z;
 
     
-    print_int(z);
-    print_newline();
-    print_int(x);
-    print_newline();
+//     print_int(z);
+//     print_newline();
+//     print_int(x);
+//     print_newline();
 
-    print_int(y);
-    print_newline();
+//     print_int(y);
+//     print_newline();
 
-    z=z*2;
-    print_int(z);
-    print_newline();
+//     z=z*2;
+//     print_int(z);
+//     print_newline();
 
     
-    return z;
-}
+//     return z;
+// }

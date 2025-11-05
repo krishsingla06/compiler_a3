@@ -1618,7 +1618,13 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + value);
         emit_comment("DEBUG: Loaded constant " + value + " into " + reg);
-        return reg;  // Don't add to descriptors (temporary use only)
+        
+        // Mark register as containing a constant (so we don't spill it)
+        reg_desc.add_var_to_reg(reg, "<CONSTANT>");
+        storage_desc.set_location("<CONSTANT>", reg);
+        // Don't mark as dirty - constants don't need to be written back
+        
+        return reg;
     }
     
     // Handle string literals
@@ -1627,7 +1633,12 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         string reg = allocate_register_with_spilling();
         emit("la " + reg + ", " + str_label);
         emit_comment("DEBUG: Loaded address of string \"" + value + "\" into " + reg);
-        return reg;  // Don't add to descriptors (temporary use only)
+        
+        // Mark register as containing a constant address
+        reg_desc.add_var_to_reg(reg, "<STRING_ADDR>");
+        storage_desc.set_location("<STRING_ADDR>", reg);
+        
+        return reg;
     }
     
     // Check if it's a numeric literal (workaround for parser not always setting CONSTANT type)
@@ -1644,7 +1655,12 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + value);
         emit_comment("DEBUG: Loaded numeric literal " + value + " into " + reg);
-        return reg;  // Don't add to descriptors (temporary use only)
+        
+        // Mark register as containing a constant
+        reg_desc.add_var_to_reg(reg, "<CONSTANT>");
+        storage_desc.set_location("<CONSTANT>", reg);
+        
+        return reg;
     }
     
     // It's a variable or temp - use ensure_in_register
@@ -1671,6 +1687,12 @@ string MIPSGenerator::allocate_register_with_spilling() {
     // Spill all variables in the victim register (including temps!)
     set<string> vars = reg_desc.get_vars_in_reg(victim_reg);
     for (const string& var : vars) {
+        // Skip constants - they don't need to be spilled
+        if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+            emit_comment("DEBUG: Skipping spill of constant in " + victim_reg);
+            continue;
+        }
+        
         // Spill ALL variables (both real variables and temps) if dirty
         if (reg_allocator.is_dirty(victim_reg)) {
             int offset = get_offset(var);
@@ -1693,6 +1715,11 @@ void MIPSGenerator::spill_register(const string& reg) {
     set<string> vars = reg_desc.get_vars_in_reg(reg);
     
     for (const string& var : vars) {
+        // Skip constants - they don't need to be spilled
+        if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+            continue;
+        }
+        
         // Only spill if not already in memory
         if (storage_desc.is_only_in_register(var)) {
             int offset = get_offset(var);
@@ -1776,6 +1803,12 @@ void MIPSGenerator::spill_all_dirty() {
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         
         for (const string& var : vars) {
+            // Skip constants - they don't need to be spilled
+            if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+                emit_comment("DEBUG: Skipping spill of constant in " + reg);
+                continue;
+            }
+            
             // Spill ALL variables (both real variables and temps)
             int offset = get_offset(var);
             emit("sw " + reg + ", " + to_string(offset) + "($fp)");
