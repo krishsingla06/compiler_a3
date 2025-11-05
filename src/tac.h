@@ -84,6 +84,7 @@ enum TACOperatorType {
     TAC_OPERATOR_PARAM,
     TAC_OPERATOR_FUNC_BEGIN, // ok
     TAC_OPERATOR_FUNC_END, // ok
+    TAC_OPERATOR_STORE_INDIRECT,  // *ptr = value
 
     TAC_OPERATOR_NOP
 };

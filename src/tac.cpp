@@ -193,6 +193,11 @@ string get_TAC_instruction_string(TACInstruction* instruction) {
     else if (instruction->op.type == TAC_OPERATOR_FUNC_END) {
         result += "end function "+ get_operand_string(instruction->result);
     }
+    else if (instruction->op.type == TAC_OPERATOR_STORE_INDIRECT) {
+        //cout<<"Krish2\n";
+        result += "*(" + get_operand_string(instruction->result) + ") = "
+                + get_operand_string(instruction->arg1);
+    }
 
     else if (is_assignment(instruction)) {
         if (instruction->arg2->type != TAC_OPERAND_EMPTY) {
@@ -211,6 +216,7 @@ string get_TAC_instruction_string(TACInstruction* instruction) {
                 + get_operand_string(instruction->arg1);
         }
     }
+   
     else result += "Nothing to print";
     return result;
 }

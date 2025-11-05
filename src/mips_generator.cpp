@@ -520,6 +520,14 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
              instr->op.type == TAC_OPERATOR_BIT_NOT) {
         translate_bitwise(instr);
     }
+    else if (instr->op.type == TAC_OPERATOR_ADDR_OF) {
+        // Address-of operator: result = &arg1
+        translate_address_of(instr);
+    }
+    else if (instr->op.type == TAC_OPERATOR_DEREF) {
+        // Dereference operator: result = *arg1
+        translate_dereference(instr);
+    }
     else if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
         emit_label(instr->result->value);
         emit_comment("Function: " + instr->result->value);
@@ -1100,6 +1108,93 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
     reg_allocator.mark_dirty(dest_reg);
     
     emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
+}
+
+void MIPSGenerator::translate_address_of(TACInstruction* instr) {
+    // TAC: result = &arg1
+    // MIPS: Get the address of arg1 (which is at offset($fp))
+    
+    string dest = instr->result->value;
+    string var = instr->arg1->value;
+    
+    emit_comment(dest + " = &" + var);
+    
+    // Get the memory offset of the variable
+    int offset = get_offset(var);
+    
+    // Allocate a register for the result
+    string dest_reg = reg_allocator.allocate_temp_reg();
+    
+    // If register was already allocated, spill it first
+    if (reg_allocator.is_reg_allocated(dest_reg)) {
+        spill_register(dest_reg);
+    }
+    
+    // Calculate address: dest_reg = $fp + offset
+    if (offset == 0) {
+        emit("move " + dest_reg + ", $fp");
+        emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
+    } else if (offset > 0) {
+        emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+        emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+    } else {
+        emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+        emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+    }
+    
+    // Update descriptors: dest is now in dest_reg and is dirty
+    reg_desc.add_var_to_reg(dest_reg, dest);
+    storage_desc.set_location(dest, dest_reg);
+    reg_allocator.mark_dirty(dest_reg);
+    
+    emit_comment("DEBUG: " + dest + " (pointer) in " + dest_reg + " (dirty)");
+}
+
+void MIPSGenerator::translate_dereference(TACInstruction* instr) {
+    // TAC: result = *arg1
+    // MIPS: Load value from memory address stored in arg1
+    
+    string dest = instr->result->value;
+    string ptr = instr->arg1->value;
+    
+    emit_comment(dest + " = *" + ptr);
+    
+    // Get pointer value into a register
+    string ptr_reg;
+    if (storage_desc.is_in_register(ptr)) {
+        ptr_reg = storage_desc.get_register(ptr);
+        emit_comment("DEBUG: Pointer " + ptr + " already in " + ptr_reg);
+    } else {
+        // Load pointer from memory
+        ptr_reg = reg_allocator.allocate_temp_reg();
+        if (reg_allocator.is_reg_allocated(ptr_reg)) {
+            spill_register(ptr_reg);
+        }
+        int offset = get_offset(ptr);
+        emit("lw " + ptr_reg + ", " + to_string(offset) + "($fp)");
+        emit_comment("DEBUG: Loaded pointer " + ptr + " from memory at " + to_string(offset) + "($fp)");
+        
+        // Update descriptors for pointer
+        reg_desc.add_var_to_reg(ptr_reg, ptr);
+        storage_desc.add_location(ptr, ptr_reg);
+    }
+    
+    // Allocate register for dereferenced value
+    string dest_reg = reg_allocator.allocate_temp_reg();
+    if (reg_allocator.is_reg_allocated(dest_reg)) {
+        spill_register(dest_reg);
+    }
+    
+    // Load value from address in ptr_reg: dest_reg = *ptr_reg
+    emit("lw " + dest_reg + ", 0(" + ptr_reg + ")");
+    emit_comment("DEBUG: Dereferenced *" + ptr + " into " + dest_reg);
+    
+    // Update descriptors: dest is now in dest_reg and is dirty
+    reg_desc.add_var_to_reg(dest_reg, dest);
+    storage_desc.set_location(dest, dest_reg);
+    reg_allocator.mark_dirty(dest_reg);
+    
+    emit_comment("DEBUG: " + dest + " = *" + ptr + " in " + dest_reg + " (dirty)");
 }
 
 void MIPSGenerator::translate_jump(TACInstruction* instr) {

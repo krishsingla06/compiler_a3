@@ -163,7 +163,7 @@ void close_jump_table_file(){
         string identifier;      // For expressions that reference variables
         bool isLiteral;         // True for literals, false for variables/expressions
         bool isLvalue;          // True if the expression is an lvalue, false for temporaries
-
+        bool isDereferenced;  // True if this is result of * operator (lvalue from pointer deref)
         // Struct/Union information
         bool isStruct;          // True if this is a struct type
         bool isUnion;           // True if this is a union type
@@ -201,7 +201,7 @@ void close_jump_table_file(){
                      arrayDimensions(), identifier(""), isLiteral(false), isLvalue(false),
                      isStruct(false), isUnion(false), structUnionName(""), structDef(nullptr), 
                      isClass(false), className(""), classDef(nullptr),
-                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false),
+                     isFunctionPointer(false), returnType(nullptr), parameterTypes(nullptr), isReference(false), isDereferenced(false),
                      isMemberFunction(false), memberFunctionName(""), memberFunctionClass(nullptr), objectAddress(nullptr),
                      result(nullptr), code()  {}
         // Copy constructor
@@ -216,7 +216,7 @@ void close_jump_table_file(){
                     isFunctionPointer(other.isFunctionPointer),
                     returnType(other.returnType ? new TypeInfo(*other.returnType) : nullptr),
                     parameterTypes(other.parameterTypes ? new vector<TypeInfo>(*other.parameterTypes) : nullptr),
-                    isReference(other.isReference),
+                    isReference(other.isReference), isDereferenced(other.isDereferenced),
                     isMemberFunction(other.isMemberFunction), memberFunctionName(other.memberFunctionName),
                     memberFunctionClass(other.memberFunctionClass), objectAddress(other.objectAddress),
                     result(other.result),
@@ -2839,6 +2839,7 @@ argument_expression_list
 	}
 	;
 
+
 unary_expression
 	: postfix_expression { $$ = $1; }
 	| INCREMENT unary_expression { 
@@ -3210,17 +3211,34 @@ assignment_expression
 		TypeInfo* rhs_type = $3;
 		
 		// Check if left-hand side is a valid lvalue
+        
 		if (!is_lvalue(*lhs_type)) {
 			type_error("Cannot assign to " + lhs_type->toString() + " - not an lvalue");
 			$$ = new TypeInfo();
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
 			$$->baseType = "error";
-		} else if (!is_implicit_conversion_allowed(*rhs_type, *lhs_type)) {
+		} 
+        else if (lhs_type->isDereferenced) {
+            // This is *ptr = value (any level: *p, **p, ***p)
+            cout<<"Krish\n";
+            
+            $$ = new TypeInfo(*lhs_type);
+            $$->isLvalue = false;
+            $$->code = lhs_type->code;
+            $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
+            TACInstruction* assign_inst = emit(TACOperator(TAC_OPERATOR_STORE_INDIRECT), lhs_type->result, cast_result.second.second, new_empty_var(),0); // *lhs = rhs
+            $$->code.push_back(assign_inst);
+        }
+        else if (!is_implicit_conversion_allowed(*rhs_type, *lhs_type)) {
 			type_error("Cannot assign " + rhs_type->toString() + " to " + lhs_type->toString());
 			$$ = new TypeInfo();
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
 			$$->baseType = "error";
-		} else if (is_narrowing_conversion(*rhs_type, *lhs_type)) {
+		} 
+        else if (is_narrowing_conversion(*rhs_type, *lhs_type)) {
 			type_warning("Narrowing conversion from " + rhs_type->toString() + " to " + lhs_type->toString());
 			$$ = new TypeInfo(*lhs_type);  // Result type is the LHS type
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
@@ -6401,6 +6419,7 @@ TypeInfo* perform_unary_operation(const TypeInfo& operand, const string& op) {
         res->pointerLevel--;
         // res of dereference is an lvalue (you can assign to *p)
         res->isLvalue = true;
+        res->isDereferenced = true;
         cout << " -> " << res->toString() << "\n";
         res->code = operand.code;
         TACOperand* temp = new_typed_temp_var(res->baseType, res->pointerLevel); // dereference result

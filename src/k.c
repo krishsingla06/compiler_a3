@@ -1,3 +1,6 @@
+
+// -------------------------------------
+// Rigorous test: Variable declarations, assignments, arithmetic operations, nested scopes and function calls
 // int foo(int x,int y){
 //     int p;
 //     int q;
@@ -16,7 +19,7 @@
 
 //     a=3;
 //     b=4;
-//    // a = b+c+foo(a,b);
+//    a = b+c+foo(a,b);
 
 //     {
 //         int x;
@@ -31,6 +34,9 @@
 //     }
 //     return foo(a,b);
 // }
+
+// -------------------------------------
+// Test: Simple function call
 
 // int foo(int x,int y){
 //     int p;
@@ -47,6 +53,9 @@
 //     q = 2;
 //     return p + q + x + y;
 // }
+
+// -------------------------------------
+// Test: Force temp register spilling
 
 // int main() {
 //     int a, b, c, d, e, f, g, h, i, j, k, l;
@@ -75,6 +84,8 @@
 // int y=2;
 
 
+// -------------------------------------
+// Simple function call test
 
 // int main(int m,int n){
 //     int p;
@@ -84,6 +95,9 @@
 //     q = m-n;
 //     return foo(p,q);
 // }
+
+// ------------------------------------
+// Test: Force temp register spilling
 
 // int main() {
 //     int a = 1;
@@ -103,17 +117,21 @@
 
 
 // ------------------------------------
-int foo(int x,int y){
-    int p;
-    p = !(x);
-    return 0;
-}
+// Function calling, logical operators, return values and calling
+// int foo(int x,int y){
+//     int p;
+//     p = !(x);
+//     return 0;
+// }
 
-int main(){
-    int p,q;
-    foo(p,q);
-}
+// int main(){
+//     int p,q;
+//     foo(p,q);
+// }
 
+//--------------------------------------
+
+// Important: Test jumps and labels as well as basic block handling
 // int main(){
 //     int x;
 //     x=1;
@@ -128,12 +146,9 @@ int main(){
 //     x=4;
 //     return x;
 // }
-// ------------------------------------
-
 
 // ------------------------------------
 // Important: Test register descriptor consistency after assignments
-// Correct output, tested.
 // int main(){
 //     int x;
 //     int y;
@@ -142,3 +157,26 @@ int main(){
 //     y++;
 // }
 
+// int main(){
+//     // int x;
+//     // int y;
+//     // int*z;
+//     // z=&x;
+//     // *z=10;
+//     // y=*z;
+//     // z=&y;
+//     // *z=20;
+//     // return x+y;
+//     int ***x;
+//     ***x=10;
+
+// }
+
+int main(){
+    int **x;
+    int *y;
+    //(x+3)=x; // error
+    *(x)=y;
+    *y=10;
+    **x=20;
+}
