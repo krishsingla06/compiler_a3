@@ -66,7 +66,7 @@ I11:
 I12:
 
 I13:
-    addiu $sp, $sp, -16
+    addiu $sp, $sp, -8
     lw $t0, -8($fp)
     sw $t0, 8($sp)
     move $a0, $t0
@@ -74,7 +74,7 @@ I13:
     sw $t1, 12($sp)
     move $a1, $t1
     jal foo_i_i
-    addiu $sp, $sp, 16
+    addiu $sp, $sp, 8
     move $t2, $v0
 
 I14:

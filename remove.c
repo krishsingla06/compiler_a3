@@ -1,0 +1,2 @@
+//rm -f *.cpp.debug *.cpp.errors *.cpp.functab *.cpp.globalsymtab *.cpp.jumptab *.cpp.symtab *.tac *.asm *.clean.asm
+//rm -f *.c.debug *.c.errors *.c.functab *.c.globalsymtab *.c.jumptab *.c.symtab *.tac *.asm *.clean.asm

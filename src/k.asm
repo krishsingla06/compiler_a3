@@ -280,8 +280,8 @@ I13:
     # v_y_foo_i_i_s2: [memory:12($fp)]
     # --- End Storage Descriptor ---
     # Call foo_i_i with 2 arguments
-    addiu $sp, $sp, -16
-    # DEBUG: Allocate 16 bytes for 2 parameters + $ra/$fp
+    addiu $sp, $sp, -8
+    # DEBUG: Allocate 8 bytes for 2 parameters + $ra/$fp
     lw $t0, -8($fp)
     # DEBUG: Loaded v_q_main_s2 from memory at -8($fp)
     # DEBUG: Param 0 (v_q_main_s2) in $t0
@@ -298,8 +298,8 @@ I13:
     # DEBUG: Copied param 1 to $a1
     jal foo_i_i
     # DEBUG: Called foo_i_i
-    addiu $sp, $sp, 16
-    # DEBUG: Deallocate 16 bytes of parameter space
+    addiu $sp, $sp, 8
+    # DEBUG: Deallocate 8 bytes of parameter space
     move $t2, $v0
     # DEBUG: Return value from $v0 to $t2
     # DEBUG: #t2 = return value in $t2 (dirty)

@@ -556,6 +556,7 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         emit_comment("TODO: Implement TAC op type " + to_string(instr->op.type));
     }
 }
+
 void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     // Assignment: result = arg1 (op is NULL, flag=0)
     
@@ -752,7 +753,6 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
     
     emit_comment("DEBUG: " + dest + " = result in " + dest_reg + " (dirty)");
 }
-
 
 void MIPSGenerator::translate_comparison(TACInstruction* instr) {
     // Two cases:
@@ -1147,7 +1147,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     // Calculate space needed for parameters
     // We need space for ALL parameters (even first 4 that go in registers)
     // Each param needs 4 bytes, plus 8 bytes for $ra and old $fp of callee
-    int param_space = (num_args > 0) ? (num_args * 4 + 8) : 8;
+    int param_space = (num_args > 0) ? (num_args * 4) : 0;
     
     // Allocate space for parameters on stack
     if (param_space > 0) {
@@ -1360,7 +1360,6 @@ int MIPSGenerator::get_offset(const string& var_name) {
     // Use the helper function from parser.y to get variable offset
     return get_variable_offset(var_name.c_str());
 }
-
 
 string MIPSGenerator::get_operand_string(TACOperand* operand) {
     if (!operand || operand->type == TAC_OPERAND_EMPTY) {
