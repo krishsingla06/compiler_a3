@@ -1824,7 +1824,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         string reg = "$t" + to_string(i);
         
         // Check if this register is dirty (has been modified)
-        if (reg_allocator.is_dirty(reg)) {
+        //if (reg_allocator.is_dirty(reg)) {
             // Get the variable(s) stored in this register
             set<string> vars = reg_desc.get_vars_in_reg(reg);
             
@@ -1843,7 +1843,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
 
             // Clear dirty flag for this register
             reg_allocator.clear_dirty(reg);
-        }
+        //}
         
         // Clear the register descriptor completely (assume destroyed by call)
         reg_desc.clear_reg(reg);

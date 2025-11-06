@@ -67,7 +67,7 @@ I9:
 
 
 I10:
-main:
+factorial_i:
     addiu $sp, $sp, -64
     sw $ra, 60($sp)
     sw $fp, 56($sp)
@@ -75,39 +75,123 @@ main:
 
 
 I11:
-    addiu $t0, $fp, -8
+    lw $t0, 8($fp)
+    li $t1, 0
+    beq $t0, $t1, I13
+
 
 I12:
-    sw $t0, -4($fp)
+    j I15
+
 
 I13:
+    li $t0, 1
 
 I14:
-    # Loading float constant: 1.100000
-    li.s $f0, 1.100000
-    s.s $f0, 0($t0)
+    sw $t0, -4($fp)
+    j I16
+
 
 I15:
+    li $t0, 0
+
+    sw $t0, -4($fp)
 
 I16:
-    l.s $f1, -8($fp)
-    mov.s $f12, $f1
-    li $v0, 2
-    syscall
+    lw $t0, -4($fp)
+    bne $t0, $zero, I18
+
 
 I17:
+    j I20
+
+
+I18:
+    li $v0, 1
+
+
+I19:
+    j I25
+
+
+I20:
+    lw $t0, 8($fp)
+    li $t1, 1
+    sub $t2, $t0, $t1
+
+I21:
+
+I22:
+    sw $t0, 8($fp)
+    sw $t1, 0($fp)
+    sw $t2, -8($fp)
+    addiu $sp, $sp, -4
+    lw $t0, -8($fp)
+    sw $t0, 8($sp)
+    move $a0, $t0
+    jal factorial_i
+    addiu $sp, $sp, 4
+    move $t1, $v0
+
+I23:
+    lw $t2, 8($fp)
+    mul $t3, $t2, $t1
+
+I24:
+    sw $t1, -12($fp)
+    sw $t3, -16($fp)
+    move $v0, $t3
+
+
+I25:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+I26:
+main:
+    addiu $sp, $sp, -56
+    sw $ra, 52($sp)
+    sw $fp, 48($sp)
+    addiu $fp, $sp, 48
+
+
+I27:
+
+I28:
+    addiu $sp, $sp, -4
+    li $t0, 5
+    sw $t0, 8($sp)
+    move $a0, $t0
+    jal factorial_i
+    addiu $sp, $sp, 4
+    move $t0, $v0
+
+I29:
+    sw $t0, -4($fp)
+
+I30:
+
+I31:
+    move $a0, $t0
+    li $v0, 1
+    syscall
+
+I32:
     li $a0, 10
     li $v0, 11
     syscall
 
-I18:
-    sw $t0, -12($fp)
-    sw $t0, -16($fp)
+I33:
+    sw $t0, -8($fp)
     sw $t0, -4($fp)
-    li $v0, 0
+    move $v0, $t0
 
 
-I19:
+I34:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

@@ -2,7 +2,7 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: main (main)
+| Function: factorial (factorial_i)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
@@ -10,7 +10,17 @@
 |     - Local var space: 16 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 24 bytes
-|   Declared at line: 57
+|   Declared at line: 80
++-----------------------------------------------------------------------------------------+
+| Function: main (main)
+|   Return type: int
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 8 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 89
 +-----------------------------------------------------------------------------------------+
 | Function: print_float (print_float_f)
 |   Return type: void

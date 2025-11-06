@@ -50,6 +50,9 @@ int main(){
     print_int(x);
     print_newline();
     return x;
+}
+
+// -------------------------------------
 int main(){
     int i=10;
     int sum;
@@ -67,7 +70,7 @@ int main(){
     print_int(sum); // should print 37 (1+2+3+4+6+7)
     print_newline();
     return sum; // should return 37
-}}
+}
 
 int print_int(int x) {
     return 0;
