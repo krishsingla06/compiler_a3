@@ -2100,6 +2100,17 @@ postfix_expression
                 cout<<"Resulting type after subscript: " << $$->toString() << "\n";
 			}
 
+            // jugaad
+            //if prefix expression is dereferenced already then just change last instruction from deref to NOP
+            if(base->isDereferenced && base->isLvalue){
+                if(!base->code.empty()){
+                    TACInstruction* lastInst = base->code.back();
+                    if(lastInst->op.type == TAC_OPERATOR_DEREF){
+                        lastInst->op.type = TAC_OPERATOR_NOP;
+                    }
+                }
+            }
+
         
 			
 			$$->isLiteral = false;

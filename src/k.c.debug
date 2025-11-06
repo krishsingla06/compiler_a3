@@ -36,49 +36,81 @@ Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
-DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable arr at offset -800 (size: 800 bytes)
-DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
-Variable arr mangled as v_arr_main_s2 [LOCAL]
-Declared variable: arr (int[10][20]) at line 226 in scope 2
-Found variable: arr of type int[10][20]
-Integer literal: 5 (type: int)
-Handling array subscript for base type: int[10][20]
-Resulting type after subscript: int[20]
-Allocated local variable #t1 at offset -804 (size: 4 bytes)
+Integer literal: 10 (type: int)
+DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable i at offset -4 (size: 4 bytes)
+DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
+Variable i mangled as v_i_main_s2 [LOCAL]
+Declared variable: i (int) with initializer of type int at line 499 in scope 2
+DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable sum at offset -8 (size: 4 bytes)
+DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
+Variable sum mangled as v_sum_main_s2 [LOCAL]
+Declared variable: sum (int) at line 500 in scope 2
+Found variable: sum of type int
+Integer literal: 0 (type: int)
+Simple assignment from int to int
+Found variable: i of type int
+Integer literal: 10 (type: int)
+Binary operation: int <= int -> int (numeric comparison)
+Allocated local variable #t1 at offset -12 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 227 in scope 2
-Allocated local variable #t2 at offset -808 (size: 4 bytes)
+Declared variable: #t1 (int) at line 502 in scope 2
+Entering scope level 3
+Function main parameter space: 0 bytes
+Found variable: i of type int
+Integer literal: 5 (type: int)
+Binary operation: int == int -> int (numeric comparison)
+Allocated local variable #t2 at offset -16 (size: 4 bytes)
 Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (int) at line 227 in scope 2
-Allocated local variable #t3 at offset -812 (size: 4 bytes)
+Declared variable: #t2 (int) at line 503 in scope 3
+Entering scope level 4
+Function main parameter space: 0 bytes
+Compound statement with declarations and statements
+Found variable: i of type int
+Integer literal: 8 (type: int)
+Binary operation: int == int -> int (numeric comparison)
+Allocated local variable #t3 at offset -20 (size: 4 bytes)
 Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int) at line 227 in scope 2
-Allocated local variable #t4 at offset -816 (size: 4 bytes)
+Declared variable: #t3 (int) at line 506 in scope 3
+Entering scope level 4
+Function main parameter space: 0 bytes
+Compound statement with declarations and statements
+Found variable: sum of type int
+Found variable: sum of type int
+Found variable: i of type int
+Binary operation: int + intAllocated local variable #t4 at offset -24 (size: 4 bytes)
 Variable #t4 mangled as #t4 [LOCAL]
-Declared variable: #t4 (int) at line 227 in scope 2
-Integer literal: 3 (type: int)
-Handling array subscript for base type: int[20]
-Resulting type after subscript: int
-Allocated local variable #t5 at offset -820 (size: 4 bytes)
-Variable #t5 mangled as #t5 [LOCAL]
-Declared variable: #t5 (int) at line 227 in scope 2
-Allocated local variable #t6 at offset -824 (size: 4 bytes)
-Variable #t6 mangled as #t6 [LOCAL]
-Declared variable: #t6 (int) at line 227 in scope 2
-Allocated local variable #t7 at offset -828 (size: 4 bytes)
-Variable #t7 mangled as #t7 [LOCAL]
-Declared variable: #t7 (int) at line 227 in scope 2
-Allocated local variable #t8 at offset -832 (size: 4 bytes)
-Variable #t8 mangled as #t8 [LOCAL]
-Declared variable: #t8 (int) at line 227 in scope 2
+Declared variable: #t4 (int) at line 509 in scope 3
+ -> int (numeric arithmetic)
+Simple assignment from int to int
+Found variable: i of type int
+Found variable: i of type int
 Integer literal: 1 (type: int)
-Krish
+Binary operation: int + intAllocated local variable #t5 at offset -28 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 510 in scope 3
+ -> int (numeric arithmetic)
+Simple assignment from int to int
+Compound statement with declarations and statements
+Found function name: print_int
+Found variable: sum of type int
+Found exact function match: print_int_i
+Allocated local variable #t6 at offset -32 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 512 in scope 2
+Found function name: print_newline
+Found exact function match: print_newline
+Function call: print_newline() -> int
+Allocated local variable #t7 at offset -36 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 513 in scope 2
+Found variable: sum of type int
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 832 bytes
+  - Local variables: 36 bytes
   - Parameters: 0 bytes
-  - Total: 840 bytes
+  - Total: 44 bytes
 TAC code appended to k.tac
 yyparse() returned 0
 
@@ -94,10 +126,30 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 17
-Getting offset for variable: v_arr_main_s2
-Getting offset for variable: #t4
+Total TAC instructions collected: 42
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: v_sum_main_s2
+Getting offset for variable: v_i_main_s2
 Getting offset for variable: #t1
+Getting offset for variable: #t1
+Getting offset for variable: #t1
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: #t2
+Getting offset for variable: #t2
+Getting offset for variable: #t2
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: #t3
+Getting offset for variable: #t3
+Getting offset for variable: #t3
+Getting offset for variable: v_sum_main_s2
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: v_sum_main_s2
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: #t4
+Getting offset for variable: v_sum_main_s2
+Getting offset for variable: #t5
+Getting offset for variable: v_i_main_s2
+Getting offset for variable: v_sum_main_s2
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

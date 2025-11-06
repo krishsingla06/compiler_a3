@@ -770,6 +770,13 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
             reg_allocator.mark_dirty(src_reg);
             emit_comment("DEBUG: " + dest + " now also in " + src_reg + " (dirty)");
         }
+        
+        // IMPORTANT: Save to memory for pointer/address assignments
+        // This ensures that pointer values are available for later dereferences
+        int dest_offset = get_offset(dest);
+        emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
+        emit_comment("DEBUG: Saved " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
+        storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
     } else {
         // Source is not in register - need to load it first
         string src_reg = ensure_in_register(src);
@@ -808,6 +815,13 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         reg_allocator.mark_dirty(src_reg);
         
         emit_comment("DEBUG: " + dest + " loaded in " + src_reg + " (dirty)");
+        
+        // IMPORTANT: Save to memory for pointer/address assignments
+        // This ensures that pointer values are available for later dereferences
+        int dest_offset = get_offset(dest);
+        emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
+        emit_comment("DEBUG: Saved " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
+        storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
     }
 }
 

@@ -222,9 +222,9 @@ int print_newline() {
 //     // return node1.p;
 // }
 
-int main(){
-    int arr[10][20];
-    arr[5][3]=1;
+//int main(){
+    // int arr[10][20];
+    // arr[5][3]=1;
     // arr[5][1]=2;
     // print_int(arr[0][0]);
     // print_newline();
@@ -258,7 +258,7 @@ int main(){
     // print_int(arr[2]);
     // print_newline();
     //return arr[2];
-}
+//}
 
 //-----------------------------
 
@@ -299,3 +299,217 @@ int main(){
     
 //     return z;
 // }
+
+// --------------------------------
+// multilevel pointers test
+
+// int main(){
+//     int x;
+//     int *p;
+//     int **q;
+//     int ***r;
+
+//     x = 10;
+//     p = &x;
+//     q = &p;
+//     r = &q;
+
+//     ***r = 20; // x should become 20
+//     print_int(x);
+//     print_newline();
+//     //dikkat for now, bcoz memory mei kabhi store nahi kiya p,q,r ko, they are in registers only
+
+//     return x; // Should return 20
+// }
+
+// loop test
+// int main(){
+//     int i;
+//     int sum;
+//     sum = 0;
+//     for(i=1;i<=10;i++){
+//         sum = sum + i;
+//     }
+//     print_int(sum);
+//     print_newline();
+//     return sum; // should return 55
+// }
+
+// more loops and if else and jumps test with printint
+
+// int main(){
+//     int i;
+//     int sum;
+//     sum = 0;
+//     // for(i=1;i<=10;i++){
+//     //     if(i%2==0){
+//     //         sum = sum + i;
+//     //     }
+//     //     else{
+//     //         sum = sum + (i*2);
+//     //     }
+//     // }
+//     // while(i<=10){
+//     //     if(i%2==0){
+//     //         sum = sum + i;
+//     //     }
+//     //     else{
+//     //         sum = sum + (i*2);
+//     //     }
+//     //     i = i + 1;
+//     // }
+//     // do{
+//     //     if(i%2==0){
+//     //         sum = sum + i;
+//     //     }
+//     //     else{
+//     //         sum = sum + (i*2);
+//     //     }
+//     //     i = i + 1;
+//     // }while(i<=10);
+//     // until(i>10){
+//     //     if(i%2==0){
+//     //         sum = sum + i;
+//     //     }
+//     //     else{
+//     //         sum = sum + (i*2);
+//     //     }
+//     //     i = i + 1;
+//     // }
+//     print_int(sum);
+//     print_newline();
+//     return sum; // should return 80
+// }
+
+// int main(){
+//     int arr[4][5];
+//     arr[2][3] = 10;
+//     // print_int(arr[2][3]);
+//     // print_newline();
+// }
+
+// test jumps
+
+// int main(){
+//     int x;
+//     x = 10;
+//     goto I9;
+// I10:
+//     x = 20;
+//     goto I11;
+// I9:
+//     x = 30;
+//     goto I10;
+// I11:
+//     x = 40;
+//     print_int(x); // should print 40
+//     print_newline();
+//     return x;
+// }
+
+// nested loops test
+// while, do while and until only
+// int main(){
+//     int i;
+//     int j;
+//     int sum;
+//     sum = 0;
+//     i = 1;
+//     do{
+//         j = 1;
+//         while(j<=5){
+//             sum = sum + (i*j);
+//             j = j + 1;
+//         }
+//         i = i + 1;
+//     }while(i<=3);
+//     print_int(sum); // should print 90
+//     print_newline();
+//     return sum; // should return 90
+// }
+
+// highly complicated nested loops with jumps test
+// int main(){
+//     int i;
+//     int j;
+//     int sum;
+//     sum = 0;
+//     i = 1;
+//     I1:
+//     j = 1;
+//     I2:
+//         sum = sum + (i*j);
+//         j = j + 1;
+//         if(j<=5){
+//             goto I2;
+//         }
+//     i = i + 1;
+//     if(i<=3){
+//         goto I1;
+//     }
+//     print_int(sum); // should print 90
+//     print_newline();
+//     return sum; // should return 90
+// }
+
+
+// function call with more than 4 params test
+// int foo(int a, int b, int c, int d, int e){
+//     return a + b + c + d + e;
+// }
+// int main(){
+//     int x;
+//     x = foo(1,2,3,4,5); // should return 15
+//     print_int(x);
+//     print_newline();
+//     return x;
+// }
+
+
+// int foo(int a, int b, int c, int d){
+//     return a + b + c + d;
+// }
+// int main(){
+//     int x;
+//     x = foo(1,2,3,4); // should return 10
+//     print_int(x);
+//     print_newline();
+//     return x;
+// }
+
+// recursive function test
+// int factorial(int n){
+//     if(n==0){
+//         return 1;
+//     }
+//     else{
+//         return n * factorial(n-1);
+//     }
+// }
+// int main(){
+//     int x;
+//     x = factorial(5); // should return 120
+//     print_int(x);
+//     print_newline();
+//     return x;
+// }
+
+// go break continue test
+int main(){
+    int i=10;
+    int sum;
+    sum = 0;
+    while(i<=10){
+        if(i==5){
+            continue;
+        }
+        if(i==8){
+            break;
+        }
+        sum = sum + i;
+        i = i + 1;
+    }
+    print_int(sum); // should print 37 (1+2+3+4+6+7)
+    print_newline();
+    return sum; // should return 37
+}

@@ -50,45 +50,166 @@ I6:
 
 I7:
 main:
-    addiu $sp, $sp, -880
-    sw $ra, 876($sp)
-    sw $fp, 872($sp)
-    addiu $fp, $sp, 872
+    addiu $sp, $sp, -84
+    sw $ra, 80($sp)
+    sw $fp, 76($sp)
+    addiu $fp, $sp, 76
 
 
 I8:
-    li $t0, 5
-    li $t1, 80
-    mul $t2, $t0, $t1
+    li $t0, 10
 
 I9:
-    addiu $t0, $fp, -800
+    li $t1, 0
+
+    sw $t0, -4($fp)
+    sw $t1, -8($fp)
 
 I10:
-    add $t3, $t0, $t2
+    lw $t0, -4($fp)
+    li $t1, 10
+    ble $t0, $t1, I12
+
 
 I11:
-    lw $t1, 0($t3)
+    j I14
+
 
 I12:
-    li $t4, 3
-    li $t5, 4
-    mul $t6, $t4, $t5
+    li $t0, 1
 
 I13:
-    sw $t2, -804($fp)
-    addiu $t2, $fp, -816
+    sw $t0, -12($fp)
+    j I15
+
 
 I14:
-    add $t7, $t2, $t6
+    li $t0, 0
+
+    sw $t0, -12($fp)
 
 I15:
+    lw $t0, -12($fp)
+    bne $t0, $zero, I17
+
 
 I16:
-    li $t8, 1
-    sw $t8, 0($t7)
+    j I38
+
 
 I17:
+    lw $t0, -4($fp)
+    li $t1, 5
+    beq $t0, $t1, I19
+
+
+I18:
+    j I21
+
+
+I19:
+    li $t0, 1
+
+I20:
+    sw $t0, -16($fp)
+    j I22
+
+
+I21:
+    li $t0, 0
+
+    sw $t0, -16($fp)
+
+I22:
+    lw $t0, -16($fp)
+    bne $t0, $zero, I24
+
+
+I23:
+    j I25
+
+
+I24:
+    j I10
+
+
+I25:
+    lw $t0, -4($fp)
+    li $t1, 8
+    beq $t0, $t1, I27
+
+
+I26:
+    j I29
+
+
+I27:
+    li $t0, 1
+
+I28:
+    sw $t0, -20($fp)
+    j I30
+
+
+I29:
+    li $t0, 0
+
+    sw $t0, -20($fp)
+
+I30:
+    lw $t0, -20($fp)
+    bne $t0, $zero, I32
+
+
+I31:
+    j I33
+
+
+I32:
+    j I38
+
+
+I33:
+    lw $t0, -8($fp)
+    lw $t1, -4($fp)
+    add $t2, $t0, $t1
+
+I34:
+    sw $t2, -8($fp)
+
+I35:
+    li $t0, 1
+    add $t3, $t1, $t0
+
+I36:
+    sw $t3, -4($fp)
+
+I37:
+    sw $t2, -24($fp)
+    sw $t2, -8($fp)
+    sw $t3, -28($fp)
+    sw $t3, -4($fp)
+    j I10
+
+
+I38:
+
+I39:
+    lw $t0, -8($fp)
+    move $a0, $t0
+    li $v0, 1
+    syscall
+
+I40:
+    li $a0, 10
+    li $v0, 11
+    syscall
+
+I41:
+    move $v0, $t0
+
+
+I42:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

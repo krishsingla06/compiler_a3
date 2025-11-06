@@ -7,10 +7,10 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 832 bytes
+|     - Local var space: 36 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 840 bytes
-|   Declared at line: 225
+|     - Total frame size: 44 bytes
+|   Declared at line: 498
 +-----------------------------------------------------------------------------------------+
 | Function: print_int (print_int_i)
 |   Return type: int

@@ -8,15 +8,15 @@ Total Symbols: 10
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -804    |
-| #t2                 | #t2                             | int         | LOCAL    | -808    |
-| #t3                 | #t3                             | int         | LOCAL    | -812    |
-| #t4                 | #t4                             | int         | LOCAL    | -816    |
-| #t5                 | #t5                             | int         | LOCAL    | -820    |
-| #t6                 | #t6                             | int         | LOCAL    | -824    |
-| #t7                 | #t7                             | int         | LOCAL    | -828    |
-| #t8                 | #t8                             | int         | LOCAL    | -832    |
-| arr                 | v_arr_main_s2                   | int[10][20] | LOCAL    | -800    |
+| #t1                 | #t1                             | int         | LOCAL    | -12     |
+| #t2                 | #t2                             | int         | LOCAL    | -16     |
+| #t3                 | #t3                             | int         | LOCAL    | -20     |
+| #t4                 | #t4                             | int         | LOCAL    | -24     |
+| #t5                 | #t5                             | int         | LOCAL    | -28     |
+| #t6                 | #t6                             | int         | LOCAL    | -32     |
+| #t7                 | #t7                             | int         | LOCAL    | -36     |
+| i                   | v_i_main_s2                     | int         | LOCAL    | -4      |
+| sum                 | v_sum_main_s2                   | int         | LOCAL    | -8      |
 | x                   | v_x_print_int_i_s2              | int         | PARAM#0  | 8       |
 +-----------------------------------------------------------------------------------------+
 
