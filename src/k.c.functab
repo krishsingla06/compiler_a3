@@ -2,35 +2,15 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: factorial (factorial_i)
-|   Return type: int
-|   Parameters: 
-|   Stack Frame:
-|     - Parameter space: 0 bytes
-|     - Local var space: 16 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 24 bytes
-|   Declared at line: 80
-+-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 8 bytes
+|     - Local var space: 36 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 16 bytes
-|   Declared at line: 89
-+-----------------------------------------------------------------------------------------+
-| Function: print_float (print_float_f)
-|   Return type: void
-|   Parameters: float 
-|   Stack Frame:
-|     - Parameter space: 4 bytes
-|     - Local var space: 0 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 12 bytes
-|   Declared at line: 12
+|     - Total frame size: 44 bytes
+|   Declared at line: 91
 +-----------------------------------------------------------------------------------------+
 | Function: print_int (print_int_i)
 |   Return type: void
@@ -40,7 +20,7 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 13
+|   Declared at line: 82
 +-----------------------------------------------------------------------------------------+
 | Function: print_newline (print_newline)
 |   Return type: void
@@ -50,5 +30,5 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 8 bytes
-|   Declared at line: 16
+|   Declared at line: 86
 +-----------------------------------------------------------------------------------------+

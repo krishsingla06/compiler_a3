@@ -9,11 +9,11 @@
 // //     return c; // should return 5.5
 // // }
 
-void print_float(float x){return;}
-void print_int(int x) {
-    return;
-}
-void print_newline(){return;}
+// void print_float(float x){return;}
+// void print_int(int x) {
+//     return;
+// }
+// void print_newline(){return;}
 
 // // float main() {
 // //     float x = 1.99;
@@ -77,19 +77,12 @@ void print_newline(){return;}
 
 
 
-int factorial(int n){
-    if(n==0){
-        return 1;
-    }
-    else{
-        return n * factorial(n-1);
-    }
+//#include <stdio.h>
+
+void print_int(int n){
+    return;
 }
 
-int main(){
-    int x;
-    x = factorial(5); // should return 120
-    print_int(x);
-    print_newline();
-    return x;
+void print_newline(){
+    return;
 }

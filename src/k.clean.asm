@@ -8,7 +8,7 @@
 .globl main
 
 I1:
-print_float_f:
+print_int_i:
     addiu $sp, $sp, -52
     sw $ra, 48($sp)
     sw $fp, 44($sp)
@@ -28,12 +28,11 @@ I3:
 
 
 I4:
-print_int_i:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
+print_newline:
+    addiu $sp, $sp, -48
+    sw $ra, 44($sp)
+    sw $fp, 40($sp)
+    addiu $fp, $sp, 40
 
 
 I5:
@@ -48,150 +47,156 @@ I6:
 
 
 I7:
-print_newline:
-    addiu $sp, $sp, -48
-    sw $ra, 44($sp)
-    sw $fp, 40($sp)
-    addiu $fp, $sp, 40
+main:
+    addiu $sp, $sp, -84
+    sw $ra, 80($sp)
+    sw $fp, 76($sp)
+    addiu $fp, $sp, 76
 
 
 I8:
-
+    li $t0, 0
 
 I9:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
+    li $t1, 1
 
+    sw $t0, -8($fp)
+    sw $t1, -4($fp)
 
 I10:
-factorial_i:
-    addiu $sp, $sp, -64
-    sw $ra, 60($sp)
-    sw $fp, 56($sp)
-    addiu $fp, $sp, 56
+    lw $t0, -4($fp)
+    li $t1, 10
+    ble $t0, $t1, I12
 
 
 I11:
-    lw $t0, 8($fp)
-    li $t1, 0
-    beq $t0, $t1, I13
+    j I14
 
 
 I12:
+    li $t0, 1
+
+I13:
+    sw $t0, -12($fp)
     j I15
 
 
-I13:
-    li $t0, 1
-
 I14:
-    sw $t0, -4($fp)
-    j I16
-
-
-I15:
     li $t0, 0
 
-    sw $t0, -4($fp)
+    sw $t0, -12($fp)
+
+I15:
+    lw $t0, -12($fp)
+    bne $t0, $zero, I20
+
 
 I16:
-    lw $t0, -4($fp)
-    bne $t0, $zero, I18
+    j I35
 
 
 I17:
-    j I20
-
+    lw $t0, -4($fp)
+    li $t1, 1
+    add $t2, $t0, $t1
 
 I18:
-    li $v0, 1
-
+    sw $t2, -4($fp)
 
 I19:
-    j I25
+    sw $t2, -16($fp)
+    sw $t2, -4($fp)
+    j I10
 
 
 I20:
-    lw $t0, 8($fp)
-    li $t1, 1
-    sub $t2, $t0, $t1
+    lw $t0, -4($fp)
+    li $t1, 2
+    rem $t2, $t0, $t1
 
 I21:
+    sw $t2, -20($fp)
+    li $t3, 0
+    beq $t2, $t3, I23
+
 
 I22:
-    sw $t0, 8($fp)
-    sw $t1, 0($fp)
-    sw $t2, -8($fp)
-    addiu $sp, $sp, -4
-    lw $t0, -8($fp)
-    sw $t0, 8($sp)
-    move $a0, $t0
-    jal factorial_i
-    addiu $sp, $sp, 4
-    move $t1, $v0
+    j I25
+
 
 I23:
-    lw $t2, 8($fp)
-    mul $t3, $t2, $t1
+    li $t0, 1
 
 I24:
-    sw $t1, -12($fp)
-    sw $t3, -16($fp)
-    move $v0, $t3
+    sw $t0, -24($fp)
+    j I26
 
 
 I25:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
+    li $t0, 0
 
+    sw $t0, -24($fp)
 
 I26:
-main:
-    addiu $sp, $sp, -56
-    sw $ra, 52($sp)
-    sw $fp, 48($sp)
-    addiu $fp, $sp, 48
+    lw $t0, -24($fp)
+    bne $t0, $zero, I28
 
 
 I27:
+    j I31
+
 
 I28:
-    addiu $sp, $sp, -4
-    li $t0, 5
-    sw $t0, 8($sp)
-    move $a0, $t0
-    jal factorial_i
-    addiu $sp, $sp, 4
-    move $t0, $v0
+    lw $t0, -8($fp)
+    lw $t1, -4($fp)
+    add $t2, $t0, $t1
 
 I29:
-    sw $t0, -4($fp)
+    sw $t2, -8($fp)
 
 I30:
+    sw $t2, -28($fp)
+    sw $t2, -8($fp)
+    j I35
+
 
 I31:
+    lw $t0, -4($fp)
+    li $t1, 2
+    mul $t2, $t0, $t1
+
+I32:
+    lw $t3, -8($fp)
+    add $t4, $t3, $t2
+
+I33:
+    sw $t4, -8($fp)
+
+I34:
+    sw $t2, -32($fp)
+    sw $t4, -36($fp)
+    sw $t4, -8($fp)
+    j I17
+
+
+I35:
+
+I36:
+    lw $t0, -8($fp)
     move $a0, $t0
     li $v0, 1
     syscall
 
-I32:
+I37:
     li $a0, 10
     li $v0, 11
     syscall
 
-I33:
-    sw $t0, -8($fp)
-    sw $t0, -4($fp)
+I38:
     move $v0, $t0
 
 
-I34:
+I39:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

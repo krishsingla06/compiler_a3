@@ -1816,40 +1816,51 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         return;  // Don't do normal function call processing
     }
     
-    // ===== CALLER-SAVE: Save all dirty $t0-$t9 registers before call =====
-    emit_comment("=== Caller-Save: Spill dirty registers before call ===");
+    // ===== CALLER-SAVE: Spill ALL $t0-$t9 registers before call =====
+    emit_comment("=== Caller-Save: Spill ALL registers before call ===");
     vector<string> saved_regs;  // Track which registers we saved
     
     for (int i = 0; i <= 9; i++) {
         string reg = "$t" + to_string(i);
         
-        // Check if this register is dirty (has been modified)
-        //if (reg_allocator.is_dirty(reg)) {
-            // Get the variable(s) stored in this register
-            set<string> vars = reg_desc.get_vars_in_reg(reg);
-            
-            if (!vars.empty()) {
-                for (const string& var : vars) {
-                    // Spill to memory using existing offset
-                    int offset = get_offset(var);
-                    emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-                    emit_comment("DEBUG: Saved " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
-                    
-                    // Update storage descriptor: variable is now in memory with exact location
-                    storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+        // Get ALL variable(s) stored in this register (dirty or clean)
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        
+        if (!vars.empty()) {
+            for (const string& var : vars) {
+                // Skip constants and invalid variables
+                if (var == "<CONSTANT>" || var.empty()) {
+                    emit_comment("DEBUG: Skipping spill of constant in " + reg);
+                    continue;
                 }
-                saved_regs.push_back(reg);
+                
+                // Get offset - if it's 0, this might be invalid or old $fp location
+                int offset = get_offset(var);
+                
+                // Don't spill to 0($fp) as that's the saved old $fp location
+                if (offset == 0) {
+                    emit_comment("DEBUG: Skipping spill of " + var + " - invalid offset 0");
+                    continue;
+                }
+                
+                // Spill to memory using existing offset
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
+                
+                // Update storage descriptor: variable is now ONLY in memory
+                storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
             }
-
-            // Clear dirty flag for this register
-            reg_allocator.clear_dirty(reg);
-        //}
+            saved_regs.push_back(reg);
+        }
         
         // Clear the register descriptor completely (assume destroyed by call)
         reg_desc.clear_reg(reg);
+        
+        // Clear dirty flag for this register
+        reg_allocator.clear_dirty(reg);
     }
     
-    emit_comment("=== End Caller-Save (saved " + to_string(saved_regs.size()) + " registers) ===");
+    emit_comment("=== End Caller-Save (spilled " + to_string(saved_regs.size()) + " registers) ===");
     
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0
@@ -1895,7 +1906,8 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             emit_comment("DEBUG: Float param " + to_string(i) + " (" + param + ") in " + param_freg);
             
             // Store on stack
-            int stack_offset = 8 + (i * 4);
+            // offset is size of all params - (i * 4) + 4
+            int stack_offset =  (i * 4);
             emit("s.s " + param_freg + ", " + to_string(stack_offset) + "($sp)");
             emit_comment("DEBUG: Stored float param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
             
@@ -1927,7 +1939,8 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             // Store on stack at 8($sp), 12($sp), 16($sp), ... (after allocation)
             // These will become +8($fp), +12($fp), +16($fp) in the callee
             // The +8 accounts for $ra and old $fp that callee will save
-            int stack_offset = 8 + (i * 4);
+            //int stack_offset = 8 + (i * 4);
+            int stack_offset =  (i * 4);
             emit("sw " + param_reg + ", " + to_string(stack_offset) + "($sp)");
             emit_comment("DEBUG: Stored param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
             
@@ -1991,6 +2004,34 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
 
 void MIPSGenerator::translate_return(TACInstruction* instr) {
     // TAC: return <value>
+    
+    // ===== IMPORTANT: Spill ALL dirty registers before return =====
+    emit_comment("=== Spilling all dirty registers before return ===");
+    set<string> dirty_regs = reg_allocator.get_dirty_regs();
+    
+    for (const string& reg : dirty_regs) {
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        
+        for (const string& var : vars) {
+            // Spill to memory
+            int offset = get_offset(var);
+            
+            // Check if it's a float register
+            if (reg.length() > 2 && reg[1] == 'f') {
+                emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory");
+            } else {
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory");
+            }
+            
+            // Update storage descriptor
+            storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+        }
+        
+        // Clear dirty flag
+        reg_allocator.clear_dirty(reg);
+    }
     
     if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
         string ret_val = instr->result->value;
