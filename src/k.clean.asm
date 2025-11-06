@@ -68,57 +68,46 @@ I9:
 
 I10:
 main:
-    addiu $sp, $sp, -72
-    sw $ra, 68($sp)
-    sw $fp, 64($sp)
-    addiu $fp, $sp, 64
+    addiu $sp, $sp, -64
+    sw $ra, 60($sp)
+    sw $fp, 56($sp)
+    addiu $fp, $sp, 56
 
 
 I11:
-    # Loading float constant: 1.990000
-    li.s $f0, 1.990000
+    addiu $t0, $fp, -8
 
 I12:
-    # Loading float constant: 2.700000
-    li.s $f1, 2.700000
+    sw $t0, -4($fp)
 
 I13:
-    li $t0, 3
+
+I14:
+    # Loading float constant: 1.100000
+    li.s $f0, 1.100000
+    s.s $f0, 0($t0)
+
+I15:
 
 I16:
+    l.s $f1, -8($fp)
+    mov.s $f12, $f1
+    li $v0, 2
+    syscall
 
 I17:
-    lw $t1, -24($fp)
-    move $a0, $t1
-    li $v0, 1
+    li $a0, 10
+    li $v0, 11
     syscall
 
 I18:
-    li $a0, 10
-    li $v0, 11
-    syscall
+    sw $t0, -12($fp)
+    sw $t0, -16($fp)
+    sw $t0, -4($fp)
+    li $v0, 0
+
 
 I19:
-
-I20:
-    move $a0, $t0
-    li $v0, 1
-    syscall
-
-I21:
-    li $a0, 10
-    li $v0, 11
-    syscall
-
-I22:
-    s.s $f0, -4($fp)
-    s.s $f1, -8($fp)
-    sw $t0, -12($fp)
-    # Loading float constant: 0.000000
-    li.s $f0, 0.000000
-
-
-I23:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

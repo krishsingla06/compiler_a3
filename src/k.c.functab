@@ -3,14 +3,14 @@
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
 | Function: main (main)
-|   Return type: float
+|   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 24 bytes
+|     - Local var space: 16 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 32 bytes
-|   Declared at line: 18
+|     - Total frame size: 24 bytes
+|   Declared at line: 57
 +-----------------------------------------------------------------------------------------+
 | Function: print_float (print_float_f)
 |   Return type: void

@@ -523,7 +523,9 @@ void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, in
     emit_comment("=== Initialize Parameter Descriptors ===");
     
     // For each parameter:
-    // 1. First 4 params: register ($a0-$a3) AND memory (+8($fp), +12($fp), +16($fp), +20($fp))
+    // 1. First 4 params: 
+    //    - Float params: $f12-$f15 AND memory (+8($fp), +12($fp), +16($fp), +20($fp))
+    //    - Int params: $a0-$a3 AND memory (+8($fp), +12($fp), +16($fp), +20($fp))
     // 2. Params 5+: only memory (+24($fp), +28($fp), ...)
     
     for (int i = 0; i < num_params; i++) {
@@ -546,15 +548,25 @@ void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, in
         
         // For first 4 parameters, also add register location
         if (i < 4) {
-            string arg_reg = "$a" + to_string(i);
+            // Check if parameter is float
+            bool is_float_param = is_variable_float(mangled_param.c_str());
+            
+            string arg_reg;
+            if (is_float_param) {
+                // Float parameters go in $f12-$f15
+                arg_reg = "$f" + to_string(12 + i);
+                emit_comment("DEBUG: Float parameter " + to_string(i) + " (" + mangled_param + ") in " + arg_reg);
+            } else {
+                // Integer parameters go in $a0-$a3
+                arg_reg = "$a" + to_string(i);
+                emit_comment("DEBUG: Integer parameter " + to_string(i) + " (" + mangled_param + ") in " + arg_reg);
+            }
             
             // Add to register descriptor
             reg_desc.add_var_to_reg(arg_reg, mangled_param);
             
             // Add to storage descriptor
             storage_desc.add_location(mangled_param, arg_reg);
-            
-            emit_comment("DEBUG: Parameter " + to_string(i) + " (" + mangled_param + ") also in " + arg_reg);
         }
     }
     
@@ -661,6 +673,7 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
 
 void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     // Assignment: result = arg1 (op is NULL, flag=0)
+    // ptr = t1
     
     if (!instr->result || !instr->arg1) return;
     
@@ -670,8 +683,8 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     emit_comment("Assignment: " + dest + " = " + src);
     
     // Check if this is a float assignment
-    bool dest_is_float = is_variable_float(dest.c_str());
-    bool src_is_float = is_operand_float(instr->arg1);
+    bool dest_is_float = is_variable_float(dest.c_str()); // not float
+    bool src_is_float = is_operand_float(instr->arg1); // not float
     
     if (dest_is_float || src_is_float) {
         // Float assignment
@@ -1371,7 +1384,8 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
 void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     // TAC: result = &arg1
     // MIPS: Get the address of arg1 (which is at offset($fp))
-    
+    // t1 = &x
+    // ptr = t1
     string dest = instr->result->value;
     string var = instr->arg1->value;
     
@@ -1389,6 +1403,9 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     }
     
     // Calculate address: dest_reg = $fp + offset
+    // float *ptr = f;
+    // temp = &f
+    // ptr = temp
     if (offset == 0) {
         emit("move " + dest_reg + ", $fp");
         emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
@@ -1456,25 +1473,39 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
 }
 
 void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
-    // TAC: *(arg1) = arg2
-    // MIPS: Store value (arg2) through pointer (arg1)
+    // TAC: *(result) = arg1
+    // MIPS: Store value (arg1) through pointer (result)
     
-    string ptr = instr->result->value;      // FIXED: arg1 is the pointer
-    string value = instr->arg1->value;    // FIXED: arg2 is the value
+    string ptr = instr->result->value;
+    string value = instr->arg1->value;
     
     emit_comment("*" + ptr + " = " + value);
     
-    // Get pointer address into a register using smart helper
-    string ptr_reg = load_operand_to_register(instr->result);
+    // IMPORTANT: Pointer must be loaded into CPU register (not FPU register)
+    // Even if it points to a float, the pointer itself is an address (integer)
+    string ptr_reg = ensure_in_register(ptr);
     emit_comment("DEBUG: Pointer " + ptr + " in " + ptr_reg);
     
-    // Get value to store into a register using smart helper (handles constants, strings, variables)
-    string value_reg = load_operand_to_register(instr->arg1);
-    emit_comment("DEBUG: Value " + value + " in " + value_reg);
+    // Check if the value being stored is a float
+    bool value_is_float = is_operand_float(instr->arg1);
     
-    // Store value through pointer: sw $value, 0($ptr)
-    emit("sw " + value_reg + ", 0(" + ptr_reg + ")");
-    emit_comment("DEBUG: Stored " + value + " through pointer " + ptr);
+    if (value_is_float) {
+        // Store float value through pointer
+        string value_freg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: Float value " + value + " in " + value_freg);
+        
+        // Use s.s (store single) for floats: s.s $fX, 0($tY)
+        emit("s.s " + value_freg + ", 0(" + ptr_reg + ")");
+        emit_comment("DEBUG: Stored float " + value + " through pointer " + ptr);
+    } else {
+        // Store integer value through pointer
+        string value_reg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: Integer value " + value + " in " + value_reg);
+        
+        // Use sw (store word) for integers: sw $tX, 0($tY)
+        emit("sw " + value_reg + ", 0(" + ptr_reg + ")");
+        emit_comment("DEBUG: Stored integer " + value + " through pointer " + ptr);
+    }
     
     // Note: We don't track what the pointer points to in our descriptors,
     // so we can't update descriptors for the target memory location
@@ -1823,7 +1854,10 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0
     vector<string> params;
-    for (int i = pending_params.size() - 1; i >= 0; i--) {
+    // for (int i = pending_params.size() - 1; i >= 0; i--) {
+    //     params.push_back(pending_params[i]);
+    // }
+    for(int i=0; i < pending_params.size(); i++) {
         params.push_back(pending_params[i]);
     }
     pending_params.clear();
@@ -2300,6 +2334,14 @@ bool MIPSGenerator::is_operand_float(TACOperand* operand) {
     // Check if it's a variable or temp with float type
     if (operand->type == TAC_OPERAND_IDENTIFIER || 
         operand->type == TAC_OPERAND_TEMP_VAR) {
+        // IMPORTANT: Pointers are NOT floats, even if they point to floats
+        // Check pointer level first - if it's a pointer (level > 0), it's NOT a float
+        int ptr_level = get_variable_pointer_level(operand->value.c_str());
+        if (ptr_level > 0) {
+            return false;  // Pointers are stored in CPU registers, not FPU registers
+        }
+        
+        // Only non-pointer variables can be floats
         return is_variable_float(operand->value.c_str());
     }
     
@@ -2374,7 +2416,8 @@ void MIPSGenerator::spill_all_dirty() {
 void MIPSGenerator::print_descriptors() {
     emit_comment("--- Register Descriptor ---");
     // Print which variables are in which registers
-    set<string> all_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    set<string> all_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9", "$f0", "$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7", "$f8", "$f9",
+                           "$f10", "$f11", "$f12", "$f13", "$f14", "$f15", "$f16", "$f17", "$f18", "$f19", "$f20", "$f21", "$f22", "$f23", "$f24", "$f25", "$f26", "$f27", "$f28", "$f29", "$f30", "$f31", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3"};
     for (const string& reg : all_regs) {
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         if (!vars.empty()) {

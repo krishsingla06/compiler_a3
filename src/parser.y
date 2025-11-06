@@ -6882,6 +6882,9 @@ extern "C" bool is_variable_float(const char* var_name) {
     // Check in global symbol table
     auto it = global_symbol_table.find(name);
     if (it != global_symbol_table.end()) {
+        // print name and type
+        cout << "hihi Variable " << name << " type: " << it->second.type.toString() << "\n";
+        cout<<"Returning "<< (it->second.type.baseType == "float" && it->second.type.pointerLevel == 0) << "\n";
         return (it->second.type.baseType == "float" && it->second.type.pointerLevel == 0);
     }
     
