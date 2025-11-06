@@ -3,20 +3,22 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 10
+Total Symbols: 12
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -12     |
-| #t2                 | #t2                             | int         | LOCAL    | -16     |
-| #t3                 | #t3                             | int         | LOCAL    | -20     |
-| #t4                 | #t4                             | int         | LOCAL    | -24     |
-| #t5                 | #t5                             | int         | LOCAL    | -28     |
-| #t6                 | #t6                             | int         | LOCAL    | -32     |
-| #t7                 | #t7                             | int         | LOCAL    | -36     |
-| i                   | v_i_main_s2                     | int         | LOCAL    | -4      |
-| sum                 | v_sum_main_s2                   | int         | LOCAL    | -8      |
+| #t1                 | #t1                             | float       | LOCAL    | -16     |
+| #t2                 | #t2                             | float       | LOCAL    | -20     |
+| #t3                 | #t3                             | void        | LOCAL    | -24     |
+| #t4                 | #t4                             | void        | LOCAL    | -24     |
+| #t5                 | #t5                             | void        | LOCAL    | -24     |
+| #t6                 | #t6                             | void        | LOCAL    | -24     |
+| p                   | v_p_main_s2                     | int         | LOCAL    | -24     |
+| x                   | v_x_main_s2                     | float       | LOCAL    | -4      |
+| x                   | v_x_print_float_f_s2            | float       | PARAM#0  | 8       |
 | x                   | v_x_print_int_i_s2              | int         | PARAM#0  | 8       |
+| y                   | v_y_main_s2                     | float       | LOCAL    | -8      |
+| z                   | v_z_main_s2                     | int         | LOCAL    | -12     |
 +-----------------------------------------------------------------------------------------+
 

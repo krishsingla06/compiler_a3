@@ -3,9 +3,13 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <cstdio>
 
 // Extern declaration to access helper function from parser.y
 extern "C" int get_variable_offset(const char* var_name);
+extern "C" const char* get_variable_type(const char* var_name);
+extern "C" bool is_variable_float(const char* var_name);
+extern "C" int get_variable_pointer_level(const char* var_name);
 int get_function_stack_frame_size(const string& mangledName);
 int get_function_param_count(const string& mangledName);
 string get_function_param_name(const string& mangledName, int param_index);
@@ -614,6 +618,10 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         // Store through pointer: *(arg1) = arg2
         translate_store_indirect(instr);
     }
+    else if (instr->op.type == TAC_OPERATOR_CAST) {
+        // Type cast: result = (type)arg2
+        translate_cast(instr);
+    }
     else if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
         emit_label(instr->result->value);
         emit_comment("Function: " + instr->result->value);
@@ -660,6 +668,28 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     string src = instr->arg1->value;
     
     emit_comment("Assignment: " + dest + " = " + src);
+    
+    // Check if this is a float assignment
+    bool dest_is_float = is_variable_float(dest.c_str());
+    bool src_is_float = is_operand_float(instr->arg1);
+    
+    if (dest_is_float || src_is_float) {
+        // Float assignment
+        emit_comment("DEBUG: Float assignment");
+        
+        // Load source into float register
+        string src_freg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: " + src + " in " + src_freg);
+        
+        // If destination is already in a register, update it
+        // Otherwise just update descriptors
+        reg_desc.add_var_to_reg(src_freg, dest);
+        storage_desc.set_location(dest, src_freg);
+        reg_allocator.mark_dirty(src_freg);
+        
+        emit_comment("DEBUG: " + dest + " = " + src + " in " + src_freg + " (dirty, float)");
+        return;
+    }
     
     // Check if source is a string literal
     if (instr->arg1->type == TAC_OPERAND_STRING) {
@@ -832,172 +862,59 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
     string src1 = instr->arg1->value;
     string src2 = instr->arg2->value;
     
-    string op_name;
-    switch (instr->op.type) {
-        case TAC_OPERATOR_ADD: op_name = "add"; break;
-        case TAC_OPERATOR_SUB: op_name = "sub"; break;
-        case TAC_OPERATOR_MUL: op_name = "mul"; break;
-        case TAC_OPERATOR_DIV: op_name = "div"; break;
-        case TAC_OPERATOR_MOD: op_name = "rem"; break;
-        default: op_name = "unknown"; break;
-    }
+    // Check if this is a float operation
+    bool is_float_op = is_operand_float(instr->arg1) || is_operand_float(instr->arg2);
     
-    emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
-    
-    // Get operands into registers using the smart helper
-    string reg1 = load_operand_to_register(instr->arg1);
-    emit_comment("DEBUG: " + src1 + " in " + reg1);
-    
-    string reg2 = load_operand_to_register(instr->arg2);
-    emit_comment("DEBUG: " + src2 + " in " + reg2);
-    
-    // Allocate destination register
-    string dest_reg = allocate_register_with_spilling();
-    
-    // Generate operation
-    emit(op_name + " " + dest_reg + ", " + reg1 + ", " + reg2);
-    
-    // Update descriptors - keep result in register ONLY
-    reg_desc.add_var_to_reg(dest_reg, dest);
-    storage_desc.set_location(dest, dest_reg);
-    reg_allocator.mark_dirty(dest_reg);
-    
-    emit_comment("DEBUG: " + dest + " = result in " + dest_reg + " (dirty)");
-}
-
-void MIPSGenerator::translate_comparison(TACInstruction* instr) {
-    // Two cases:
-    // 1. flag == 2: if arg1 op arg2 goto result (conditional branch)
-    // 2. flag == 0: result = arg1 op arg2 (comparison result stored in variable)
-    
-    string src1 = instr->arg1->value;
-    string src2 = instr->arg2->value;
-
-    
-    if (instr->flag == 2) {
-        // Conditional branch: if arg1 op arg2 goto label
-        string target_label = instr->result->value;
-        
+    if (is_float_op) {
+        // Float arithmetic
         string op_name;
-        string branch_instr;
-
-        
         switch (instr->op.type) {
-            case TAC_OPERATOR_EQ:
-                op_name = "==";
-                branch_instr = "beq";  // branch if equal
-                break;
-            case TAC_OPERATOR_NE:
-                op_name = "!=";
-                branch_instr = "bne";  // branch if not equal
-                break;
-            case TAC_OPERATOR_LT:
-                op_name = "<";
-                branch_instr = "blt";  // branch if less than
-                break;
-            case TAC_OPERATOR_GT:
-                op_name = ">";
-                branch_instr = "bgt";  // branch if greater than
-                break;
-            case TAC_OPERATOR_LE:
-                op_name = "<=";
-                branch_instr = "ble";  // branch if less than or equal
-                break;
-            case TAC_OPERATOR_GE:
-                op_name = ">=";
-                branch_instr = "bge";  // branch if greater than or equal
-                break;
-            default:
-                op_name = "??";
-                branch_instr = "beq";
-                break;
-        }
-
-        // if src2 is empty then it is a unary comparison (e.g., if arg1 != 0)
-
-        if(src2.empty()) {
-            // Unary comparison against zero
-            emit_comment("if " + src1 + " " + op_name + " 0 goto I" + target_label);
-            
-            // Get operand into register
-            string reg1;
-            
-            if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
-                reg1 = allocate_register_with_spilling();
-                emit("li " + reg1 + ", " + src1);
-                emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
-            } else {
-                reg1 = ensure_in_register(src1);
-                emit_comment("DEBUG: " + src1 + " in " + reg1);
-            }
-            
-            // Emit branch instruction against zero
-            if (instr->op.type == TAC_OPERATOR_NE) {
-                emit("bne " + reg1 + ", $zero, I" + target_label);
-            } else if (instr->op.type == TAC_OPERATOR_EQ) {
-                emit("beq " + reg1 + ", $zero, I" + target_label);
-            } else {
-                // For other comparisons, treat as not equal to zero
-                emit("bne " + reg1 + ", $zero, I" + target_label);
-            }
-            emit_comment("Branch to I" + target_label + " if condition true");
-            return;
+            case TAC_OPERATOR_ADD: op_name = "add.s"; break;
+            case TAC_OPERATOR_SUB: op_name = "sub.s"; break;
+            case TAC_OPERATOR_MUL: op_name = "mul.s"; break;
+            case TAC_OPERATOR_DIV: op_name = "div.s"; break;
+            case TAC_OPERATOR_MOD: 
+                emit_comment("ERROR: Modulo not supported for floats");
+                return;
+            default: op_name = "unknown"; break;
         }
         
-        emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label);
+        emit_comment(dest + " = " + src1 + " " + op_name + " " + src2 + " (float)");
         
-        // Get operands into registers using smart helper
-        string reg1 = load_operand_to_register(instr->arg1);
-        emit_comment("DEBUG: " + src1 + " in " + reg1);
+        // Get operands into float registers
+        string freg1 = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: " + src1 + " in " + freg1);
         
-        string reg2 = load_operand_to_register(instr->arg2);
-        emit_comment("DEBUG: " + src2 + " in " + reg2);
+        string freg2 = load_operand_to_register(instr->arg2);
+        emit_comment("DEBUG: " + src2 + " in " + freg2);
         
-        // Emit branch instruction
-        emit(branch_instr + " " + reg1 + ", " + reg2 + ", I" + target_label);
-        emit_comment("Branch to I" + target_label + " if condition true");
+        // Allocate destination float register
+        string dest_freg = reg_allocator.allocate_float_reg();
         
+        // Generate operation
+        emit(op_name + " " + dest_freg + ", " + freg1 + ", " + freg2);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_freg, dest);
+        storage_desc.set_location(dest, dest_freg);
+        reg_allocator.mark_dirty(dest_freg);
+        
+        emit_comment("DEBUG: " + dest + " = result in " + dest_freg + " (dirty, float)");
     } else {
-        // Comparison result stored in variable: result = arg1 op arg2
-        string dest = instr->result->value;
-        
+        // Integer arithmetic
         string op_name;
-        string set_instr;
-        
         switch (instr->op.type) {
-            case TAC_OPERATOR_EQ:
-                op_name = "==";
-                set_instr = "seq";  // set if equal
-                break;
-            case TAC_OPERATOR_NE:
-                op_name = "!=";
-                set_instr = "sne";  // set if not equal
-                break;
-            case TAC_OPERATOR_LT:
-                op_name = "<";
-                set_instr = "slt";  // set if less than
-                break;
-            case TAC_OPERATOR_GT:
-                op_name = ">";
-                set_instr = "sgt";  // set if greater than
-                break;
-            case TAC_OPERATOR_LE:
-                op_name = "<=";
-                set_instr = "sle";  // set if less than or equal
-                break;
-            case TAC_OPERATOR_GE:
-                op_name = ">=";
-                set_instr = "sge";  // set if greater than or equal
-                break;
-            default:
-                op_name = "??";
-                set_instr = "seq";
-                break;
+            case TAC_OPERATOR_ADD: op_name = "add"; break;
+            case TAC_OPERATOR_SUB: op_name = "sub"; break;
+            case TAC_OPERATOR_MUL: op_name = "mul"; break;
+            case TAC_OPERATOR_DIV: op_name = "div"; break;
+            case TAC_OPERATOR_MOD: op_name = "rem"; break;
+            default: op_name = "unknown"; break;
         }
         
         emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
         
-        // Get operands into registers using smart helper
+        // Get operands into registers using the smart helper
         string reg1 = load_operand_to_register(instr->arg1);
         emit_comment("DEBUG: " + src1 + " in " + reg1);
         
@@ -1007,15 +924,315 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
         // Allocate destination register
         string dest_reg = allocate_register_with_spilling();
         
-        // Generate comparison (result: 1 if true, 0 if false)
-        emit(set_instr + " " + dest_reg + ", " + reg1 + ", " + reg2);
+        // Generate operation
+        emit(op_name + " " + dest_reg + ", " + reg1 + ", " + reg2);
         
-        // Update descriptors
+        // Update descriptors - keep result in register ONLY
         reg_desc.add_var_to_reg(dest_reg, dest);
         storage_desc.set_location(dest, dest_reg);
         reg_allocator.mark_dirty(dest_reg);
         
-        emit_comment("DEBUG: " + dest + " = comparison result in " + dest_reg + " (dirty)");
+        emit_comment("DEBUG: " + dest + " = result in " + dest_reg + " (dirty)");
+    }
+}
+
+
+void MIPSGenerator::translate_comparison(TACInstruction* instr) {
+    // Two cases:
+    // 1. flag == 2: if arg1 op arg2 goto result (conditional branch)
+    // 2. flag == 0: result = arg1 op arg2 (comparison result stored in variable)
+    
+    string src1 = instr->arg1->value;
+    string src2 = instr->arg2->value;
+
+    // Check if this is a float comparison
+    bool is_float_cmp = is_operand_float(instr->arg1) || is_operand_float(instr->arg2);
+    
+    if (instr->flag == 2) {
+        // Conditional branch: if arg1 op arg2 goto label
+        string target_label = instr->result->value;
+        
+        if (is_float_cmp) {
+            // Float comparison with conditional branch
+            string op_name;
+            
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ: op_name = "=="; break;
+                case TAC_OPERATOR_NE: op_name = "!="; break;
+                case TAC_OPERATOR_LT: op_name = "<"; break;
+                case TAC_OPERATOR_GT: op_name = ">"; break;
+                case TAC_OPERATOR_LE: op_name = "<="; break;
+                case TAC_OPERATOR_GE: op_name = ">="; break;
+                default: op_name = "??"; break;
+            }
+            
+            emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label + " (float)");
+            
+            // Get operands into float registers
+            string freg1 = load_operand_to_register(instr->arg1);
+            emit_comment("DEBUG: " + src1 + " in " + freg1);
+            
+            string freg2 = load_operand_to_register(instr->arg2);
+            emit_comment("DEBUG: " + src2 + " in " + freg2);
+            
+            // MIPS float comparison: c.xx.s followed by bc1t/bc1f
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ:
+                    emit("c.eq.s " + freg1 + ", " + freg2);
+                    emit("bc1t I" + target_label);
+                    break;
+                case TAC_OPERATOR_NE:
+                    emit("c.eq.s " + freg1 + ", " + freg2);
+                    emit("bc1f I" + target_label);
+                    break;
+                case TAC_OPERATOR_LT:
+                    emit("c.lt.s " + freg1 + ", " + freg2);
+                    emit("bc1t I" + target_label);
+                    break;
+                case TAC_OPERATOR_LE:
+                    emit("c.le.s " + freg1 + ", " + freg2);
+                    emit("bc1t I" + target_label);
+                    break;
+                case TAC_OPERATOR_GT:
+                    // GT is !LE
+                    emit("c.le.s " + freg1 + ", " + freg2);
+                    emit("bc1f I" + target_label);
+                    break;
+                case TAC_OPERATOR_GE:
+                    // GE is !LT
+                    emit("c.lt.s " + freg1 + ", " + freg2);
+                    emit("bc1f I" + target_label);
+                    break;
+                default:
+                    emit_comment("ERROR: Unknown float comparison operator");
+                    break;
+            }
+            emit_comment("Branch to I" + target_label + " if condition true");
+            
+        } else {
+            // Integer comparison with conditional branch
+            string op_name;
+            string branch_instr;
+            
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ:
+                    op_name = "==";
+                    branch_instr = "beq";  // branch if equal
+                    break;
+                case TAC_OPERATOR_NE:
+                    op_name = "!=";
+                    branch_instr = "bne";  // branch if not equal
+                    break;
+                case TAC_OPERATOR_LT:
+                    op_name = "<";
+                    branch_instr = "blt";  // branch if less than
+                    break;
+                case TAC_OPERATOR_GT:
+                    op_name = ">";
+                    branch_instr = "bgt";  // branch if greater than
+                    break;
+                case TAC_OPERATOR_LE:
+                    op_name = "<=";
+                    branch_instr = "ble";  // branch if less than or equal
+                    break;
+                case TAC_OPERATOR_GE:
+                    op_name = ">=";
+                    branch_instr = "bge";  // branch if greater than or equal
+                    break;
+                default:
+                    op_name = "??";
+                    branch_instr = "beq";
+                    break;
+            }
+
+            // if src2 is empty then it is a unary comparison (e.g., if arg1 != 0)
+            if(src2.empty()) {
+                // Unary comparison against zero
+                emit_comment("if " + src1 + " " + op_name + " 0 goto I" + target_label);
+                
+                // Get operand into register
+                string reg1;
+                
+                if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+                    reg1 = allocate_register_with_spilling();
+                    emit("li " + reg1 + ", " + src1);
+                    emit_comment("DEBUG: Loaded constant " + src1 + " into " + reg1);
+                } else {
+                    reg1 = ensure_in_register(src1);
+                    emit_comment("DEBUG: " + src1 + " in " + reg1);
+                }
+                
+                // Emit branch instruction against zero
+                if (instr->op.type == TAC_OPERATOR_NE) {
+                    emit("bne " + reg1 + ", $zero, I" + target_label);
+                } else if (instr->op.type == TAC_OPERATOR_EQ) {
+                    emit("beq " + reg1 + ", $zero, I" + target_label);
+                } else {
+                    // For other comparisons, treat as not equal to zero
+                    emit("bne " + reg1 + ", $zero, I" + target_label);
+                }
+                emit_comment("Branch to I" + target_label + " if condition true");
+                return;
+            }
+            
+            emit_comment("if " + src1 + " " + op_name + " " + src2 + " goto I" + target_label);
+            
+            // Get operands into registers using smart helper
+            string reg1 = load_operand_to_register(instr->arg1);
+            emit_comment("DEBUG: " + src1 + " in " + reg1);
+            
+            string reg2 = load_operand_to_register(instr->arg2);
+            emit_comment("DEBUG: " + src2 + " in " + reg2);
+            
+            // Emit branch instruction
+            emit(branch_instr + " " + reg1 + ", " + reg2 + ", I" + target_label);
+            emit_comment("Branch to I" + target_label + " if condition true");
+        }
+        
+    } else {
+        // Comparison result stored in variable: result = arg1 op arg2
+        string dest = instr->result->value;
+        
+        if (is_float_cmp) {
+            // Float comparison storing result
+            string op_name;
+            
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ: op_name = "=="; break;
+                case TAC_OPERATOR_NE: op_name = "!="; break;
+                case TAC_OPERATOR_LT: op_name = "<"; break;
+                case TAC_OPERATOR_GT: op_name = ">"; break;
+                case TAC_OPERATOR_LE: op_name = "<="; break;
+                case TAC_OPERATOR_GE: op_name = ">="; break;
+                default: op_name = "??"; break;
+            }
+            
+            emit_comment(dest + " = " + src1 + " " + op_name + " " + src2 + " (float)");
+            
+            // Get operands into float registers
+            string freg1 = load_operand_to_register(instr->arg1);
+            emit_comment("DEBUG: " + src1 + " in " + freg1);
+            
+            string freg2 = load_operand_to_register(instr->arg2);
+            emit_comment("DEBUG: " + src2 + " in " + freg2);
+            
+            // Allocate destination register (integer result: 0 or 1)
+            string dest_reg = allocate_register_with_spilling();
+            
+            // Generate comparison and convert to 0/1
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ:
+                    emit("c.eq.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 0");
+                    emit("bc1f 1f");  // Skip next instruction if false
+                    emit("li " + dest_reg + ", 1");
+                    emit_label("1");
+                    break;
+                case TAC_OPERATOR_NE:
+                    emit("c.eq.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 1");
+                    emit("bc1f 1f");  // Skip next instruction if false
+                    emit("li " + dest_reg + ", 0");
+                    emit_label("1");
+                    break;
+                case TAC_OPERATOR_LT:
+                    emit("c.lt.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 0");
+                    emit("bc1f 1f");
+                    emit("li " + dest_reg + ", 1");
+                    emit_label("1");
+                    break;
+                case TAC_OPERATOR_LE:
+                    emit("c.le.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 0");
+                    emit("bc1f 1f");
+                    emit("li " + dest_reg + ", 1");
+                    emit_label("1");
+                    break;
+                case TAC_OPERATOR_GT:
+                    emit("c.le.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 1");
+                    emit("bc1f 1f");
+                    emit("li " + dest_reg + ", 0");
+                    emit_label("1");
+                    break;
+                case TAC_OPERATOR_GE:
+                    emit("c.lt.s " + freg1 + ", " + freg2);
+                    emit("li " + dest_reg + ", 1");
+                    emit("bc1f 1f");
+                    emit("li " + dest_reg + ", 0");
+                    emit_label("1");
+                    break;
+                default:
+                    emit_comment("ERROR: Unknown float comparison operator");
+                    break;
+            }
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+            
+            emit_comment("DEBUG: " + dest + " = comparison result in " + dest_reg + " (0 or 1)");
+            
+        } else {
+            // Integer comparison storing result
+            string op_name;
+            string set_instr;
+            
+            switch (instr->op.type) {
+                case TAC_OPERATOR_EQ:
+                    op_name = "==";
+                    set_instr = "seq";  // set if equal
+                    break;
+                case TAC_OPERATOR_NE:
+                    op_name = "!=";
+                    set_instr = "sne";  // set if not equal
+                    break;
+                case TAC_OPERATOR_LT:
+                    op_name = "<";
+                    set_instr = "slt";  // set if less than
+                    break;
+                case TAC_OPERATOR_GT:
+                    op_name = ">";
+                    set_instr = "sgt";  // set if greater than
+                    break;
+                case TAC_OPERATOR_LE:
+                    op_name = "<=";
+                    set_instr = "sle";  // set if less than or equal
+                    break;
+                case TAC_OPERATOR_GE:
+                    op_name = ">=";
+                    set_instr = "sge";  // set if greater than or equal
+                    break;
+                default:
+                    op_name = "??";
+                    set_instr = "seq";
+                    break;
+            }
+            
+            emit_comment(dest + " = " + src1 + " " + op_name + " " + src2);
+            
+            // Get operands into registers using smart helper
+            string reg1 = load_operand_to_register(instr->arg1);
+            emit_comment("DEBUG: " + src1 + " in " + reg1);
+            
+            string reg2 = load_operand_to_register(instr->arg2);
+            emit_comment("DEBUG: " + src2 + " in " + reg2);
+            
+            // Allocate destination register
+            string dest_reg = allocate_register_with_spilling();
+            
+            // Generate comparison (result: 1 if true, 0 if false)
+            emit(set_instr + " " + dest_reg + ", " + reg1 + ", " + reg2);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+            
+            emit_comment("DEBUG: " + dest + " = comparison result in " + dest_reg);
+        }
     }
 }
 
@@ -1263,6 +1480,107 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
     // so we can't update descriptors for the target memory location
 }
 
+void MIPSGenerator::translate_cast(TACInstruction* instr) {
+    // Type cast: result = (type)src
+    // arg1 contains the value to cast, arg2 contains the target type
+    
+    if (!instr->result || !instr->arg1 || !instr->arg2) {
+        emit_comment("ERROR: Invalid cast instruction");
+        return;
+    }
+    
+    string dest = instr->result->value;
+    string src = instr->arg1->value;  // Source value
+    string target_type = instr->arg2->value;  // Target type as string
+    
+    emit_comment("Cast: " + dest + " = (" + target_type + ")" + src);
+    
+    // Determine if we're casting to/from float
+    bool src_is_float = is_operand_float(instr->arg1);
+    bool dest_is_float = (target_type == "float");
+    
+    if (src_is_float && !dest_is_float) {
+        // Float to int conversion
+        emit_comment("DEBUG: Converting float to int");
+        
+        // Load source float into float register
+        string src_freg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: Source float in " + src_freg);
+        
+        // Allocate a temporary float register for rounded result
+        string temp_freg = reg_allocator.allocate_float_reg();
+        
+        // Convert float to word (cvt.w.s)
+        emit("cvt.w.s " + temp_freg + ", " + src_freg);
+        emit_comment("DEBUG: Converted to integer in " + temp_freg);
+        
+        // Move from FPU to CPU register
+        string dest_reg = allocate_register_with_spilling();
+        emit("mfc1 " + dest_reg + ", " + temp_freg);
+        emit_comment("DEBUG: Moved integer result to " + dest_reg);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
+        
+        emit_comment("DEBUG: " + dest + " = (int)" + src + " in " + dest_reg);
+        
+    } else if (!src_is_float && dest_is_float) {
+        // Int to float conversion
+        emit_comment("DEBUG: Converting int to float");
+        
+        // Load source integer into CPU register
+        string src_reg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: Source int in " + src_reg);
+        
+        // Allocate float registers
+        string temp_freg = reg_allocator.allocate_float_reg();
+        string dest_freg = reg_allocator.allocate_float_reg();
+        
+        // Move from CPU to FPU register
+        emit("mtc1 " + src_reg + ", " + temp_freg);
+        emit_comment("DEBUG: Moved integer to " + temp_freg);
+        
+        // Convert word to float (cvt.s.w)
+        emit("cvt.s.w " + dest_freg + ", " + temp_freg);
+        emit_comment("DEBUG: Converted to float in " + dest_freg);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_freg, dest);
+        storage_desc.set_location(dest, dest_freg);
+        reg_allocator.mark_dirty(dest_freg);
+        
+        emit_comment("DEBUG: " + dest + " = (float)" + src + " in " + dest_freg);
+        
+    } else if (src_is_float && dest_is_float) {
+        // Float to float (no conversion needed, just assignment)
+        emit_comment("DEBUG: Float to float (no conversion)");
+        
+        string src_freg = load_operand_to_register(instr->arg1);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(src_freg, dest);
+        storage_desc.set_location(dest, src_freg);
+        reg_allocator.mark_dirty(src_freg);
+        
+        emit_comment("DEBUG: " + dest + " = " + src + " in " + src_freg);
+        
+    } else {
+        // Int to int (or other types) - just load and assign
+        emit_comment("DEBUG: Integer cast (possibly truncation/extension)");
+        
+        string src_reg = load_operand_to_register(instr->arg1);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(src_reg, dest);
+        storage_desc.set_location(dest, src_reg);
+        reg_allocator.mark_dirty(src_reg);
+        
+        emit_comment("DEBUG: " + dest + " = (cast)" + src + " in " + src_reg);
+    }
+}
+
 void MIPSGenerator::translate_jump(TACInstruction* instr) {
     // Unconditional jump: goto label
     if (instr->flag == 1) {
@@ -1300,6 +1618,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     // ===== SPECIAL HANDLING FOR BUILT-IN FUNCTIONS =====
     // Check if it's a built-in (handle name mangling: print_int_i, print_int, etc.)
     bool is_print_int = (func_name.find("print_int") == 0);
+    bool is_print_float = (func_name.find("print_float") == 0);
     bool is_print_string = (func_name.find("print_string") == 0);
     
     if (is_print_int) {
@@ -1325,6 +1644,38 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             emit("li $v0, 1");
             emit("syscall");
             emit_comment("=== End print_int ===");
+        }
+        return;
+    }
+    
+    if (is_print_float) {
+        emit_comment("=== Built-in print_float function ===");
+        
+        // Get the single parameter
+        if (!pending_params.empty()) {
+            string param = pending_params[pending_params.size() - 1];
+            pending_params.clear();
+            
+            // Check if parameter is a float literal or variable
+            bool is_float_literal = param.find('.') != string::npos;
+            
+            if (is_float_literal) {
+                // Load float literal into $f12
+                emit("li.s $f12, " + param);
+                emit_comment("DEBUG: Loaded float literal " + param + " into $f12");
+            } else {
+                // Load float variable into $f12
+                string param_freg = ensure_in_float_register(param);
+                if (param_freg != "$f12") {
+                    emit("mov.s $f12, " + param_freg);
+                    emit_comment("DEBUG: Moved float from " + param_freg + " to $f12");
+                }
+            }
+            
+            // Syscall 2: print float
+            emit("li $v0, 2");
+            emit("syscall");
+            emit_comment("=== End print_float ===");
         }
         return;
     }
@@ -1488,39 +1839,71 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         emit_comment("DEBUG: Allocate " + to_string(param_space) + " bytes for " + to_string(num_args) + " parameters + $ra/$fp");
     }
     
-    // Pass first 4 params in $a0-$a3 AND store on stack
+    // Pass first 4 params in $a0-$a3 (or $f12-$f15 for floats) AND store on stack
     // Params 5+ only on stack
     for (int i = 0; i < num_args; i++) {
         string param = params[i];
         
-        // Get parameter value into a register
-        string param_reg;
+        // Check if parameter is float
+        bool is_float_param = is_variable_float(param.c_str()) || 
+                              (param.find('.') != string::npos);
         
-        // Check if it's a constant
-        bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
-        
-        if (is_constant) {
-            param_reg = allocate_register_with_spilling();
-            emit("li " + param_reg + ", " + param);
-            emit_comment("DEBUG: Loaded constant param " + to_string(i) + " = " + param);
+        if (is_float_param) {
+            // Float parameter
+            emit_comment("DEBUG: Param " + to_string(i) + " is float");
+            
+            // Get parameter value into a float register
+            // Create a temporary TAC operand for the parameter
+            TACOperand* param_operand = new TACOperand(TAC_OPERAND_IDENTIFIER, param);
+            string param_freg = load_operand_to_register(param_operand);
+            delete param_operand;
+            
+            emit_comment("DEBUG: Float param " + to_string(i) + " (" + param + ") in " + param_freg);
+            
+            // Store on stack
+            int stack_offset = 8 + (i * 4);
+            emit("s.s " + param_freg + ", " + to_string(stack_offset) + "($sp)");
+            emit_comment("DEBUG: Stored float param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
+            
+            // Also copy to $f12-$f15 for first 4 float params
+            if (i < 4) {
+                string arg_freg = "$f" + to_string(12 + i);
+                if (param_freg != arg_freg) {
+                    emit("mov.s " + arg_freg + ", " + param_freg);
+                    emit_comment("DEBUG: Copied float param " + to_string(i) + " to " + arg_freg);
+                }
+            }
         } else {
-            param_reg = ensure_in_register(param);
-            emit_comment("DEBUG: Param " + to_string(i) + " (" + param + ") in " + param_reg);
-        }
-        
-        // Store on stack at 8($sp), 12($sp), 16($sp), ... (after allocation)
-        // These will become +8($fp), +12($fp), +16($fp) in the callee
-        // The +8 accounts for $ra and old $fp that callee will save
-        int stack_offset = 8 + (i * 4);
-        emit("sw " + param_reg + ", " + to_string(stack_offset) + "($sp)");
-        emit_comment("DEBUG: Stored param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
-        
-        // Also copy to $a0-$a3 for first 4 params
-        if (i < 4) {
-            string arg_reg = "$a" + to_string(i);
-            if (param_reg != arg_reg) {
-                emit("move " + arg_reg + ", " + param_reg);
-                emit_comment("DEBUG: Copied param " + to_string(i) + " to " + arg_reg);
+            // Integer parameter
+            // Get parameter value into a register
+            string param_reg;
+            
+            // Check if it's a constant
+            bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
+            
+            if (is_constant) {
+                param_reg = allocate_register_with_spilling();
+                emit("li " + param_reg + ", " + param);
+                emit_comment("DEBUG: Loaded constant param " + to_string(i) + " = " + param);
+            } else {
+                param_reg = ensure_in_register(param);
+                emit_comment("DEBUG: Param " + to_string(i) + " (" + param + ") in " + param_reg);
+            }
+            
+            // Store on stack at 8($sp), 12($sp), 16($sp), ... (after allocation)
+            // These will become +8($fp), +12($fp), +16($fp) in the callee
+            // The +8 accounts for $ra and old $fp that callee will save
+            int stack_offset = 8 + (i * 4);
+            emit("sw " + param_reg + ", " + to_string(stack_offset) + "($sp)");
+            emit_comment("DEBUG: Stored param " + to_string(i) + " on stack at " + to_string(stack_offset) + "($sp)");
+            
+            // Also copy to $a0-$a3 for first 4 params
+            if (i < 4) {
+                string arg_reg = "$a" + to_string(i);
+                if (param_reg != arg_reg) {
+                    emit("move " + arg_reg + ", " + param_reg);
+                    emit_comment("DEBUG: Copied param " + to_string(i) + " to " + arg_reg);
+                }
             }
         }
     }
@@ -1535,20 +1918,40 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         emit_comment("DEBUG: Deallocate " + to_string(param_space) + " bytes of parameter space");
     }
     
-    // Get return value from $v0 (if there's a result)
+    // Get return value from $v0 or $f0 (if there's a result)
     if (instr->result) {
         string dest = instr->result->value;
-        string dest_reg = allocate_register_with_spilling();
         
-        emit("move " + dest_reg + ", $v0");
-        emit_comment("DEBUG: Return value from $v0 to " + dest_reg);
+        // Check if return value is float
+        bool dest_is_float = is_variable_float(dest.c_str());
         
-        // Update descriptors
-        reg_desc.add_var_to_reg(dest_reg, dest);
-        storage_desc.set_location(dest, dest_reg);
-        reg_allocator.mark_dirty(dest_reg);
-        
-        emit_comment("DEBUG: " + dest + " = return value in " + dest_reg + " (dirty)");
+        if (dest_is_float) {
+            // Float return value in $f0
+            string dest_freg = reg_allocator.allocate_float_reg();
+            
+            emit("mov.s " + dest_freg + ", $f0");
+            emit_comment("DEBUG: Float return value from $f0 to " + dest_freg);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_freg, dest);
+            storage_desc.set_location(dest, dest_freg);
+            reg_allocator.mark_dirty(dest_freg);
+            
+            emit_comment("DEBUG: " + dest + " = return value in " + dest_freg + " (float, dirty)");
+        } else {
+            // Integer return value in $v0
+            string dest_reg = allocate_register_with_spilling();
+            
+            emit("move " + dest_reg + ", $v0");
+            emit_comment("DEBUG: Return value from $v0 to " + dest_reg);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+            
+            emit_comment("DEBUG: " + dest + " = return value in " + dest_reg + " (dirty)");
+        }
     }
 }
 
@@ -1559,23 +1962,42 @@ void MIPSGenerator::translate_return(TACInstruction* instr) {
         string ret_val = instr->result->value;
         emit_comment("return " + ret_val);
         
-        // Get return value into a register
-        string ret_reg;
+        // Check if return value is float
+        bool is_float_return = is_operand_float(instr->result);
         
-        // Check if it's a constant
-        bool is_constant = !ret_val.empty() && (isdigit(ret_val[0]) || ret_val[0] == '-');
-        
-        if (is_constant) {
-            emit("li $v0, " + ret_val);
-            emit_comment("DEBUG: Return constant " + ret_val + " in $v0");
-        } else {
-            ret_reg = ensure_in_register(ret_val);
-            emit_comment("DEBUG: " + ret_val + " in " + ret_reg);
+        if (is_float_return) {
+            // Float return value - put in $f0
+            emit_comment("DEBUG: Returning float value");
             
-            // Move to $v0 if not already there
-            if (ret_reg != "$v0") {
-                emit("move $v0, " + ret_reg);
-                emit_comment("DEBUG: Moved return value to $v0");
+            // Get return value into a float register
+            string ret_freg = load_operand_to_register(instr->result);
+            emit_comment("DEBUG: " + ret_val + " in " + ret_freg);
+            
+            // Move to $f0 if not already there
+            if (ret_freg != "$f0") {
+                emit("mov.s $f0, " + ret_freg);
+                emit_comment("DEBUG: Moved float return value to $f0");
+            }
+        } else {
+            // Integer return value - put in $v0
+            // Get return value into a register
+            string ret_reg;
+            
+            // Check if it's a constant
+            bool is_constant = !ret_val.empty() && (isdigit(ret_val[0]) || ret_val[0] == '-');
+            
+            if (is_constant) {
+                emit("li $v0, " + ret_val);
+                emit_comment("DEBUG: Return constant " + ret_val + " in $v0");
+            } else {
+                ret_reg = ensure_in_register(ret_val);
+                emit_comment("DEBUG: " + ret_val + " in " + ret_reg);
+                
+                // Move to $v0 if not already there
+                if (ret_reg != "$v0") {
+                    emit("move $v0, " + ret_reg);
+                    emit_comment("DEBUG: Moved return value to $v0");
+                }
             }
         }
     } else {
@@ -1616,6 +2038,29 @@ string MIPSGenerator::get_reg(const string& var) {
     return ensure_in_register(var);
 }
 
+string MIPSGenerator::ensure_in_float_register(const string& var) {
+    // Check if variable is already in a float register
+    if (storage_desc.is_in_register(var)) {
+        string reg = storage_desc.get_register(var);
+        if (reg[1] == 'f') {  // It's already in a float register
+            return reg;
+        }
+    }
+    
+    // Need to load from memory into float register
+    string freg = reg_allocator.allocate_float_reg();
+    int offset = get_offset(var);
+    
+    emit("l.s " + freg + ", " + to_string(offset) + "($fp)");
+    emit_comment("DEBUG: Loaded float " + var + " from " + to_string(offset) + "($fp) into " + freg);
+    
+    // Update descriptors
+    reg_desc.add_var_to_reg(freg, var);
+    storage_desc.set_location(var, freg);
+    
+    return freg;
+}
+
 string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
     // Load an operand (constant, variable, or temp) into a register
     // Returns the register containing the value
@@ -1626,19 +2071,48 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
     }
     
     string value = operand->value;
+    bool is_float = is_operand_float(operand);
     
     // Handle constants
     if (operand->type == TAC_OPERAND_CONSTANT) {
-        string reg = allocate_register_with_spilling();
-        emit("li " + reg + ", " + value);
-        emit_comment("DEBUG: Loaded constant " + value + " into " + reg);
-        
-        // Mark register as containing a constant (so we don't spill it)
-        reg_desc.add_var_to_reg(reg, "<CONSTANT>");
-        storage_desc.set_location("<CONSTANT>", reg);
-        // Don't mark as dirty - constants don't need to be written back
-        
-        return reg;
+        if (is_float) {
+            // Float constant - load from data section
+            // MIPS doesn't support loading float immediates directly
+            // We need to store the constant in data section and load it
+            string freg = reg_allocator.allocate_float_reg();
+            
+            // Create a unique label for this float constant
+            string float_label = "float_const_" + value;
+            // Replace dots and minus signs for valid labels
+            for (char& c : float_label) {
+                if (c == '.') c = '_';
+                if (c == '-') c = 'n';
+            }
+            
+            // Add to data section (we'll need a map for float constants)
+            // For now, use a simple approach: load via la and l.s
+            // This requires adding float constants to data section
+            
+            // Simplified: Load the float value as a comment showing the value
+            // and use li.s pseudo-instruction if supported, otherwise load from memory
+            emit("# Loading float constant: " + value);
+            emit("li.s " + freg + ", " + value);
+            emit_comment("DEBUG: Loaded float constant " + value + " into " + freg);
+            
+            return freg;
+        } else {
+            // Integer constant
+            string reg = allocate_register_with_spilling();
+            emit("li " + reg + ", " + value);
+            emit_comment("DEBUG: Loaded constant " + value + " into " + reg);
+            
+            // Mark register as containing a constant (so we don't spill it)
+            reg_desc.add_var_to_reg(reg, "<CONSTANT>");
+            storage_desc.set_location("<CONSTANT>", reg);
+            // Don't mark as dirty - constants don't need to be written back
+            
+            return reg;
+        }
     }
     
     // Handle string literals
@@ -1659,13 +2133,31 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
     bool is_numeric = !value.empty();
     size_t start = 0;
     if (!value.empty() && (value[0] == '-' || value[0] == '+')) start = 1;
-    for (size_t i = start; i < value.length(); i++) {
-        if (!isdigit(value[i])) {
-            is_numeric = false;
-            break;
+    
+    // Check for float literal (contains '.')
+    bool has_dot = value.find('.') != string::npos;
+    
+    if (!has_dot) {
+        for (size_t i = start; i < value.length(); i++) {
+            if (!isdigit(value[i])) {
+                is_numeric = false;
+                break;
+            }
         }
     }
-    if (is_numeric && value.length() > start) {
+    
+    if (is_numeric && value.length() > start && has_dot) {
+        // Float literal
+        string freg = reg_allocator.allocate_float_reg();
+        
+        // Use li.s pseudo-instruction to load float constant
+        emit("# Loading float literal: " + value);
+        emit("li.s " + freg + ", " + value);
+        emit_comment("DEBUG: Loaded float literal " + value + " into " + freg);
+        
+        return freg;
+    } else if (is_numeric && value.length() > start) {
+        // Integer literal
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + value);
         emit_comment("DEBUG: Loaded numeric literal " + value + " into " + reg);
@@ -1677,8 +2169,12 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         return reg;
     }
     
-    // It's a variable or temp - use ensure_in_register
-    return ensure_in_register(value);
+    // It's a variable or temp - check if float
+    if (is_float) {
+        return ensure_in_float_register(value);
+    } else {
+        return ensure_in_register(value);
+    }
 }
 
 string MIPSGenerator::allocate_register_with_spilling() {
@@ -1728,6 +2224,9 @@ string MIPSGenerator::allocate_register_with_spilling() {
 void MIPSGenerator::spill_register(const string& reg) {
     set<string> vars = reg_desc.get_vars_in_reg(reg);
     
+    // Check if this is a float register
+    bool is_float_reg = (reg.length() > 2 && reg[1] == 'f');
+    
     for (const string& var : vars) {
         // Skip constants - they don't need to be spilled
         if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
@@ -1737,7 +2236,14 @@ void MIPSGenerator::spill_register(const string& reg) {
         // Only spill if not already in memory
         if (storage_desc.is_only_in_register(var)) {
             int offset = get_offset(var);
-            emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+            
+            if (is_float_reg) {
+                emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory");
+            } else {
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory");
+            }
             storage_desc.add_location(var, "memory:" + var);
         }
         reg_desc.remove_var_from_reg(reg, var);
@@ -1781,6 +2287,25 @@ bool MIPSGenerator::is_float_type(const string& type_name) {
     return type_name == "float";
 }
 
+bool MIPSGenerator::is_operand_float(TACOperand* operand) {
+    if (!operand) return false;
+    
+    // Check if it's a float literal
+    if (operand->type == TAC_OPERAND_CONSTANT) {
+        string val = operand->value;
+        // Check if it contains a decimal point
+        return val.find('.') != string::npos;
+    }
+    
+    // Check if it's a variable or temp with float type
+    if (operand->type == TAC_OPERAND_IDENTIFIER || 
+        operand->type == TAC_OPERAND_TEMP_VAR) {
+        return is_variable_float(operand->value.c_str());
+    }
+    
+    return false;
+}
+
 void MIPSGenerator::emit(const string& instruction) {
     output << "    " << instruction << "\n";
     // Also emit to clean output if available
@@ -1816,6 +2341,9 @@ void MIPSGenerator::spill_all_dirty() {
     for (const string& reg : dirty_regs) {
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         
+        // Check if this is a float register
+        bool is_float_reg = (reg.length() > 2 && reg[1] == 'f');
+        
         for (const string& var : vars) {
             // Skip constants - they don't need to be spilled
             if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
@@ -1825,8 +2353,15 @@ void MIPSGenerator::spill_all_dirty() {
             
             // Spill ALL variables (both real variables and temps)
             int offset = get_offset(var);
-            emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-            emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+            
+            if (is_float_reg) {
+                emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+            } else {
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+            }
+            
             // ADD memory location to storage descriptor
             storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
         }

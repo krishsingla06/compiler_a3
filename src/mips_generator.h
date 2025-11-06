@@ -100,6 +100,7 @@ private:
     void translate_address_of(TACInstruction* instr);
     void translate_dereference(TACInstruction* instr);
     void translate_store_indirect(TACInstruction* instr);
+    void translate_cast(TACInstruction* instr);
     void translate_jump(TACInstruction* instr);
     void translate_call(TACInstruction* instr);
     void translate_return(TACInstruction* instr);
@@ -111,6 +112,7 @@ private:
     int get_offset(const string& var_name);
     string get_operand_string(TACOperand* operand);
     bool is_float_type(const string& type_name);  // Simplified - takes string instead of TypeInfo
+    bool is_operand_float(TACOperand* operand);  // Check if operand is float type
     
     void emit(const string& instruction);
     void emit_comment(const string& comment);
@@ -121,6 +123,7 @@ private:
     void spill_register(const string& reg);  // Write back all vars in register to memory
     void spill_all_dirty();  // Write back all dirty registers to memory
     string ensure_in_register(const string& var);  // Ensure var is in a register
+    string ensure_in_float_register(const string& var);  // Ensure float var is in float register
     string load_operand_to_register(TACOperand* operand);  // Load operand (constant or variable) into register
     void print_descriptors();  // Debug: Print current state of descriptors
     

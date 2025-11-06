@@ -6858,6 +6858,49 @@ string get_function_param_name(const string& mangledName, int param_index) {
     return ""; // Parameter not found
 }
 
+// Get type information for a variable (for MIPS generation)
+extern "C" const char* get_variable_type(const char* var_name) {
+    static string type_string;
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        type_string = it->second.type.baseType;
+        return type_string.c_str();
+    }
+    
+    // Default to int if not found
+    type_string = "int";
+    return type_string.c_str();
+}
+
+// Check if a variable is a float type (for MIPS generation)
+extern "C" bool is_variable_float(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        return (it->second.type.baseType == "float" && it->second.type.pointerLevel == 0);
+    }
+    
+    return false;
+}
+
+// Get pointer level for a variable
+extern "C" int get_variable_pointer_level(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        return it->second.type.pointerLevel;
+    }
+    
+    return 0;
+}
+
 //----------------------------------------------------------------------------
 
 // Error logging functions implementation

@@ -1,30 +1,44 @@
 Error log initialized: k.c.errors
 Starting parser...
 Entering scope level 1
-Function declarator: print_int with 1 parameters
-Registered function: print_int as print_int_i returning int
-Function definition: print_int registered
+Function declarator: print_float with 1 parameters
+Registered function: print_float as print_float_f returning void
+Function definition: print_float registered
 Entering scope level 2
 Allocated parameter x (param #0) at offset 8
-DEBUG: Variable x mangled as v_x_print_int_i_s2 (function: print_int, signature: i, scope: 2)
-Variable x mangled as v_x_print_int_i_s2 [PARAM]
-Declared variable: x (int) at line 1 in scope 2
-Inserted function parameter: x (int)
-Function print_int_i parameter space: 4 bytes
-Integer literal: 0 (type: int)
+DEBUG: Variable x mangled as v_x_print_float_f_s2 (function: print_float, signature: f, scope: 2)
+Variable x mangled as v_x_print_float_f_s2 [PARAM]
+Declared variable: x (float) at line 12 in scope 2
+Inserted function parameter: x (float)
+Function print_float_f parameter space: 4 bytes
 Compound statement with declarations and statements
-Function print_int stack frame:
+Function print_float stack frame:
   - Local variables: 0 bytes
   - Parameters: 4 bytes
   - Total: 12 bytes
 Start rule: Global declaration has 3 TAC instructions
 TAC code written to k.tac
+Function declarator: print_int with 1 parameters
+Registered function: print_int as print_int_i returning void
+Function definition: print_int registered
+Entering scope level 2
+Allocated parameter x (param #0) at offset 8
+DEBUG: Variable x mangled as v_x_print_int_i_s2 (function: print_int, signature: i, scope: 2)
+Variable x mangled as v_x_print_int_i_s2 [PARAM]
+Declared variable: x (int) at line 13 in scope 2
+Inserted function parameter: x (int)
+Function print_int_i parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_int stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
 Function declarator: print_newline with no parameters
-Registered function: print_newline as print_newline returning int
+Registered function: print_newline as print_newline returning void
 Function definition: print_newline registered
 Entering scope level 2
 Function print_newline parameter space: 0 bytes
-Integer literal: 0 (type: int)
 Compound statement with declarations and statements
 Function print_newline stack frame:
   - Local variables: 0 bytes
@@ -32,85 +46,73 @@ Function print_newline stack frame:
   - Total: 8 bytes
 TAC code appended to k.tac
 Function declarator: main with no parameters
-Registered function: main as main returning int
+Registered function: main as main returning float
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
-Integer literal: 10 (type: int)
-DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable i at offset -4 (size: 4 bytes)
-DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
-Variable i mangled as v_i_main_s2 [LOCAL]
-Declared variable: i (int) with initializer of type int at line 499 in scope 2
-DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable sum at offset -8 (size: 4 bytes)
-DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
-Variable sum mangled as v_sum_main_s2 [LOCAL]
-Declared variable: sum (int) at line 500 in scope 2
-Found variable: sum of type int
-Integer literal: 0 (type: int)
-Simple assignment from int to int
-Found variable: i of type int
-Integer literal: 10 (type: int)
-Binary operation: int <= int -> int (numeric comparison)
-Allocated local variable #t1 at offset -12 (size: 4 bytes)
+Float literal: 1.99 (type: float)
+DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable x at offset -4 (size: 4 bytes)
+DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
+Variable x mangled as v_x_main_s2 [LOCAL]
+Declared variable: x (float) with initializer of type float at line 19 in scope 2
+Float literal: 2.7 (type: float)
+DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable y at offset -8 (size: 4 bytes)
+DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
+Variable y mangled as v_y_main_s2 [LOCAL]
+Declared variable: y (float) with initializer of type float at line 20 in scope 2
+Integer literal: 3 (type: int)
+DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable z at offset -12 (size: 4 bytes)
+DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
+Variable z mangled as v_z_main_s2 [LOCAL]
+Declared variable: z (int) with initializer of type int at line 21 in scope 2
+Found variable: y of type float
+Found variable: z of type int
+Binary operation: float * intAllocated local variable #t1 at offset -16 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 502 in scope 2
-Entering scope level 3
-Function main parameter space: 0 bytes
-Found variable: i of type int
-Integer literal: 5 (type: int)
-Binary operation: int == int -> int (numeric comparison)
-Allocated local variable #t2 at offset -16 (size: 4 bytes)
+Declared variable: #t1 (float) at line 22 in scope 2
+Allocated local variable #t2 at offset -20 (size: 4 bytes)
 Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (int) at line 503 in scope 3
-Entering scope level 4
-Function main parameter space: 0 bytes
-Compound statement with declarations and statements
-Found variable: i of type int
-Integer literal: 8 (type: int)
-Binary operation: int == int -> int (numeric comparison)
-Allocated local variable #t3 at offset -20 (size: 4 bytes)
-Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int) at line 506 in scope 3
-Entering scope level 4
-Function main parameter space: 0 bytes
-Compound statement with declarations and statements
-Found variable: sum of type int
-Found variable: sum of type int
-Found variable: i of type int
-Binary operation: int + intAllocated local variable #t4 at offset -24 (size: 4 bytes)
-Variable #t4 mangled as #t4 [LOCAL]
-Declared variable: #t4 (int) at line 509 in scope 3
- -> int (numeric arithmetic)
-Simple assignment from int to int
-Found variable: i of type int
-Found variable: i of type int
-Integer literal: 1 (type: int)
-Binary operation: int + intAllocated local variable #t5 at offset -28 (size: 4 bytes)
-Variable #t5 mangled as #t5 [LOCAL]
-Declared variable: #t5 (int) at line 510 in scope 3
- -> int (numeric arithmetic)
-Simple assignment from int to int
-Compound statement with declarations and statements
+Declared variable: #t2 (float) at line 22 in scope 2
+ -> float (numeric arithmetic)
+Found variable: x of type float
+Binary operation: float % floatDEBUG: Variable p mangled as v_p_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable p at offset -24 (size: 4 bytes)
+DEBUG: Variable p mangled as v_p_main_s2 (function: main, signature: , scope: 2)
+Variable p mangled as v_p_main_s2 [LOCAL]
+Declared variable: p (int) with initializer of type error at line 22 in scope 2
 Found function name: print_int
-Found variable: sum of type int
+Found variable: p of type int
 Found exact function match: print_int_i
-Allocated local variable #t6 at offset -32 (size: 4 bytes)
-Variable #t6 mangled as #t6 [LOCAL]
-Declared variable: #t6 (int) at line 512 in scope 2
+Allocated local variable #t3 at offset -24 (size: 0 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (void) at line 25 in scope 2
 Found function name: print_newline
 Found exact function match: print_newline
-Function call: print_newline() -> int
-Allocated local variable #t7 at offset -36 (size: 4 bytes)
-Variable #t7 mangled as #t7 [LOCAL]
-Declared variable: #t7 (int) at line 513 in scope 2
-Found variable: sum of type int
+Function call: print_newline() -> void
+Allocated local variable #t4 at offset -24 (size: 0 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (void) at line 26 in scope 2
+Found function name: print_int
+Found variable: z of type int
+Found exact function match: print_int_i
+Allocated local variable #t5 at offset -24 (size: 0 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (void) at line 27 in scope 2
+Found function name: print_newline
+Found exact function match: print_newline
+Function call: print_newline() -> void
+Allocated local variable #t6 at offset -24 (size: 0 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (void) at line 28 in scope 2
+Float literal: 0 (type: float)
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 36 bytes
+  - Local variables: 24 bytes
   - Parameters: 0 bytes
-  - Total: 44 bytes
+  - Total: 32 bytes
 TAC code appended to k.tac
 yyparse() returned 0
 
@@ -126,30 +128,11 @@ No enums defined.
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 42
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: v_sum_main_s2
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: #t1
-Getting offset for variable: #t1
-Getting offset for variable: #t1
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: #t2
-Getting offset for variable: #t2
-Getting offset for variable: #t2
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: #t3
-Getting offset for variable: #t3
-Getting offset for variable: #t3
-Getting offset for variable: v_sum_main_s2
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: v_sum_main_s2
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: #t4
-Getting offset for variable: v_sum_main_s2
-Getting offset for variable: #t5
-Getting offset for variable: v_i_main_s2
-Getting offset for variable: v_sum_main_s2
+Total TAC instructions collected: 21
+Getting offset for variable: v_p_main_s2
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: v_y_main_s2
+Getting offset for variable: v_z_main_s2
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

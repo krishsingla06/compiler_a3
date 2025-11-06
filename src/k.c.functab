@@ -3,32 +3,42 @@
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
 | Function: main (main)
-|   Return type: int
+|   Return type: float
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 36 bytes
+|     - Local var space: 24 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 44 bytes
-|   Declared at line: 498
+|     - Total frame size: 32 bytes
+|   Declared at line: 18
++-----------------------------------------------------------------------------------------+
+| Function: print_float (print_float_f)
+|   Return type: void
+|   Parameters: float 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 12
 +-----------------------------------------------------------------------------------------+
 | Function: print_int (print_int_i)
-|   Return type: int
+|   Return type: void
 |   Parameters: int 
 |   Stack Frame:
 |     - Parameter space: 4 bytes
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 1
+|   Declared at line: 13
 +-----------------------------------------------------------------------------------------+
 | Function: print_newline (print_newline)
-|   Return type: int
+|   Return type: void
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 8 bytes
-|   Declared at line: 5
+|   Declared at line: 16
 +-----------------------------------------------------------------------------------------+
