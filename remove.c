@@ -44,3 +44,21 @@ int main(){
     int *y;
     (x+3)=y;
 }
+
+int main(){
+    int i;
+    int sum;
+    sum = 0;
+    for(i=1;i<=10;i++){
+        if(i==5){
+            continue;
+        }
+        if(i==8){
+            break;
+        }
+        sum = sum + i;
+    }
+    print_int(sum); // should print 37 (1+2+3+4+6+7)
+    print_newline();
+    return sum; // should return 37
+}
