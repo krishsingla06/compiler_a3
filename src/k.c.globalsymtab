@@ -3,7 +3,7 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 12
+Total Symbols: 9
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
@@ -11,14 +11,11 @@ Total Symbols: 12
 | #t1                 | #t1                             | int         | LOCAL    | -12     |
 | #t2                 | #t2                             | int         | LOCAL    | -16     |
 | #t3                 | #t3                             | int         | LOCAL    | -20     |
-| #t4                 | #t4                             | int         | LOCAL    | -24     |
-| #t5                 | #t5                             | int         | LOCAL    | -28     |
-| #t6                 | #t6                             | int         | LOCAL    | -32     |
-| #t7                 | #t7                             | int         | LOCAL    | -36     |
-| #t8                 | #t8                             | void        | LOCAL    | -36     |
-| #t9                 | #t9                             | void        | LOCAL    | -36     |
-| i                   | v_i_main_s2                     | int         | LOCAL    | -4      |
+| #t4                 | #t4                             | void        | LOCAL    | -20     |
+| #t5                 | #t5                             | void        | LOCAL    | -20     |
+| #t6                 | #t6                             | void        | LOCAL    | -20     |
+| dec                 | v_dec_main_s2                   | int         | LOCAL    | -8      |
 | n                   | v_n_print_int_i_s2              | int         | PARAM#0  | 8       |
-| sum                 | v_sum_main_s2                   | int         | LOCAL    | -8      |
+| x                   | v_x_main_s2                     | int         | LOCAL    | -4      |
 +-----------------------------------------------------------------------------------------+
 

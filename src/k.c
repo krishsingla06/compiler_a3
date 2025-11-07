@@ -86,3 +86,21 @@ void print_int(int n){
 void print_newline(){
     return;
 }
+
+
+int main(){
+    int x;
+    int dec = 10;
+    switch(dec){
+        case 1:
+            print_int(10);
+            break;
+        case 2:
+            print_int(20);
+            break;
+        
+        default:
+            print_int(30);
+    }
+
+}

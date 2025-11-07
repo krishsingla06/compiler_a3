@@ -4416,7 +4416,7 @@ labeled_statement
         delete $3;
         delete $7;
     }
-	| DEFAULT COLON statement {                                               /* e.g., default: stmt */
+	| DEFAULT  {
         // Check if we're inside a switch statement
         if (switch_default_stack.empty()) {
             type_error("Default label not within a switch statement");
@@ -4425,17 +4425,19 @@ labeled_statement
             if (switch_default_stack.back() != nullptr) {
                 type_error("Multiple default labels in switch statement");
             } else {
-                // Create and register default label
+                // Create and register default label (this emits the label to TAC)
                 TACOperand* default_label = new_label(0);
                 switch_default_stack.back() = default_label;
-                $$ = new TypeInfo();
-                $$->code = vector<TACInstruction*>();
-                $$->code.insert($$->code.end(), $3->code.begin(), $3->code.end());
-                // Propagate break statements
-                $$->break_list = $3->break_list;                
-                delete $3;
             }
         }
+    } 
+    COLON marker statement {                                               /* e.g., default: stmt */
+        $$ = new TypeInfo();
+        $$->code = vector<TACInstruction*>();
+        $$->code.insert($$->code.end(), $5->code.begin(), $5->code.end());
+        // Propagate break statements
+        $$->break_list = $5->break_list;                
+        delete $5;
     }
 	;
 
@@ -4616,9 +4618,15 @@ selection_statement
         int min_case = switch_min_case_stack.back();
         int max_case = switch_max_case_stack.back();
         int table_size = max_case - min_case + 1;
+        
+        // Determine the target for out-of-bounds values
+        TACOperand* bounds_target;
         if (default_label == nullptr) {
-            default_label = end_label; // If no default, jump to end
+            bounds_target = end_label; // If no default, jump to end
+        } else {
+            bounds_target = default_label; // If default exists, jump to default
         }
+        
         int MAX_JUMP_TABLE_SIZE = 1000000;
         if(table_size > MAX_JUMP_TABLE_SIZE){
             type_warning("Jump table size " + to_string(table_size) + " exceeds maximum of " + to_string(MAX_JUMP_TABLE_SIZE) + 
@@ -4631,7 +4639,9 @@ selection_statement
             switch_max_case_stack.pop_back();
             delete $3; delete $6;
         }else{
-        vector<TACOperand*> jump_table_entries(table_size, default_label);
+        // Fill jump table: unmatched entries go to default (or end if no default)
+        TACOperand* unmatched_target = (default_label != nullptr) ? default_label : end_label;
+        vector<TACOperand*> jump_table_entries(table_size, unmatched_target);
         for (const auto& pair : case_map) {
             int case_value = pair.first;
             TACOperand* case_label = pair.second;
@@ -4646,8 +4656,8 @@ selection_statement
         TACInstruction* goto_jump_table = $$->code[$3->code.size() - 1];
         load_min->arg1 = new_constant(to_string(min_case));
         load_max->arg1 = new_constant(to_string(max_case));
-        check_lower_bound->result = default_label; // if less than min_case goto default
-        check_upper_bound->result = default_label; // if greater than max_case goto default
+        check_lower_bound->result = bounds_target; // if less than min_case goto default/end
+        check_upper_bound->result = bounds_target; // if greater than max_case goto default/end
         switch_case_stack.pop_back();
         switch_default_stack.pop_back();
         switch_table_id_stack.pop_back();

@@ -37,78 +37,6 @@ Exiting scope level 2
 
 
 
-Exiting scope level 4
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 97 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 97 [mangled: #t2] [LOCAL, offset: -16]
-  - i (int) declared at line 92 [mangled: v_i_main_s2] [LOCAL, offset: -4]
-  - sum (int) declared at line 93 [mangled: v_sum_main_s2] [LOCAL, offset: -8]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 3 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t3 (int) declared at line 98 [mangled: #t3] [LOCAL, offset: -20]
-  - #t4 (int) declared at line 98 [mangled: #t4] [LOCAL, offset: -24]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 4 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t5 (int) declared at line 99 [mangled: #t5] [LOCAL, offset: -28]
-+-----------------------------------------------------------------------------------------+
-Destroying symbols from scope 4:
-  - #t5 (int)
-
-
-
-
-
-Exiting scope level 4
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 97 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 97 [mangled: #t2] [LOCAL, offset: -16]
-  - i (int) declared at line 92 [mangled: v_i_main_s2] [LOCAL, offset: -4]
-  - sum (int) declared at line 93 [mangled: v_sum_main_s2] [LOCAL, offset: -8]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 3 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t3 (int) declared at line 98 [mangled: #t3] [LOCAL, offset: -20]
-  - #t4 (int) declared at line 98 [mangled: #t4] [LOCAL, offset: -24]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 4 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t6 (int) declared at line 102 [mangled: #t6] [LOCAL, offset: -32]
-  - #t7 (int) declared at line 102 [mangled: #t7] [LOCAL, offset: -36]
-+-----------------------------------------------------------------------------------------+
-Destroying symbols from scope 4:
-  - #t6 (int)
-  - #t7 (int)
-
-
-
-
-
 Exiting scope level 3
 
 +-----------------------------------------------------------------------------------------+
@@ -121,20 +49,23 @@ Exiting scope level 3
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 97 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 97 [mangled: #t2] [LOCAL, offset: -16]
-  - i (int) declared at line 92 [mangled: v_i_main_s2] [LOCAL, offset: -4]
-  - sum (int) declared at line 93 [mangled: v_sum_main_s2] [LOCAL, offset: -8]
+  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
+  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
+  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
+  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
+  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 3 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t3 (int) declared at line 98 [mangled: #t3] [LOCAL, offset: -20]
-  - #t4 (int) declared at line 98 [mangled: #t4] [LOCAL, offset: -24]
+  - #t4 (void) declared at line 96 [mangled: #t4] [LOCAL, offset: -20]
+  - #t5 (void) declared at line 99 [mangled: #t5] [LOCAL, offset: -20]
+  - #t6 (void) declared at line 102 [mangled: #t6] [LOCAL, offset: -20]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 3:
-  - #t3 (int)
-  - #t4 (int)
+  - #t4 (void)
+  - #t5 (void)
+  - #t6 (void)
 
 
 
@@ -152,20 +83,18 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 97 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 97 [mangled: #t2] [LOCAL, offset: -16]
-  - #t8 (void) declared at line 106 [mangled: #t8] [LOCAL, offset: -36]
-  - #t9 (void) declared at line 107 [mangled: #t9] [LOCAL, offset: -36]
-  - i (int) declared at line 92 [mangled: v_i_main_s2] [LOCAL, offset: -4]
-  - sum (int) declared at line 93 [mangled: v_sum_main_s2] [LOCAL, offset: -8]
+  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
+  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
+  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
+  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
+  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
   - #t2 (int)
-  - #t8 (void)
-  - #t9 (void)
-  - i (int)
-  - sum (int)
+  - #t3 (int)
+  - dec (int)
+  - x (int)
 
 
 

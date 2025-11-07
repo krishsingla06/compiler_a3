@@ -13,6 +13,9 @@ extern "C" int get_variable_pointer_level(const char* var_name);
 int get_function_stack_frame_size(const string& mangledName);
 int get_function_param_count(const string& mangledName);
 string get_function_param_name(const string& mangledName, int param_index);
+
+// Extern declaration to access jump tables from parser.y
+extern map<int, vector<TACOperand*>> overall_jump_tables;
 /*
  * MIPS Stack Frame Layout:
  * 
@@ -591,6 +594,10 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         // Conditional jump: if arg1 op arg2 goto result
         translate_comparison(instr);
     }
+    else if (instr->flag == 4) {
+        // Jump table (switch-case): jump to table[arg2]
+        translate_jump_table(instr);
+    }
     else if (instr->flag == 0 && instr->op.type == TAC_OPERATOR_NOP) {
         // Assignment: result = arg1
         translate_assignment(instr);
@@ -964,6 +971,7 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
     if (instr->flag == 2) {
         // Conditional branch: if arg1 op arg2 goto label
         string target_label = instr->result->value;
+        
         
         if (is_float_cmp) {
             // Float comparison with conditional branch
@@ -1619,6 +1627,63 @@ void MIPSGenerator::translate_jump(TACInstruction* instr) {
         emit_comment("Unconditional jump to I" + target_label);
         emit("j I" + target_label);
     }
+}
+
+void MIPSGenerator::translate_jump_table(TACInstruction* instr) {
+    // TAC: flag=4, arg1=table_id, arg2=index (expression_value - min_case)
+    // Jump to jump_table[table_id][index]
+    
+    if (!instr->arg1 || !instr->arg2) {
+        emit_comment("ERROR: Invalid jump table instruction");
+        return;
+    }
+    
+    int table_id = stoi(instr->arg1->value);
+    string index_var = instr->arg2->value;
+    
+    emit_comment("=== Switch-Case Jump Table " + to_string(table_id) + " ===");
+    
+    // Check if jump table exists
+    if (overall_jump_tables.find(table_id) == overall_jump_tables.end()) {
+        emit_comment("ERROR: Jump table " + to_string(table_id) + " not found");
+        return;
+    }
+    
+    vector<TACOperand*>& jump_table = overall_jump_tables[table_id];
+    int table_size = jump_table.size();
+    
+    emit_comment("Jump table size: " + to_string(table_size));
+    
+    // Get index into a register
+    string index_reg = load_operand_to_register(instr->arg2);
+    emit_comment("DEBUG: Index in " + index_reg);
+    
+    // Allocate a temporary register for comparison values
+    string cmp_reg = allocate_register_with_spilling();
+    emit_comment("DEBUG: Using " + cmp_reg + " for comparison values");
+    
+    // For small switch tables, generate a series of comparisons and branches
+    // For larger tables, we could generate actual jump tables in data section
+    // For now, using if-else chain approach (simple and works for all cases)
+    
+    for (int i = 0; i < table_size; i++) {
+        TACOperand* target = jump_table[i];
+        if (!target) continue;
+        
+        string target_label = target->value;
+        
+        // Spill all dirty registers before branching to another basic block
+        emit_comment("DEBUG: Spilling before branch to I" + target_label);
+        spill_all_dirty();
+        
+        // Compare index with i
+        emit("li " + cmp_reg + ", " + to_string(i));
+        emit("beq " + index_reg + ", " + cmp_reg + ", I" + target_label);
+        emit_comment("DEBUG: if index == " + to_string(i) + " goto I" + target_label);
+    }
+    
+    // If no match found, fall through (default case already handled by bounds checks)
+    emit_comment("=== End Jump Table ===");
 }
 
 void MIPSGenerator::translate_param(TACInstruction* instr) {

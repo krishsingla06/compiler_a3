@@ -105,6 +105,7 @@ private:
     void translate_call(TACInstruction* instr);
     void translate_return(TACInstruction* instr);
     void translate_param(TACInstruction* instr);
+    void translate_jump_table(TACInstruction* instr);  // NEW: Handle switch-case jump tables
     
     string get_mips_label(TACOperand* label);
     string load_operand(TACOperand* operand, const string& reg);  // Simplified - no TypeInfo parameter
