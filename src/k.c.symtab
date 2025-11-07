@@ -5,15 +5,17 @@ Exiting scope level 2
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+  - global_f (float) declared at line 111 [mangled: global_f] [GLOBAL]
+  - global_x (int) declared at line 110 [mangled: global_x] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - n (int) declared at line 82 [mangled: v_n_print_int_i_s2] [PARAM #0, offset: 8]
+  - x (int) declared at line 113 [mangled: v_x_print_int_i_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - n (int)
+  - x (int)
 
 
 
@@ -26,75 +28,21 @@ Exiting scope level 2
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-
-
-
-
-Exiting scope level 3
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
+  - global_f (float) declared at line 111 [mangled: global_f] [GLOBAL]
+  - global_x (int) declared at line 110 [mangled: global_x] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
-  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
-  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
-  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 3 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t4 (void) declared at line 96 [mangled: #t4] [LOCAL, offset: -20]
-  - #t5 (void) declared at line 99 [mangled: #t5] [LOCAL, offset: -20]
-  - #t6 (void) declared at line 102 [mangled: #t6] [LOCAL, offset: -20]
-+-----------------------------------------------------------------------------------------+
-Destroying symbols from scope 3:
-  - #t4 (void)
-  - #t5 (void)
-  - #t6 (void)
-
-
-
-
-
-Exiting scope level 2
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
-  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
-  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
-  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
+  - #t1 (int) declared at line 123 [mangled: #t1] [LOCAL, offset: -8]
+  - #t2 (void) declared at line 125 [mangled: #t2] [LOCAL, offset: -8]
+  - local (int) declared at line 118 [mangled: v_local_main_s2] [LOCAL, offset: -4]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
-  - #t2 (int)
-  - #t3 (int)
-  - dec (int)
-  - x (int)
+  - #t2 (void)
+  - local (int)
 
 
 
@@ -107,8 +55,13 @@ Exiting scope level 1
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
+  - global_f (float) declared at line 111 [mangled: global_f] [GLOBAL]
+  - global_x (int) declared at line 110 [mangled: global_x] [GLOBAL]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 1:
+  - global_f (float)
+  - global_x (int)
 
 
 

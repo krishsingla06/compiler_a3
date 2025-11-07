@@ -14,6 +14,9 @@ using namespace std;
 class TACInstruction;
 class TACOperand;
 
+// Forward declare friend function for static variable callback
+void static_var_callback(const char* label, const char* name, const char* type, int size, const char* init_value);
+
 // Basic Block structure
 struct BasicBlock {
     int id;                          // Block ID (B1, B2, ...)
@@ -52,6 +55,8 @@ public:
 
 // MIPS Code Generator (Simplified stub version)
 class MIPSGenerator {
+    friend void static_var_callback(const char*, const char*, const char*, int, const char*);
+    
 private:
     ostream& output;
     ostream* clean_output;  // Optional clean output (no debug comments)
@@ -76,9 +81,14 @@ private:
     map<string, string> string_literals;  // Maps string content to label (str_0, str_1, ...)
     int next_string_id;
     
+    // Static variable management
+    map<string, string> global_var_labels;  // Maps variable_name -> label
+    
     void generate_data_section();
+    void generate_static_data_section();  // Generate .data section for global/static variables
     void collect_data_section_items(const vector<TACInstruction*>& tac_instructions);
     string add_string_literal(const string& content);  // Add string, return label
+    string get_global_var_label(const string& var_name);  // Get label for global/static variable
     
     void generate_text_section(const vector<TACInstruction*>& tac_instructions);
     

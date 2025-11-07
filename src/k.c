@@ -79,28 +79,50 @@
 
 //#include <stdio.h>
 
-void print_int(int n){
-    return;
-}
+// void print_int(int n){
+//     return;
+// }
 
-void print_newline(){
-    return;
-}
+// void print_newline(){
+//     return;
+// }
 
 
-int main(){
-    int x;
-    int dec = 10;
-    switch(dec){
-        case 1:
-            print_int(10);
-            break;
-        case 2:
-            print_int(20);
-            break;
+// int main(){
+//     int x;
+//     int dec = 10;
+//     switch(dec){
+//         case 1:
+//             print_int(10);
+//             break;
+//         case 2:
+//             print_int(20);
+//             break;
         
-        default:
-            print_int(30);
-    }
+//         default:
+//             print_int(30);
+//     }
 
+// }
+
+// Test global and static variables
+
+int global_x;
+float global_f;
+
+void print_int(int x) {
+    return;
+}
+
+int main() {
+        int local;
+
+    global_x = 100;
+    global_f = 2.5;
+    
+    local = global_x + 10;
+    
+    print_int(local);
+    
+    return 0;
 }

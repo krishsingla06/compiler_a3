@@ -3,6 +3,9 @@
 
 
 .data
+    global_global_f: .float 0
+    global_global_x: .word 0
+
 
 .text
 .globl main
@@ -28,97 +31,44 @@ I3:
 
 
 I4:
-print_newline:
-    addiu $sp, $sp, -48
-    sw $ra, 44($sp)
-    sw $fp, 40($sp)
-    addiu $fp, $sp, 40
+main:
+    addiu $sp, $sp, -56
+    sw $ra, 52($sp)
+    sw $fp, 48($sp)
+    addiu $fp, $sp, 48
 
 
 I5:
-
+    li $t0, 100
+    sw $t0, global_global_x
 
 I6:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
+    # Loading float constant: 2.500000
+    li.s $f0, 2.500000
+    s.s $f0, global_global_f
 
 I7:
-main:
-    addiu $sp, $sp, -68
-    sw $ra, 64($sp)
-    sw $fp, 60($sp)
-    addiu $fp, $sp, 60
-
+    lw $t0, global_global_x
+    li $t1, 10
+    add $t2, $t0, $t1
 
 I8:
-    li $t0, 3
+    sw $t2, -4($fp)
 
 I9:
-    li $t1, 1
 
 I10:
-    li $t2, 2
+    move $a0, $t2
+    li $v0, 1
+    syscall
 
 I11:
-    sw $t0, -8($fp)
-    sw $t1, -12($fp)
-    sw $t2, -16($fp)
-    blt $t0, $t1, I21
+    sw $t2, -8($fp)
+    sw $t2, -4($fp)
+    li $v0, 0
 
 
 I12:
-    lw $t0, -8($fp)
-    lw $t1, -16($fp)
-    bgt $t0, $t1, I21
-
-
-I13:
-    lw $t0, -8($fp)
-    lw $t1, -12($fp)
-    sub $t2, $t0, $t1
-
-I14:
-    sw $t2, -20($fp)
-    li $t3, 0
-    beq $t2, $t3, I15
-    li $t3, 1
-    beq $t2, $t3, I18
-
-I15:
-
-I16:
-    li $a0, 10
-    li $v0, 1
-    syscall
-
-I17:
-    j I23
-
-
-I18:
-
-I19:
-    li $a0, 20
-    li $v0, 1
-    syscall
-
-I20:
-    j I23
-
-
-I21:
-
-I22:
-    li $a0, 30
-    li $v0, 1
-    syscall
-
-
-I23:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

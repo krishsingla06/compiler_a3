@@ -2,7 +2,7 @@
     #   MIPS Assembly Code Generation
     # ======================================
 
-    # Total TAC instructions: 23
+    # Total TAC instructions: 12
 
     # ======================================
     #   Collecting Data Section Items
@@ -14,16 +14,16 @@
     # ======================================
     # Block B1: i0-i1
     # Block B2: i2-i2
-    # Block B3: i3-i4
-    # Block B4: i5-i5
-    # Block B5: i6-i10
-    # Block B6: i11-i11
-    # Block B7: i12-i16
-    # Block B8: i17-i19
-    # Block B9: i20-i21
-    # Block B10: i22-i22
+    # Block B3: i3-i10
+    # Block B4: i11-i11
 
 .data
+    # === Global and Static Variables ===
+    # Variable: global_f (float)
+    global_global_f: .float 0
+    # Variable: global_x (int)
+    global_global_x: .word 0
+
     # String Literals
     # (no string literals)
 
@@ -56,18 +56,18 @@ print_int_i:
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
     # === Initialize Parameter Descriptors ===
-    # DEBUG: Parameter 0 (v_n_print_int_i_s2) at 8($fp)
-    # DEBUG: Integer parameter 0 (v_n_print_int_i_s2) in $a0
+    # DEBUG: Parameter 0 (v_x_print_int_i_s2) at 8($fp)
+    # DEBUG: Integer parameter 0 (v_x_print_int_i_s2) in $a0
     # === End Parameter Initialization ===
 
 
     # TAC 1: 2: return 
 I2:
     # --- Register Descriptor ---
-    # $a0: [v_n_print_int_i_s2]
+    # $a0: [v_x_print_int_i_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [$a0, memory:8($fp)]
+    # v_x_print_int_i_s2: [$a0, memory:8($fp)]
     # --- End Storage Descriptor ---
     # Spilling before control flow instruction
     # DEBUG: No dirty registers to spill
@@ -84,7 +84,7 @@ I3:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
     # === Function Epilogue for print_int_i ===
     move $sp, $fp
@@ -102,412 +102,174 @@ I3:
 
 
     # ======================================
-    # === B3_i3_i4 ===
+    # === B3_i3_i10 ===
     # ======================================
     # Registers cleared at block start
-    # TAC 3: 4: function begin : print_newline
+    # TAC 3: 4: function begin : main
 I4:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-print_newline:
-    # Function: print_newline
-    # === Function Prologue for print_newline ===
-    # Frame size: 48 bytes
-    addiu $sp, $sp, -48
-    # Allocate 48 bytes (8 for $ra+$fp, 48 for locals/temps)
-    sw $ra, 44($sp)
-    # Save return address at 52($sp)
-    sw $fp, 40($sp)
-    # Save old frame pointer at 48($sp)
-    addiu $fp, $sp, 40
-    # Set new frame pointer (points to saved old $fp)
-    # === End of Prologue ===
-    # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
-
-
-    # TAC 4: 5: return 
-I5:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Spilling before control flow instruction
-    # DEBUG: No dirty registers to spill
-    # === Spilling all dirty registers before return ===
-    # return (void)
-
-
-    # ======================================
-    # === B4_i5_i5 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 5: 6: end function print_newline
-I6:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # === Function Epilogue for print_newline ===
-    move $sp, $fp
-    # Move $sp to $fp (where old $fp is saved)
-    lw $ra, 4($fp)
-    # Restore return address
-    lw $fp, 0($fp)
-    # Restore old frame pointer
-    addiu $sp, $sp, 8
-    # Deallocate saved $ra and $fp (8 bytes)
-    jr $ra
-    # Return to caller
-    # === End of Epilogue ===
-    # End of function: print_newline
-
-
-    # ======================================
-    # === B5_i6_i10 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 6: 7: function begin : main
-I7:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
 main:
     # Function: main
     # === Function Prologue for main ===
-    # Frame size: 68 bytes
-    addiu $sp, $sp, -68
-    # Allocate 68 bytes (8 for $ra+$fp, 68 for locals/temps)
-    sw $ra, 64($sp)
-    # Save return address at 72($sp)
-    sw $fp, 60($sp)
-    # Save old frame pointer at 68($sp)
-    addiu $fp, $sp, 60
+    # Frame size: 56 bytes
+    addiu $sp, $sp, -56
+    # Allocate 56 bytes (8 for $ra+$fp, 56 for locals/temps)
+    sw $ra, 52($sp)
+    # Save return address at 60($sp)
+    sw $fp, 48($sp)
+    # Save old frame pointer at 56($sp)
+    addiu $fp, $sp, 48
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
 
-    # TAC 7: 8: v_dec_main_s2 = 3
+    # TAC 4: 5: global_x = 100
+I5:
+    # --- Register Descriptor ---
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_x_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: global_x = 100
+    li $t0, 100
+    sw $t0, global_global_x
+    # DEBUG: Stored global_x to global global_global_x
+
+    # TAC 5: 6: global_f = 2.500000
+I6:
+    # --- Register Descriptor ---
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_x_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: global_f = 2.500000
+    # DEBUG: Float assignment
+    # Loading float constant: 2.500000
+    li.s $f0, 2.500000
+    # DEBUG: Loaded float constant 2.500000 into $f0
+    # DEBUG: 2.500000 in $f0
+    s.s $f0, global_global_f
+    # DEBUG: Stored float global_f to global global_global_f
+
+    # TAC 6: 7: #t1 = global_x + 10
+I7:
+    # --- Register Descriptor ---
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_x_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # #t1 = global_x add 10
+    # DEBUG: Loading global variable global_x
+    lw $t0, global_global_x
+    # DEBUG: Loaded global global_x from global_global_x into $t0
+    # DEBUG: global_x in $t0
+    li $t1, 10
+    # DEBUG: Loaded constant 10 into $t1
+    # DEBUG: 10 in $t1
+    add $t2, $t0, $t1
+    # DEBUG: #t1 = result in $t2 (dirty)
+
+    # TAC 7: 8: v_local_main_s2 = #t1
 I8:
     # --- Register Descriptor ---
+    # $t0: [global_x]
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # #t1: [$t2]
+    # <CONSTANT>: [$t1]
+    # global_x: [$t0, global:global_global_x]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_dec_main_s2 = 3
-    li $t0, 3
-    # DEBUG: v_dec_main_s2 = constant 3 loaded in $t0 (dirty)
+    # Assignment: v_local_main_s2 = #t1
+    # DEBUG: #t1 already in $t2
+    # DEBUG: v_local_main_s2 now also in $t2 (dirty)
+    sw $t2, -4($fp)
+    # DEBUG: Saved v_local_main_s2 to memory at -4($fp)
 
-    # TAC 8: 9: #t1 = 1
+    # TAC 8: 9: param v_local_main_s2
 I9:
     # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2] (dirty)
+    # $t0: [global_x]
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1, v_local_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_dec_main_s2: [$t0]
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # #t1: [$t2]
+    # <CONSTANT>: [$t1]
+    # global_x: [$t0, global:global_global_x]
+    # v_local_main_s2: [$t2, memory:-4($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: #t1 = 1
-    li $t1, 1
-    # DEBUG: #t1 = constant 1 loaded in $t1 (dirty)
+    # param v_local_main_s2
+    # DEBUG: Collected parameter #1: v_local_main_s2
 
-    # TAC 9: 10: #t2 = 2
+    # TAC 9: 10: #t2 = call print_int_i, 1
 I10:
     # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2] (dirty)
-    # $t1: [#t1] (dirty)
+    # $t0: [global_x]
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1, v_local_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t1]
-    # v_dec_main_s2: [$t0]
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # #t1: [$t2]
+    # <CONSTANT>: [$t1]
+    # global_x: [$t0, global:global_global_x]
+    # v_local_main_s2: [$t2, memory:-4($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: #t2 = 2
-    li $t2, 2
-    # DEBUG: #t2 = constant 2 loaded in $t2 (dirty)
+    # Call print_int_i with 1 arguments
+    # === Built-in print_int function ===
+    move $a0, $t2
+    li $v0, 1
+    syscall
+    # === End print_int ===
 
-    # TAC 10: 11: if v_dec_main_s2 < #t1 goto I21
+    # TAC 10: 11: return 0
 I11:
     # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2] (dirty)
-    # $t1: [#t1] (dirty)
-    # $t2: [#t2] (dirty)
+    # $t0: [global_x]
+    # $t1: [<CONSTANT>]
+    # $t2: [#t1, v_local_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t1]
-    # #t2: [$t2]
-    # v_dec_main_s2: [$t0]
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # #t1: [$t2]
+    # <CONSTANT>: [$t1]
+    # global_x: [$t0, global:global_global_x]
+    # v_local_main_s2: [$t2, memory:-4($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
     # Spilling before control flow instruction
-    # DEBUG: Spilling 3 dirty registers
-    sw $t0, -8($fp)
-    # DEBUG: Spilled v_dec_main_s2 from $t0 to memory at -8($fp)
-    sw $t1, -12($fp)
-    # DEBUG: Spilled #t1 from $t1 to memory at -12($fp)
-    sw $t2, -16($fp)
-    # DEBUG: Spilled #t2 from $t2 to memory at -16($fp)
-    # if v_dec_main_s2 < #t1 goto I21
-    # DEBUG: v_dec_main_s2 in $t0
-    # DEBUG: #t1 in $t1
-    blt $t0, $t1, I21
-    # Branch to I21 if condition true
+    # DEBUG: Spilling 1 dirty registers
+    sw $t2, -8($fp)
+    # DEBUG: Spilled #t1 from $t2 to memory at -8($fp)
+    sw $t2, -4($fp)
+    # DEBUG: Spilled v_local_main_s2 from $t2 to memory at -4($fp)
+    # === Spilling all dirty registers before return ===
+    # return 0
+    li $v0, 0
+    # DEBUG: Return constant 0 in $v0
 
 
     # ======================================
-    # === B6_i11_i11 ===
+    # === B4_i11_i11 ===
     # ======================================
     # Registers cleared at block start
-    # TAC 11: 12: if v_dec_main_s2 > #t2 goto I21
+    # TAC 11: 12: end function main
 I12:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Spilling before control flow instruction
-    # DEBUG: No dirty registers to spill
-    # if v_dec_main_s2 > #t2 goto I21
-    lw $t0, -8($fp)
-    # DEBUG: Loaded v_dec_main_s2 from memory at -8($fp)
-    # DEBUG: v_dec_main_s2 in $t0
-    lw $t1, -16($fp)
-    # DEBUG: Loaded #t2 from memory at -16($fp)
-    # DEBUG: #t2 in $t1
-    bgt $t0, $t1, I21
-    # Branch to I21 if condition true
-
-
-    # ======================================
-    # === B7_i12_i16 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 12: 13: #t3 = v_dec_main_s2 - #t1
-I13:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t3 = v_dec_main_s2 sub #t1
-    lw $t0, -8($fp)
-    # DEBUG: Loaded v_dec_main_s2 from memory at -8($fp)
-    # DEBUG: v_dec_main_s2 in $t0
-    lw $t1, -12($fp)
-    # DEBUG: Loaded #t1 from memory at -12($fp)
-    # DEBUG: #t1 in $t1
-    sub $t2, $t0, $t1
-    # DEBUG: #t3 = result in $t2 (dirty)
-
-    # TAC 13: 14: goto_jump_table(0,#t3)
-I14:
-    # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2]
-    # $t1: [#t1]
-    # $t2: [#t3] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t1, memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [$t2]
-    # v_dec_main_s2: [$t0, memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # === Switch-Case Jump Table 0 ===
-    # Jump table size: 2
-    # DEBUG: Index in $t2
-    # DEBUG: Using $t3 for comparison values
-    # DEBUG: Spilling before branch to I15
-    # DEBUG: Spilling 1 dirty registers
-    sw $t2, -20($fp)
-    # DEBUG: Spilled #t3 from $t2 to memory at -20($fp)
-    li $t3, 0
-    beq $t2, $t3, I15
-    # DEBUG: if index == 0 goto I15
-    # DEBUG: Spilling before branch to I18
-    # DEBUG: No dirty registers to spill
-    li $t3, 1
-    beq $t2, $t3, I18
-    # DEBUG: if index == 1 goto I18
-    # === End Jump Table ===
-
-    # TAC 14: 15: param 10
-I15:
-    # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2]
-    # $t1: [#t1]
-    # $t2: [#t3]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t1, memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [$t2, memory:-20($fp)]
-    # v_dec_main_s2: [$t0, memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param 10
-    # DEBUG: Collected parameter #1: 10
-
-    # TAC 15: 16: #t4 = call print_int_i, 1
-I16:
-    # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2]
-    # $t1: [#t1]
-    # $t2: [#t3]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t1, memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [$t2, memory:-20($fp)]
-    # v_dec_main_s2: [$t0, memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    li $a0, 10
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # TAC 16: 17: goto I23
-I17:
-    # --- Register Descriptor ---
-    # $t0: [v_dec_main_s2]
-    # $t1: [#t1]
-    # $t2: [#t3]
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t1, memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [$t2, memory:-20($fp)]
-    # v_dec_main_s2: [$t0, memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Spilling before control flow instruction
-    # DEBUG: No dirty registers to spill
-    # Unconditional jump to I23
-    j I23
-
-
-    # ======================================
-    # === B8_i17_i19 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 17: 18: param 20
-I18:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param 20
-    # DEBUG: Collected parameter #1: 20
-
-    # TAC 18: 19: #t5 = call print_int_i, 1
-I19:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    li $a0, 20
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # TAC 19: 20: goto I23
-I20:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Spilling before control flow instruction
-    # DEBUG: No dirty registers to spill
-    # Unconditional jump to I23
-    j I23
-
-
-    # ======================================
-    # === B9_i20_i21 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 20: 21: param 30
-I21:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param 30
-    # DEBUG: Collected parameter #1: 30
-
-    # TAC 21: 22: #t6 = call print_int_i, 1
-I22:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Call print_int_i with 1 arguments
-    # === Built-in print_int function ===
-    li $a0, 30
-    li $v0, 1
-    syscall
-    # === End print_int ===
-
-    # End of block B9 - spilling all registers
-    # DEBUG: No dirty registers to spill
-
-    # ======================================
-    # === B10_i22_i22 ===
-    # ======================================
-    # Registers cleared at block start
-    # TAC 22: 23: end function main
-I23:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-12($fp)]
-    # #t2: [memory:-16($fp)]
-    # #t3: [memory:-20($fp)]
-    # v_dec_main_s2: [memory:-8($fp)]
-    # v_n_print_int_i_s2: [memory:8($fp)]
+    # #t1: [memory:-8($fp)]
+    # global_x: [global:global_global_x]
+    # v_local_main_s2: [memory:-4($fp)]
+    # v_x_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
     # === Function Epilogue for main ===
     move $sp, $fp

@@ -10,6 +10,7 @@ extern "C" int get_variable_offset(const char* var_name);
 extern "C" const char* get_variable_type(const char* var_name);
 extern "C" bool is_variable_float(const char* var_name);
 extern "C" int get_variable_pointer_level(const char* var_name);
+extern "C" void get_all_static_variables(void (*callback)(const char*, const char*, const char*, int, const char*));
 int get_function_stack_frame_size(const string& mangledName);
 int get_function_param_count(const string& mangledName);
 string get_function_param_name(const string& mangledName, int param_index);
@@ -408,9 +409,70 @@ string MIPSGenerator::add_string_literal(const string& content) {
     return label;
 }
 
+// Static member for callback
+static MIPSGenerator* g_generator_instance = nullptr;
+
+// Callback wrapper for C function pointer compatibility (friend function of MIPSGenerator)
+void static_var_callback(const char* label, const char* name, const char* type, int size, const char* init_value) {
+    if (!g_generator_instance) return;
+    
+    string type_str(type);
+    string init_str(init_value);
+    string label_str(label);
+    string name_str(name);
+    
+    // Store label mapping for future reference
+    g_generator_instance->global_var_labels[name_str] = label_str;
+    
+    g_generator_instance->emit_comment("Variable: " + name_str + " (" + type_str + ")");
+    
+    // Determine MIPS directive based on type and size
+    if (type_str == "int") {
+        g_generator_instance->emit(label_str + ": .word " + init_str);
+    } else if (type_str == "char") {
+        g_generator_instance->emit(label_str + ": .byte " + init_str);
+    } else if (type_str == "float") {
+        g_generator_instance->emit(label_str + ": .float " + init_str);
+    } else {
+        // For pointers, arrays, structs, etc., allocate space
+        g_generator_instance->emit(label_str + ": .space " + to_string(size));
+    }
+}
+
+void MIPSGenerator::generate_static_data_section() {
+    emit_comment("=== Global and Static Variables ===");
+    
+    // Set global instance for callback
+    g_generator_instance = this;
+    
+    // Get all static variables from parser
+    get_all_static_variables(static_var_callback);
+    
+    // Clear global instance
+    g_generator_instance = nullptr;
+    
+    if (global_var_labels.empty()) {
+        emit_comment("(no global/static variables)");
+    }
+    
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+}
+
+string MIPSGenerator::get_global_var_label(const string& var_name) {
+    auto it = global_var_labels.find(var_name);
+    if (it != global_var_labels.end()) {
+        return it->second;
+    }
+    return "";  // Not a global variable
+}
+
 void MIPSGenerator::generate_data_section() {
     output << ".data\n";
     if (clean_output) *clean_output << ".data\n";
+    
+    // First emit global/static variables
+    generate_static_data_section();
     
     emit_comment("String Literals");
     
@@ -689,6 +751,9 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     
     emit_comment("Assignment: " + dest + " = " + src);
     
+    // Check if destination is a global/static variable
+    string dest_global_label = get_global_var_label(dest);
+    
     // Check if this is a float assignment
     bool dest_is_float = is_variable_float(dest.c_str()); // not float
     bool src_is_float = is_operand_float(instr->arg1); // not float
@@ -700,6 +765,14 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         // Load source into float register
         string src_freg = load_operand_to_register(instr->arg1);
         emit_comment("DEBUG: " + src + " in " + src_freg);
+        
+        // If destination is global, store directly to global memory
+        if (!dest_global_label.empty()) {
+            emit("s.s " + src_freg + ", " + dest_global_label);
+            emit_comment("DEBUG: Stored float " + dest + " to global " + dest_global_label);
+            reg_allocator.clear_dirty(src_freg);
+            return;
+        }
         
         // If destination is already in a register, update it
         // Otherwise just update descriptors
@@ -754,6 +827,15 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         string reg = allocate_register_with_spilling();
         emit("li " + reg + ", " + src);
         
+        // If destination is global, store directly to global memory
+        if (!dest_global_label.empty()) {
+            emit("sw " + reg + ", " + dest_global_label);
+            emit_comment("DEBUG: Stored " + dest + " to global " + dest_global_label);
+            // Register is now clean (value written to global memory)
+            reg_allocator.clear_dirty(reg);
+            return;
+        }
+        
         // Check if dest was previously in another register - if so, remove it from there
         if (storage_desc.is_in_register(dest)) {
             string old_reg = storage_desc.get_register(dest);
@@ -781,6 +863,13 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         // Source is in a register
         string src_reg = storage_desc.get_register(src);
         emit_comment("DEBUG: " + src + " already in " + src_reg);
+        
+        // If destination is global, store directly to global memory
+        if (!dest_global_label.empty()) {
+            emit("sw " + src_reg + ", " + dest_global_label);
+            emit_comment("DEBUG: Stored " + dest + " to global " + dest_global_label);
+            return;
+        }
         
         // Check if dest is already in some register - if so, we need to invalidate that register
         if (storage_desc.is_in_register(dest)) {
@@ -830,6 +919,13 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     } else {
         // Source is not in register - need to load it first
         string src_reg = ensure_in_register(src);
+        
+        // If destination is global, store directly to global memory
+        if (!dest_global_label.empty()) {
+            emit("sw " + src_reg + ", " + dest_global_label);
+            emit_comment("DEBUG: Stored " + dest + " to global " + dest_global_label);
+            return;
+        }
         
         // Check if dest is already in some register - if so, invalidate that register
         if (storage_desc.is_in_register(dest)) {
@@ -2309,7 +2405,42 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         return reg;
     }
     
-    // It's a variable or temp - check if float
+    // It's a variable or temp - check if it's a global variable first
+    string var_name = value;
+    string global_label = get_global_var_label(var_name);
+    
+    if (!global_label.empty()) {
+        // This is a global/static variable - load from static memory
+        emit_comment("DEBUG: Loading global variable " + var_name);
+        
+        if (is_float) {
+            string freg = reg_allocator.allocate_float_reg();
+            emit("l.s " + freg + ", " + global_label);
+            emit_comment("DEBUG: Loaded global float " + var_name + " from " + global_label + " into " + freg);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(freg, var_name);
+            storage_desc.set_location(var_name, freg);
+            storage_desc.add_location(var_name, "global:" + global_label);
+            reg_allocator.clear_dirty(freg);
+            
+            return freg;
+        } else {
+            string reg = allocate_register_with_spilling();
+            emit("lw " + reg + ", " + global_label);
+            emit_comment("DEBUG: Loaded global " + var_name + " from " + global_label + " into " + reg);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(reg, var_name);
+            storage_desc.set_location(var_name, reg);
+            storage_desc.add_location(var_name, "global:" + global_label);
+            reg_allocator.clear_dirty(reg);
+            
+            return reg;
+        }
+    }
+    
+    // It's a local variable or temp
     if (is_float) {
         return ensure_in_float_register(value);
     } else {
