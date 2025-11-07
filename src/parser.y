@@ -4803,7 +4803,7 @@ iteration_statement
             backpatch($9->true_list, $2);
         }
         loop_depth--;
-    }                  
+    }
 	| FOR LPAREN expression_statement begin_marker short_circuited_expression_statement{
         // For loop without increment: for(init; cond; ) body
         // Create labels for conditional jump
@@ -4832,9 +4832,13 @@ iteration_statement
         TACInstruction* goto_begin = emit(TACOperator(TAC_OPERATOR_NOP), $4, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_begin);
         
-        // next_list contains false_list of condition and next_list of body and break statements
+        // Backpatch statement's next_list to jump back to condition (not loop exit!)
+        if(! $8->next_list.empty()) {
+            backpatch($8->next_list, $4);
+        }
+        
+        // next_list contains false_list of condition and break statements only
         $$->next_list = $5->false_list;
-        $$->next_list.insert($8->next_list.begin(), $8->next_list.end());
         $$->next_list.insert($8->break_list.begin(), $8->break_list.end());
         
         // Continue statements should jump to condition (begin_marker)
@@ -4886,11 +4890,15 @@ iteration_statement
         TACInstruction* goto_incr = emit(TACOperator(TAC_OPERATOR_NOP), $7, new_empty_var(), new_empty_var(), 1);
         $$->code.push_back(goto_incr);
                 
-        TACOperand* incr_label = $10;
+        TACOperand* incr_label = $7;
         
-        // next_list contains false_list of condition and next_list of body and break statements
+        // Backpatch statement's next_list to jump to increment (not loop exit!)
+        if(! $12->next_list.empty()) {
+            backpatch($12->next_list, incr_label);
+        }
+        
+        // next_list contains false_list of condition and break statements only
         $$->next_list = $5->false_list;
-        $$->next_list.insert($12->next_list.begin(), $12->next_list.end());
         $$->next_list.insert($12->break_list.begin(), $12->break_list.end());
         
         // Continue statements should jump to increment label

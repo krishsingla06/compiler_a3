@@ -38,12 +38,20 @@ DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable i at offset -4 (size: 4 bytes)
 DEBUG: Variable i mangled as v_i_main_s2 (function: main, signature: , scope: 2)
 Variable i mangled as v_i_main_s2 [LOCAL]
+<<<<<<< HEAD
 Declared variable: i (int) at line 92 in scope 2
+=======
+Declared variable: i (int) at line 63 in scope 2
+>>>>>>> 139695f (for loop nextlist bug resolved)
 DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable sum at offset -8 (size: 4 bytes)
 DEBUG: Variable sum mangled as v_sum_main_s2 (function: main, signature: , scope: 2)
 Variable sum mangled as v_sum_main_s2 [LOCAL]
+<<<<<<< HEAD
 Declared variable: sum (int) at line 93 in scope 2
+=======
+Declared variable: sum (int) at line 64 in scope 2
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Found variable: sum of type int
 Integer literal: 0 (type: int)
 Simple assignment from int to int
@@ -55,6 +63,7 @@ Integer literal: 10 (type: int)
 Binary operation: int <= int -> int (numeric comparison)
 Allocated local variable #t1 at offset -12 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t1 (int) at line 97 in scope 2
 Found variable: i of type int
 Unary operation: ++int -> int
@@ -63,17 +72,38 @@ Variable #t2 mangled as #t2 [LOCAL]
 Declared variable: #t2 (int) at line 97 in scope 2
 Entering scope level 3
 Function main parameter space: 0 bytes
+=======
+Declared variable: #t1 (int) at line 68 in scope 2
+Entering scope level 3
+Function main parameter space: 0 bytes
+Found variable: i of type int
+Found variable: i of type int
+Integer literal: 1 (type: int)
+Binary operation: int + intAllocated local variable #t2 at offset -16 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 69 in scope 3
+ -> int (numeric arithmetic)
+Simple assignment from int to int
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Found variable: i of type int
 Integer literal: 2 (type: int)
 Binary operation: int % intAllocated local variable #t3 at offset -20 (size: 4 bytes)
 Variable #t3 mangled as #t3 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t3 (int) at line 98 in scope 3
+=======
+Declared variable: #t3 (int) at line 70 in scope 3
+>>>>>>> 139695f (for loop nextlist bug resolved)
  -> int (numeric arithmetic)
 Integer literal: 0 (type: int)
 Binary operation: int == int -> int (numeric comparison)
 Allocated local variable #t4 at offset -24 (size: 4 bytes)
 Variable #t4 mangled as #t4 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t4 (int) at line 98 in scope 3
+=======
+Declared variable: #t4 (int) at line 70 in scope 3
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Entering scope level 4
 Function main parameter space: 0 bytes
 Found variable: sum of type int
@@ -81,7 +111,11 @@ Found variable: sum of type int
 Found variable: i of type int
 Binary operation: int + intAllocated local variable #t5 at offset -28 (size: 4 bytes)
 Variable #t5 mangled as #t5 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t5 (int) at line 99 in scope 4
+=======
+Declared variable: #t5 (int) at line 71 in scope 4
+>>>>>>> 139695f (for loop nextlist bug resolved)
  -> int (numeric arithmetic)
 Simple assignment from int to int
 Compound statement with declarations and statements
@@ -93,11 +127,19 @@ Found variable: i of type int
 Integer literal: 2 (type: int)
 Binary operation: int * intAllocated local variable #t6 at offset -32 (size: 4 bytes)
 Variable #t6 mangled as #t6 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t6 (int) at line 102 in scope 4
  -> int (numeric arithmetic)
 Binary operation: int + intAllocated local variable #t7 at offset -36 (size: 4 bytes)
 Variable #t7 mangled as #t7 [LOCAL]
 Declared variable: #t7 (int) at line 102 in scope 4
+=======
+Declared variable: #t6 (int) at line 74 in scope 4
+ -> int (numeric arithmetic)
+Binary operation: int + intAllocated local variable #t7 at offset -36 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 74 in scope 4
+>>>>>>> 139695f (for loop nextlist bug resolved)
  -> int (numeric arithmetic)
 Simple assignment from int to int
 Compound statement with declarations and statements
@@ -107,13 +149,21 @@ Found variable: sum of type int
 Found exact function match: print_int_i
 Allocated local variable #t8 at offset -36 (size: 0 bytes)
 Variable #t8 mangled as #t8 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t8 (void) at line 106 in scope 2
+=======
+Declared variable: #t8 (void) at line 78 in scope 2
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Found function name: print_newline
 Found exact function match: print_newline
 Function call: print_newline() -> void
 Allocated local variable #t9 at offset -36 (size: 0 bytes)
 Variable #t9 mangled as #t9 [LOCAL]
+<<<<<<< HEAD
 Declared variable: #t9 (void) at line 107 in scope 2
+=======
+Declared variable: #t9 (void) at line 79 in scope 2
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Found variable: sum of type int
 Compound statement with declarations and statements
 Function main stack frame:
@@ -135,8 +185,15 @@ No enums defined.
 
 
 Generating MIPS assembly code...
+<<<<<<< HEAD
 Total TAC instructions collected: 39
 hihi Variable v_n_print_int_i_s2 type: int
+=======
+Total TAC instructions collected: 41
+hihi Variable v_x_print_float_f_s2 type: float
+Returning 1
+hihi Variable v_x_print_int_i_s2 type: int
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Returning 0
 hihi Variable v_sum_main_s2 type: int
 Returning 0
@@ -168,6 +225,7 @@ Returning 0
 hihi Variable #t2 type: int
 Returning 0
 Getting offset for variable: v_i_main_s2
+<<<<<<< HEAD
 Getting offset for variable: #t2
 Getting offset for variable: v_i_main_s2
 hihi Variable v_i_main_s2 type: int
@@ -175,6 +233,14 @@ Returning 0
 hihi Variable v_i_main_s2 type: int
 Returning 0
 Getting offset for variable: v_i_main_s2
+=======
+hihi Variable v_i_main_s2 type: int
+Returning 0
+hihi Variable v_i_main_s2 type: int
+Returning 0
+Getting offset for variable: #t2
+Getting offset for variable: v_i_main_s2
+>>>>>>> 139695f (for loop nextlist bug resolved)
 Getting offset for variable: #t3
 hihi Variable #t3 type: int
 Returning 0
