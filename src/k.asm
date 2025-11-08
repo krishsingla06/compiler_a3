@@ -48,6 +48,13 @@ v_global_var_s1: .word 0  # int (global/static) at 0($gp)
     # === B1_i0_i1 ===
     # ======================================
     # Registers cleared at block start
+    # === Computing Next-Use Information for Block B1 ===
+    # Instr i1 Next-Use:
+    # Instr i0 Next-Use:
+    #   print_int_i -> N/A
+    # === End of Next-Use Computation for Block B1 ===
+
+    # Next-use information computed
     # TAC 0: 1: function begin : print_int_i
 I1:
     # --- Register Descriptor ---
@@ -93,6 +100,12 @@ I2:
     # === B2_i2_i2 ===
     # ======================================
     # Registers cleared at block start
+    # === Computing Next-Use Information for Block B2 ===
+    # Instr i2 Next-Use:
+    #   print_int_i -> N/A
+    # === End of Next-Use Computation for Block B2 ===
+
+    # Next-use information computed
     # TAC 2: 3: end function print_int_i
 I3:
     # --- Register Descriptor ---
@@ -119,6 +132,13 @@ I3:
     # === B3_i3_i4 ===
     # ======================================
     # Registers cleared at block start
+    # === Computing Next-Use Information for Block B3 ===
+    # Instr i4 Next-Use:
+    # Instr i3 Next-Use:
+    #   print_newline -> N/A
+    # === End of Next-Use Computation for Block B3 ===
+
+    # Next-use information computed
     # TAC 3: 4: function begin : print_newline
 I4:
     # --- Register Descriptor ---
@@ -159,6 +179,12 @@ I5:
     # === B4_i5_i5 ===
     # ======================================
     # Registers cleared at block start
+    # === Computing Next-Use Information for Block B4 ===
+    # Instr i5 Next-Use:
+    #   print_newline -> N/A
+    # === End of Next-Use Computation for Block B4 ===
+
+    # Next-use information computed
     # TAC 5: 6: end function print_newline
 I6:
     # --- Register Descriptor ---
@@ -193,6 +219,22 @@ I6:
     # Registers cleared at block start
     # TAC 6: 7: function begin : print_float_f
 >>>>>>> 478ce81 (Arrays and pointers)
+    # === Computing Next-Use Information for Block B5 ===
+    # Instr i10 Next-Use:
+    #   #t1 -> N/A
+    #   v_dec_main_s2 -> N/A
+    # Instr i9 Next-Use:
+    #   #t2 -> N/A
+    # Instr i8 Next-Use:
+    #   #t1 -> N/A
+    # Instr i7 Next-Use:
+    #   v_dec_main_s2 -> N/A
+    # Instr i6 Next-Use:
+    #   main -> N/A
+    # === End of Next-Use Computation for Block B5 ===
+
+    # Next-use information computed
+    # TAC 6: 7: function begin : main
 I7:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
@@ -214,6 +256,23 @@ I7:
     # ======================================
     # Registers cleared at block start
     # TAC 7: 8: function begin : add_to_global_i
+main:
+    # Function: main
+    # === Function Prologue for main ===
+    # Frame size: 68 bytes
+    addiu $sp, $sp, -68
+    # Allocate 68 bytes (8 for $ra+$fp, 68 for locals/temps)
+    sw $ra, 64($sp)
+    # Save return address at 72($sp)
+    sw $fp, 60($sp)
+    # Save old frame pointer at 68($sp)
+    addiu $fp, $sp, 60
+    # Set new frame pointer (points to saved old $fp)
+    # === End of Prologue ===
+    # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
+
+
+    # TAC 7: 8: v_dec_main_s2 = 10
 I8:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
@@ -257,6 +316,11 @@ print_float_f:
 
 
     # TAC 8: 9: #t1 = 10 + v_x_add_to_global_i_s2
+    # Assignment: v_dec_main_s2 = 10
+    li $t0, 10
+    # DEBUG: v_dec_main_s2 = constant 10 loaded in $t0 (dirty)
+
+    # TAC 8: 9: #t1 = 1
 I9:
     # --- Register Descriptor ---
     # $a0: [v_x_add_to_global_i_s2]
@@ -326,6 +390,14 @@ I11:
     # ======================================
     # Registers cleared at block start
     # TAC 11: 12: end function add_to_global_i
+    # === Computing Next-Use Information for Block B6 ===
+    # Instr i11 Next-Use:
+    #   #t2 -> N/A
+    #   v_dec_main_s2 -> N/A
+    # === End of Next-Use Computation for Block B6 ===
+
+    # Next-use information computed
+    # TAC 11: 12: if v_dec_main_s2 > #t2 goto I21
 I12:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
@@ -392,6 +464,22 @@ I9:
     # ======================================
     # Registers cleared at block start
     # TAC 12: 13: function begin : main
+    # === Computing Next-Use Information for Block B7 ===
+    # Instr i16 Next-Use:
+    # Instr i15 Next-Use:
+    #   #t4 -> N/A
+    #   print_int_i -> N/A
+    # Instr i14 Next-Use:
+    # Instr i13 Next-Use:
+    #   #t3 -> N/A
+    # Instr i12 Next-Use:
+    #   #t1 -> N/A
+    #   #t3 -> N/A
+    #   v_dec_main_s2 -> N/A
+    # === End of Next-Use Computation for Block B7 ===
+
+    # Next-use information computed
+    # TAC 12: 13: #t3 = v_dec_main_s2 - #t1
 I13:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
@@ -530,6 +618,26 @@ I17:
     # DEBUG: Saved v_result_main_s2 to memory at -8($fp)
 
     # TAC 17: 18: param v_result_main_s2
+    # Spilling before control flow instruction
+    # DEBUG: No dirty registers to spill
+    # Unconditional jump to I23
+    j I23
+
+
+    # ======================================
+    # === B8_i17_i19 ===
+    # ======================================
+    # Registers cleared at block start
+    # === Computing Next-Use Information for Block B8 ===
+    # Instr i19 Next-Use:
+    # Instr i18 Next-Use:
+    #   #t5 -> N/A
+    #   print_int_i -> N/A
+    # Instr i17 Next-Use:
+    # === End of Next-Use Computation for Block B8 ===
+
+    # Next-use information computed
+    # TAC 17: 18: param 20
 I18:
     # --- Register Descriptor ---
     # $t0: [v_local_main_s2]
@@ -625,6 +733,16 @@ I21:
     # Registers cleared at block start
     # TAC 21: 22: end function main
 I22:
+    # === Computing Next-Use Information for Block B9 ===
+    # Instr i21 Next-Use:
+    #   #t6 -> N/A
+    #   print_int_i -> N/A
+    # Instr i20 Next-Use:
+    # === End of Next-Use Computation for Block B9 ===
+
+    # Next-use information computed
+    # TAC 20: 21: param 30
+I21:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
@@ -919,6 +1037,21 @@ I21:
 
     # TAC 21: 22: end function main
 I22:
+    # End of block B9 - spilling all registers
+    # DEBUG: No dirty registers to spill
+
+    # ======================================
+    # === B10_i22_i22 ===
+    # ======================================
+    # Registers cleared at block start
+    # === Computing Next-Use Information for Block B10 ===
+    # Instr i22 Next-Use:
+    #   main -> N/A
+    # === End of Next-Use Computation for Block B10 ===
+
+    # Next-use information computed
+    # TAC 22: 23: end function main
+I23:
     # --- Register Descriptor ---
     # $f12: [v_f_print_float_f_s2]
     # $t0: [v_y_main_s2]

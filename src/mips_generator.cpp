@@ -1,6 +1,7 @@
 #include "mips_generator.h"
 #include "tac.h"
 #include <iostream>
+#include<bits/stdc++.h>
 #include <iomanip>
 #include <algorithm>
 #include <cstdio>
@@ -158,7 +159,7 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
-    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0), next_global_offset(0) {
+    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0), next_global_offset(0), current_instruction_index(0) {
 }
 
 void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions) {
@@ -256,6 +257,71 @@ void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_inst
     if (clean_output) *clean_output << "\n";
 }
 
+
+
+
+//todo
+
+
+void MIPSGenerator::compute_next_use_info(const BasicBlock& block, 
+                                          const vector<TACInstruction*>& tac_instructions) {
+    emit_comment("=== Computing Next-Use Information for Block B" + to_string(block.id) + " ===");
+    // next_use_table.clear();
+    map<string, int> next_use;  // Variable -> next use index
+    // Process instructions in reverse order
+    for (int i = block.end_index; i >= block.start_index; i--) {
+        TACInstruction* instr = tac_instructions[i];
+        map<string, int> current_info;  
+if (instr->result && 
+    (instr->result->type == TAC_OPERAND_IDENTIFIER || 
+     instr->result->type == TAC_OPERAND_TEMP_VAR) &&
+    instr->flag != 1 && instr->flag != 2 && instr->flag != 4) {
+    string var_name = instr->result->value;
+    current_info[var_name] = -1;
+    next_use.erase(var_name);
+}
+
+// Arg1 variable - USE
+if (instr->arg1 && (instr->arg1->type == TAC_OPERAND_IDENTIFIER || 
+                    instr->arg1->type == TAC_OPERAND_TEMP_VAR)){
+    string var_name = instr->arg1->value;  // ← FIX 1
+    if (next_use.find(var_name) != next_use.end()) {
+        current_info[var_name] = next_use[var_name];
+    } else {
+        current_info[var_name] = -1;
+    }
+    next_use[var_name] = i;
+}
+
+// Arg2 variable - USE
+if (instr->arg2 && (instr->arg2->type == TAC_OPERAND_IDENTIFIER || 
+                    instr->arg2->type == TAC_OPERAND_TEMP_VAR)){
+    string var_name = instr->arg2->value;  // ← FIX 2
+    if (next_use.find(var_name) != next_use.end()) {
+        current_info[var_name] = next_use[var_name];
+    } else {
+        current_info[var_name] = -1;
+    }
+    next_use[var_name] = i;
+}        
+        // Store current instruction's next-use info
+        next_use_table[i] = current_info;
+        
+        // Emit debug info
+        emit_comment("Instr i" + to_string(i) + " Next-Use:");
+        for (const auto& pair : current_info) {
+            emit_comment("  " + pair.first + " -> " + 
+                         (pair.second == -1 ? "N/A" : "i" + to_string(pair.second)));
+        }
+    }
+    emit_comment("=== End of Next-Use Computation for Block B" + to_string(block.id) + " ===");
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+
+}
+
+
+
 void MIPSGenerator::clear_all_registers() {
     // Clear all temporary registers and their descriptors
     for (int i = 0; i <= 9; i++) {
@@ -324,11 +390,13 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
         // Clear all registers at the start of each basic block
         clear_all_registers();
         emit_comment("Registers cleared at block start");
-        
+            compute_next_use_info(block, tac_instructions);
+    emit_comment("Next-use information computed");
+
         // Process instructions in this basic block
         for (int i = block.start_index; i <= block.end_index; i++) {
             TACInstruction* instr = tac_instructions[i];
-            
+            current_instruction_index=i;
             // Emit TAC as comment for debugging
             emit_comment("TAC " + to_string(i) + ": " + get_TAC_instruction_string(instr));
             
@@ -2430,6 +2498,56 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         return ensure_in_register(value);
     }
 }
+//implement the function get_next_use_distance
+// Rewrite get_next_use_distance to use next_use_table:
+int MIPSGenerator::get_next_use_distance(const string& var) {
+    // Check if current instruction has next-use info for this variable
+    if (next_use_table.find(current_instruction_index) == next_use_table.end()) {
+        return INT_MAX;  // No info available
+    }
+    
+    map<string, int>& current_info = next_use_table[current_instruction_index];
+    
+    if (current_info.find(var) == current_info.end()) {
+        return INT_MAX;  // Variable not in next-use table
+    }
+    
+    int next_use_index = current_info[var];
+    
+    if (next_use_index == -1) {
+        return INT_MAX;  // Variable has no next use (dead)
+    }
+    
+    // Return DISTANCE (not absolute index)
+    return next_use_index - current_instruction_index;
+}
+
+string MIPSGenerator::select_victim_by_next_use() {
+    // Select the register whose variable has the farthest next use
+    set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    
+    string victim_reg;
+    int farthest_next_use = -1;
+    
+    for (const string& reg : all_temp_regs) {
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        if (vars.empty()) {
+            // Found a free register - just return it
+            return reg;
+        }
+        
+        // For each variable in this register, find its next use
+        for (const string& var : vars) {
+            int next_use = get_next_use_distance(var);
+            if (next_use > farthest_next_use) {
+                farthest_next_use = next_use;
+                victim_reg = reg;
+            }
+        }
+    }
+    
+    return victim_reg;
+}
 
 string MIPSGenerator::allocate_register_with_spilling() {
     // Check if we have any free registers
@@ -2444,7 +2562,7 @@ string MIPSGenerator::allocate_register_with_spilling() {
     }
     
     // All registers are in use - need to spill one
-    string victim_reg = reg_allocator.allocate_temp_reg();  // Gets round-robin victim
+string victim_reg = select_victim_by_next_use();  // REPLACE WITH THIS
     
     emit_comment("DEBUG: Spilling register " + victim_reg + " due to register pressure");
     

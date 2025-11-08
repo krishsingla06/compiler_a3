@@ -131,16 +131,15 @@ DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable x at offset -44 (size: 4 bytes)
 DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
 Variable x mangled as v_x_main_s2 [LOCAL]
-Declared variable: x (int*) at line 335 in scope 2
-DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable y at offset -48 (size: 4 bytes)
-DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
-Variable y mangled as v_y_main_s2 [LOCAL]
-Declared variable: y (int) at line 336 in scope 2
-Found variable: x of type int*
-Found variable: m of type int[10]
-Simple assignment from int[10] to int*
-Allocated local variable #t1 at offset -52 (size: 4 bytes)
+Declared variable: x (int) at line 92 in scope 2
+Integer literal: 10 (type: int)
+DEBUG: Variable dec mangled as v_dec_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable dec at offset -8 (size: 4 bytes)
+DEBUG: Variable dec mangled as v_dec_main_s2 (function: main, signature: , scope: 2)
+Variable dec mangled as v_dec_main_s2 [LOCAL]
+Declared variable: dec (int) with initializer of type int at line 93 in scope 2
+Found variable: dec of type int
+Allocated local variable #t1 at offset -12 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
 Declared variable: #t1 (int*) at line 337 in scope 2
 Found variable: x of type int*
@@ -171,9 +170,10 @@ Simple assignment from int to int
 Found function name: print_int
 Found variable: y of type int
 Found exact function match: print_int_i
-Allocated local variable #t7 at offset -72 (size: 0 bytes)
-Variable #t7 mangled as #t7 [LOCAL]
-Declared variable: #t7 (void) at line 340 in scope 2
+Allocated local variable #t6 at offset -20 (size: 0 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (void) at line 103 in scope 3
+Compound statement with declarations and statements
 Compound statement with declarations and statements
 Function main stack frame:
   - Local variables: 72 bytes

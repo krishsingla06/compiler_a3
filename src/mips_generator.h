@@ -56,11 +56,11 @@ private:
     ostream& output;
     ostream* clean_output;  // Optional clean output (no debug comments)
     MIPSRegisterAllocator reg_allocator;
-
+    int current_instruction_index;
     // NEW: Add descriptors
     RegisterDescriptor reg_desc;
     StorageDescriptor storage_desc;
-
+    map<int,map<string,int>>next_use_table; // next use table: instr index -> (var name -> next use index)
     string current_function;
     int current_stack_size;
     
@@ -89,6 +89,7 @@ private:
     
     // Basic block analysis
     void analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions);
+    void compute_next_use_info(const BasicBlock& block, const vector<TACInstruction*>& tac_instructions);
     void clear_all_registers();
     void emit_block_label(int block_id, int start_idx, int end_idx);
     
@@ -131,6 +132,8 @@ private:
 
     string get_reg(const string& var);  // Get register with var, or allocate and load
     string allocate_register_with_spilling();  // Allocate register, spilling if necessary
+    string select_victim_by_next_use();  // Select victim register based on next use information
+    int get_next_use_distance(const string& var);  // NEW: Get next use distance for variable
     void spill_register(const string& reg);  // Write back all vars in register to memory
     void spill_all_dirty();  // Write back all dirty registers to memory
     string ensure_in_register(const string& var);  // Ensure var is in a register

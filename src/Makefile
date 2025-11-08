@@ -8,4 +8,4 @@ lex.yy.c: lexer.l
 	flex -w lexer.l
 
 a.exe: parser.tab.c lex.yy.c tac.cpp mips_generator.cpp descriptors.cpp
-	g++ -w -o parser parser.tab.c lex.yy.c tac.cpp mips_generator.cpp descriptors.cpp -lfl
+	g++ -w -o parser parser.tab.c lex.yy.c tac.cpp mips_generator.cpp descriptors.cpp
