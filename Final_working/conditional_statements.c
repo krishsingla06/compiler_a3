@@ -96,4 +96,11 @@ int main(){
 
     print_int(okkk);
     print_newline();
+
+    // expected output
+    // 60
+    // 345
+    // 7045
+    // 45
+    // 45
 }
