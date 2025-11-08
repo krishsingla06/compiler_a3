@@ -50,12 +50,19 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
   - #t1 (int) declared at line 114 [mangled: #t1] [LOCAL, offset: -4]
   - x (int) declared at line 113 [mangled: v_x_add_to_global_i_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
   - x (int)
+=======
+  - f (float) declared at line 90 [mangled: v_f_print_float_f_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - f (float)
+>>>>>>> 478ce81 (Arrays and pointers)
 
 
 
@@ -74,6 +81,7 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
   - #t2 (int) declared at line 128 [mangled: #t2] [LOCAL, offset: -12]
   - #t3 (void) declared at line 129 [mangled: #t3] [LOCAL, offset: -12]
   - #t4 (void) declared at line 130 [mangled: #t4] [LOCAL, offset: -12]
@@ -86,6 +94,30 @@ Destroying symbols from scope 2:
   - #t4 (void)
   - local (int)
   - result (int)
+=======
+  - #t1 (int*) declared at line 337 [mangled: #t1] [LOCAL, offset: -52]
+  - #t2 (int) declared at line 338 [mangled: #t2] [LOCAL, offset: -56]
+  - #t3 (int) declared at line 339 [mangled: #t3] [LOCAL, offset: -60]
+  - #t4 (int) declared at line 339 [mangled: #t4] [LOCAL, offset: -64]
+  - #t5 (int) declared at line 339 [mangled: #t5] [LOCAL, offset: -68]
+  - #t6 (int) declared at line 339 [mangled: #t6] [LOCAL, offset: -72]
+  - #t7 (void) declared at line 340 [mangled: #t7] [LOCAL, offset: -72]
+  - m (int[10]) declared at line 334 [mangled: v_m_main_s2] [LOCAL, offset: -40]
+  - x (int*) declared at line 335 [mangled: v_x_main_s2] [LOCAL, offset: -44]
+  - y (int) declared at line 336 [mangled: v_y_main_s2] [LOCAL, offset: -48]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t1 (int*)
+  - #t2 (int)
+  - #t3 (int)
+  - #t4 (int)
+  - #t5 (int)
+  - #t6 (int)
+  - #t7 (void)
+  - m (int[10])
+  - x (int*)
+  - y (int)
+>>>>>>> 478ce81 (Arrays and pointers)
 
 
 

@@ -2,42 +2,15 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: add_to_global (add_to_global_i)
-|   Return type: int
-|   Parameters: int 
-|   Stack Frame:
-|     - Parameter space: 4 bytes
-|     - Local var space: 4 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 16 bytes
-|   Declared at line: 113
-+-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-<<<<<<< HEAD
-|     - Local var space: 12 bytes
+|     - Local var space: 32 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 20 bytes
-|   Declared at line: 123
-=======
-|     - Local var space: 72 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 80 bytes
-|   Declared at line: 333
-+-----------------------------------------------------------------------------------------+
-| Function: print_float (print_float_f)
-|   Return type: void
-|   Parameters: float 
-|   Stack Frame:
-|     - Parameter space: 4 bytes
-|     - Local var space: 0 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 12 bytes
-|   Declared at line: 90
->>>>>>> 478ce81 (Arrays and pointers)
+|     - Total frame size: 40 bytes
+|   Declared at line: 4
 +-----------------------------------------------------------------------------------------+
 | Function: print_int (print_int_i)
 |   Return type: void
@@ -47,7 +20,7 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 82
+|   Declared at line: 1
 +-----------------------------------------------------------------------------------------+
 | Function: print_newline (print_newline)
 |   Return type: void
@@ -57,5 +30,5 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 8 bytes
-|   Declared at line: 86
+|   Declared at line: 2
 +-----------------------------------------------------------------------------------------+

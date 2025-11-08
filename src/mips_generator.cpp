@@ -947,12 +947,14 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         
         emit_comment("DEBUG: " + dest + " loaded in " + src_reg + " (dirty)");
         
-        // IMPORTANT: Save to memory for pointer/address assignments
-        // This ensures that pointer values are available for later dereferences
-        int dest_offset = get_offset(dest);
-        emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
-        emit_comment("DEBUG: Saved " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
-        storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
+        // IMPORTANT: For pointer variables, save to memory immediately so they can be dereferenced
+        int dest_ptr_level = get_variable_pointer_level(dest.c_str());
+        if (dest_ptr_level > 0) {
+            int dest_offset = get_offset(dest);
+            emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
+            emit_comment("DEBUG: Saved pointer " + dest + " to memory for later dereference");
+            storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
+        }
     }
 }
 
@@ -1596,8 +1598,24 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
         emit_comment("DEBUG: Stored integer " + value + " through pointer " + ptr);
     }
     
-    // Note: We don't track what the pointer points to in our descriptors,
-    // so we can't update descriptors for the target memory location
+    // CRITICAL FIX: When storing through a pointer, we don't know which variable
+    // it points to, so we must invalidate ALL cached register values for local variables
+    // to force reload from memory on next use
+    emit_comment("DEBUG: Invalidating all cached values due to pointer store");
+    
+    // Get all variables currently in registers
+    set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    for (const string& reg : all_temp_regs) {
+        set<string> vars_in_reg = reg_desc.get_vars_in_reg(reg);
+        for (const string& var : vars_in_reg) {
+            // Only invalidate actual variables (starting with v_), not temps (#t)
+            if (var.length() > 0 && var[0] == 'v' && var[1] == '_') {
+                emit_comment("DEBUG: Invalidating cached value of " + var + " in " + reg);
+                storage_desc.remove_location(var, reg);
+                reg_desc.remove_var_from_reg(reg, var);
+            }
+        }
+    }
 }
 
 void MIPSGenerator::translate_cast(TACInstruction* instr) {
@@ -1792,6 +1810,50 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     
     emit_comment("Call " + func_name + " with " + to_string(num_args) + " arguments");
     
+    // ===== CALLER-SAVE: Spill ALL $t0-$t9 registers FIRST =====
+    // CRITICAL: This MUST happen BEFORE any parameter processing (including built-ins)
+    // so that when we load parameters, we get the updated values from memory
+    emit_comment("=== Caller-Save: Spill ALL registers before call ===");
+    
+    for (int i = 0; i <= 9; i++) {
+        string reg = "$t" + to_string(i);
+        
+        // Get ALL variable(s) stored in this register (dirty or clean)
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        
+        if (!vars.empty()) {
+            for (const string& var : vars) {
+                // Skip constants and invalid variables
+                if (var == "<CONSTANT>" || var.empty()) {
+                    continue;
+                }
+                
+                // Get offset - if it's 0, this might be invalid or old $fp location
+                int offset = get_offset(var);
+                
+                // Don't spill to 0($fp) as that's the saved old $fp location
+                if (offset == 0) {
+                    continue;
+                }
+                
+                // Spill to memory using existing offset
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
+                
+                // Update storage descriptor: variable is now ONLY in memory
+                storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+            }
+        }
+        
+        // Clear the register descriptor completely (assume destroyed by call)
+        reg_desc.clear_reg(reg);
+        
+        // Clear dirty flag for this register
+        reg_allocator.clear_dirty(reg);
+    }
+    
+    emit_comment("=== End Caller-Save ===");
+    
     // ===== SPECIAL HANDLING FOR BUILT-IN FUNCTIONS =====
     // Check if it's a built-in (handle name mangling: print_int_i, print_int, etc.)
     bool is_print_int = (func_name.find("print_int") == 0);
@@ -1961,52 +2023,6 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         emit_comment("=== End printf ===");
         return;  // Don't do normal function call processing
     }
-    
-    // ===== CALLER-SAVE: Spill ALL $t0-$t9 registers before call =====
-    emit_comment("=== Caller-Save: Spill ALL registers before call ===");
-    vector<string> saved_regs;  // Track which registers we saved
-    
-    for (int i = 0; i <= 9; i++) {
-        string reg = "$t" + to_string(i);
-        
-        // Get ALL variable(s) stored in this register (dirty or clean)
-        set<string> vars = reg_desc.get_vars_in_reg(reg);
-        
-        if (!vars.empty()) {
-            for (const string& var : vars) {
-                // Skip constants and invalid variables
-                if (var == "<CONSTANT>" || var.empty()) {
-                    emit_comment("DEBUG: Skipping spill of constant in " + reg);
-                    continue;
-                }
-                
-                // Get offset - if it's 0, this might be invalid or old $fp location
-                int offset = get_offset(var);
-                
-                // Don't spill to 0($fp) as that's the saved old $fp location
-                if (offset == 0) {
-                    emit_comment("DEBUG: Skipping spill of " + var + " - invalid offset 0");
-                    continue;
-                }
-                
-                // Spill to memory using existing offset
-                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
-                
-                // Update storage descriptor: variable is now ONLY in memory
-                storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
-            }
-            saved_regs.push_back(reg);
-        }
-        
-        // Clear the register descriptor completely (assume destroyed by call)
-        reg_desc.clear_reg(reg);
-        
-        // Clear dirty flag for this register
-        reg_allocator.clear_dirty(reg);
-    }
-    
-    emit_comment("=== End Caller-Save (spilled " + to_string(saved_regs.size()) + " registers) ===");
     
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0

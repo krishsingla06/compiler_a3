@@ -1,4 +1,4 @@
-%{
+%{\
 #include <bits/stdc++.h>
 #include<iomanip>
 #include "mips_generator.h"
@@ -2190,9 +2190,19 @@ postfix_expression
             TACOperand* offset = new_typed_temp_var("int");
             TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
 
+            TACOperand* base_addr = nullptr;
+            TACInstruction* i_base = nullptr;
+            // If base is already an address (like from previous deref), use it directly
+            if (base->isDereferenced && base->isLvalue) {
+                base_addr = base->result; // Use existing address
+            } else {
+                // base_addr = &base (address operation)
+                base_addr = new_typed_temp_var("int", 0, true);
+                i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
+            }
             // base_addr = &base (address operation)
-            TACOperand* base_addr = new_typed_temp_var("int", 0, true);
-            TACInstruction* i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
+            // TACOperand* base_addr = new_typed_temp_var("int", 0, true);
+            // TACInstruction* i_base = emit(TAC_OPERATOR_ADDR_OF, base_addr, base->result, new_empty_var(),0);
 
             // address = base_addr + offset (pointer arithmetic)
             TACOperand* address = new_typed_temp_var("int", 0, true);
@@ -2204,7 +2214,11 @@ postfix_expression
            // $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
             $$->code.insert($$->code.end(), index->code.begin(), index->code.end());
             $$->code.push_back(i1);
-            $$->code.push_back(i_base);
+            if(i_base)
+            {
+                $$->code.push_back(i_base);
+            }
+            //$$->code.push_back(i_base);
             $$->code.push_back(i2);
             $$->code.push_back(i3);
 

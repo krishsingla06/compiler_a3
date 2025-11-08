@@ -22,11 +22,17 @@
     # Block B2: i2-i2
     # Block B3: i3-i4
     # Block B4: i5-i5
+<<<<<<< HEAD
     # Block B5: i6-i6
     # Block B6: i7-i10
     # Block B7: i11-i11
     # Block B8: i12-i20
     # Block B9: i21-i21
+=======
+    # Block B5: i6-i7
+    # Block B6: i8-i8
+    # Block B7: i9-i21
+>>>>>>> 478ce81 (Arrays and pointers)
 
 .data
     # String Literals
@@ -176,16 +182,24 @@ I6:
 
 
     # ======================================
+<<<<<<< HEAD
     # === B5_i6_i6 ===
     # ======================================
     # Registers cleared at block start
     # TAC 6: 7: v_global_var_s1 = 10
+=======
+    # === B5_i6_i7 ===
+    # ======================================
+    # Registers cleared at block start
+    # TAC 6: 7: function begin : print_float_f
+>>>>>>> 478ce81 (Arrays and pointers)
 I7:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # v_n_print_int_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
+<<<<<<< HEAD
     # Assignment: v_global_var_s1 = 10
     li $t0, 10
     # DEBUG: v_global_var_s1 = constant 10 loaded in $t0 (dirty)
@@ -218,11 +232,25 @@ add_to_global_i:
     sw $fp, 48($sp)
     # Save old frame pointer at 56($sp)
     addiu $fp, $sp, 48
+=======
+print_float_f:
+    # Function: print_float_f
+    # === Function Prologue for print_float_f ===
+    # Frame size: 52 bytes
+    addiu $sp, $sp, -52
+    # Allocate 52 bytes (8 for $ra+$fp, 52 for locals/temps)
+    sw $ra, 48($sp)
+    # Save return address at 56($sp)
+    sw $fp, 44($sp)
+    # Save old frame pointer at 52($sp)
+    addiu $fp, $sp, 44
+>>>>>>> 478ce81 (Arrays and pointers)
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
     # === Initialize Parameter Descriptors ===
+<<<<<<< HEAD
     # DEBUG: Parameter 0 (v_x_add_to_global_i_s2) at 8($fp)
     # DEBUG: Integer parameter 0 (v_x_add_to_global_i_s2) in $a0
     # === End Parameter Initialization ===
@@ -308,6 +336,42 @@ I12:
     # v_x_add_to_global_i_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
     # === Function Epilogue for add_to_global_i ===
+=======
+    # DEBUG: Parameter 0 (v_f_print_float_f_s2) at 8($fp)
+    # DEBUG: Float parameter 0 (v_f_print_float_f_s2) in $f12
+    # === End Parameter Initialization ===
+
+
+    # TAC 7: 8: return 
+I8:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # Spilling before control flow instruction
+    # DEBUG: No dirty registers to spill
+    # === Spilling all dirty registers before return ===
+    # return (void)
+
+
+    # ======================================
+    # === B6_i8_i8 ===
+    # ======================================
+    # Registers cleared at block start
+    # TAC 8: 9: end function print_float_f
+I9:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # === Function Epilogue for print_float_f ===
+>>>>>>> 478ce81 (Arrays and pointers)
     move $sp, $fp
     # Move $sp to $fp (where old $fp is saved)
     lw $ra, 4($fp)
@@ -319,6 +383,7 @@ I12:
     jr $ra
     # Return to caller
     # === End of Epilogue ===
+<<<<<<< HEAD
     # End of function: add_to_global_i
 
 
@@ -335,10 +400,28 @@ I13:
     # v_global_var_s1: [memory:0($gp)]
     # v_n_print_int_i_s2: [memory:8($fp)]
     # v_x_add_to_global_i_s2: [memory:8($fp)]
+=======
+    # End of function: print_float_f
+
+
+    # ======================================
+    # === B7_i9_i21 ===
+    # ======================================
+    # Registers cleared at block start
+    # TAC 9: 10: function begin : main
+I10:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+>>>>>>> 478ce81 (Arrays and pointers)
     # --- End Storage Descriptor ---
 main:
     # Function: main
     # === Function Prologue for main ===
+<<<<<<< HEAD
     # Frame size: 60 bytes
     addiu $sp, $sp, -60
     # Allocate 60 bytes (8 for $ra+$fp, 60 for locals/temps)
@@ -347,11 +430,22 @@ main:
     sw $fp, 52($sp)
     # Save old frame pointer at 60($sp)
     addiu $fp, $sp, 52
+=======
+    # Frame size: 120 bytes
+    addiu $sp, $sp, -120
+    # Allocate 120 bytes (8 for $ra+$fp, 120 for locals/temps)
+    sw $ra, 116($sp)
+    # Save return address at 124($sp)
+    sw $fp, 112($sp)
+    # Save old frame pointer at 120($sp)
+    addiu $fp, $sp, 112
+>>>>>>> 478ce81 (Arrays and pointers)
     # Set new frame pointer (points to saved old $fp)
     # === End of Prologue ===
     # Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp
 
 
+<<<<<<< HEAD
     # TAC 13: 14: v_local_main_s2 = 5
 I14:
     # --- Register Descriptor ---
@@ -541,6 +635,307 @@ I22:
     # v_n_print_int_i_s2: [memory:8($fp)]
     # v_result_main_s2: [memory:-8($fp)]
     # v_x_add_to_global_i_s2: [memory:8($fp)]
+=======
+    # TAC 10: 11: #t1 = (v_m_main_s2)int*
+I11:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # Cast: #t1 = (int*)v_m_main_s2
+    # DEBUG: Integer cast (possibly truncation/extension)
+    lw $t0, -40($fp)
+    # DEBUG: Loaded v_m_main_s2 from memory at -40($fp)
+    # DEBUG: #t1 = (cast)v_m_main_s2 in $t0
+
+    # TAC 11: 12: v_x_main_s2 = #t1
+I12:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t1, v_m_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t0]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_m_main_s2: [$t0]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: v_x_main_s2 = #t1
+    # DEBUG: #t1 already in $t0
+    # DEBUG: v_x_main_s2 now also in $t0 (dirty)
+    sw $t0, -44($fp)
+    # DEBUG: Saved pointer v_x_main_s2 to memory for later dereference
+
+    # TAC 12: 13: #t2 = v_x_main_s2
+I13:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t1, v_m_main_s2, v_x_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t0]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_m_main_s2: [$t0]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [$t0, memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: #t2 = v_x_main_s2
+    # DEBUG: v_x_main_s2 already in $t0
+    # DEBUG: #t2 now also in $t0 (dirty)
+
+    # TAC 13: 14: *(#t2) = 1
+I14:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t1, #t2, v_m_main_s2, v_x_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t0]
+    # #t2: [$t0]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_m_main_s2: [$t0]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [$t0, memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # *#t2 = 1
+    # DEBUG: Pointer #t2 in $t0
+    li $t1, 1
+    # DEBUG: Loaded constant 1 into $t1
+    # DEBUG: Integer value 1 in $t1
+    sw $t1, 0($t0)
+    # DEBUG: Stored integer 1 through pointer #t2
+    # DEBUG: Invalidating all cached values due to pointer store
+    # DEBUG: Invalidating cached value of v_m_main_s2 in $t0
+    # DEBUG: Invalidating cached value of v_x_main_s2 in $t0
+
+    # TAC 14: 15: #t3 = 0 * 4
+I15:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t1, #t2] (dirty)
+    # $t1: [<CONSTANT>]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t0]
+    # #t2: [$t0]
+    # <CONSTANT>: [$t1]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # #t3 = 0 mul 4
+    li $t2, 0
+    # DEBUG: Loaded constant 0 into $t2
+    # DEBUG: 0 in $t2
+    li $t3, 4
+    # DEBUG: Loaded constant 4 into $t3
+    # DEBUG: 4 in $t3
+    mul $t4, $t2, $t3
+    # DEBUG: #t3 = result in $t4 (dirty)
+
+    # TAC 15: 16: #t4 = & v_m_main_s2
+I16:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t1, #t2] (dirty)
+    # $t1: [<CONSTANT>]
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [$t0]
+    # #t2: [$t0]
+    # #t3: [$t4]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # #t4 = &v_m_main_s2
+    sw $t0, -52($fp)
+    # DEBUG: Spilled #t1 from $t0 to memory
+    sw $t0, -56($fp)
+    # DEBUG: Spilled #t2 from $t0 to memory
+    addiu $t0, $fp, -40
+    # DEBUG: #t4 = address of v_m_main_s2 at -40($fp)
+    # DEBUG: #t4 (pointer) in $t0 (dirty)
+
+    # TAC 16: 17: #t5 = #t4 + #t3
+I17:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t4] (dirty)
+    # $t1: [<CONSTANT>]
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [$t4]
+    # #t4: [$t0]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # #t5 = #t4 add #t3
+    # DEBUG: #t4 in $t0
+    # DEBUG: #t3 in $t4
+    add $t5, $t0, $t4
+    # DEBUG: #t5 = result in $t5 (dirty)
+
+    # TAC 17: 18: #t6 = * #t5
+I18:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t4] (dirty)
+    # $t1: [<CONSTANT>]
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # $t5: [#t5] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [$t4]
+    # #t4: [$t0]
+    # #t5: [$t5]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # #t6 = *#t5
+    # DEBUG: Pointer #t5 already in $t5
+    lw $t1, 0($t5)
+    # DEBUG: Dereferenced *#t5 into $t1
+    # DEBUG: #t6 = *#t5 in $t1 (dirty)
+
+    # TAC 18: 19: v_y_main_s2 = #t6
+I19:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t4] (dirty)
+    # $t1: [#t6] (dirty)
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # $t5: [#t5] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [$t4]
+    # #t4: [$t0]
+    # #t5: [$t5]
+    # #t6: [$t1]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: v_y_main_s2 = #t6
+    # DEBUG: #t6 already in $t1
+    # DEBUG: v_y_main_s2 now also in $t1 (dirty)
+
+    # TAC 19: 20: param v_y_main_s2
+I20:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t4] (dirty)
+    # $t1: [#t6, v_y_main_s2] (dirty)
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # $t5: [#t5] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [$t4]
+    # #t4: [$t0]
+    # #t5: [$t5]
+    # #t6: [$t1]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # v_y_main_s2: [$t1]
+    # --- End Storage Descriptor ---
+    # param v_y_main_s2
+    # DEBUG: Collected parameter #1: v_y_main_s2
+
+    # TAC 20: 21: #t7 = call print_int_i, 1
+I21:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [#t4] (dirty)
+    # $t1: [#t6, v_y_main_s2] (dirty)
+    # $t2: [<CONSTANT>]
+    # $t3: [<CONSTANT>]
+    # $t4: [#t3] (dirty)
+    # $t5: [#t5] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [$t4]
+    # #t4: [$t0]
+    # #t5: [$t5]
+    # #t6: [$t1]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # v_y_main_s2: [$t1]
+    # --- End Storage Descriptor ---
+    # Call print_int_i with 1 arguments
+    # === Caller-Save: Spill ALL registers before call ===
+    sw $t0, -64($fp)
+    # DEBUG: Spilled #t4 from $t0 to -64($fp)
+    sw $t1, -72($fp)
+    # DEBUG: Spilled #t6 from $t1 to -72($fp)
+    sw $t1, -48($fp)
+    # DEBUG: Spilled v_y_main_s2 from $t1 to -48($fp)
+    sw $t4, -60($fp)
+    # DEBUG: Spilled #t3 from $t4 to -60($fp)
+    sw $t5, -68($fp)
+    # DEBUG: Spilled #t5 from $t5 to -68($fp)
+    # === End Caller-Save ===
+    # === Built-in print_int function ===
+    lw $t0, -48($fp)
+    # DEBUG: Loaded v_y_main_s2 from memory at -48($fp)
+    move $a0, $t0
+    li $v0, 1
+    syscall
+    # === End print_int ===
+
+    # TAC 21: 22: end function main
+I22:
+    # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
+    # $t0: [v_y_main_s2]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t1: [memory:#t1]
+    # #t2: [memory:#t2]
+    # #t3: [memory:-60($fp)]
+    # #t4: [memory:-64($fp)]
+    # #t5: [memory:-68($fp)]
+    # #t6: [memory:-72($fp)]
+    # <CONSTANT>: [$t3]
+    # v_f_print_float_f_s2: [$f12, memory:8($fp)]
+    # v_n_print_int_i_s2: [memory:8($fp)]
+    # v_x_main_s2: [memory:-44($fp)]
+    # v_y_main_s2: [$t0, memory:-48($fp)]
+>>>>>>> 478ce81 (Arrays and pointers)
     # --- End Storage Descriptor ---
     # === Function Epilogue for main ===
     move $sp, $fp
