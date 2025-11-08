@@ -8,14 +8,14 @@ Total Symbols: 9
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -12     |
-| #t2                 | #t2                             | int         | LOCAL    | -16     |
-| #t3                 | #t3                             | int         | LOCAL    | -20     |
-| #t4                 | #t4                             | void        | LOCAL    | -20     |
-| #t5                 | #t5                             | void        | LOCAL    | -20     |
-| #t6                 | #t6                             | void        | LOCAL    | -20     |
-| dec                 | v_dec_main_s2                   | int         | LOCAL    | -8      |
+| #t1                 | #t1                             | int         | LOCAL    | -4      |
+| #t2                 | #t2                             | int         | LOCAL    | -12     |
+| #t3                 | #t3                             | void        | LOCAL    | -12     |
+| #t4                 | #t4                             | void        | LOCAL    | -12     |
+| global_var          | v_global_var_s1                 | int         | GLOBAL   | 0       |
+| local               | v_local_main_s2                 | int         | LOCAL    | -4      |
 | n                   | v_n_print_int_i_s2              | int         | PARAM#0  | 8       |
-| x                   | v_x_main_s2                     | int         | LOCAL    | -4      |
+| result              | v_result_main_s2                | int         | LOCAL    | -8      |
+| x                   | v_x_add_to_global_i_s2          | int         | PARAM#0  | 8       |
 +-----------------------------------------------------------------------------------------+
 

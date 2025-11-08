@@ -37,35 +37,25 @@ Exiting scope level 2
 
 
 
-Exiting scope level 3
+Exiting scope level 2
 
 +-----------------------------------------------------------------------------------------+
 |                                    SYMBOL TABLE                                        |
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+  - global_var (int) declared at line 109 [mangled: v_global_var_s1] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
-  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
-  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
-  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
+  - #t1 (int) declared at line 114 [mangled: #t1] [LOCAL, offset: -4]
+  - x (int) declared at line 113 [mangled: v_x_add_to_global_i_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 3 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t4 (void) declared at line 96 [mangled: #t4] [LOCAL, offset: -20]
-  - #t5 (void) declared at line 99 [mangled: #t5] [LOCAL, offset: -20]
-  - #t6 (void) declared at line 102 [mangled: #t6] [LOCAL, offset: -20]
-+-----------------------------------------------------------------------------------------+
-Destroying symbols from scope 3:
-  - #t4 (void)
-  - #t5 (void)
-  - #t6 (void)
+Destroying symbols from scope 2:
+  - #t1 (int)
+  - x (int)
 
 
 
@@ -78,23 +68,24 @@ Exiting scope level 2
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+  - global_var (int) declared at line 109 [mangled: v_global_var_s1] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 94 [mangled: #t1] [LOCAL, offset: -12]
-  - #t2 (int) declared at line 94 [mangled: #t2] [LOCAL, offset: -16]
-  - #t3 (int) declared at line 94 [mangled: #t3] [LOCAL, offset: -20]
-  - dec (int) declared at line 93 [mangled: v_dec_main_s2] [LOCAL, offset: -8]
-  - x (int) declared at line 92 [mangled: v_x_main_s2] [LOCAL, offset: -4]
+  - #t2 (int) declared at line 128 [mangled: #t2] [LOCAL, offset: -12]
+  - #t3 (void) declared at line 129 [mangled: #t3] [LOCAL, offset: -12]
+  - #t4 (void) declared at line 130 [mangled: #t4] [LOCAL, offset: -12]
+  - local (int) declared at line 124 [mangled: v_local_main_s2] [LOCAL, offset: -4]
+  - result (int) declared at line 125 [mangled: v_result_main_s2] [LOCAL, offset: -8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - #t1 (int)
   - #t2 (int)
-  - #t3 (int)
-  - dec (int)
-  - x (int)
+  - #t3 (void)
+  - #t4 (void)
+  - local (int)
+  - result (int)
 
 
 
@@ -107,8 +98,11 @@ Exiting scope level 1
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
+  - global_var (int) declared at line 109 [mangled: v_global_var_s1] [GLOBAL]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 1:
+  - global_var (int)
 
 
 

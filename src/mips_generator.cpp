@@ -10,6 +10,10 @@ extern "C" int get_variable_offset(const char* var_name);
 extern "C" const char* get_variable_type(const char* var_name);
 extern "C" bool is_variable_float(const char* var_name);
 extern "C" int get_variable_pointer_level(const char* var_name);
+extern "C" bool is_variable_global(const char* var_name);
+extern "C" bool is_variable_static(const char* var_name);
+extern "C" int get_global_variable_count();
+extern "C" const char* get_global_variable_at_index(int index, bool* out_is_float);
 int get_function_stack_frame_size(const string& mangledName);
 int get_function_param_count(const string& mangledName);
 string get_function_param_name(const string& mangledName, int param_index);
@@ -154,7 +158,7 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
-    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0) {
+    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0), next_global_offset(0) {
 }
 
 void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions) {
@@ -294,6 +298,9 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     // Collect strings and constants for data section
     collect_data_section_items(tac_instructions);
     
+    // Collect global and static variables
+    collect_global_variables(tac_instructions);
+    
     // Analyze basic blocks
     analyze_basic_blocks(tac_instructions);
     
@@ -391,6 +398,28 @@ void MIPSGenerator::collect_data_section_items(const vector<TACInstruction*>& ta
     if (clean_output) *clean_output << "\n";
 }
 
+void MIPSGenerator::collect_global_variables(const vector<TACInstruction*>& tac_instructions) {
+    emit_comment("======================================");
+    emit_comment("  Collecting Global and Static Variables");
+    emit_comment("======================================");
+    
+    // First, allocate space for ALL global/static variables from symbol table
+    // This ensures even unused variables get allocated
+    int global_var_count = get_global_variable_count();
+    for (int i = 0; i < global_var_count; i++) {
+        bool is_float = false;
+        const char* var_name_cstr = get_global_variable_at_index(i, &is_float);
+        if (var_name_cstr) {
+            string var_name(var_name_cstr);
+            allocate_global_space(var_name, is_float);
+        }
+    }
+    
+    emit_comment("Allocated space for " + to_string(global_var_offsets.size()) + " global/static variables");
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+}
+
 string MIPSGenerator::add_string_literal(const string& content) {
     // Check if this string already exists
     for (const auto& pair : string_literals) {
@@ -431,6 +460,37 @@ void MIPSGenerator::generate_data_section() {
     
     if (string_literals.empty()) {
         emit_comment("(no string literals)");
+    }
+    
+    output << "\n";
+    if (clean_output) *clean_output << "\n";
+    
+    // Emit global and static variables
+    emit_comment("Global and Static Variables");
+    
+    if (!global_var_offsets.empty()) {
+        // Create a sorted list of variables by offset to ensure correct layout
+        vector<pair<string, int>> sorted_vars(global_var_offsets.begin(), global_var_offsets.end());
+        sort(sorted_vars.begin(), sorted_vars.end(), 
+             [](const pair<string, int>& a, const pair<string, int>& b) {
+                 return a.second < b.second;
+             });
+        
+        // Reserve space for global/static variables with proper offsets
+        for (const auto& var_pair : sorted_vars) {
+            const string& var_name = var_pair.first;
+            int offset = var_pair.second;
+            bool is_float = is_variable_float(var_name.c_str());
+            
+         // Emit the variable as a labeled word in data section
+         output << var_name << ": .word 0  # " << (is_float ? "float" : "int") 
+             << " (global/static) at " << offset << "($gp)\n";
+         // Also include an informative comment in the clean output so offsets are visible
+         if (clean_output) *clean_output << var_name << ": .word 0  # " << (is_float ? "float" : "int") 
+                   << " (global/static) at " << offset << "($gp)\n";
+        }
+    } else {
+        emit_comment("(no global or static variables)");
     }
     
     output << "\n";
@@ -796,10 +856,17 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
                 // Spill all variables in that register if dirty
                 if (reg_allocator.is_dirty(old_dest_reg)) {
                     for (const string& var : vars_in_old_reg) {
-                        int offset = get_offset(var);
-                        emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
-                        emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
-                        storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                        if (is_global_or_static(var)) {
+                            int offset = get_global_offset(var);
+                            emit("sw " + old_dest_reg + ", " + to_string(offset) + "($gp)");
+                            emit_comment("DEBUG: Spilled global/static " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($gp)");
+                            storage_desc.add_location(var, "memory:" + to_string(offset) + "($gp)");
+                        } else {
+                            int offset = get_offset(var);
+                            emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
+                            emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
+                            storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                        }
                     }
                 }
                 
@@ -823,10 +890,17 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         
         // IMPORTANT: Save to memory for pointer/address assignments
         // This ensures that pointer values are available for later dereferences
-        int dest_offset = get_offset(dest);
-        emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
-        emit_comment("DEBUG: Saved " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
-        storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
+        if (is_global_or_static(dest)) {
+            int dest_offset = get_global_offset(dest);
+            emit("sw " + src_reg + ", " + to_string(dest_offset) + "($gp)");
+            emit_comment("DEBUG: Saved global/static " + dest + " to memory at " + to_string(dest_offset) + "($gp)");
+            storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($gp)");
+        } else {
+            int dest_offset = get_offset(dest);
+            emit("sw " + src_reg + ", " + to_string(dest_offset) + "($fp)");
+            emit_comment("DEBUG: Saved " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
+            storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
+        }
     } else {
         // Source is not in register - need to load it first
         string src_reg = ensure_in_register(src);
@@ -844,10 +918,17 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
                 // Spill all variables in that register if dirty
                 if (reg_allocator.is_dirty(old_dest_reg)) {
                     for (const string& var : vars_in_old_reg) {
-                        int offset = get_offset(var);
-                        emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
-                        emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
-                        storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                        if (is_global_or_static(var)) {
+                            int offset = get_global_offset(var);
+                            emit("sw " + old_dest_reg + ", " + to_string(offset) + "($gp)");
+                            emit_comment("DEBUG: Spilled global/static " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($gp)");
+                            storage_desc.add_location(var, "memory:" + to_string(offset) + "($gp)");
+                        } else {
+                            int offset = get_offset(var);
+                            emit("sw " + old_dest_reg + ", " + to_string(offset) + "($fp)");
+                            emit_comment("DEBUG: Spilled " + var + " from " + old_dest_reg + " to memory at " + to_string(offset) + "($fp)");
+                            storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+                        }
                     }
                 }
                 
@@ -2163,10 +2244,18 @@ string MIPSGenerator::ensure_in_register(const string& var) {
     // Not in register - need to load from memory
     string reg = allocate_register_with_spilling();
     
-    // Load from memory (works for both real variables and temps now)
-    int offset = get_offset(var);
-    emit("lw " + reg + ", " + to_string(offset) + "($fp)");
-    emit_comment("DEBUG: Loaded " + var + " from memory at " + to_string(offset) + "($fp)");
+    // Check if variable is global/static
+    if (is_global_or_static(var)) {
+        // Load from global data section using offset from $gp
+        int offset = get_global_offset(var);
+        emit("lw " + reg + ", " + to_string(offset) + "($gp)");
+        emit_comment("DEBUG: Loaded global/static " + var + " from " + to_string(offset) + "($gp)");
+    } else {
+        // Load from stack frame using $fp
+        int offset = get_offset(var);
+        emit("lw " + reg + ", " + to_string(offset) + "($fp)");
+        emit_comment("DEBUG: Loaded " + var + " from memory at " + to_string(offset) + "($fp)");
+    }
     
     reg_desc.add_var_to_reg(reg, var);
     storage_desc.add_location(var, reg);
@@ -2189,10 +2278,19 @@ string MIPSGenerator::ensure_in_float_register(const string& var) {
     
     // Need to load from memory into float register
     string freg = reg_allocator.allocate_float_reg();
-    int offset = get_offset(var);
     
-    emit("l.s " + freg + ", " + to_string(offset) + "($fp)");
-    emit_comment("DEBUG: Loaded float " + var + " from " + to_string(offset) + "($fp) into " + freg);
+    // Check if variable is global/static
+    if (is_global_or_static(var)) {
+        // Load from global data section using offset from $gp
+        int offset = get_global_offset(var);
+        emit("l.s " + freg + ", " + to_string(offset) + "($gp)");
+        emit_comment("DEBUG: Loaded global/static float " + var + " from " + to_string(offset) + "($gp) into " + freg);
+    } else {
+        // Load from stack frame using $fp
+        int offset = get_offset(var);
+        emit("l.s " + freg + ", " + to_string(offset) + "($fp)");
+        emit_comment("DEBUG: Loaded float " + var + " from " + to_string(offset) + "($fp) into " + freg);
+    }
     
     // Update descriptors
     reg_desc.add_var_to_reg(freg, var);
@@ -2345,11 +2443,18 @@ string MIPSGenerator::allocate_register_with_spilling() {
         
         // Spill ALL variables (both real variables and temps) if dirty
         if (reg_allocator.is_dirty(victim_reg)) {
-            int offset = get_offset(var);
-            emit("sw " + victim_reg + ", " + to_string(offset) + "($fp)");
-            emit_comment("DEBUG: Spilled " + var + " from " + victim_reg + " to memory at " + to_string(offset) + "($fp)");
-            // ADD memory location to storage descriptor
-            storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+            // Check if variable is global/static
+            if (is_global_or_static(var)) {
+                int offset = get_global_offset(var);
+                emit("sw " + victim_reg + ", " + to_string(offset) + "($gp)");
+                emit_comment("DEBUG: Spilled global/static " + var + " from " + victim_reg + " to " + to_string(offset) + "($gp)");
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($gp)");
+            } else {
+                int offset = get_offset(var);
+                emit("sw " + victim_reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + victim_reg + " to memory at " + to_string(offset) + "($fp)");
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
+            }
         }
         // Remove the register location from storage descriptor (variable no longer in this register)
         storage_desc.remove_location(var, victim_reg);
@@ -2375,16 +2480,29 @@ void MIPSGenerator::spill_register(const string& reg) {
         
         // Only spill if not already in memory
         if (storage_desc.is_only_in_register(var)) {
-            int offset = get_offset(var);
-            
-            if (is_float_reg) {
-                emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
-                emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory");
+            // Check if variable is global/static
+            if (is_global_or_static(var)) {
+                int offset = get_global_offset(var);
+                if (is_float_reg) {
+                    emit("s.s " + reg + ", " + to_string(offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static float " + var + " from " + reg + " to " + to_string(offset) + "($gp)");
+                } else {
+                    emit("sw " + reg + ", " + to_string(offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static " + var + " from " + reg + " to " + to_string(offset) + "($gp)");
+                }
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($gp)");
             } else {
-                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory");
+                int offset = get_offset(var);
+                
+                if (is_float_reg) {
+                    emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory");
+                } else {
+                    emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory");
+                }
+                storage_desc.add_location(var, "memory:" + var);
             }
-            storage_desc.add_location(var, "memory:" + var);
         }
         reg_desc.remove_var_from_reg(reg, var);
         storage_desc.remove_location(var, reg);
@@ -2402,13 +2520,19 @@ void MIPSGenerator::store_to_memory(const string& reg, TACOperand* dest) {
     if (!dest) return;
     
     string var_name = dest->value;
-    int offset = get_offset(var_name);
     
-    // Store to memory: sw $reg, offset($fp)
-    emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-    
-    // Update storage descriptor
-    storage_desc.add_location(var_name, "memory:" + var_name);
+    // Check if variable is global/static
+    if (is_global_or_static(var_name)) {
+        int offset = get_global_offset(var_name);
+        emit("sw " + reg + ", " + to_string(offset) + "($gp)");
+        emit_comment("DEBUG: Stored to global/static " + var_name + " at " + to_string(offset) + "($gp)");
+        storage_desc.add_location(var_name, "memory:" + to_string(offset) + "($gp)");
+    } else {
+        int offset = get_offset(var_name);
+        emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+        emit_comment("DEBUG: Stored to " + var_name + " at " + to_string(offset) + "($fp)");
+        storage_desc.add_location(var_name, "memory:" + var_name);
+    }
 }
 
 int MIPSGenerator::get_offset(const string& var_name) {
@@ -2499,19 +2623,29 @@ void MIPSGenerator::spill_all_dirty() {
                 continue;
             }
             
-            // Spill ALL variables (both real variables and temps)
-            int offset = get_offset(var);
-            
-            if (is_float_reg) {
-                emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
-                emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+            // Check if variable is global/static
+            if (is_global_or_static(var)) {
+                int offset = get_global_offset(var);
+                if (is_float_reg) {
+                    emit("s.s " + reg + ", " + to_string(offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static float " + var + " from " + reg + " to " + to_string(offset) + "($gp)");
+                } else {
+                    emit("sw " + reg + ", " + to_string(offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static " + var + " from " + reg + " to " + to_string(offset) + "($gp)");
+                }
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($gp)");
             } else {
-                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+                int offset = get_offset(var);
+                
+                if (is_float_reg) {
+                    emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+                } else {
+                    emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory at " + to_string(offset) + "($fp)");
+                }
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
             }
-            
-            // ADD memory location to storage descriptor
-            storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
         }
     }
     
@@ -2556,5 +2690,52 @@ void MIPSGenerator::print_descriptors() {
     }
     emit_comment("--- End Storage Descriptor ---");
 }
+
+// Global/Static Variable Helper Functions
+
+bool MIPSGenerator::is_global_or_static(const string& var_name) {
+    return is_variable_global(var_name.c_str()) || is_variable_static(var_name.c_str());
+}
+
+int MIPSGenerator::get_global_offset(const string& var_name) {
+    auto it = global_var_offsets.find(var_name);
+    if (it != global_var_offsets.end()) {
+        return it->second;
+    }
+    // Variable not yet allocated in global space - allocate it now
+    bool is_float = is_variable_float(var_name.c_str());
+    return allocate_global_space(var_name, is_float);
+}
+
+int MIPSGenerator::allocate_global_space(const string& var_name, bool is_float) {
+    // Check if already allocated
+    auto it = global_var_offsets.find(var_name);
+    if (it != global_var_offsets.end()) {
+        return it->second;
+    }
+    
+    // Allocate space (4 bytes for int/float, 8 bytes for double)
+    int size = is_float ? 4 : 4;  // Simplified: assume 4 bytes for both
+    int offset = next_global_offset;
+    global_var_offsets[var_name] = offset;
+    next_global_offset += size;
+    
+    
+    emit_comment("Allocated global/static variable '" + var_name + "' at offset " + to_string(offset) + "($gp)");
+    
+    return offset;
+}
+
+// Declare extern C function from parser
+extern "C" void update_global_offsets(const char* var_name, int offset);
+
+void MIPSGenerator::update_symbol_table_offsets() {
+    // Update parser's symbol table with actual global offsets
+    for (const auto& pair : global_var_offsets) {
+        update_global_offsets(pair.first.c_str(), pair.second);
+    }
+}
+
+
 
 

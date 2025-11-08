@@ -88,19 +88,56 @@ void print_newline(){
 }
 
 
-int main(){
-    int x;
-    int dec = 10;
-    switch(dec){
-        case 1:
-            print_int(10);
-            break;
-        case 2:
-            print_int(20);
-            break;
+// int main(){
+//     int x;
+//     int dec = 10;
+//     switch(dec){
+//         case 1:
+//             print_int(10);
+//             break;
+//         case 2:
+//             print_int(20);
+//             break;
         
-        default:
-            print_int(30);
-    }
+//         default:
+//             print_int(30);
+//     }
 
+// }
+
+// int a;
+int global_var = 10;
+// float global_float = 3.14;
+// static int static_var = 20;
+
+int add_to_global(int x) {
+    global_var = 10 + x;
+    return global_var;
+}
+
+// int use_static() {
+//     static_var = static_var + 5;
+//     return static_var;
+// }
+
+int main() {
+    int local = 5;
+    int result;
+    
+    // Test global variable
+    result = add_to_global(local);
+    print_int(result);
+    print_newline();
+    
+    // Test static variable
+    // result = use_static();
+    // print_int(result);
+    // print_newline();
+
+    // // Use global float
+    // global_float = global_float + 1.0;
+    // print_int(global_float);
+    // print_newline();
+    
+    return result;
 }

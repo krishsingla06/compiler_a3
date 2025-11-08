@@ -490,6 +490,65 @@ void close_jump_table_file(){
         return 0;
     }
     
+    extern "C" bool is_variable_global(const char* var_name) {
+        string name(var_name);
+        auto it = global_symbol_table.find(name);
+        if (it != global_symbol_table.end()) {
+            return it->second.location == SymbolEntry::VAR_GLOBAL;
+        }
+        return false;
+    }
+    
+    extern "C" bool is_variable_static(const char* var_name) {
+        string name(var_name);
+        auto it = global_symbol_table.find(name);
+        if (it != global_symbol_table.end()) {
+            return it->second.type.is_static;
+        }
+        return false;
+    }
+    
+    // Update global variable offsets in symbol table after code generation
+    extern "C" void update_global_offsets(const char* var_name, int offset) {
+        string name(var_name);
+        auto it = global_symbol_table.find(name);
+        if (it != global_symbol_table.end()) {
+            it->second.stackOffset = offset;
+        }
+    }
+    
+    // Get count of global/static variables
+    extern "C" int get_global_variable_count() {
+        int count = 0;
+        for (const auto& pair : global_symbol_table) {
+            if (pair.second.location == SymbolEntry::VAR_GLOBAL) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    // Get the nth global/static variable (returns mangled name and whether it's float)
+    // Returns nullptr if index out of bounds
+    extern "C" const char* get_global_variable_at_index(int index, bool* out_is_float) {
+        int current = 0;
+        for (const auto& pair : global_symbol_table) {
+            const SymbolEntry& entry = pair.second;
+            if (entry.location == SymbolEntry::VAR_GLOBAL) {
+                if (current == index) {
+                    // Set output parameter
+                    if (out_is_float) {
+                        *out_is_float = (entry.type.baseType == "float" || entry.type.baseType == "double");
+                    }
+                    // Return mangled name (the key)
+                    return pair.first.c_str();
+                }
+                current++;
+            }
+        }
+        return nullptr;
+    }
+    
     // Function symbol table
     map<string, FunctionEntry> function_table;
     
@@ -587,6 +646,7 @@ void close_jump_table_file(){
     void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
     void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
     void insert_static_variable_globally(const string& name, const TypeInfo& type);
+    void insert_static_local_into_scope(const string& original_name, const string& mangled_name, const TypeInfo& type);
     void insert_guard_variable_globally(const string& guard_name);
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
@@ -1200,9 +1260,12 @@ declaration
                         combinedType.guard_var_name = guard_name;
                         
                         // 3. Register static variable and guard in global scope
-                        // hihi insert static variable globally by passing simple name not the mangled name
-                        insert_static_variable_globally(declInfo->name, combinedType);
+                        // Use mangled name so MIPS generator can find it by TAC variable name
+                        insert_static_variable_globally(mangled_var_name, combinedType);
                         insert_guard_variable_globally(guard_name);
+                        
+                        // 4. Insert into current scope for name resolution (without overriding global entry)
+                        insert_static_local_into_scope(declInfo->name, mangled_var_name, combinedType);
                         
                         TACOperand* guard_var = new_identifier(guard_name);
                         
@@ -1286,9 +1349,12 @@ declaration
             // if non static then only insert symbol in current scope
             if (!combinedType.is_static) {
                 insert_symbol(declInfo->name, combinedType, declInfo->initType);
-            }else{
-                insert_static_variable_globally(declInfo->name, combinedType);
+            } else if (current_function_name == "") {
+                // Global (file-scope) static variable - need to mangle the name
+                string mangled_name = mangle_variable_name(declInfo->name, current_scope_level, "", "");
+                insert_static_variable_globally(mangled_name, combinedType);
             }
+            // Note: Function-local statics are already inserted in the guard initialization code above
 
 
 			// ========== Generate constructor call for class objects ==========
@@ -5191,7 +5257,42 @@ void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, con
          << " at scope level " << entry.scope_level << "\n";
 }
 
-
+// Insert a static local variable into current scope for name resolution
+// without overriding its global symbol table entry
+void insert_static_local_into_scope(const string& original_name, const string& mangled_name, const TypeInfo& type) {
+    if (scope_stack.empty()) {
+        return;
+    }
+    
+    auto& current_scope = scope_stack.back();
+    
+    // Check for redeclaration
+    if (current_scope.symbols.find(original_name) != current_scope.symbols.end()) {
+        string error_msg = "Error at line " + to_string(yylineno) + ": Variable '" + original_name + "' already declared in current scope";
+        cerr << error_msg << "\n";
+        log_error(error_msg);
+        return;
+    }
+    
+    // Create a symbol entry that points to the global static variable
+    SymbolEntry entry;
+    entry.name = original_name;
+    entry.type = type;
+    entry.line = yylineno;
+    entry.scope_level = current_scope_level;
+    entry.isConst = false;
+    entry.constValue = 0;
+    entry.mangledName = mangled_name;  // Use the mangled name for TAC generation
+    entry.location = SymbolEntry::VAR_GLOBAL;  // It's stored globally, not on stack
+    entry.stackOffset = 0;  // Not relevant for globals
+    entry.paramNumber = -1;
+    
+    // Add to current scope only (do NOT override global_symbol_table entry)
+    current_scope.symbols[original_name] = entry;
+    
+    cout << "Inserted static local variable '" << original_name << "' into scope "
+         << "(points to global '" << mangled_name << "')\n";
+}
 
 // Insert a static variable into global scope
 void insert_static_variable_globally(const string& name, const TypeInfo& type) {
@@ -7405,9 +7506,6 @@ int main(int argc, char** argv) {
 	// Display enum table
 	display_enum_table();
 	
-	// Display global symbol table
-	displayGlobalSymbolTable();
-	
 	// Generate MIPS assembly code
 	cout << "\n\nGenerating MIPS assembly code...\n";
 	cout << "Total TAC instructions collected: " << all_tac_instructions.size() << "\n";
@@ -7424,12 +7522,16 @@ int main(int argc, char** argv) {
 			// Generate with both debug and clean output
 			MIPSGenerator mips_gen(mips_file, &clean_mips_file);
 			mips_gen.generate(all_tac_instructions);
+			// Update symbol table with actual global offsets
+			mips_gen.update_symbol_table_offsets();
 			clean_mips_file.close();
 			cout << "Clean MIPS assembly code (no debug) written to " << clean_mips_filename << "\n";
 		} else {
 			// Generate with only debug output
 			MIPSGenerator mips_gen(mips_file);
 			mips_gen.generate(all_tac_instructions);
+			// Update symbol table with actual global offsets
+			mips_gen.update_symbol_table_offsets();
 			cerr << "Warning: Could not open clean MIPS output file\n";
 		}
 		mips_file.close();
@@ -7437,6 +7539,9 @@ int main(int argc, char** argv) {
 	} else {
 		cerr << "Error: Could not open MIPS output file\n";
 	}
+	
+	// Display global symbol table (after code generation so offsets are correct)
+	displayGlobalSymbolTable();
 	
 	// Clean up all remaining scopes
 	while (!scope_stack.empty()) {

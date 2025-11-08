@@ -76,8 +76,13 @@ private:
     map<string, string> string_literals;  // Maps string content to label (str_0, str_1, ...)
     int next_string_id;
     
+    // Global and static variable management
+    map<string, int> global_var_offsets;  // Maps variable name to offset from $gp
+    int next_global_offset;                // Next available offset from $gp
+    
     void generate_data_section();
     void collect_data_section_items(const vector<TACInstruction*>& tac_instructions);
+    void collect_global_variables(const vector<TACInstruction*>& tac_instructions);
     string add_string_literal(const string& content);  // Add string, return label
     
     void generate_text_section(const vector<TACInstruction*>& tac_instructions);
@@ -115,6 +120,11 @@ private:
     bool is_float_type(const string& type_name);  // Simplified - takes string instead of TypeInfo
     bool is_operand_float(TACOperand* operand);  // Check if operand is float type
     
+    // Global/static variable helpers
+    bool is_global_or_static(const string& var_name);
+    int get_global_offset(const string& var_name);
+    int allocate_global_space(const string& var_name, bool is_float);
+    
     void emit(const string& instruction);
     void emit_comment(const string& comment);
     void emit_label(const string& label);
@@ -131,6 +141,7 @@ private:
 public:
     MIPSGenerator(ostream& out, ostream* clean_out = nullptr);
     void generate(const vector<TACInstruction*>& tac_instructions);
+    void update_symbol_table_offsets();
 };
 
 #endif // MIPS_GENERATOR_H
