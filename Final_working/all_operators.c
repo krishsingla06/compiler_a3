@@ -47,8 +47,9 @@ int main(){
     print_newline();
 
     // expected output : 
-    // 60
-    // 345
-    // 7045
-    // 45
+    // 1
+    // 20.5
+    // 0
+    // 1
+
 }
