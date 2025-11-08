@@ -7,10 +7,10 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 8 bytes
+|     - Local var space: 20 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 16 bytes
-|   Declared at line: 117
+|     - Total frame size: 28 bytes
+|   Declared at line: 91
 +-----------------------------------------------------------------------------------------+
 | Function: print_int (print_int_i)
 |   Return type: void
@@ -20,5 +20,15 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 113
+|   Declared at line: 82
++-----------------------------------------------------------------------------------------+
+| Function: print_newline (print_newline)
+|   Return type: void
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 8 bytes
+|   Declared at line: 86
 +-----------------------------------------------------------------------------------------+

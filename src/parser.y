@@ -369,10 +369,9 @@ void close_jump_table_file(){
         VarLocation location;     // Where this variable is stored
         int paramNumber;          // Parameter number (0-based) if VAR_PARAM, else -1
         int stackOffset;          // Offset from $fp for locals/params (in bytes)
-        string staticLabel;       // Label for global/static variables in .data section
         
         SymbolEntry() : line(0), scope_level(0), isConst(false), constValue(0),
-        location(VAR_GLOBAL), paramNumber(-1), stackOffset(0), staticLabel("") {}
+        location(VAR_GLOBAL), paramNumber(-1), stackOffset(0) {}
     };
     
     // Function parameter structure
@@ -538,12 +537,6 @@ void close_jump_table_file(){
     // Stack of switch expression results for nested switches
     
     // Stack of jump table IDs for nested switches
-    
-    // ===== STATIC MEMORY ALLOCATION =====
-    // Registry for all global and static variables
-    // Maps: label -> (SymbolEntry, initial_value_string)
-    map<string, pair<SymbolEntry, string>> static_variables_registry;
-    int static_var_counter = 0;
     vector<int> switch_table_id_stack;
     
     // Global temporary storage for struct members being parsed
@@ -593,11 +586,6 @@ void close_jump_table_file(){
     void exit_scope();
     void insert_symbol(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
     void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, const TypeInfo* initType = nullptr);
-    void insert_static_variable_globally(const string& name, const TypeInfo& type);
-    void insert_guard_variable_globally(const string& guard_name);
-    
-    // Export static variables to MIPS generator
-    extern "C" void get_all_static_variables(void (*callback)(const char* label, const char* name, const char* type, int size, const char* init_value));
     void insert_static_variable_globally(const string& name, const TypeInfo& type);
     void insert_guard_variable_globally(const string& guard_name);
     bool lookup_symbol(const string& name, SymbolEntry& entry);
@@ -1297,14 +1285,7 @@ declaration
 
             // if non static then only insert symbol in current scope
             if (!combinedType.is_static) {
-                // Check if we're at global scope (scope level 1)
-                if (current_scope_level == 1 || current_function_name.empty()) {
-                    // This is a global variable - register in static memory
-                    insert_symbol_at_global_scope(declInfo->name, combinedType, declInfo->initType);
-                } else {
-                    // Local variable
-                    insert_symbol(declInfo->name, combinedType, declInfo->initType);
-                }
+                insert_symbol(declInfo->name, combinedType, declInfo->initType);
             }else{
                 insert_static_variable_globally(declInfo->name, combinedType);
             }
@@ -5201,26 +5182,13 @@ void insert_symbol_at_global_scope(const string& name, const TypeInfo& type, con
     entry.isConst = false;
     entry.constValue = 0;
     entry.mangledName = name;  // For global variables, use the name as-is (already mangled)
-    entry.location = SymbolEntry::VAR_GLOBAL;
-    
-    // Generate a unique label for this global/static variable
-    string label = "global_" + name;
-    entry.staticLabel = label;
-    
-    // Register in static variables registry for data section generation
-    string initial_value = "0";  // Default initialization
-    if (initType && initType->result) {
-        initial_value = initType->result->value;
-    }
-    static_variables_registry[label] = make_pair(entry, initial_value);
     
     global_scope.symbols[name] = entry;
     global_symbol_table[entry.mangledName] = entry;
 
     
     cout << "Inserted into global scope: " << name << " (" << type.toString() << ")" 
-         << " at scope level " << entry.scope_level 
-         << " with label " << label << "\n";
+         << " at scope level " << entry.scope_level << "\n";
 }
 
 
@@ -5233,18 +5201,6 @@ void insert_static_variable_globally(const string& name, const TypeInfo& type) {
     insert_symbol_at_global_scope(name, static_type, nullptr);
     
     cout << "Registered static variable globally: " << name << "\n";
-}
-
-// Export all static variables to MIPS generator
-extern "C" void get_all_static_variables(void (*callback)(const char* label, const char* name, const char* type, int size, const char* init_value)) {
-    for (const auto& pair : static_variables_registry) {
-        const string& label = pair.first;
-        const SymbolEntry& entry = pair.second.first;
-        const string& init_value = pair.second.second;
-        
-        int size = get_type_size(entry.type);
-        callback(label.c_str(), entry.name.c_str(), entry.type.baseType.c_str(), size, init_value.c_str());
-    }
 }
 
 // Insert a guard variable into global scope
