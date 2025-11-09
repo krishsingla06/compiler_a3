@@ -1864,11 +1864,12 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     
     emit_comment("Call " + func_name + " with " + to_string(num_args) + " arguments");
     
-    // ===== CALLER-SAVE: Spill ALL $t0-$t9 registers FIRST =====
+    // ===== CALLER-SAVE: Spill ALL $t0-$t9 and $a0-$a3 registers FIRST =====
     // CRITICAL: This MUST happen BEFORE any parameter processing (including built-ins)
     // so that when we load parameters, we get the updated values from memory
     emit_comment("=== Caller-Save: Spill ALL registers before call ===");
     
+    // Spill $t0-$t9
     for (int i = 0; i <= 9; i++) {
         string reg = "$t" + to_string(i);
         
@@ -1905,6 +1906,45 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         // Clear dirty flag for this register
         reg_allocator.clear_dirty(reg);
     }
+    
+    // Spill $a0-$a3 (argument registers will be clobbered by the call)
+    for (int i = 0; i <= 3; i++) {
+        string reg = "$a" + to_string(i);
+        
+        // Get ALL variable(s) stored in this register
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        
+        if (!vars.empty()) {
+            for (const string& var : vars) {
+                // Skip constants and invalid variables
+                if (var == "<CONSTANT>" || var.empty()) {
+                    continue;
+                }
+                
+                // Get offset
+                int offset = get_offset(var);
+                
+                // Don't spill to 0($fp)
+                if (offset == 0) {
+                    continue;
+                }
+                
+                // Spill to memory
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled " + var + " from " + reg + " to " + to_string(offset) + "($fp)");
+                
+                // Update storage descriptor: variable is now ONLY in memory
+                storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+            }
+        }
+        
+        // Clear the register descriptor (will be overwritten by call)
+        reg_desc.clear_reg(reg);
+    }
+    
+    // NOTE: $t0-$t9 are also caller-saved (will be clobbered by callee)
+    // We've already spilled them above, but make sure ALL are marked as invalid after the call
+    // This ensures no stale register contents are used after the function returns
     
     emit_comment("=== End Caller-Save ===");
     
@@ -2215,6 +2255,37 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             
             emit_comment("DEBUG: " + dest + " = return value in " + dest_reg + " (dirty)");
         }
+    }
+    
+    // IMPORTANT: After a function call, all caller-saved registers ($t0-$t9, $a0-$a3) 
+    // are potentially clobbered. We already spilled them before the call, but we need
+    // to make sure BOTH descriptors don't incorrectly think variables are still in these registers.
+    // Clear all $t and $a registers from descriptors (except the one holding the return value if any)
+    for (int i = 0; i <= 9; i++) {
+        string treg = "$t" + to_string(i);
+        // Skip the register holding the return value
+        if (instr->result && storage_desc.get_register(instr->result->value) == treg) {
+            continue;
+        }
+        // Get all variables that think they're in this register
+        set<string> vars_in_reg = reg_desc.get_vars_in_reg(treg);
+        // Remove this register from their storage descriptor entries
+        for (const string& var : vars_in_reg) {
+            storage_desc.remove_location(var, treg);
+        }
+        // Clear this register from reg descriptor
+        reg_desc.clear_reg(treg);
+    }
+    for (int i = 0; i <= 3; i++) {
+        string areg = "$a" + to_string(i);
+        // Get all variables that think they're in this register
+        set<string> vars_in_reg = reg_desc.get_vars_in_reg(areg);
+        // Remove this register from their storage descriptor entries
+        for (const string& var : vars_in_reg) {
+            storage_desc.remove_location(var, areg);
+        }
+        // Clear this register from reg descriptor
+        reg_desc.clear_reg(areg);
     }
 }
 

@@ -2193,7 +2193,7 @@ postfix_expression
             TACOperand* base_addr = nullptr;
             TACInstruction* i_base = nullptr;
             // If base is already an address (like from previous deref), use it directly
-            if (base->isDereferenced && base->isLvalue) {
+            if ((base->isDereferenced || base->pointerLevel > 0) && base->isLvalue) {
                 base_addr = base->result; // Use existing address
             } else {
                 // base_addr = &base (address operation)
@@ -2748,6 +2748,7 @@ postfix_expression
 					$$ = new TypeInfo(member->type);
 					$$->isLvalue = true;  // Member access is an lvalue
 					$$->isLiteral = false;
+                    $$->isDereferenced = true; // Result is dereferenced value
 					
 					// TAC: Calculate member address
 					// base_addr = &base
@@ -2884,6 +2885,7 @@ postfix_expression
 					$$->isLvalue = true;  // Member access is an lvalue
 					$$->isLiteral = false;
 				
+                    $$->isDereferenced = true; // Result is dereferenced value
 					
 					$$->code = base->code;
 					
@@ -5731,10 +5733,13 @@ bool is_implicit_conversion_allowed(const TypeInfo& from, const TypeInfo& to) {
     
     
     // Allow array to pointer conversion (array decay)
-    if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType && (from.pointerLevel + from.arrayDimensions.size() == to.pointerLevel)) {
+    /* if (from.isArray && to.pointerLevel > 0 && from.baseType == to.baseType && (from.pointerLevel + from.arrayDimensions.size() == to.pointerLevel)) {
+        return true;
+    }    */
+
+    if (from.isArray && (to.pointerLevel == 1) && from.baseType == to.baseType ) { // changed recently : krish (9/11)
         return true;
     }   
-
     
     
     return false;
@@ -5828,15 +5833,16 @@ pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> change_type_rhs_to_l
     }
 
     //if rhs is array and lhs is pointer, then do array to pointer decay
-    if (right.isArray && left.pointerLevel > 0 && right.baseType == left.baseType && left.pointerLevel == (right.pointerLevel + right.arrayDimensions.size())) {
+    if (right.isArray && left.pointerLevel > 0 && right.baseType == left.baseType && (left.pointerLevel == 1)) {
         TypeInfo decayedType = array_to_pointer_conversion(right);
         TACOperand* right_temp = new_typed_temp_var(decayedType.baseType, decayedType.pointerLevel); // array decay
         string targetTypeStr = decayedType.baseType;
-        for (int i = 0; i < decayedType.pointerLevel; i++) {
+       // for (int i = 0; i < decayedType.pointerLevel; i++) {
             targetTypeStr += "*";
-        }
-        TACInstruction* castInstr = emit(TACOperator(TAC_OPERATOR_CAST), right_temp, right.result, new_type(targetTypeStr), 0);
-        res->code.push_back(castInstr);
+       // }
+        // Generate address-of operation for array-to-pointer decay
+        TACInstruction* addrInstr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), right_temp, right.result, new_empty_var(), 0);
+        res->code.push_back(addrInstr);
         return {res->code, {left.result, right_temp}};
     }
                 
@@ -6694,7 +6700,8 @@ TypeInfo array_to_pointer_conversion(const TypeInfo& type) {
     if (res.isArray) {
         //simple make array of level = dimension of array
         res.isArray = false;
-        res.pointerLevel += res.arrayDimensions.size();
+        //res.pointerLevel += res.arrayDimensions.size();
+        res.pointerLevel += 1; 
         res.arrayDimensions.clear();
 
         // For multidimensional arrays, we only decay the first dimension

@@ -2,13 +2,53 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
+| Function: foo (foo_up1)
+|   Return type: void
+|   Parameters: struct A* 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 52 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 64 bytes
+|   Declared at line: 81
++-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 20 bytes
+|     - Local var space: 48 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 28 bytes
+|     - Total frame size: 56 bytes
+|   Declared at line: 91
++-----------------------------------------------------------------------------------------+
+| Function: print_float (print_float_f)
+|   Return type: void
+|   Parameters: float 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 1
++-----------------------------------------------------------------------------------------+
+| Function: print_int (print_int_i)
+|   Return type: void
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
 |   Declared at line: 2
++-----------------------------------------------------------------------------------------+
+| Function: print_newline (print_newline)
+|   Return type: void
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 8 bytes
+|   Declared at line: 5
 +-----------------------------------------------------------------------------------------+
