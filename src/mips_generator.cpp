@@ -159,7 +159,7 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
-    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0), next_global_offset(0), current_instruction_index(0) {
+    : output(out), clean_output(clean_out), current_block_id(0), next_string_id(0), next_global_offset(0), current_instruction_index(0), peephole_window_size(12) {
 }
 
 void MIPSGenerator::analyze_basic_blocks(const vector<TACInstruction*>& tac_instructions) {
@@ -421,7 +421,8 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
             
             // Translate to MIPS
             translate_instruction(instr);
-            
+                flush_instruction_buffer();  // ← ADD THIS LINE
+
             output << "\n";
             if (clean_output) *clean_output << "\n";
         }
@@ -436,6 +437,9 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
         output << "\n";
         if (clean_output) *clean_output << "\n";
     }
+    
+    // At the very end, flush instruction buffer
+    // flush_instruction_buffer();
     
     emit_comment("End of code");
 }
@@ -572,35 +576,24 @@ void MIPSGenerator::generate_text_section(const vector<TACInstruction*>& tac_ins
 void MIPSGenerator::generate_function_prologue(const string& func_name) {
     emit_comment("=== Function Prologue for " + func_name + " ===");
     
-    // Calculate frame size (locals + temps)
     int frame_size = calculate_stack_frame_size(func_name);
-    
     emit_comment("Frame size: " + to_string(frame_size) + " bytes");
     
-    // Step 1: Allocate space for entire frame (locals + temps + $ra + old $fp)
-    // Total space = frame_size + 8 (8 bytes for $ra and old $fp)
     int total_frame = frame_size;
-    emit("addiu $sp, $sp, -" + to_string(total_frame));
+    emit_direct("addiu $sp, $sp, -" + to_string(total_frame));  // ← CHANGE HERE
     emit_comment("Allocate " + to_string(total_frame) + " bytes (8 for $ra+$fp, " + 
                  to_string(frame_size) + " for locals/temps)");
     
-    // Step 2: Save return address at offset (frame_size + 4) from new $sp
-    emit("sw $ra, " + to_string(frame_size - 4) + "($sp)");
+    emit_direct("sw $ra, " + to_string(frame_size - 4) + "($sp)");  // ← CHANGE HERE
     emit_comment("Save return address at " + to_string(frame_size + 4) + "($sp)");
     
-    // Step 3: Save old frame pointer at offset (frame_size) from new $sp
-    emit("sw $fp, " + to_string(frame_size - 8) + "($sp)");
+    emit_direct("sw $fp, " + to_string(frame_size - 8) + "($sp)");  // ← CHANGE HERE
     emit_comment("Save old frame pointer at " + to_string(frame_size) + "($sp)");
     
-    // Step 4: Set new frame pointer
-    // $fp should point to where we saved old $fp
-    emit("addiu $fp, $sp, " + to_string(frame_size - 8));
+    emit_direct("addiu $fp, $sp, " + to_string(frame_size - 8));  // ← CHANGE HERE
     emit_comment("Set new frame pointer (points to saved old $fp)");
     
-    emit_comment("=== End of Prologue ===");
-    emit_comment("Now: $fp+4 = $ra, $fp+0 = old $fp, $fp-4 = first local/temp");
-    output << "\n";
-    if (clean_output) *clean_output << "\n";
+    // ...rest of function...
 }
 
 void MIPSGenerator::generate_function_epilogue(const string& func_name) {
@@ -608,30 +601,23 @@ void MIPSGenerator::generate_function_epilogue(const string& func_name) {
     
     int frame_size = calculate_stack_frame_size(func_name);
     
-    // Step 1: Move $sp back to where $fp is (where old $fp is saved)
-    emit("move $sp, $fp");
+    emit_direct("move $sp, $fp");  // ← CHANGE HERE
     emit_comment("Move $sp to $fp (where old $fp is saved)");
 
-    // Step 2: Restore return address from 4($fp)
-    emit("lw $ra, 4($fp)");
+    emit_direct("lw $ra, 4($fp)");  // ← CHANGE HERE
     emit_comment("Restore return address");
 
-    // Step 3: Restore old frame pointer from 0($fp)
-    emit("lw $fp, 0($fp)");
+    emit_direct("lw $fp, 0($fp)");  // ← CHANGE HERE
     emit_comment("Restore old frame pointer");
     
-    // Step 4: Deallocate the saved $ra and $fp (8 bytes)
-    // Since we moved $sp to $fp, we only need to skip past the saved $ra and $fp
-    emit("addiu $sp, $sp, 8");
+    emit_direct("addiu $sp, $sp, 8");  // ← CHANGE HERE
     emit_comment("Deallocate saved $ra and $fp (8 bytes)");
     
-    // Step 5: Return to caller
-    emit("jr $ra");
+    emit_direct("jr $ra");  // ← CHANGE HERE
     emit_comment("Return to caller");
     
     emit_comment("=== End of Epilogue ===");
 }
-
 int MIPSGenerator::calculate_stack_frame_size(const string& func_name) {
     // Use external function to get stack frame size for locals and temps
     int frame_size = get_function_stack_frame_size(func_name);
@@ -2713,13 +2699,339 @@ bool MIPSGenerator::is_operand_float(TACOperand* operand) {
 }
 
 void MIPSGenerator::emit(const string& instruction) {
+    emit_to_buffer(instruction);
+}
+void MIPSGenerator::emit_to_buffer(const string& instruction) {
+    instruction_buffer.push_back(instruction);
+    
+    if (instruction_buffer.size() >= peephole_window_size) {
+        apply_peephole_optimizations();
+        
+        // Emit the first instruction
+output << "    " << instruction_buffer[0] << "\n";
+if (clean_output) {
+    *clean_output << "    " << instruction_buffer[0] << "\n";
+}        
+        instruction_buffer.erase(instruction_buffer.begin());
+    }
+}
+void MIPSGenerator::emit_direct(const string& instruction) {
+    // Bypass buffer for structural code (prologue/epilogue/labels)
     output << "    " << instruction << "\n";
-    // Also emit to clean output if available
     if (clean_output) {
         *clean_output << "    " << instruction << "\n";
     }
 }
+void MIPSGenerator::flush_instruction_buffer() {
+    while (!instruction_buffer.empty()) {
+        apply_peephole_optimizations();
+        
+output << "    " << instruction_buffer[0] << "\n";
+if (clean_output) {
+    *clean_output << "    " << instruction_buffer[0] << "\n";
+}        
+        instruction_buffer.erase(instruction_buffer.begin());
+    }
+}
+void MIPSGenerator::apply_peephole_optimizations() {
+    if (instruction_buffer.size() < 2) return;
+    
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        changed |= optimize_redundant_moves();
+        changed |= optimize_load_store_pairs();
+        changed |= optimize_arithmetic_identity();
+        changed |= optimize_strength_reduction();
+        changed |= optimize_branch_chains();
+    }
+}
+bool MIPSGenerator::optimize_redundant_moves() {
+    if (instruction_buffer.size() < 2) return false;
+    
+    // Pattern 1: move $tx, $ty followed by move $ty, $tx
+    // Pattern 2: move $tx, $ty followed by move $tx, $ty (duplicate)
+    
+    for (size_t i = 0; i < instruction_buffer.size() - 1; i++) {
+        string instr1 = instruction_buffer[i];
+        string instr2 = instruction_buffer[i + 1];
+        
+        // Parse first instruction
+        if (instr1.find("move ") == 0) {
+            // Extract registers: "move $t0, $t1"
+            size_t comma = instr1.find(',');
+            if (comma == string::npos) continue;
+            
+            string dest1 = instr1.substr(5, comma - 5);  // "$t0"
+            string src1 = instr1.substr(comma + 2);      // "$t1"
+            
+            // Trim whitespace
+            dest1.erase(0, dest1.find_first_not_of(" \t"));
+            dest1.erase(dest1.find_last_not_of(" \t") + 1);
+            src1.erase(0, src1.find_first_not_of(" \t"));
+            src1.erase(src1.find_last_not_of(" \t") + 1);
+            
+            // Check for Pattern 1: move $tx, $ty then move $ty, $tx
+            if (instr2 == "move " + src1 + ", " + dest1) {
+                instruction_buffer.erase(instruction_buffer.begin() + i + 1);
+                emit_comment("PEEPHOLE: Removed redundant reverse move");
+                return true;
+            }
+            
+            // Check for Pattern 2: duplicate move
+            if (instr2 == instr1) {
+                instruction_buffer.erase(instruction_buffer.begin() + i + 1);
+                emit_comment("PEEPHOLE: Removed duplicate move");
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+bool MIPSGenerator::optimize_load_store_pairs() {
+    if (instruction_buffer.size() < 2) return false;
+    
+    // Pattern: lw $tx, offset($fp) followed by sw $tx, offset($fp)
+    // Only optimize if there's no modification of $tx between them
+    
+    for (size_t i = 0; i < instruction_buffer.size() - 1; i++) {
+        string instr1 = instruction_buffer[i];
+        string instr2 = instruction_buffer[i + 1];
+        
+        // Check for load-store pattern
+        if (instr1.find("lw ") == 0 && instr2.find("sw ") == 0) {
+            // Parse: "lw $t0, -4($fp)" and "sw $t0, -4($fp)"
+            size_t comma1 = instr1.find(',');
+            size_t comma2 = instr2.find(',');
+            
+            if (comma1 == string::npos || comma2 == string::npos) continue;
+            
+            string reg1 = instr1.substr(3, comma1 - 3);
+            string loc1 = instr1.substr(comma1 + 2);
+            
+            string reg2 = instr2.substr(3, comma2 - 3);
+            string loc2 = instr2.substr(comma2 + 2);
+            
+            // Trim whitespace
+            reg1.erase(0, reg1.find_first_not_of(" \t"));
+            reg1.erase(reg1.find_last_not_of(" \t") + 1);
+            loc1.erase(0, loc1.find_first_not_of(" \t"));
+            loc1.erase(loc1.find_last_not_of(" \t") + 1);
+            reg2.erase(0, reg2.find_first_not_of(" \t"));
+            reg2.erase(reg2.find_last_not_of(" \t") + 1);
+            loc2.erase(0, loc2.find_first_not_of(" \t"));
+            loc2.erase(loc2.find_last_not_of(" \t") + 1);
+            
+            // If same register and same location, remove the store
+            if (reg1 == reg2 && loc1 == loc2) {
+                instruction_buffer.erase(instruction_buffer.begin() + i + 1);
+                emit_comment("PEEPHOLE: Removed redundant store after load");
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+bool MIPSGenerator::optimize_arithmetic_identity() {
+    if (instruction_buffer.empty()) return false;
+    
+    for (size_t i = 0; i < instruction_buffer.size(); i++) {
+        string instr = instruction_buffer[i];
+        
+        // Pattern: add $tx, $ty, $zero → move $tx, $ty
+        if (instr.find("add ") == 0 && instr.find("$zero") != string::npos) {
+            // Parse: "add $t0, $t1, $zero"
+            size_t comma1 = instr.find(',');
+            size_t comma2 = instr.find(',', comma1 + 1);
+            
+            if (comma1 != string::npos && comma2 != string::npos) {
+                string dest = instr.substr(4, comma1 - 4);
+                string src = instr.substr(comma1 + 2, comma2 - comma1 - 2);
+                
+                // Trim
+                dest.erase(0, dest.find_first_not_of(" \t"));
+                dest.erase(dest.find_last_not_of(" \t") + 1);
+                src.erase(0, src.find_first_not_of(" \t"));
+                src.erase(src.find_last_not_of(" \t") + 1);
+                
+                instruction_buffer[i] = "move " + dest + ", " + src;
+                emit_comment("PEEPHOLE: Simplified add with $zero to move");
+                return true;
+            }
+        }
 
+// ALSO check: add $tx, $ty, $tz where $tz contains 0
+if (instr.find("add ") == 0) {
+    size_t lastComma = instr.rfind(',');
+    if (lastComma != string::npos) {
+        string lastOp = instr.substr(lastComma + 1);
+        lastOp.erase(0, lastOp.find_first_not_of(" \t"));
+        lastOp.erase(lastOp.find_last_not_of(" \t") + 1);
+        
+        // Check if there's a "li lastOp, 0" in the buffer
+        bool is_zero = false;
+        for (const string& prev : instruction_buffer) {
+            if (prev == "li " + lastOp + ", 0") {
+                is_zero = true;
+                break;
+            }
+        }
+        
+        if (is_zero) {
+            size_t comma1 = instr.find(',');
+            string dest = instr.substr(4, comma1 - 4);
+            string src = instr.substr(comma1 + 2, lastComma - comma1 - 2);
+            
+            dest.erase(0, dest.find_first_not_of(" \t"));
+            dest.erase(dest.find_last_not_of(" \t") + 1);
+            src.erase(0, src.find_first_not_of(" \t"));
+            src.erase(src.find_last_not_of(" \t") + 1);
+            
+            instruction_buffer[i] = "move " + dest + ", " + src;
+            emit_comment("PEEPHOLE: Simplified add with 0 to move");
+            return true;
+        }
+    }
+}
+        
+        // Pattern: mul $tx, $ty, 1 → move $tx, $ty
+        if (instr.find("mul ") == 0) {
+            size_t lastComma = instr.rfind(',');
+            if (lastComma != string::npos) {
+                string lastOp = instr.substr(lastComma + 1);
+                lastOp.erase(0, lastOp.find_first_not_of(" \t"));
+                lastOp.erase(lastOp.find_last_not_of(" \t") + 1);
+
+                bool is_one = false;
+        for (const string& prev : instruction_buffer) {
+            if (prev == "li " + lastOp + ", 1") {
+                is_one = true;
+                break;
+            }
+        }
+        
+        if (is_one) {
+                    size_t comma1 = instr.find(',');
+                    string dest = instr.substr(4, comma1 - 4);
+                    string src = instr.substr(comma1 + 2, lastComma - comma1 - 2);
+                    
+                    dest.erase(0, dest.find_first_not_of(" \t"));
+                    dest.erase(dest.find_last_not_of(" \t") + 1);
+                    src.erase(0, src.find_first_not_of(" \t"));
+                    src.erase(src.find_last_not_of(" \t") + 1);
+                    
+                    instruction_buffer[i] = "move " + dest + ", " + src;
+                    emit_comment("PEEPHOLE: Simplified mul by 1 to move");
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+bool MIPSGenerator::optimize_strength_reduction() {
+    if (instruction_buffer.empty()) return false;
+    
+    for (size_t i = 0; i < instruction_buffer.size(); i++) {
+        string instr = instruction_buffer[i];
+        
+        // Pattern: mul $tx, $ty, <power_of_2> → sll $tx, $ty, <log2>
+        if (instr.find("mul ") == 0) {
+            size_t lastComma = instr.rfind(',');
+            if (lastComma != string::npos) {
+                string multiplier = instr.substr(lastComma + 1);
+                multiplier.erase(0, multiplier.find_first_not_of(" \t"));
+                multiplier.erase(multiplier.find_last_not_of(" \t") + 1);
+                
+                // Check if it's a power of 2
+                int mult = 0;
+                try {
+                    mult = stoi(multiplier);
+                } catch (...) {
+                    continue;
+                }
+                
+                // Check if power of 2 and get shift amount
+                if (mult > 0 && (mult & (mult - 1)) == 0) {
+                    int shift = 0;
+                    int temp = mult;
+                    while (temp > 1) {
+                        temp >>= 1;
+                        shift++;
+                    }
+                    
+                    size_t comma1 = instr.find(',');
+                    string dest = instr.substr(4, comma1 - 4);
+                    string src = instr.substr(comma1 + 2, lastComma - comma1 - 2);
+                    
+                    dest.erase(0, dest.find_first_not_of(" \t"));
+                    dest.erase(dest.find_last_not_of(" \t") + 1);
+                    src.erase(0, src.find_first_not_of(" \t"));
+                    src.erase(src.find_last_not_of(" \t") + 1);
+                    
+                    instruction_buffer[i] = "sll " + dest + ", " + src + ", " + to_string(shift);
+                    emit_comment("PEEPHOLE: Strength reduction mul → sll");
+                    return true;
+                }
+            }
+        }
+        
+        // Pattern: div $tx, $ty, <power_of_2> → sra $tx, $ty, <log2>
+        if (instr.find("div ") == 0) {
+            size_t lastComma = instr.rfind(',');
+            if (lastComma != string::npos) {
+                string divisor = instr.substr(lastComma + 1);
+                divisor.erase(0, divisor.find_first_not_of(" \t"));
+                divisor.erase(divisor.find_last_not_of(" \t") + 1);
+                
+                int div = 0;
+                try {
+                    div = stoi(divisor);
+                } catch (...) {
+                    continue;
+                }
+                
+                if (div > 0 && (div & (div - 1)) == 0) {
+                    int shift = 0;
+                    int temp = div;
+                    while (temp > 1) {
+                        temp >>= 1;
+                        shift++;
+                    }
+                    
+                    size_t comma1 = instr.find(',');
+                    string dest = instr.substr(4, comma1 - 4);
+                    string src = instr.substr(comma1 + 2, lastComma - comma1 - 2);
+                    
+                    dest.erase(0, dest.find_first_not_of(" \t"));
+                    dest.erase(dest.find_last_not_of(" \t") + 1);
+                    src.erase(0, src.find_first_not_of(" \t"));
+                    src.erase(src.find_last_not_of(" \t") + 1);
+                    
+                    instruction_buffer[i] = "sra " + dest + ", " + src + ", " + to_string(shift);
+                    emit_comment("PEEPHOLE: Strength reduction div → sra");
+                    return true;
+                }
+            }
+        }
+    }
+    
+    return false;
+}
+bool MIPSGenerator::optimize_branch_chains() {
+    if (instruction_buffer.size() < 2) return false;
+    
+    // Pattern: beq $tx, $ty, L1 followed by L1: j L2
+    // Optimization: Replace with beq $tx, $ty, L2
+    
+    // This is more complex and requires tracking labels
+    // For now, leave as stub - implement only if you see this pattern frequently
+    
+    return false;
+}
 void MIPSGenerator::emit_comment(const string& comment) {
     output << "    # " << comment << "\n";
     // Do NOT emit comments to clean output (that's the point of clean output)
@@ -2869,7 +3181,3 @@ void MIPSGenerator::update_symbol_table_offsets() {
         update_global_offsets(pair.first.c_str(), pair.second);
     }
 }
-
-
-
-

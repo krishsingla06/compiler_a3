@@ -1,60 +1,17 @@
-<<<<<<< HEAD
 
 +=========================================================================================+
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 12
+Total Symbols: 5
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-<<<<<<< HEAD
-| #t1                 | #t1                             | int         | LOCAL    | -4      |
-| #t2                 | #t2                             | int         | LOCAL    | -12     |
-| #t3                 | #t3                             | void        | LOCAL    | -12     |
-| #t4                 | #t4                             | void        | LOCAL    | -12     |
-| global_var          | v_global_var_s1                 | int         | GLOBAL   | 0       |
-| local               | v_local_main_s2                 | int         | LOCAL    | -4      |
-| n                   | v_n_print_int_i_s2              | int         | PARAM#0  | 8       |
-| result              | v_result_main_s2                | int         | LOCAL    | -8      |
-| x                   | v_x_add_to_global_i_s2          | int         | PARAM#0  | 8       |
-=======
-| #t1                 | #t1                             | int*        | LOCAL    | -52     |
-| #t2                 | #t2                             | int         | LOCAL    | -56     |
-| #t3                 | #t3                             | int         | LOCAL    | -60     |
-| #t4                 | #t4                             | int         | LOCAL    | -64     |
-| #t5                 | #t5                             | int         | LOCAL    | -68     |
-| #t6                 | #t6                             | int         | LOCAL    | -72     |
-| #t7                 | #t7                             | void        | LOCAL    | -72     |
-| f                   | v_f_print_float_f_s2            | float       | PARAM#0  | 8       |
-| m                   | v_m_main_s2                     | int[10]     | LOCAL    | -40     |
-| n                   | v_n_print_int_i_s2              | int         | PARAM#0  | 8       |
-| x                   | v_x_main_s2                     | int*        | LOCAL    | -44     |
-| y                   | v_y_main_s2                     | int         | LOCAL    | -48     |
->>>>>>> 478ce81 (Arrays and pointers)
-+-----------------------------------------------------------------------------------------+
-
-=======
-
-+=========================================================================================+
-|                              GLOBAL SYMBOL TABLE                                        |
-+=========================================================================================+
-
-Total Symbols: 9
-
-+-----------------------------------------------------------------------------------------+
-| Name                | Mangled Name                    | Type        | Location | Offset  |
-+-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -12     |
+| #t1                 | #t1                             | int         | LOCAL    | -8      |
 | #t2                 | #t2                             | int         | LOCAL    | -16     |
-| #t3                 | #t3                             | int         | LOCAL    | -20     |
-| #t4                 | #t4                             | void        | LOCAL    | -20     |
-| #t5                 | #t5                             | void        | LOCAL    | -20     |
-| #t6                 | #t6                             | void        | LOCAL    | -20     |
-| dec                 | v_dec_main_s2                   | int         | LOCAL    | -8      |
-| n                   | v_n_print_int_i_s2              | int         | PARAM#0  | 8       |
 | x                   | v_x_main_s2                     | int         | LOCAL    | -4      |
+| y                   | v_y_main_s2                     | int         | LOCAL    | -12     |
+| z                   | v_z_main_s2                     | int         | LOCAL    | -20     |
 +-----------------------------------------------------------------------------------------+
 
->>>>>>> 106e7e2 (Next Use Algorithm Implemented)

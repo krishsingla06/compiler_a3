@@ -140,6 +140,22 @@ private:
     string ensure_in_float_register(const string& var);  // Ensure float var is in float register
     string load_operand_to_register(TACOperand* operand);  // Load operand (constant or variable) into register
     void print_descriptors();  // Debug: Print current state of descriptors
+    void emit_direct(const string& instruction);  // Emit without buffering (for prologue/epilogue)
+    // Peephole optimization support
+    vector<string> instruction_buffer;  // Buffer to hold instructions before emitting
+    int peephole_window_size;           // Size of optimization window (default: 3-5)
+    
+    // Peephole optimization methods
+    void flush_instruction_buffer();
+    void apply_peephole_optimizations();
+    bool optimize_redundant_moves();
+    bool optimize_load_store_pairs();
+    bool optimize_arithmetic_identity();
+    bool optimize_branch_chains();
+    bool optimize_strength_reduction();
+    
+    // Helper: emit instruction to buffer instead of directly
+    void emit_to_buffer(const string& instruction);
     
 public:
     MIPSGenerator(ostream& out, ostream* clean_out = nullptr);
