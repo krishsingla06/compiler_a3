@@ -651,7 +651,7 @@ void close_jump_table_file(){
     bool lookup_symbol(const string& name, SymbolEntry& entry);
     bool lookup_symbol_current_scope(const string& name);
     void check_variable_declaration(const string& name);
-    
+    void optimize_goto_chains();
     // Variable name mangling function
     string mangle_variable_name(const string& varName, int scopeLevel, const string& functionName = "", const string& signature = "");
     
@@ -7471,7 +7471,127 @@ void display_jump_tables() {
     //cout << "\n";
     jump_table_file << "\n\n\n\n";
 }
-
+void optimize_goto_chains() {
+    map<string, string> goto_chains;
+    
+    cout << "=== Starting Goto Chain Optimization ===\n";
+    
+    // Step 1: Find all label -> goto pairs
+    for (size_t i = 0; i < all_tac_instructions.size(); i++) {
+        TACInstruction* instr = all_tac_instructions[i];
+        
+        // Check if this instruction has a label AND is an unconditional goto
+        if (instr->label && instr->label->type == TAC_OPERAND_LABEL &&
+            instr->flag == 1 && instr->result && 
+            instr->result->type == TAC_OPERAND_LABEL) {
+            
+            string source_label = instr->label->value;
+            string target_label = instr->result->value;
+            goto_chains[source_label] = target_label;
+            
+            cout << "Found goto chain: L" << source_label << " -> L" << target_label << "\n";
+        }
+    }
+    
+    if (goto_chains.empty()) {
+        cout << "No goto chains found to optimize\n";
+        return;
+    }
+    
+    // Step 2: Resolve chains (follow transitive jumps)
+    cout << "Resolving transitive chains...\n";
+    for (auto& pair : goto_chains) {
+        string current = pair.second;
+        set<string> visited;
+        
+        // Follow the chain until we reach a non-goto label
+        while (goto_chains.find(current) != goto_chains.end() && 
+               visited.find(current) == visited.end()) {
+            visited.insert(current);
+            current = goto_chains[current];
+        }
+        
+        // Update to final target
+        if (pair.second != current) {
+            cout << "  Chain L" << pair.first << " -> L" << pair.second 
+                 << " optimized to -> L" << current << "\n";
+            pair.second = current;
+        }
+    }
+    
+    // Step 3: Replace all goto targets in all instructions
+    int replacements = 0;
+    for (auto* instr : all_tac_instructions) {
+        // Unconditional goto (flag == 1)
+        if (instr->flag == 1 && instr->result && 
+            instr->result->type == TAC_OPERAND_LABEL) {
+            string target = instr->result->value;
+            if (goto_chains.find(target) != goto_chains.end()) {
+                string new_target = goto_chains[target];
+                if (target != new_target) {
+                    cout << "Replacing goto L" << target << " with goto L" << new_target << "\n";
+                    instr->result->value = new_target;
+                    replacements++;
+                }
+            }
+        }
+        
+        // Conditional branch (flag == 2)
+        if (instr->flag == 2 && instr->result && 
+            instr->result->type == TAC_OPERAND_LABEL) {
+            string target = instr->result->value;
+            if (goto_chains.find(target) != goto_chains.end()) {
+                string new_target = goto_chains[target];
+                if (target != new_target) {
+                    cout << "Replacing conditional branch to L" << target 
+                         << " with L" << new_target << "\n";
+                    instr->result->value = new_target;
+                    replacements++;
+                }
+            }
+        }
+        
+        // Switch case jump table (flag == 4)
+        if (instr->flag == 4 && instr->arg1) {
+            int table_id = stoi(instr->arg1->value);
+            if (overall_jump_tables.find(table_id) != overall_jump_tables.end()) {
+                for (auto* target : overall_jump_tables[table_id]) {
+                    if (target && target->type == TAC_OPERAND_LABEL &&
+                        goto_chains.find(target->value) != goto_chains.end()) {
+                        string old_target = target->value;
+                        string new_target = goto_chains[old_target];
+                        if (old_target != new_target) {
+                            cout << "Replacing jump table entry L" << old_target 
+                                 << " with L" << new_target << "\n";
+                            target->value = new_target;
+                            replacements++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Step 4: Update label_map if used
+for (auto& entry : label_map) {
+    string label_name = entry.first;
+    TACOperand* label_operand = entry.second;
+    
+    if (label_operand && label_operand->type == TAC_OPERAND_LABEL) {
+        string label_value = label_operand->value;
+        if (goto_chains.find(label_value) != goto_chains.end()) {
+            string new_target = goto_chains[label_value];
+            if (label_value != new_target) {
+                cout << "Updating label_map[" << label_name << "] from L" 
+                     << label_value << " to L" << new_target << "\n";
+                label_operand->value = new_target;
+                replacements++;
+            }
+        }
+    }
+}
+    cout << "=== Goto Chain Optimization Complete ===\n";
+    cout << "Total replacements: " << replacements << "\n";
+}
 int main(int argc, char** argv) {
     
 	if (argc != 2) {
@@ -7526,7 +7646,21 @@ int main(int argc, char** argv) {
 	display_typedef_table();
 	// Display enum table
 	display_enum_table();
-	
+	cout << "\n\n=== Optimizing TAC ===\n";
+optimize_goto_chains();
+cout << "=== TAC Optimization Complete ===\n\n";
+// After optimization, rewrite the TAC file with optimized code
+cout << "Rewriting optimized TAC to file...\n";
+ofstream tac_file_optimized(output_tac_filename);
+if (tac_file_optimized.is_open()) {
+    for(auto instr : all_tac_instructions){
+        tac_file_optimized << get_TAC_instruction_string(instr) << "\n";
+    }
+    tac_file_optimized.close();
+    cout << "Optimized TAC written to " << output_tac_filename << "\n";
+} else {
+    cerr << "Failed to rewrite optimized TAC file\n";
+}
 	// Generate MIPS assembly code
 	cout << "\n\nGenerating MIPS assembly code...\n";
 	cout << "Total TAC instructions collected: " << all_tac_instructions.size() << "\n";
