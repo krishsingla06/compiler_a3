@@ -1,13 +1,22 @@
+void print_int(int i){return;}
 
-int main() {
-    int x = 5;
-    
-    // Simple chain: L1 -> L2 -> L3
-    goto L1;
-    
-    L1: goto L2;
-    L2: goto L3;
-    L3: x = x + 1;
-    
-    return x;
+void print_float(float f){return;}
+
+void print_char(char c){return;}
+
+void print_string(char* s){return;}
+
+char myfunc(char inp){
+    return inp;
+}
+
+int main(){
+    char arr[5];
+    arr[0] = 'a';
+    arr[1] = 'b';
+    arr[2] = 'c';  
+    arr[3] = 'd';
+    arr[4] = 'e';
+    print_char(arr[2]);
+    return 0;
 }

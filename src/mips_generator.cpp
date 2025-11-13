@@ -10,6 +10,7 @@
 extern "C" int get_variable_offset(const char* var_name);
 extern "C" const char* get_variable_type(const char* var_name);
 extern "C" bool is_variable_float(const char* var_name);
+extern "C" bool is_variable_char(const char* var_name);
 extern "C" int get_variable_pointer_level(const char* var_name);
 extern "C" bool is_variable_global(const char* var_name);
 extern "C" bool is_variable_static(const char* var_name);
@@ -1687,13 +1688,15 @@ void MIPSGenerator::translate_cast(TACInstruction* instr) {
     
     emit_comment("Cast: " + dest + " = (" + target_type + ")" + src);
     
-    // Determine if we're casting to/from float
+    // Determine source and destination types
     bool src_is_float = is_operand_float(instr->arg1);
+    bool src_is_char = is_operand_char(instr->arg1);
     bool dest_is_float = (target_type == "float");
+    bool dest_is_char = (target_type == "char");
     
+    // Case 1: Float to int/char conversion
     if (src_is_float && !dest_is_float) {
-        // Float to int conversion
-        emit_comment("DEBUG: Converting float to int");
+        emit_comment("DEBUG: Converting float to " + target_type);
         
         // Load source float into float register
         string src_freg = load_operand_to_register(instr->arg1);
@@ -1711,20 +1714,24 @@ void MIPSGenerator::translate_cast(TACInstruction* instr) {
         emit("mfc1 " + dest_reg + ", " + temp_freg);
         emit_comment("DEBUG: Moved integer result to " + dest_reg);
         
+        // If converting to char, mask to keep only lower 8 bits (optional, for consistency)
+        // Since char is 4 bytes in our implementation, no masking needed
+        
         // Update descriptors
         reg_desc.add_var_to_reg(dest_reg, dest);
         storage_desc.set_location(dest, dest_reg);
         reg_allocator.mark_dirty(dest_reg);
         
-        emit_comment("DEBUG: " + dest + " = (int)" + src + " in " + dest_reg);
+        emit_comment("DEBUG: " + dest + " = (" + target_type + ")" + src + " in " + dest_reg);
         
-    } else if (!src_is_float && dest_is_float) {
-        // Int to float conversion
-        emit_comment("DEBUG: Converting int to float");
+    } 
+    // Case 2: Int/char to float conversion
+    else if (!src_is_float && dest_is_float) {
+        emit_comment("DEBUG: Converting " + string(src_is_char ? "char" : "int") + " to float");
         
-        // Load source integer into CPU register
+        // Load source integer/char into CPU register
         string src_reg = load_operand_to_register(instr->arg1);
-        emit_comment("DEBUG: Source int in " + src_reg);
+        emit_comment("DEBUG: Source " + string(src_is_char ? "char" : "int") + " in " + src_reg);
         
         // Allocate float registers
         string temp_freg = reg_allocator.allocate_float_reg();
@@ -1745,8 +1752,9 @@ void MIPSGenerator::translate_cast(TACInstruction* instr) {
         
         emit_comment("DEBUG: " + dest + " = (float)" + src + " in " + dest_freg);
         
-    } else if (src_is_float && dest_is_float) {
-        // Float to float (no conversion needed, just assignment)
+    } 
+    // Case 3: Float to float (no conversion needed)
+    else if (src_is_float && dest_is_float) {
         emit_comment("DEBUG: Float to float (no conversion)");
         
         string src_freg = load_operand_to_register(instr->arg1);
@@ -1758,18 +1766,30 @@ void MIPSGenerator::translate_cast(TACInstruction* instr) {
         
         emit_comment("DEBUG: " + dest + " = " + src + " in " + src_freg);
         
-    } else {
-        // Int to int (or other types) - just load and assign
-        emit_comment("DEBUG: Integer cast (possibly truncation/extension)");
+    } 
+    // Case 4: Int to char, char to int, or char to char
+    else {
+        string src_type = src_is_char ? "char" : "int";
+        string dest_type = dest_is_char ? "char" : "int";
+        emit_comment("DEBUG: " + src_type + " to " + dest_type + " cast");
         
+        // Load source into register (works for both int and char since both are 4 bytes)
         string src_reg = load_operand_to_register(instr->arg1);
+        
+        // For char, we could optionally mask to 8 bits, but since char is 4 bytes, 
+        // we treat it the same as int
+        // If you want to enforce ASCII range (0-255), uncomment:
+        // if (dest_is_char) {
+        //     emit("andi " + src_reg + ", " + src_reg + ", 0xFF");
+        //     emit_comment("DEBUG: Masked to 8 bits for char");
+        // }
         
         // Update descriptors
         reg_desc.add_var_to_reg(src_reg, dest);
         storage_desc.set_location(dest, src_reg);
         reg_allocator.mark_dirty(src_reg);
         
-        emit_comment("DEBUG: " + dest + " = (cast)" + src + " in " + src_reg);
+        emit_comment("DEBUG: " + dest + " = (" + target_type + ")" + src + " in " + src_reg);
     }
 }
 
@@ -1952,6 +1972,7 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     // Check if it's a built-in (handle name mangling: print_int_i, print_int, etc.)
     bool is_print_int = (func_name.find("print_int") == 0);
     bool is_print_float = (func_name.find("print_float") == 0);
+    bool is_print_char = (func_name.find("print_char") == 0);
     bool is_print_string = (func_name.find("print_string") == 0);
     
     if (is_print_int) {
@@ -2009,6 +2030,35 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             emit("li $v0, 2");
             emit("syscall");
             emit_comment("=== End print_float ===");
+        }
+        return;
+    }
+    
+    if (is_print_char) {
+        emit_comment("=== Built-in print_char function ===");
+        
+        // Get the single parameter
+        if (!pending_params.empty()) {
+            string param = pending_params[pending_params.size() - 1];
+            pending_params.clear();
+            
+            // Load parameter into $a0
+            bool is_constant = !param.empty() && (isdigit(param[0]) || param[0] == '-');
+            if (is_constant) {
+                emit("li $a0, " + param);
+                emit_comment("DEBUG: Loaded char constant " + param + " into $a0");
+            } else {
+                string param_reg = ensure_in_register(param);
+                if (param_reg != "$a0") {
+                    emit("move $a0, " + param_reg);
+                    emit_comment("DEBUG: Moved char from " + param_reg + " to $a0");
+                }
+            }
+            
+            // Syscall 11: print character
+            emit("li $v0, 11");
+            emit("syscall");
+            emit_comment("=== End print_char ===");
         }
         return;
     }
@@ -2768,6 +2818,34 @@ bool MIPSGenerator::is_operand_float(TACOperand* operand) {
     
     return false;
 }
+
+bool MIPSGenerator::is_operand_char(TACOperand* operand) {
+    if (!operand) return false;
+    
+    // Check if it's a char literal (single character in quotes)
+    if (operand->type == TAC_OPERAND_CONSTANT) {
+        string val = operand->value;
+        // Char literals are typically single characters or small integers
+        // For now, we'll rely on variable type checking
+        return false;
+    }
+    
+    // Check if it's a variable or temp with char type
+    if (operand->type == TAC_OPERAND_IDENTIFIER || 
+        operand->type == TAC_OPERAND_TEMP_VAR) {
+        // Check pointer level first - if it's a pointer (level > 0), it's NOT a char
+        int ptr_level = get_variable_pointer_level(operand->value.c_str());
+        if (ptr_level > 0) {
+            return false;  // Pointers are stored in CPU registers
+        }
+        
+        // Only non-pointer variables can be chars
+        return is_variable_char(operand->value.c_str());
+    }
+    
+    return false;
+}
+
 
 void MIPSGenerator::emit(const string& instruction) {
     emit_to_buffer(instruction);

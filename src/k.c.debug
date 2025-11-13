@@ -1,33 +1,223 @@
 Error log initialized: k.c.errors
 Starting parser...
 Entering scope level 1
+Function declarator: print_int with 1 parameters
+Registered function: print_int as print_int_i returning void
+Function definition: print_int registered
+Entering scope level 2
+Allocated parameter i (param #0) at offset 8
+DEBUG: Variable i mangled as v_i_print_int_i_s2 (function: print_int, signature: i, scope: 2)
+Variable i mangled as v_i_print_int_i_s2 [PARAM]
+Declared variable: i (int) at line 1 in scope 2
+Inserted function parameter: i (int)
+Function print_int_i parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_int stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+Start rule: Global declaration has 3 TAC instructions
+TAC code written to k.tac
+Function declarator: print_float with 1 parameters
+Registered function: print_float as print_float_f returning void
+Function definition: print_float registered
+Entering scope level 2
+Allocated parameter f (param #0) at offset 8
+DEBUG: Variable f mangled as v_f_print_float_f_s2 (function: print_float, signature: f, scope: 2)
+Variable f mangled as v_f_print_float_f_s2 [PARAM]
+Declared variable: f (float) at line 3 in scope 2
+Inserted function parameter: f (float)
+Function print_float_f parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_float stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
+Function declarator: print_char with 1 parameters
+Registered function: print_char as print_char_c returning void
+Function definition: print_char registered
+Entering scope level 2
+Allocated parameter c (param #0) at offset 8
+DEBUG: Variable c mangled as v_c_print_char_c_s2 (function: print_char, signature: c, scope: 2)
+Variable c mangled as v_c_print_char_c_s2 [PARAM]
+Declared variable: c (char) at line 5 in scope 2
+Inserted function parameter: c (char)
+Function print_char_c parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_char stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
+Function declarator: print_string with 1 parameters
+Registered function: print_string as print_string_cp1 returning void
+Function definition: print_string registered
+Entering scope level 2
+Allocated parameter s (param #0) at offset 8
+DEBUG: Variable s mangled as v_s_print_string_cp1_s2 (function: print_string, signature: cp1, scope: 2)
+Variable s mangled as v_s_print_string_cp1_s2 [PARAM]
+Declared variable: s (char*) at line 7 in scope 2
+Inserted function parameter: s (char*)
+Function print_string_cp1 parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_string stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
+Function declarator: myfunc with 1 parameters
+Registered function: myfunc as myfunc_c returning char
+Function definition: myfunc registered
+Entering scope level 2
+Allocated parameter inp (param #0) at offset 8
+DEBUG: Variable inp mangled as v_inp_myfunc_c_s2 (function: myfunc, signature: c, scope: 2)
+Variable inp mangled as v_inp_myfunc_c_s2 [PARAM]
+Declared variable: inp (char) at line 9 in scope 2
+Inserted function parameter: inp (char)
+Function myfunc_c parameter space: 4 bytes
+Found variable: inp of type char
+Hello ji
+Compound statement with declarations and statements
+Function myfunc stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
 Function declarator: main with no parameters
 Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
-Integer literal: 5 (type: int)
-DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable x at offset -4 (size: 4 bytes)
-DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
-Variable x mangled as v_x_main_s2 [LOCAL]
-Declared variable: x (int) with initializer of type int at line 3 in scope 2
-Found variable: x of type int
-Found variable: x of type int
-Integer literal: 1 (type: int)
-Binary operation: int + intAllocated local variable #t1 at offset -8 (size: 4 bytes)
+DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable arr at offset -20 (size: 20 bytes)
+DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
+Variable arr mangled as v_arr_main_s2 [LOCAL]
+Declared variable: arr (char[5]) at line 20 in scope 2
+Found variable: arr of type char[5]
+Integer literal: 0 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t1 at offset -24 (size: 4 bytes)
 Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 10 in scope 2
- -> int (numeric arithmetic)
-Simple assignment from int to int
-Found variable: x of type int
+Declared variable: #t1 (int) at line 21 in scope 2
+Allocated local variable #t2 at offset -28 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 21 in scope 2
+Allocated local variable #t3 at offset -32 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 21 in scope 2
+Allocated local variable #t4 at offset -36 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (char) at line 21 in scope 2
+Char literal: 'a' (type: char)
+Krish
+Hello ji
+Found variable: arr of type char[5]
+Integer literal: 1 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t5 at offset -40 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 22 in scope 2
+Allocated local variable #t6 at offset -44 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 22 in scope 2
+Allocated local variable #t7 at offset -48 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 22 in scope 2
+Allocated local variable #t8 at offset -52 (size: 4 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (char) at line 22 in scope 2
+Char literal: 'b' (type: char)
+Krish
+Hello ji
+Found variable: arr of type char[5]
+Integer literal: 2 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t9 at offset -56 (size: 4 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (int) at line 23 in scope 2
+Allocated local variable #t10 at offset -60 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 23 in scope 2
+Allocated local variable #t11 at offset -64 (size: 4 bytes)
+Variable #t11 mangled as #t11 [LOCAL]
+Declared variable: #t11 (int) at line 23 in scope 2
+Allocated local variable #t12 at offset -68 (size: 4 bytes)
+Variable #t12 mangled as #t12 [LOCAL]
+Declared variable: #t12 (char) at line 23 in scope 2
+Char literal: 'c' (type: char)
+Krish
+Hello ji
+Found variable: arr of type char[5]
+Integer literal: 3 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t13 at offset -72 (size: 4 bytes)
+Variable #t13 mangled as #t13 [LOCAL]
+Declared variable: #t13 (int) at line 24 in scope 2
+Allocated local variable #t14 at offset -76 (size: 4 bytes)
+Variable #t14 mangled as #t14 [LOCAL]
+Declared variable: #t14 (int) at line 24 in scope 2
+Allocated local variable #t15 at offset -80 (size: 4 bytes)
+Variable #t15 mangled as #t15 [LOCAL]
+Declared variable: #t15 (int) at line 24 in scope 2
+Allocated local variable #t16 at offset -84 (size: 4 bytes)
+Variable #t16 mangled as #t16 [LOCAL]
+Declared variable: #t16 (char) at line 24 in scope 2
+Char literal: 'd' (type: char)
+Krish
+Hello ji
+Found variable: arr of type char[5]
+Integer literal: 4 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t17 at offset -88 (size: 4 bytes)
+Variable #t17 mangled as #t17 [LOCAL]
+Declared variable: #t17 (int) at line 25 in scope 2
+Allocated local variable #t18 at offset -92 (size: 4 bytes)
+Variable #t18 mangled as #t18 [LOCAL]
+Declared variable: #t18 (int) at line 25 in scope 2
+Allocated local variable #t19 at offset -96 (size: 4 bytes)
+Variable #t19 mangled as #t19 [LOCAL]
+Declared variable: #t19 (int) at line 25 in scope 2
+Allocated local variable #t20 at offset -100 (size: 4 bytes)
+Variable #t20 mangled as #t20 [LOCAL]
+Declared variable: #t20 (char) at line 25 in scope 2
+Char literal: 'e' (type: char)
+Krish
+Hello ji
+Found function name: print_char
+Found variable: arr of type char[5]
+Integer literal: 2 (type: int)
+Handling array subscript for base type: char[5]
+Resulting type after subscript: char
+Allocated local variable #t21 at offset -104 (size: 4 bytes)
+Variable #t21 mangled as #t21 [LOCAL]
+Declared variable: #t21 (int) at line 26 in scope 2
+Allocated local variable #t22 at offset -108 (size: 4 bytes)
+Variable #t22 mangled as #t22 [LOCAL]
+Declared variable: #t22 (int) at line 26 in scope 2
+Allocated local variable #t23 at offset -112 (size: 4 bytes)
+Variable #t23 mangled as #t23 [LOCAL]
+Declared variable: #t23 (int) at line 26 in scope 2
+Allocated local variable #t24 at offset -116 (size: 4 bytes)
+Variable #t24 mangled as #t24 [LOCAL]
+Declared variable: #t24 (char) at line 26 in scope 2
+Found exact function match: print_char_c
+Hello ji
+Allocated local variable #t25 at offset -116 (size: 0 bytes)
+Variable #t25 mangled as #t25 [LOCAL]
+Declared variable: #t25 (void) at line 26 in scope 2
+Integer literal: 0 (type: int)
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 8 bytes
+  - Local variables: 116 bytes
   - Parameters: 0 bytes
-  - Total: 16 bytes
-Start rule: Global declaration has 9 TAC instructions
-TAC code written to k.tac
+  - Total: 124 bytes
+TAC code appended to k.tac
 yyparse() returned 0
 
 +-----------------------------------------------------------------------------------------+
@@ -43,16 +233,7 @@ No enums defined.
 
 === Optimizing TAC ===
 === Starting Goto Chain Optimization ===
-Found goto chain: L3 -> L4
-Found goto chain: L4 -> L5
-Found goto chain: L5 -> L6
-Resolving transitive chains...
-  Chain L3 -> L4 optimized to -> L6
-  Chain L4 -> L5 optimized to -> L6
-Replacing goto L4 with goto L6
-Replacing goto L5 with goto L6
-=== Goto Chain Optimization Complete ===
-Total replacements: 2
+No goto chains found to optimize
 === TAC Optimization Complete ===
 
 Rewriting optimized TAC to file...
@@ -60,24 +241,122 @@ Optimized TAC written to k.tac
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 9
-hihi Variable v_x_main_s2 type: int
+Total TAC instructions collected: 49
+hihi Variable v_i_print_int_i_s2 type: int
 Returning 0
-Getting offset for variable: v_x_main_s2
-hihi Variable v_x_main_s2 type: int
+hihi Variable v_f_print_float_f_s2 type: float
+Returning 1
+hihi Variable v_c_print_char_c_s2 type: char
 Returning 0
-hihi Variable v_x_main_s2 type: int
+hihi Variable v_s_print_string_cp1_s2 type: char*
 Returning 0
-Getting offset for variable: v_x_main_s2
-hihi Variable v_x_main_s2 type: int
+hihi Variable v_inp_myfunc_c_s2 type: char
+Returning 0
+hihi Variable v_inp_myfunc_c_s2 type: char
+Returning 0
+Getting offset for variable: v_arr_main_s2
+hihi Variable #t2 type: int
 Returning 0
 hihi Variable #t1 type: int
 Returning 0
-Getting offset for variable: v_x_main_s2
-Getting offset for variable: #t1
-Getting offset for variable: v_x_main_s2
-hihi Variable v_x_main_s2 type: int
+hihi Variable #t2 type: int
 Returning 0
+hihi Variable #t1 type: int
+Returning 0
+hihi Variable #t4 type: char
+Returning 0
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t4
+Getting offset for variable: v_arr_main_s2
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t8 type: char
+Returning 0
+hihi Variable #t7 type: int
+Returning 0
+Getting offset for variable: #t8
+Getting offset for variable: #t2
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t1
+hihi Variable #t10 type: int
+Returning 0
+hihi Variable #t9 type: int
+Returning 0
+hihi Variable #t10 type: int
+Returning 0
+hihi Variable #t9 type: int
+Returning 0
+Getting offset for variable: #t9
+hihi Variable #t12 type: char
+Returning 0
+hihi Variable #t11 type: int
+Returning 0
+Getting offset for variable: #t12
+Getting offset for variable: #t11
+Getting offset for variable: #t12
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t3
+hihi Variable #t14 type: int
+Returning 0
+hihi Variable #t13 type: int
+Returning 0
+hihi Variable #t14 type: int
+Returning 0
+hihi Variable #t13 type: int
+Returning 0
+Getting offset for variable: #t13
+hihi Variable #t16 type: char
+Returning 0
+hihi Variable #t15 type: int
+Returning 0
+Getting offset for variable: #t16
+Getting offset for variable: #t15
+Getting offset for variable: #t16
+Getting offset for variable: v_arr_main_s2
+hihi Variable #t18 type: int
+Returning 0
+hihi Variable #t17 type: int
+Returning 0
+hihi Variable #t18 type: int
+Returning 0
+hihi Variable #t17 type: int
+Returning 0
+Getting offset for variable: #t17
+hihi Variable #t20 type: char
+Returning 0
+hihi Variable #t19 type: int
+Returning 0
+Getting offset for variable: #t20
+Getting offset for variable: #t19
+Getting offset for variable: #t20
+Getting offset for variable: v_arr_main_s2
+hihi Variable #t22 type: int
+Returning 0
+hihi Variable #t21 type: int
+Returning 0
+hihi Variable #t22 type: int
+Returning 0
+hihi Variable #t21 type: int
+Returning 0
+Getting offset for variable: #t21
+Getting offset for variable: #t23
+Getting offset for variable: #t6
+Getting offset for variable: #t10
+Getting offset for variable: #t14
+Getting offset for variable: #t18
+Getting offset for variable: #t22
+Getting offset for variable: #t24
+Getting offset for variable: #t5
+Getting offset for variable: #t7
+Getting offset for variable: #t8
+Getting offset for variable: #t24
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

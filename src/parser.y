@@ -697,8 +697,8 @@ void close_jump_table_file(){
     }
 
     string char_to_string_conversion(char value){
-        // Convert char to string representation
-        return string(1, value);
+        // Convert char to its ASCII value as a string (e.g., 'A' -> "65")
+        return to_string((int)(unsigned char)value);
     }
 
     int getSize(TypeInfo t){
@@ -718,7 +718,7 @@ void close_jump_table_file(){
             base_size = 4;
         }
         else if(t.baseType == "char"){
-            base_size = 1;
+            base_size = 4;  // char is 4 bytes (same as int for easy conversions)
         }
         else if(t.baseType == "float"){
             base_size = 4;
@@ -7026,6 +7026,19 @@ extern "C" bool is_variable_float(const char* var_name) {
         cout << "hihi Variable " << name << " type: " << it->second.type.toString() << "\n";
         cout<<"Returning "<< (it->second.type.baseType == "float" && it->second.type.pointerLevel == 0) << "\n";
         return (it->second.type.baseType == "float" && it->second.type.pointerLevel == 0);
+    }
+    
+    return false;
+}
+
+// Check if a variable is a char type (for MIPS generation)
+extern "C" bool is_variable_char(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        return (it->second.type.baseType == "char" && it->second.type.pointerLevel == 0);
     }
     
     return false;

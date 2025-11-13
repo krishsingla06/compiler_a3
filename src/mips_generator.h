@@ -120,6 +120,7 @@ private:
     string get_operand_string(TACOperand* operand);
     bool is_float_type(const string& type_name);  // Simplified - takes string instead of TypeInfo
     bool is_operand_float(TACOperand* operand);  // Check if operand is float type
+    bool is_operand_char(TACOperand* operand);   // Check if operand is char type
     
     // Global/static variable helpers
     bool is_global_or_static(const string& var_name);

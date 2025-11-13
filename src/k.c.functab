@@ -7,8 +7,58 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 8 bytes
+|     - Local var space: 116 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 16 bytes
-|   Declared at line: 2
+|     - Total frame size: 124 bytes
+|   Declared at line: 13
++-----------------------------------------------------------------------------------------+
+| Function: myfunc (myfunc_c)
+|   Return type: char
+|   Parameters: char 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 9
++-----------------------------------------------------------------------------------------+
+| Function: print_char (print_char_c)
+|   Return type: void
+|   Parameters: char 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 5
++-----------------------------------------------------------------------------------------+
+| Function: print_float (print_float_f)
+|   Return type: void
+|   Parameters: float 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 3
++-----------------------------------------------------------------------------------------+
+| Function: print_int (print_int_i)
+|   Return type: void
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 1
++-----------------------------------------------------------------------------------------+
+| Function: print_string (print_string_cp1)
+|   Return type: void
+|   Parameters: char* 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 7
 +-----------------------------------------------------------------------------------------+
