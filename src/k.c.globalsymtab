@@ -3,41 +3,18 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 31
+Total Symbols: 8
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -24     |
-| #t10                | #t10                            | int         | LOCAL    | -60     |
-| #t11                | #t11                            | int         | LOCAL    | -64     |
-| #t12                | #t12                            | char        | LOCAL    | -68     |
-| #t13                | #t13                            | int         | LOCAL    | -72     |
-| #t14                | #t14                            | int         | LOCAL    | -76     |
-| #t15                | #t15                            | int         | LOCAL    | -80     |
-| #t16                | #t16                            | char        | LOCAL    | -84     |
-| #t17                | #t17                            | int         | LOCAL    | -88     |
-| #t18                | #t18                            | int         | LOCAL    | -92     |
-| #t19                | #t19                            | int         | LOCAL    | -96     |
-| #t2                 | #t2                             | int         | LOCAL    | -28     |
-| #t20                | #t20                            | char        | LOCAL    | -100    |
-| #t21                | #t21                            | int         | LOCAL    | -104    |
-| #t22                | #t22                            | int         | LOCAL    | -108    |
-| #t23                | #t23                            | int         | LOCAL    | -112    |
-| #t24                | #t24                            | char        | LOCAL    | -116    |
-| #t25                | #t25                            | void        | LOCAL    | -116    |
-| #t3                 | #t3                             | int         | LOCAL    | -32     |
-| #t4                 | #t4                             | char        | LOCAL    | -36     |
-| #t5                 | #t5                             | int         | LOCAL    | -40     |
-| #t6                 | #t6                             | int         | LOCAL    | -44     |
-| #t7                 | #t7                             | int         | LOCAL    | -48     |
-| #t8                 | #t8                             | char        | LOCAL    | -52     |
-| #t9                 | #t9                             | int         | LOCAL    | -56     |
-| arr                 | v_arr_main_s2                   | char[5]     | LOCAL    | -20     |
+| #t1                 | #t1                             | int         | LOCAL    | -8      |
+| #t2                 | #t2                             | int         | LOCAL    | -12     |
+| #t3                 | #t3                             | char        | LOCAL    | -16     |
+| #t4                 | #t4                             | void        | LOCAL    | -16     |
 | c                   | v_c_print_char_c_s2             | char        | PARAM#0  | 8       |
-| f                   | v_f_print_float_f_s2            | float       | PARAM#0  | 8       |
+| format              | v_format_printf_cp1_s2          | char*       | PARAM#0  | 8       |
 | i                   | v_i_print_int_i_s2              | int         | PARAM#0  | 8       |
-| inp                 | v_inp_myfunc_c_s2               | char        | PARAM#0  | 8       |
-| s                   | v_s_print_string_cp1_s2         | char*       | PARAM#0  | 8       |
+| str                 | v_str_main_s2                   | char*       | LOCAL    | -4      |
 +-----------------------------------------------------------------------------------------+
 

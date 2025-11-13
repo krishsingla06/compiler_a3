@@ -443,6 +443,17 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     // flush_instruction_buffer();
     
     emit_comment("End of code");
+    
+    // Emit runtime library functions that were used
+    if (runtime_lib.has_used_functions()) {
+        emit_comment("======================================");
+        emit_comment("  Including Runtime Library Functions");
+        emit_comment("======================================");
+        runtime_lib.emit_library_code(output);
+        if (clean_output) {
+            runtime_lib.emit_library_code(*clean_output);
+        }
+    }
 }
 
 void MIPSGenerator::collect_data_section_items(const vector<TACInstruction*>& tac_instructions) {
@@ -1085,6 +1096,28 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
         // Generate operation
         emit(op_name + " " + dest_reg + ", " + reg1 + ", " + reg2);
         
+        // Free constant registers after use (they won't be needed again)
+        if (instr->arg1->type == TAC_OPERAND_CONSTANT || 
+            (instr->arg1->value.length() > 0 && isdigit(instr->arg1->value[0]))) {
+            set<string> vars1 = reg_desc.get_vars_in_reg(reg1);
+            for (const string& v : vars1) {
+                if (v.find("<CONST_") == 0) {
+                    reg_desc.remove_var_from_reg(reg1, v);
+                    storage_desc.remove_location(v, reg1);
+                }
+            }
+        }
+        if (instr->arg2->type == TAC_OPERAND_CONSTANT || 
+            (instr->arg2->value.length() > 0 && isdigit(instr->arg2->value[0]))) {
+            set<string> vars2 = reg_desc.get_vars_in_reg(reg2);
+            for (const string& v : vars2) {
+                if (v.find("<CONST_") == 0) {
+                    reg_desc.remove_var_from_reg(reg2, v);
+                    storage_desc.remove_location(v, reg2);
+                }
+            }
+        }
+        
         // Update descriptors - keep result in register ONLY
         reg_desc.add_var_to_reg(dest_reg, dest);
         storage_desc.set_location(dest, dest_reg);
@@ -1606,9 +1639,19 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
         spill_register(dest_reg);
     }
     
-    // Load value from address in ptr_reg: dest_reg = *ptr_reg
-    emit("lw " + dest_reg + ", 0(" + ptr_reg + ")");
-    emit_comment("DEBUG: Dereferenced *" + ptr + " into " + dest_reg);
+    // Check if we're dereferencing a char* (for string literals)
+    // String literals store 1-byte chars, so use lb (load byte) instead of lw (load word)
+    bool is_char_ptr = is_variable_char(dest.c_str());
+    
+    if (is_char_ptr) {
+        // Load byte (signed) for char* dereferencing
+        emit("lb " + dest_reg + ", 0(" + ptr_reg + ")");
+        emit_comment("DEBUG: Dereferenced *" + ptr + " (char*) into " + dest_reg + " using lb");
+    } else {
+        // Load value from address in ptr_reg: dest_reg = *ptr_reg
+        emit("lw " + dest_reg + ", 0(" + ptr_reg + ")");
+        emit_comment("DEBUG: Dereferenced *" + ptr + " into " + dest_reg);
+    }
     
     // Update descriptors: dest is now in dest_reg and is dirty
     reg_desc.add_var_to_reg(dest_reg, dest);
@@ -1962,21 +2005,60 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         reg_desc.clear_reg(reg);
     }
     
+    // Spill float registers $f0-$f11 (caller-saved float registers)
+    // Note: In MIPS, $f12 is used for float return value and first float arg
+    for (int i = 0; i <= 11; i++) {
+        string freg = "$f" + to_string(i);
+        
+        // Get ALL variable(s) stored in this float register
+        set<string> vars = reg_desc.get_vars_in_reg(freg);
+        
+        if (!vars.empty()) {
+            for (const string& var : vars) {
+                // Skip constants and invalid variables
+                if (var == "<CONSTANT>" || var.empty()) {
+                    continue;
+                }
+                
+                // Get offset
+                int offset = get_offset(var);
+                
+                // Don't spill to 0($fp)
+                if (offset == 0) {
+                    continue;
+                }
+                
+                // Spill float to memory
+                emit("swc1 " + freg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Spilled float " + var + " from " + freg + " to " + to_string(offset) + "($fp)");
+                
+                // Update storage descriptor: variable is now ONLY in memory
+                storage_desc.set_location(var, "memory:" + to_string(offset) + "($fp)");
+            }
+        }
+        
+        // Clear the float register descriptor (will be clobbered by call)
+        reg_desc.clear_reg(freg);
+    }
+    
     // NOTE: $t0-$t9 are also caller-saved (will be clobbered by callee)
     // We've already spilled them above, but make sure ALL are marked as invalid after the call
     // This ensures no stale register contents are used after the function returns
     
     emit_comment("=== End Caller-Save ===");
     
-    // ===== SPECIAL HANDLING FOR BUILT-IN FUNCTIONS =====
-    // Check if it's a built-in (handle name mangling: print_int_i, print_int, etc.)
+    // ===== SPECIAL HANDLING FOR LIBRARY FUNCTIONS =====
+    // Check if it's a library function
     bool is_print_int = (func_name.find("print_int") == 0);
     bool is_print_float = (func_name.find("print_float") == 0);
     bool is_print_char = (func_name.find("print_char") == 0);
     bool is_print_string = (func_name.find("print_string") == 0);
+    bool is_print_newline = (func_name.find("print_newline") == 0);
+    bool is_printf = (func_name.find("printf") == 0);
     
     if (is_print_int) {
-        emit_comment("=== Built-in print_int function ===");
+        emit_comment("=== Call library function: print_int ===");
+        runtime_lib.mark_function_used("print_int");
         
         // Get the single parameter
         if (!pending_params.empty()) {
@@ -1994,16 +2076,16 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                 }
             }
             
-            // Syscall 1: print integer
-            emit("li $v0, 1");
-            emit("syscall");
+            // Call library function
+            emit("jal __lib_print_int");
             emit_comment("=== End print_int ===");
         }
         return;
     }
     
     if (is_print_float) {
-        emit_comment("=== Built-in print_float function ===");
+        emit_comment("=== Call library function: print_float ===");
+        runtime_lib.mark_function_used("print_float");
         
         // Get the single parameter
         if (!pending_params.empty()) {
@@ -2026,16 +2108,16 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                 }
             }
             
-            // Syscall 2: print float
-            emit("li $v0, 2");
-            emit("syscall");
+            // Call library function
+            emit("jal __lib_print_float");
             emit_comment("=== End print_float ===");
         }
         return;
     }
     
     if (is_print_char) {
-        emit_comment("=== Built-in print_char function ===");
+        emit_comment("=== Call library function: print_char ===");
+        runtime_lib.mark_function_used("print_char");
         
         // Get the single parameter
         if (!pending_params.empty()) {
@@ -2055,16 +2137,16 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                 }
             }
             
-            // Syscall 11: print character
-            emit("li $v0, 11");
-            emit("syscall");
+            // Call library function
+            emit("jal __lib_print_char");
             emit_comment("=== End print_char ===");
         }
         return;
     }
     
     if (is_print_string) {
-        emit_comment("=== Built-in print_string function ===");
+        emit_comment("=== Call library function: print_string ===");
+        runtime_lib.mark_function_used("print_string");
         
         // Get the single parameter (string address)
         if (!pending_params.empty()) {
@@ -2077,27 +2159,121 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                 emit("move $a0, " + param_reg);
             }
             
-            // Syscall 4: print string
-            emit("li $v0, 4");
-            emit("syscall");
+            // Call library function
+            emit("jal __lib_print_string");
             emit_comment("=== End print_string ===");
         }
         return;
     }
     
-    if (is_print_string || func_name.find("print_newline") == 0) {
-        emit_comment("=== Built-in print_newline function ===");
+    if (is_print_newline) {
+        emit_comment("=== Call library function: print_newline ===");
+        runtime_lib.mark_function_used("print_newline");
         pending_params.clear();
         
-        // Print a newline character (ASCII 10)
-        emit("li $a0, 10");      // ASCII code for newline
-        emit("li $v0, 11");      // Syscall 11: print character
-        emit("syscall");
+        // Call library function
+        emit("jal __lib_print_newline");
         emit_comment("=== End print_newline ===");
         return;
     }
     
     // ===== SPECIAL HANDLING FOR PRINTF =====
+    if (is_printf) {
+        emit_comment("=== Call library function: printf (variadic) ===");
+        runtime_lib.mark_function_used("printf");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: printf called with no format string");
+            return;
+        }
+        
+        // Printf uses a special calling convention:
+        // - Format string in $a0
+        // - Variadic arguments on stack
+        // Parameters are in forward order in pending_params (first param at index 0)
+        int num_args = pending_params.size() - 1;
+        
+        emit_comment("Printf: format string + " + to_string(num_args) + " arguments");
+        
+        // Load format string into $a0 (first argument, at index 0)
+        // Format string is ALWAYS a pointer (integer), never a float
+        string format_param = pending_params[0];
+        emit_comment("DEBUG: format_param = '" + format_param + "', first char = " + (format_param.empty() ? "EMPTY" : to_string((int)format_param[0])));
+        
+        // Check if it's a string literal
+        if (!format_param.empty() && format_param[0] == '"') {
+            // It's a string literal - add it and load its address
+            string str_label = add_string_literal(format_param);
+            emit("la $a0, " + str_label);
+            emit_comment("Load format string literal address");
+        } else {
+            // It's a variable containing a string address
+            // Load from memory first (in case it's been spilled)
+            emit_comment("DEBUG: format_param is a variable, not a string literal");
+            int fmt_offset = get_offset(format_param);
+            if (fmt_offset != 0) {
+                emit("lw $a0, " + to_string(fmt_offset) + "($fp)");
+                emit_comment("Load format string address from memory at " + to_string(fmt_offset) + "($fp)");
+            } else {
+                // Try to get it from register
+                string fmt_reg = ensure_in_register(format_param);
+                // Make sure it's not a float register
+                if (fmt_reg.find("$f") == 0) {
+                    emit_comment("ERROR: Format string in float register!");
+                } else if (fmt_reg != "$a0") {
+                    emit("move $a0, " + fmt_reg);
+                }
+            }
+        }
+        
+        // Store variadic arguments on stack if present
+        // The library function expects them at specific offsets from $sp
+        // Arguments are in pending_params: [0]=format, [1]=arg1, [2]=arg2, ...
+        // We need to store args 1..n on the stack
+        
+        if (num_args > 0) {
+            emit_comment("Store variadic arguments on stack");
+            // Allocate stack space
+            emit("addiu $sp, $sp, " + to_string(-4 * num_args));
+            
+            // Store each argument (skip index 0 which is the format string)
+            for (int i = 0; i < num_args; i++) {
+                string arg = pending_params[i + 1];  // +1 to skip format string
+                emit_comment("Arg " + to_string(i) + ": " + arg);
+                
+                // Check if it's a float
+                bool is_float_param = is_variable_float(arg.c_str()) || 
+                                     (arg.find('.') != string::npos);
+                
+                if (is_float_param) {
+                    string arg_freg = ensure_in_float_register(arg);
+                    emit("swc1 " + arg_freg + ", " + to_string(i * 4) + "($sp)");
+                } else {
+                    bool is_constant = !arg.empty() && (isdigit(arg[0]) || arg[0] == '-');
+                    if (is_constant) {
+                        emit("li $t0, " + arg);
+                        emit("sw $t0, " + to_string(i * 4) + "($sp)");
+                    } else {
+                        string arg_reg = ensure_in_register(arg);
+                        emit("sw " + arg_reg + ", " + to_string(i * 4) + "($sp)");
+                    }
+                }
+            }
+        }
+        
+        // Call library function
+        emit("jal __lib_printf");
+        
+        // Restore stack if we allocated space
+        if (num_args > 0) {
+            emit("addiu $sp, $sp, " + to_string(4 * num_args));
+            emit_comment("Deallocate variadic args space");
+        }
+        
+        emit_comment("=== End printf ===");
+        pending_params.clear();
+        return;
+    }
     if (func_name == "printf") {
         emit_comment("=== Built-in printf function ===");
         
@@ -2531,13 +2707,15 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
             return freg;
         } else {
             // Integer constant
-            string reg = allocate_register_with_spilling();
+            string reg = allocate_register_for_constant();
             emit("li " + reg + ", " + value);
             emit_comment("DEBUG: Loaded constant " + value + " into " + reg);
             
-            // Mark register as containing a constant (so we don't spill it)
-            reg_desc.add_var_to_reg(reg, "<CONSTANT>");
-            storage_desc.set_location("<CONSTANT>", reg);
+            // Track with a unique key so the register won't be reused during this expression
+            // Use a unique identifier based on instruction index to avoid collisions
+            string unique_const_key = "<CONST_" + to_string(current_instruction_index) + "_" + value + ">";
+            reg_desc.add_var_to_reg(reg, unique_const_key);
+            storage_desc.set_location(unique_const_key, reg);
             // Don't mark as dirty - constants don't need to be written back
             
             return reg;
@@ -2587,13 +2765,14 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
         return freg;
     } else if (is_numeric && value.length() > start) {
         // Integer literal
-        string reg = allocate_register_with_spilling();
+        string reg = allocate_register_for_constant();
         emit("li " + reg + ", " + value);
         emit_comment("DEBUG: Loaded numeric literal " + value + " into " + reg);
         
-        // Mark register as containing a constant
-        reg_desc.add_var_to_reg(reg, "<CONSTANT>");
-        storage_desc.set_location("<CONSTANT>", reg);
+        // Track with a unique key so the register won't be reused during this expression
+        string unique_const_key = "<CONST_" + to_string(current_instruction_index) + "_" + value + ">";
+        reg_desc.add_var_to_reg(reg, unique_const_key);
+        storage_desc.set_location(unique_const_key, reg);
         
         return reg;
     }
@@ -2631,7 +2810,9 @@ int MIPSGenerator::get_next_use_distance(const string& var) {
 
 string MIPSGenerator::select_victim_by_next_use() {
     // Select the register whose variable has the farthest next use
+    // Avoid registers with constants from the current instruction
     set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    string current_const_prefix = "<CONST_" + to_string(current_instruction_index) + "_";
     
     string victim_reg;
     int farthest_next_use = -1;
@@ -2641,6 +2822,20 @@ string MIPSGenerator::select_victim_by_next_use() {
         if (vars.empty()) {
             // Found a free register - just return it
             return reg;
+        }
+        
+        // Check if this register has a constant from the current instruction
+        bool has_current_const = false;
+        for (const string& var : vars) {
+            if (var.find(current_const_prefix) == 0) {
+                has_current_const = true;
+                break;
+            }
+        }
+        
+        // Skip registers with constants from the current instruction
+        if (has_current_const) {
+            continue;
         }
         
         // For each variable in this register, find its next use
@@ -2654,6 +2849,50 @@ string MIPSGenerator::select_victim_by_next_use() {
     }
     
     return victim_reg;
+}
+
+string MIPSGenerator::allocate_register_for_constant() {
+    // Special allocator for constants - finds an available register
+    // Prefers truly empty registers, then those with only old constants
+    set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
+    
+    // First pass: look for truly empty registers
+    for (const string& reg : all_temp_regs) {
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        if (vars.empty()) {
+            return reg;
+        }
+    }
+    
+    // Second pass: look for registers with only constants from DIFFERENT instructions
+    for (const string& reg : all_temp_regs) {
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        bool can_reuse = true;
+        for (const string& v : vars) {
+            // Check if it's a constant from the CURRENT instruction - if so, skip this register
+            string current_prefix = "<CONST_" + to_string(current_instruction_index) + "_";
+            if (v.find(current_prefix) == 0) {
+                can_reuse = false;
+                break;
+            }
+            // If it's not a constant at all, can't reuse
+            if (v.find("<CONST_") != 0 && v != "<STRING_ADDR>") {
+                can_reuse = false;
+                break;
+            }
+        }
+        if (can_reuse) {
+            // Clear out the old constants and return this register
+            for (const string& v : vars) {
+                reg_desc.remove_var_from_reg(reg, v);
+                storage_desc.remove_location(v, reg);
+            }
+            return reg;
+        }
+    }
+    
+    // No suitable registers - use the standard allocator with spilling
+    return allocate_register_with_spilling();
 }
 
 string MIPSGenerator::allocate_register_with_spilling() {
@@ -2677,7 +2916,7 @@ string victim_reg = select_victim_by_next_use();  // REPLACE WITH THIS
     set<string> vars = reg_desc.get_vars_in_reg(victim_reg);
     for (const string& var : vars) {
         // Skip constants - they don't need to be spilled
-        if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+        if (var.find("<CONST_") == 0 || var == "<STRING_ADDR>") {
             emit_comment("DEBUG: Skipping spill of constant in " + victim_reg);
             continue;
         }
@@ -2715,7 +2954,7 @@ void MIPSGenerator::spill_register(const string& reg) {
     
     for (const string& var : vars) {
         // Skip constants - they don't need to be spilled
-        if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+        if (var.find("<CONST_") == 0 || var == "<STRING_ADDR>") {
             continue;
         }
         

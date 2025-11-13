@@ -1,156 +1,18 @@
-
-
-
-
+# MIPS Runtime Library
+# Standard library functions for the compiler
 
 .data
-str_1: .asciiz "%c "
-str_0: .asciiz "Hello World"
-
+    # Library internal data (if needed)
 
 .text
-.globl main
-
-
-I1:
-printf_cp1_variadic:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
-
-I2:
-
-
-
-I3:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I4:
-print_char_c:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
-
-I5:
-
-
-
-I6:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I7:
-print_int_i:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
-
-I8:
-
-
-
-I9:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I10:
-print_newline:
-    addiu $sp, $sp, -48
-    sw $ra, 44($sp)
-    sw $fp, 40($sp)
-    addiu $fp, $sp, 40
-
-I11:
-
-
-
-I12:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I13:
-main:
-    addiu $sp, $sp, -64
-    sw $ra, 60($sp)
-    sw $fp, 56($sp)
-    addiu $fp, $sp, 56
-
-I14:
-    la $t0, str_0
-
-I15:
-    li $t1, 1
-    li $t2, 1
-    move $t3, $t1
-
-I16:
-    add $t1, $t0, $t3
-
-I17:
-    sw $t0, -4($fp)
-    lb $t0, 0($t1)
-
-I18:
-
-I19:
-
-I20:
-    sw $t0, -16($fp)
-    sw $t1, -12($fp)
-    sw $t3, -8($fp)
-    la $a0, str_1
-    addiu $sp, $sp, -4
-    lw $t0, -16($fp)
-    sw $t0, 0($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 4
-
-I21:
-    li $v0, 0
-
-
-
-I22:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
 
 #==============================================================================
-# RUNTIME LIBRARY FUNCTIONS
-# The following functions are imported from the runtime library
-#==============================================================================
-
+# Function: printf
+# Description: Formatted output function (variadic)
+# Arguments: 
+#   - $a0 = format string address
+#   - Variadic arguments on stack (starting at 0($sp) after call)
+# Supported format specifiers: %d, %f, %c, %s, %%
 #==============================================================================
 __lib_printf:
     # Save registers
@@ -279,8 +141,53 @@ __lib_printf_end:
     
     jr $ra
 
+#==============================================================================
+# Function: print_int
+# Description: Print integer value
+# Arguments: $a0 = integer to print
+#==============================================================================
+__lib_print_int:
+    li $v0, 1               # Syscall 1: print integer
+    syscall
+    jr $ra
 
 #==============================================================================
-# END OF RUNTIME LIBRARY
+# Function: print_float
+# Description: Print float value
+# Arguments: $f12 = float to print
 #==============================================================================
+__lib_print_float:
+    li $v0, 2               # Syscall 2: print float
+    syscall
+    jr $ra
 
+#==============================================================================
+# Function: print_char
+# Description: Print character
+# Arguments: $a0 = character to print (as integer)
+#==============================================================================
+__lib_print_char:
+    li $v0, 11              # Syscall 11: print character
+    syscall
+    jr $ra
+
+#==============================================================================
+# Function: print_string
+# Description: Print null-terminated string
+# Arguments: $a0 = address of string
+#==============================================================================
+__lib_print_string:
+    li $v0, 4               # Syscall 4: print string
+    syscall
+    jr $ra
+
+#==============================================================================
+# Function: print_newline
+# Description: Print newline character
+# Arguments: none
+#==============================================================================
+__lib_print_newline:
+    li $a0, 10              # ASCII newline
+    li $v0, 11              # Syscall 11: print character
+    syscall
+    jr $ra

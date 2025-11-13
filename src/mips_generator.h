@@ -7,6 +7,7 @@
 #include <set>
 #include <fstream>
 #include "descriptors.h"
+#include "runtime_library.h"
 
 using namespace std;
 
@@ -56,6 +57,7 @@ private:
     ostream& output;
     ostream* clean_output;  // Optional clean output (no debug comments)
     MIPSRegisterAllocator reg_allocator;
+    RuntimeLibrary runtime_lib;  // Runtime library manager
     int current_instruction_index;
     // NEW: Add descriptors
     RegisterDescriptor reg_desc;
@@ -132,6 +134,7 @@ private:
     void emit_label(const string& label);
 
     string get_reg(const string& var);  // Get register with var, or allocate and load
+    string allocate_register_for_constant();  // Allocate register for constants (lightweight)
     string allocate_register_with_spilling();  // Allocate register, spilling if necessary
     string select_victim_by_next_use();  // Select victim register based on next use information
     int get_next_use_distance(const string& var);  // NEW: Get next use distance for variable

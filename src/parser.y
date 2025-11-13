@@ -2181,16 +2181,24 @@ postfix_expression
 			
 			$$->isLiteral = false;
 			// Array subscript result is an lvalue if the base is an lvalue
-			$$->isLvalue = base->isLvalue;
+            $$->isLvalue = base->isLvalue;
             $$->isDereferenced = true; // Result is dereferenced value
 
-            int size_of_base = getSize(*$$);
+            // Special handling for char* (string literals)
+            // String literals store chars as 1 byte, not 4 bytes
+            int size_of_base;
+            if (base->baseType == "char" && base->pointerLevel == 1 && !base->isArray) {
+                // char* (pointer to string literal) - use 1 byte per char
+                size_of_base = 1;
+                cout << "Using size 1 for char* (string literal access)\n";
+            } else {
+                // Normal array or other pointer - use actual type size
+                size_of_base = getSize(*$$);
+            }
             
             // offset = index * size (integer arithmetic)
             TACOperand* offset = new_typed_temp_var("int");
-            TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);
-
-            TACOperand* base_addr = nullptr;
+            TACInstruction* i1 = emit(TAC_OPERATOR_MUL, offset, index->result, new_constant(to_string(size_of_base)),0);            TACOperand* base_addr = nullptr;
             TACInstruction* i_base = nullptr;
             // If base is already an address (like from previous deref), use it directly
             if ((base->isDereferenced || base->pointerLevel > 0) && base->isLvalue) {
