@@ -10,7 +10,7 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - format (char*) declared at line 13 [mangled: v_format_printf_cp1_s2] [PARAM #0, offset: 8]
+  - format (char*) declared at line 82 [mangled: v_format_printf_cp1_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - format (char*)
@@ -31,103 +31,183 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 45 [mangled: #t1] [LOCAL, offset: -24]
-  - #t10 (int) declared at line 48 [mangled: #t10] [LOCAL, offset: -60]
-  - #t11 (int) declared at line 48 [mangled: #t11] [LOCAL, offset: -64]
-  - #t12 (struct m) declared at line 48 [mangled: #t12] [LOCAL, offset: -68]
-  - #t13 (int) declared at line 48 [mangled: #t13] [LOCAL, offset: -72]
-  - #t14 (int) declared at line 48 [mangled: #t14] [LOCAL, offset: -76]
-  - #t15 (int) declared at line 48 [mangled: #t15] [LOCAL, offset: -80]
-  - #t16 (int) declared at line 49 [mangled: #t16] [LOCAL, offset: -84]
-  - #t17 (int) declared at line 49 [mangled: #t17] [LOCAL, offset: -88]
-  - #t18 (struct m) declared at line 49 [mangled: #t18] [LOCAL, offset: -92]
-  - #t19 (int) declared at line 49 [mangled: #t19] [LOCAL, offset: -96]
-  - #t2 (int) declared at line 45 [mangled: #t2] [LOCAL, offset: -28]
-  - #t20 (int) declared at line 49 [mangled: #t20] [LOCAL, offset: -100]
-  - #t21 (int) declared at line 49 [mangled: #t21] [LOCAL, offset: -104]
-  - #t22 (int) declared at line 50 [mangled: #t22] [LOCAL, offset: -108]
-  - #t23 (int) declared at line 50 [mangled: #t23] [LOCAL, offset: -112]
-  - #t24 (int) declared at line 50 [mangled: #t24] [LOCAL, offset: -116]
-  - #t25 (void) declared at line 50 [mangled: #t25] [LOCAL, offset: -116]
-  - #t26 (int) declared at line 51 [mangled: #t26] [LOCAL, offset: -120]
-  - #t27 (int) declared at line 51 [mangled: #t27] [LOCAL, offset: -124]
-  - #t28 (float) declared at line 51 [mangled: #t28] [LOCAL, offset: -128]
-  - #t29 (void) declared at line 51 [mangled: #t29] [LOCAL, offset: -128]
-  - #t3 (int) declared at line 45 [mangled: #t3] [LOCAL, offset: -32]
-  - #t30 (int) declared at line 52 [mangled: #t30] [LOCAL, offset: -132]
-  - #t31 (int) declared at line 52 [mangled: #t31] [LOCAL, offset: -136]
-  - #t32 (char) declared at line 52 [mangled: #t32] [LOCAL, offset: -140]
-  - #t33 (void) declared at line 52 [mangled: #t33] [LOCAL, offset: -140]
-  - #t34 (int) declared at line 53 [mangled: #t34] [LOCAL, offset: -144]
-  - #t35 (int) declared at line 53 [mangled: #t35] [LOCAL, offset: -148]
-  - #t36 (struct m) declared at line 53 [mangled: #t36] [LOCAL, offset: -152]
-  - #t37 (int) declared at line 53 [mangled: #t37] [LOCAL, offset: -156]
-  - #t38 (int) declared at line 53 [mangled: #t38] [LOCAL, offset: -160]
-  - #t39 (int) declared at line 53 [mangled: #t39] [LOCAL, offset: -164]
-  - #t4 (int) declared at line 46 [mangled: #t4] [LOCAL, offset: -36]
-  - #t40 (void) declared at line 53 [mangled: #t40] [LOCAL, offset: -164]
-  - #t41 (int) declared at line 54 [mangled: #t41] [LOCAL, offset: -168]
-  - #t42 (int) declared at line 54 [mangled: #t42] [LOCAL, offset: -172]
-  - #t43 (struct m) declared at line 54 [mangled: #t43] [LOCAL, offset: -176]
-  - #t44 (int) declared at line 54 [mangled: #t44] [LOCAL, offset: -180]
-  - #t45 (int) declared at line 54 [mangled: #t45] [LOCAL, offset: -184]
-  - #t46 (int) declared at line 54 [mangled: #t46] [LOCAL, offset: -188]
-  - #t47 (void) declared at line 54 [mangled: #t47] [LOCAL, offset: -188]
-  - #t5 (int) declared at line 46 [mangled: #t5] [LOCAL, offset: -40]
-  - #t6 (float) declared at line 46 [mangled: #t6] [LOCAL, offset: -44]
-  - #t7 (int) declared at line 47 [mangled: #t7] [LOCAL, offset: -48]
-  - #t8 (int) declared at line 47 [mangled: #t8] [LOCAL, offset: -52]
-  - #t9 (char) declared at line 47 [mangled: #t9] [LOCAL, offset: -56]
-  - var (struct k) declared at line 44 [mangled: v_var_main_s2] [LOCAL, offset: -20]
+  - #t1 (int) declared at line 101 [mangled: #t1] [LOCAL, offset: -28]
+  - #t10 (char) declared at line 104 [mangled: #t10] [LOCAL, offset: -64]
+  - #t11 (int) declared at line 105 [mangled: #t11] [LOCAL, offset: -68]
+  - #t12 (int) declared at line 105 [mangled: #t12] [LOCAL, offset: -72]
+  - #t13 (struct m) declared at line 105 [mangled: #t13] [LOCAL, offset: -76]
+  - #t14 (int) declared at line 105 [mangled: #t14] [LOCAL, offset: -80]
+  - #t15 (int) declared at line 105 [mangled: #t15] [LOCAL, offset: -84]
+  - #t16 (int) declared at line 105 [mangled: #t16] [LOCAL, offset: -88]
+  - #t17 (int) declared at line 106 [mangled: #t17] [LOCAL, offset: -92]
+  - #t18 (int) declared at line 106 [mangled: #t18] [LOCAL, offset: -96]
+  - #t19 (struct m) declared at line 106 [mangled: #t19] [LOCAL, offset: -100]
+  - #t2 (int) declared at line 102 [mangled: #t2] [LOCAL, offset: -32]
+  - #t20 (int) declared at line 106 [mangled: #t20] [LOCAL, offset: -104]
+  - #t21 (int) declared at line 106 [mangled: #t21] [LOCAL, offset: -108]
+  - #t22 (int) declared at line 106 [mangled: #t22] [LOCAL, offset: -112]
+  - #t23 (int) declared at line 107 [mangled: #t23] [LOCAL, offset: -116]
+  - #t24 (int) declared at line 107 [mangled: #t24] [LOCAL, offset: -120]
+  - #t25 (int) declared at line 107 [mangled: #t25] [LOCAL, offset: -124]
+  - #t26 (void) declared at line 107 [mangled: #t26] [LOCAL, offset: -124]
+  - #t27 (int) declared at line 108 [mangled: #t27] [LOCAL, offset: -128]
+  - #t28 (int) declared at line 108 [mangled: #t28] [LOCAL, offset: -132]
+  - #t29 (float) declared at line 108 [mangled: #t29] [LOCAL, offset: -136]
+  - #t3 (int) declared at line 102 [mangled: #t3] [LOCAL, offset: -36]
+  - #t30 (void) declared at line 108 [mangled: #t30] [LOCAL, offset: -136]
+  - #t31 (int) declared at line 109 [mangled: #t31] [LOCAL, offset: -140]
+  - #t32 (int) declared at line 109 [mangled: #t32] [LOCAL, offset: -144]
+  - #t33 (char) declared at line 109 [mangled: #t33] [LOCAL, offset: -148]
+  - #t34 (void) declared at line 109 [mangled: #t34] [LOCAL, offset: -148]
+  - #t35 (int) declared at line 110 [mangled: #t35] [LOCAL, offset: -152]
+  - #t36 (int) declared at line 110 [mangled: #t36] [LOCAL, offset: -156]
+  - #t37 (struct m) declared at line 110 [mangled: #t37] [LOCAL, offset: -160]
+  - #t38 (int) declared at line 110 [mangled: #t38] [LOCAL, offset: -164]
+  - #t39 (int) declared at line 110 [mangled: #t39] [LOCAL, offset: -168]
+  - #t4 (int) declared at line 102 [mangled: #t4] [LOCAL, offset: -40]
+  - #t40 (int) declared at line 110 [mangled: #t40] [LOCAL, offset: -172]
+  - #t41 (void) declared at line 110 [mangled: #t41] [LOCAL, offset: -172]
+  - #t42 (int) declared at line 111 [mangled: #t42] [LOCAL, offset: -176]
+  - #t43 (int) declared at line 111 [mangled: #t43] [LOCAL, offset: -180]
+  - #t44 (struct m) declared at line 111 [mangled: #t44] [LOCAL, offset: -184]
+  - #t45 (int) declared at line 111 [mangled: #t45] [LOCAL, offset: -188]
+  - #t46 (int) declared at line 111 [mangled: #t46] [LOCAL, offset: -192]
+  - #t47 (int) declared at line 111 [mangled: #t47] [LOCAL, offset: -196]
+  - #t48 (void) declared at line 111 [mangled: #t48] [LOCAL, offset: -196]
+  - #t49 (void) declared at line 112 [mangled: #t49] [LOCAL, offset: -196]
+  - #t5 (int) declared at line 103 [mangled: #t5] [LOCAL, offset: -44]
+  - #t50 (int) declared at line 113 [mangled: #t50] [LOCAL, offset: -200]
+  - #t51 (int) declared at line 113 [mangled: #t51] [LOCAL, offset: -204]
+  - #t52 (int) declared at line 114 [mangled: #t52] [LOCAL, offset: -208]
+  - #t53 (float) declared at line 114 [mangled: #t53] [LOCAL, offset: -212]
+  - #t54 (int) declared at line 115 [mangled: #t54] [LOCAL, offset: -216]
+  - #t55 (char) declared at line 115 [mangled: #t55] [LOCAL, offset: -220]
+  - #t56 (int) declared at line 116 [mangled: #t56] [LOCAL, offset: -224]
+  - #t57 (struct m) declared at line 116 [mangled: #t57] [LOCAL, offset: -228]
+  - #t58 (int) declared at line 116 [mangled: #t58] [LOCAL, offset: -232]
+  - #t59 (int) declared at line 116 [mangled: #t59] [LOCAL, offset: -236]
+  - #t6 (int) declared at line 103 [mangled: #t6] [LOCAL, offset: -48]
+  - #t60 (int) declared at line 116 [mangled: #t60] [LOCAL, offset: -240]
+  - #t61 (int) declared at line 117 [mangled: #t61] [LOCAL, offset: -244]
+  - #t62 (struct m) declared at line 117 [mangled: #t62] [LOCAL, offset: -248]
+  - #t63 (int) declared at line 117 [mangled: #t63] [LOCAL, offset: -252]
+  - #t64 (int) declared at line 117 [mangled: #t64] [LOCAL, offset: -256]
+  - #t65 (int) declared at line 117 [mangled: #t65] [LOCAL, offset: -260]
+  - #t66 (int) declared at line 118 [mangled: #t66] [LOCAL, offset: -264]
+  - #t67 (int) declared at line 118 [mangled: #t67] [LOCAL, offset: -268]
+  - #t68 (void) declared at line 118 [mangled: #t68] [LOCAL, offset: -268]
+  - #t69 (int) declared at line 119 [mangled: #t69] [LOCAL, offset: -272]
+  - #t7 (float) declared at line 103 [mangled: #t7] [LOCAL, offset: -52]
+  - #t70 (float) declared at line 119 [mangled: #t70] [LOCAL, offset: -276]
+  - #t71 (void) declared at line 119 [mangled: #t71] [LOCAL, offset: -276]
+  - #t72 (int) declared at line 120 [mangled: #t72] [LOCAL, offset: -280]
+  - #t73 (char) declared at line 120 [mangled: #t73] [LOCAL, offset: -284]
+  - #t74 (void) declared at line 120 [mangled: #t74] [LOCAL, offset: -284]
+  - #t75 (int) declared at line 121 [mangled: #t75] [LOCAL, offset: -288]
+  - #t76 (struct m) declared at line 121 [mangled: #t76] [LOCAL, offset: -292]
+  - #t77 (int) declared at line 121 [mangled: #t77] [LOCAL, offset: -296]
+  - #t78 (int) declared at line 121 [mangled: #t78] [LOCAL, offset: -300]
+  - #t79 (int) declared at line 121 [mangled: #t79] [LOCAL, offset: -304]
+  - #t8 (int) declared at line 104 [mangled: #t8] [LOCAL, offset: -56]
+  - #t80 (void) declared at line 121 [mangled: #t80] [LOCAL, offset: -304]
+  - #t81 (int) declared at line 122 [mangled: #t81] [LOCAL, offset: -308]
+  - #t82 (struct m) declared at line 122 [mangled: #t82] [LOCAL, offset: -312]
+  - #t83 (int) declared at line 122 [mangled: #t83] [LOCAL, offset: -316]
+  - #t84 (int) declared at line 122 [mangled: #t84] [LOCAL, offset: -320]
+  - #t85 (int) declared at line 122 [mangled: #t85] [LOCAL, offset: -324]
+  - #t86 (void) declared at line 122 [mangled: #t86] [LOCAL, offset: -324]
+  - #t9 (int) declared at line 104 [mangled: #t9] [LOCAL, offset: -60]
+  - ptr (struct k*) declared at line 100 [mangled: v_ptr_main_s2] [LOCAL, offset: -24]
+  - var (struct k) declared at line 99 [mangled: v_var_main_s2] [LOCAL, offset: -20]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
-  - #t10 (int)
+  - #t10 (char)
   - #t11 (int)
-  - #t12 (struct m)
-  - #t13 (int)
+  - #t12 (int)
+  - #t13 (struct m)
   - #t14 (int)
   - #t15 (int)
   - #t16 (int)
   - #t17 (int)
-  - #t18 (struct m)
-  - #t19 (int)
+  - #t18 (int)
+  - #t19 (struct m)
   - #t2 (int)
   - #t20 (int)
   - #t21 (int)
   - #t22 (int)
   - #t23 (int)
   - #t24 (int)
-  - #t25 (void)
-  - #t26 (int)
+  - #t25 (int)
+  - #t26 (void)
   - #t27 (int)
-  - #t28 (float)
-  - #t29 (void)
+  - #t28 (int)
+  - #t29 (float)
   - #t3 (int)
-  - #t30 (int)
+  - #t30 (void)
   - #t31 (int)
-  - #t32 (char)
-  - #t33 (void)
-  - #t34 (int)
+  - #t32 (int)
+  - #t33 (char)
+  - #t34 (void)
   - #t35 (int)
-  - #t36 (struct m)
-  - #t37 (int)
+  - #t36 (int)
+  - #t37 (struct m)
   - #t38 (int)
   - #t39 (int)
   - #t4 (int)
-  - #t40 (void)
-  - #t41 (int)
+  - #t40 (int)
+  - #t41 (void)
   - #t42 (int)
-  - #t43 (struct m)
-  - #t44 (int)
+  - #t43 (int)
+  - #t44 (struct m)
   - #t45 (int)
   - #t46 (int)
-  - #t47 (void)
+  - #t47 (int)
+  - #t48 (void)
+  - #t49 (void)
   - #t5 (int)
-  - #t6 (float)
-  - #t7 (int)
+  - #t50 (int)
+  - #t51 (int)
+  - #t52 (int)
+  - #t53 (float)
+  - #t54 (int)
+  - #t55 (char)
+  - #t56 (int)
+  - #t57 (struct m)
+  - #t58 (int)
+  - #t59 (int)
+  - #t6 (int)
+  - #t60 (int)
+  - #t61 (int)
+  - #t62 (struct m)
+  - #t63 (int)
+  - #t64 (int)
+  - #t65 (int)
+  - #t66 (int)
+  - #t67 (int)
+  - #t68 (void)
+  - #t69 (int)
+  - #t7 (float)
+  - #t70 (float)
+  - #t71 (void)
+  - #t72 (int)
+  - #t73 (char)
+  - #t74 (void)
+  - #t75 (int)
+  - #t76 (struct m)
+  - #t77 (int)
+  - #t78 (int)
+  - #t79 (int)
   - #t8 (int)
-  - #t9 (char)
+  - #t80 (void)
+  - #t81 (int)
+  - #t82 (struct m)
+  - #t83 (int)
+  - #t84 (int)
+  - #t85 (int)
+  - #t86 (void)
+  - #t9 (int)
+  - ptr (struct k*)
   - var (struct k)
 
 

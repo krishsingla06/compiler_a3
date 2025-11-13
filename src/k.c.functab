@@ -7,10 +7,10 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 188 bytes
+|     - Local var space: 324 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 196 bytes
-|   Declared at line: 42
+|     - Total frame size: 332 bytes
+|   Declared at line: 97
 +-----------------------------------------------------------------------------------------+
 | Function: printf (printf_cp1_variadic)
 |   Return type: void
@@ -20,5 +20,5 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 13
+|   Declared at line: 82
 +-----------------------------------------------------------------------------------------+

@@ -1,4 +1,5 @@
 
+
 void printf(char* format, ...){return;}
 
 struct m{
@@ -17,6 +18,8 @@ struct k
 int main(){
 
     struct k var;
+    struct k*ptr;
+    ptr = &var;
     var.a = 10;
     var.b = 97.5;
     var.c = 'z';
@@ -27,5 +30,16 @@ int main(){
     printf("%c\n", var.c);
     printf("%d\n", var.d.x);
     printf("%d\n", var.d.y);
+    printf("-----------------------\n");
+    ptr->a = 20;
+    ptr->b = 88.5;
+    ptr->c = 'y';
+    ptr->d.x = 50;
+    ptr->d.y = 150;
+    printf("%d\n", ptr->a);
+    printf("%f\n", ptr->b);
+    printf("%c\n", ptr->c);
+    printf("%d\n", ptr->d.x);
+    printf("%d\n", ptr->d.y);
     return 0;
 }

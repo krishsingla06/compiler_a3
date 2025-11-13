@@ -3,59 +3,99 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 49
+Total Symbols: 89
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -24     |
-| #t10                | #t10                            | int         | LOCAL    | -60     |
-| #t11                | #t11                            | int         | LOCAL    | -64     |
-| #t12                | #t12                            | struct m    | LOCAL    | -68     |
-| #t13                | #t13                            | int         | LOCAL    | -72     |
-| #t14                | #t14                            | int         | LOCAL    | -76     |
-| #t15                | #t15                            | int         | LOCAL    | -80     |
-| #t16                | #t16                            | int         | LOCAL    | -84     |
-| #t17                | #t17                            | int         | LOCAL    | -88     |
-| #t18                | #t18                            | struct m    | LOCAL    | -92     |
-| #t19                | #t19                            | int         | LOCAL    | -96     |
-| #t2                 | #t2                             | int         | LOCAL    | -28     |
-| #t20                | #t20                            | int         | LOCAL    | -100    |
-| #t21                | #t21                            | int         | LOCAL    | -104    |
-| #t22                | #t22                            | int         | LOCAL    | -108    |
-| #t23                | #t23                            | int         | LOCAL    | -112    |
-| #t24                | #t24                            | int         | LOCAL    | -116    |
-| #t25                | #t25                            | void        | LOCAL    | -116    |
-| #t26                | #t26                            | int         | LOCAL    | -120    |
-| #t27                | #t27                            | int         | LOCAL    | -124    |
-| #t28                | #t28                            | float       | LOCAL    | -128    |
-| #t29                | #t29                            | void        | LOCAL    | -128    |
-| #t3                 | #t3                             | int         | LOCAL    | -32     |
-| #t30                | #t30                            | int         | LOCAL    | -132    |
-| #t31                | #t31                            | int         | LOCAL    | -136    |
-| #t32                | #t32                            | char        | LOCAL    | -140    |
-| #t33                | #t33                            | void        | LOCAL    | -140    |
-| #t34                | #t34                            | int         | LOCAL    | -144    |
-| #t35                | #t35                            | int         | LOCAL    | -148    |
-| #t36                | #t36                            | struct m    | LOCAL    | -152    |
-| #t37                | #t37                            | int         | LOCAL    | -156    |
-| #t38                | #t38                            | int         | LOCAL    | -160    |
-| #t39                | #t39                            | int         | LOCAL    | -164    |
-| #t4                 | #t4                             | int         | LOCAL    | -36     |
-| #t40                | #t40                            | void        | LOCAL    | -164    |
-| #t41                | #t41                            | int         | LOCAL    | -168    |
-| #t42                | #t42                            | int         | LOCAL    | -172    |
-| #t43                | #t43                            | struct m    | LOCAL    | -176    |
-| #t44                | #t44                            | int         | LOCAL    | -180    |
-| #t45                | #t45                            | int         | LOCAL    | -184    |
-| #t46                | #t46                            | int         | LOCAL    | -188    |
-| #t47                | #t47                            | void        | LOCAL    | -188    |
-| #t5                 | #t5                             | int         | LOCAL    | -40     |
-| #t6                 | #t6                             | float       | LOCAL    | -44     |
-| #t7                 | #t7                             | int         | LOCAL    | -48     |
-| #t8                 | #t8                             | int         | LOCAL    | -52     |
-| #t9                 | #t9                             | char        | LOCAL    | -56     |
+| #t1                 | #t1                             | int         | LOCAL    | -28     |
+| #t10                | #t10                            | char        | LOCAL    | -64     |
+| #t11                | #t11                            | int         | LOCAL    | -68     |
+| #t12                | #t12                            | int         | LOCAL    | -72     |
+| #t13                | #t13                            | struct m    | LOCAL    | -76     |
+| #t14                | #t14                            | int         | LOCAL    | -80     |
+| #t15                | #t15                            | int         | LOCAL    | -84     |
+| #t16                | #t16                            | int         | LOCAL    | -88     |
+| #t17                | #t17                            | int         | LOCAL    | -92     |
+| #t18                | #t18                            | int         | LOCAL    | -96     |
+| #t19                | #t19                            | struct m    | LOCAL    | -100    |
+| #t2                 | #t2                             | int         | LOCAL    | -32     |
+| #t20                | #t20                            | int         | LOCAL    | -104    |
+| #t21                | #t21                            | int         | LOCAL    | -108    |
+| #t22                | #t22                            | int         | LOCAL    | -112    |
+| #t23                | #t23                            | int         | LOCAL    | -116    |
+| #t24                | #t24                            | int         | LOCAL    | -120    |
+| #t25                | #t25                            | int         | LOCAL    | -124    |
+| #t26                | #t26                            | void        | LOCAL    | -124    |
+| #t27                | #t27                            | int         | LOCAL    | -128    |
+| #t28                | #t28                            | int         | LOCAL    | -132    |
+| #t29                | #t29                            | float       | LOCAL    | -136    |
+| #t3                 | #t3                             | int         | LOCAL    | -36     |
+| #t30                | #t30                            | void        | LOCAL    | -136    |
+| #t31                | #t31                            | int         | LOCAL    | -140    |
+| #t32                | #t32                            | int         | LOCAL    | -144    |
+| #t33                | #t33                            | char        | LOCAL    | -148    |
+| #t34                | #t34                            | void        | LOCAL    | -148    |
+| #t35                | #t35                            | int         | LOCAL    | -152    |
+| #t36                | #t36                            | int         | LOCAL    | -156    |
+| #t37                | #t37                            | struct m    | LOCAL    | -160    |
+| #t38                | #t38                            | int         | LOCAL    | -164    |
+| #t39                | #t39                            | int         | LOCAL    | -168    |
+| #t4                 | #t4                             | int         | LOCAL    | -40     |
+| #t40                | #t40                            | int         | LOCAL    | -172    |
+| #t41                | #t41                            | void        | LOCAL    | -172    |
+| #t42                | #t42                            | int         | LOCAL    | -176    |
+| #t43                | #t43                            | int         | LOCAL    | -180    |
+| #t44                | #t44                            | struct m    | LOCAL    | -184    |
+| #t45                | #t45                            | int         | LOCAL    | -188    |
+| #t46                | #t46                            | int         | LOCAL    | -192    |
+| #t47                | #t47                            | int         | LOCAL    | -196    |
+| #t48                | #t48                            | void        | LOCAL    | -196    |
+| #t49                | #t49                            | void        | LOCAL    | -196    |
+| #t5                 | #t5                             | int         | LOCAL    | -44     |
+| #t50                | #t50                            | int         | LOCAL    | -200    |
+| #t51                | #t51                            | int         | LOCAL    | -204    |
+| #t52                | #t52                            | int         | LOCAL    | -208    |
+| #t53                | #t53                            | float       | LOCAL    | -212    |
+| #t54                | #t54                            | int         | LOCAL    | -216    |
+| #t55                | #t55                            | char        | LOCAL    | -220    |
+| #t56                | #t56                            | int         | LOCAL    | -224    |
+| #t57                | #t57                            | struct m    | LOCAL    | -228    |
+| #t58                | #t58                            | int         | LOCAL    | -232    |
+| #t59                | #t59                            | int         | LOCAL    | -236    |
+| #t6                 | #t6                             | int         | LOCAL    | -48     |
+| #t60                | #t60                            | int         | LOCAL    | -240    |
+| #t61                | #t61                            | int         | LOCAL    | -244    |
+| #t62                | #t62                            | struct m    | LOCAL    | -248    |
+| #t63                | #t63                            | int         | LOCAL    | -252    |
+| #t64                | #t64                            | int         | LOCAL    | -256    |
+| #t65                | #t65                            | int         | LOCAL    | -260    |
+| #t66                | #t66                            | int         | LOCAL    | -264    |
+| #t67                | #t67                            | int         | LOCAL    | -268    |
+| #t68                | #t68                            | void        | LOCAL    | -268    |
+| #t69                | #t69                            | int         | LOCAL    | -272    |
+| #t7                 | #t7                             | float       | LOCAL    | -52     |
+| #t70                | #t70                            | float       | LOCAL    | -276    |
+| #t71                | #t71                            | void        | LOCAL    | -276    |
+| #t72                | #t72                            | int         | LOCAL    | -280    |
+| #t73                | #t73                            | char        | LOCAL    | -284    |
+| #t74                | #t74                            | void        | LOCAL    | -284    |
+| #t75                | #t75                            | int         | LOCAL    | -288    |
+| #t76                | #t76                            | struct m    | LOCAL    | -292    |
+| #t77                | #t77                            | int         | LOCAL    | -296    |
+| #t78                | #t78                            | int         | LOCAL    | -300    |
+| #t79                | #t79                            | int         | LOCAL    | -304    |
+| #t8                 | #t8                             | int         | LOCAL    | -56     |
+| #t80                | #t80                            | void        | LOCAL    | -304    |
+| #t81                | #t81                            | int         | LOCAL    | -308    |
+| #t82                | #t82                            | struct m    | LOCAL    | -312    |
+| #t83                | #t83                            | int         | LOCAL    | -316    |
+| #t84                | #t84                            | int         | LOCAL    | -320    |
+| #t85                | #t85                            | int         | LOCAL    | -324    |
+| #t86                | #t86                            | void        | LOCAL    | -324    |
+| #t9                 | #t9                             | int         | LOCAL    | -60     |
 | format              | v_format_printf_cp1_s2          | char*       | PARAM#0  | 8       |
+| ptr                 | v_ptr_main_s2                   | struct k*   | LOCAL    | -24     |
 | var                 | v_var_main_s2                   | struct k    | LOCAL    | -20     |
 +-----------------------------------------------------------------------------------------+
 
