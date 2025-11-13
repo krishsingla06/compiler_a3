@@ -2764,11 +2764,25 @@ postfix_expression
 					// result = *result_addr (if we need the value)
 					
 					$$->code = base->code;
-					
+					//if base is derefrencedthen change the last instruction
+                    if(base->isDereferenced){
+                        // change last instruction to addr of
+                        TACInstruction* lastInstr = $$->code.back();
+                        if(lastInstr->op.type == TAC_OPERATOR_DEREF){
+                            lastInstr->op.type = TAC_OPERATOR_NOP; // remove deref
+                        }
+                    }
+
                     // base_addr = &base (address operation)
 					TACOperand* base_addr = new_typed_temp_var("int", 0, true);
-					TACInstruction* addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
-					$$->code.push_back(addr_instr);
+					TACInstruction* addr_instr;
+                    if(base->isDereferenced){
+                        addr_instr = emit(TACOperator(TAC_OPERATOR_NOP), base_addr, base->result, new_empty_var(), 0);
+                    }else{
+                        addr_instr = emit(TACOperator(TAC_OPERATOR_ADDR_OF), base_addr, base->result, new_empty_var(), 0);
+                    }
+
+                    $$->code.push_back(addr_instr);
 					
                     // member_addr = base_addr + offset (address arithmetic)
 					TACOperand* member_addr = new_typed_temp_var("int", 0, true);

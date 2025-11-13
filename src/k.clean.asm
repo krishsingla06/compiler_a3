@@ -4,8 +4,9 @@
 
 
 .data
-str_1: .asciiz "%c "
-str_0: .asciiz "Hello World"
+str_2: .asciiz "%c\n"
+str_0: .asciiz "%d\n"
+str_1: .asciiz "%f\n"
 
 
 .text
@@ -34,110 +35,282 @@ I3:
 
 
 I4:
-print_char_c:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
+main:
+    addiu $sp, $sp, -236
+    sw $ra, 232($sp)
+    sw $fp, 228($sp)
+    addiu $fp, $sp, 228
 
 I5:
-
-
+    addiu $t0, $fp, -20
 
 I6:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
+    li $t1, 0
+    move $t2, $t0
 
 I7:
-print_int_i:
-    addiu $sp, $sp, -52
-    sw $ra, 48($sp)
-    sw $fp, 44($sp)
-    addiu $fp, $sp, 44
-
+    sw $t2, -32($fp)
 
 I8:
-
-
+    li $t1, 10
+    sw $t1, 0($t2)
 
 I9:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
+    addiu $t1, $fp, -20
 
 I10:
-print_newline:
-    addiu $sp, $sp, -48
-    sw $ra, 44($sp)
-    sw $fp, 40($sp)
-    addiu $fp, $sp, 40
+    li $t3, 4
+    add $t4, $t1, $t3
 
 I11:
 
-
-
 I12:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
+    # Loading float constant: 97.500000
+    li.s $f0, 97.500000
+    s.s $f0, 0($t4)
 
 I13:
-main:
-    addiu $sp, $sp, -64
-    sw $ra, 60($sp)
-    sw $fp, 56($sp)
-    addiu $fp, $sp, 56
+    sw $t2, -28($fp)
+    addiu $t2, $fp, -20
 
 I14:
-    la $t0, str_0
+    li $t3, 16
+    add $t5, $t2, $t3
 
 I15:
-    li $t1, 1
-    li $t2, 1
-    move $t3, $t1
+    sw $t5, -56($fp)
 
 I16:
-    add $t1, $t0, $t3
+    li $t3, 122
+    sw $t3, 0($t5)
 
 I17:
-    sw $t0, -4($fp)
-    lb $t0, 0($t1)
+    addiu $t3, $fp, -20
 
 I18:
+    li $t6, 8
+    add $t7, $t3, $t6
 
 I19:
+    sw $t7, -68($fp)
 
 I20:
-    sw $t0, -16($fp)
-    sw $t1, -12($fp)
-    sw $t3, -8($fp)
-    la $a0, str_1
+    sw $t7, -72($fp)
+
+I21:
+    li $t6, 0
+    move $t8, $t7
+
+I22:
+    sw $t8, -80($fp)
+
+I23:
+    li $t6, 5
+    sw $t6, 0($t8)
+
+I24:
+    sw $t4, -40($fp)
+    sw $t4, -44($fp)
+    addiu $t4, $fp, -20
+
+I25:
+    li $t9, 8
+    sw $t0, -24($fp)
+    add $t0, $t4, $t9
+
+I26:
+    sw $t0, -92($fp)
+
+I27:
+    sw $t0, -96($fp)
+
+I28:
+    li $t9, 4
+    sw $t0, -88($fp)
+    sw $t0, -92($fp)
+    sw $t0, -96($fp)
+    add $t0, $t0, $t9
+
+I29:
+    sw $t0, -104($fp)
+
+I30:
+    li $t9, 15
+    sw $t9, 0($t0)
+
+I31:
+    sw $t5, -52($fp)
+    addiu $t5, $fp, -20
+
+I32:
+    li $t6, 0
+    sw $t0, -100($fp)
+    sw $t0, -104($fp)
+    move $t0, $t5
+
+I33:
+    lw $t6, 0($t0)
+
+I34:
+
+I35:
+
+I36:
+    sw $t0, -112($fp)
+    sw $t1, -36($fp)
+    sw $t2, -48($fp)
+    sw $t3, -60($fp)
+    sw $t4, -84($fp)
+    sw $t5, -108($fp)
+    sw $t6, -116($fp)
+    sw $t7, -64($fp)
+    sw $t7, -68($fp)
+    sw $t7, -72($fp)
+    sw $t8, -76($fp)
+    sw $t8, -80($fp)
+    la $a0, str_0
     addiu $sp, $sp, -4
-    lw $t0, -16($fp)
+    lw $t0, -116($fp)
     sw $t0, 0($sp)
     jal __lib_printf
     addiu $sp, $sp, 4
 
-I21:
+I37:
+    addiu $t7, $fp, -20
+
+I38:
+    li $t1, 4
+    add $t2, $t7, $t1
+
+I39:
+    lw $t8, 0($t2)
+
+I40:
+
+I41:
+
+I42:
+    sw $t0, -116($fp)
+    sw $t2, -124($fp)
+    sw $t7, -120($fp)
+    sw $t8, -128($fp)
+    la $a0, str_1
+    addiu $sp, $sp, -4
+    l.s $f1, -128($fp)
+    swc1 $f1, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I43:
+    addiu $t9, $fp, -20
+
+I44:
+    li $t0, 16
+    add $t1, $t9, $t0
+
+I45:
+    lb $t0, 0($t1)
+
+I46:
+
+I47:
+
+I48:
+    sw $t0, -140($fp)
+    sw $t1, -136($fp)
+    sw $t9, -132($fp)
+    swc1 $f1, -128($fp)
+    la $a0, str_2
+    addiu $sp, $sp, -4
+    lw $t0, -140($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I49:
+    addiu $t1, $fp, -20
+
+I50:
+    li $t2, 8
+    add $t3, $t1, $t2
+
+I51:
+    sw $t3, -152($fp)
+
+I52:
+    sw $t3, -156($fp)
+
+I53:
+    li $t2, 0
+    move $t4, $t3
+
+I54:
+    lw $t2, 0($t4)
+
+I55:
+
+I56:
+
+I57:
+    sw $t0, -140($fp)
+    sw $t1, -144($fp)
+    sw $t2, -164($fp)
+    sw $t3, -148($fp)
+    sw $t3, -152($fp)
+    sw $t3, -156($fp)
+    sw $t4, -160($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -4
+    lw $t0, -164($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I58:
+    addiu $t3, $fp, -20
+
+I59:
+    li $t1, 8
+    add $t2, $t3, $t1
+
+I60:
+    sw $t2, -176($fp)
+
+I61:
+    sw $t2, -180($fp)
+
+I62:
+    li $t1, 4
+    add $t4, $t2, $t1
+
+I63:
+    sw $t4, -184($fp)
+    lw $t4, 0($t4)
+
+I64:
+
+I65:
+
+I66:
+    sw $t0, -164($fp)
+    sw $t2, -172($fp)
+    sw $t2, -176($fp)
+    sw $t2, -180($fp)
+    sw $t3, -168($fp)
+    sw $t4, -188($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -4
+    lw $t0, -188($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I67:
     li $v0, 0
 
 
 
-I22:
+I68:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

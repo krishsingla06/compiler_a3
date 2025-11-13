@@ -12,37 +12,67 @@
 
 void printf(char* format, ...){return;}
 
-void print_char(char c){
-    return;
-}
+struct m{
+    int x;
+    int y;
+};
 
-void print_int(int i){
-    return;
-}
-
-void print_newline(){
-    return;
-}
-
+struct k
+{
+    int a;
+    float b;
+    struct m d;
+    char c;
+};
 
 int main(){
+
+    struct k var;
+    var.a = 10;
+    var.b = 97.5;
+    var.c = 'z';
+    var.d.x = 5;
+    var.d.y = 15;
+    printf("%d\n", var.a);
+    printf("%f\n", var.b);
+    printf("%c\n", var.c);
+    printf("%d\n", var.d.x);
+    printf("%d\n", var.d.y);
+    // int *ptr;
+    // struct k var;
+    // var.a = 10;
+    // var.b = 20.5;
+    // var.c = 'z';
+    // var.d.x = 5;
+    // var.d.y = 15;
+    // int x = 'A'+5;
+    // char ch = x;
+    // print_int(x);
+    // print_newline();
+    // print_char(ch);
+    // print_newline();
+
     
-    char *str = "Hello World";
-    // int a = 1;
-    // int b = 2;
-    // int c = 3;
-    // int d = 4;
-    // int e = 5;
-    // int f = 6;
-    // float g = 2.71;
-    // float h = 1.61;
-    // float i = 0.577;
-    // float j = 1.414;
-    // float k = 2.236;
-    // float l = 1.732;
-    // printf("%c %d %d %d %d %d %d %f %f %f %f %f %f\n", str[1], a, b, c, d, e, f, g, h, i, j, k, l);
+    //printf("%c\n", c);
 
+    // //print size of pointer
+    // print_int(sizeof(ptr));
+    // print_newline();
+    // //print size of struct k
+    // print_int(sizeof(var));
+    // print_newline();
 
-    printf("%c ", str[1]);
+    // print all data members of struct k
+    // print_int(var.a);
+    // print_newline();
+
+    // print_float(var.b);
+    // print_newline();
+    // print_char(var.c);
+    // print_newline();
+    // print_int(var.d.x);
+    // print_newline();
+    // print_int(var.d.y);
+    // print_newline();
     return 0;
 }

@@ -1127,7 +1127,6 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
     }
 }
 
-
 void MIPSGenerator::translate_comparison(TACInstruction* instr) {
     // Two cases:
     // 1. flag == 2: if arg1 op arg2 goto result (conditional branch)
