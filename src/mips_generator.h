@@ -111,6 +111,7 @@ private:
     void translate_dereference(TACInstruction* instr);
     void translate_store_indirect(TACInstruction* instr);
     void translate_cast(TACInstruction* instr);
+    void translate_unary_minus(TACInstruction* instr);
     void translate_jump(TACInstruction* instr);
     void translate_call(TACInstruction* instr);
     void translate_return(TACInstruction* instr);

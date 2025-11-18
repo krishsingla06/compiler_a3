@@ -54,7 +54,7 @@ enum TACOperatorType {
     TAC_OPERATOR_MUL, // ok
     TAC_OPERATOR_DIV, //ok
     TAC_OPERATOR_MOD, //ok
-    TAC_OPERATOR_UMINUS,
+    TAC_OPERATOR_UMINUS, //ok
 
     TAC_OPERATOR_EQ, // ok
     TAC_OPERATOR_NE, // ok

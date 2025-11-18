@@ -805,6 +805,10 @@ void MIPSGenerator::translate_instruction(TACInstruction* instr) {
         // Type cast: result = (type)arg2
         translate_cast(instr);
     }
+    else if (instr->op.type == TAC_OPERATOR_UMINUS) {
+        // Unary minus: result = -arg1
+        translate_unary_minus(instr);
+    }
     else if (instr->op.type == TAC_OPERATOR_FUNC_BEGIN) {
         emit_label(instr->result->value);
         emit_comment("Function: " + instr->result->value);
@@ -1892,6 +1896,78 @@ void MIPSGenerator::translate_cast(TACInstruction* instr) {
         reg_allocator.mark_dirty(src_reg);
         
         emit_comment("DEBUG: " + dest + " = (" + target_type + ")" + src + " in " + src_reg);
+    }
+}
+
+void MIPSGenerator::translate_unary_minus(TACInstruction* instr) {
+    // Unary minus: result = -arg1
+    
+    if (!instr->result || !instr->arg1) return;
+    
+    string dest = instr->result->value;
+    string src = instr->arg1->value;
+    
+    emit_comment(dest + " = -" + src);
+    
+    // Check if this is a float operation
+    bool is_float_op = is_operand_float(instr->arg1);
+    
+    if (is_float_op) {
+        // Float negation
+        string src_freg = load_operand_to_register(instr->arg1);
+        emit_comment("DEBUG: " + src + " in " + src_freg);
+        
+        // Allocate destination float register
+        string dest_freg = reg_allocator.allocate_float_reg();
+        
+        // MIPS float negation: neg.s
+        emit("neg.s " + dest_freg + ", " + src_freg);
+        emit_comment("DEBUG: Negated float " + src + " to " + dest);
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_freg, dest);
+        storage_desc.set_location(dest, dest_freg);
+        reg_allocator.mark_dirty(dest_freg);
+        
+        emit_comment("DEBUG: " + dest + " in " + dest_freg + " (dirty)");
+    } else {
+        // Integer negation
+        
+        // Check if source is a constant
+        if (instr->arg1->type == TAC_OPERAND_CONSTANT) {
+            // Constant negation - compute at compile time
+            int value = stoi(src);
+            int negated = -value;
+            
+            string dest_reg = allocate_register_with_spilling();
+            emit("li " + dest_reg + ", " + to_string(negated));
+            emit_comment("DEBUG: Loaded negated constant " + to_string(negated) + " into " + dest_reg);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+            
+            emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
+        } else {
+            // Variable negation - use sub from $zero
+            string src_reg = load_operand_to_register(instr->arg1);
+            emit_comment("DEBUG: " + src + " in " + src_reg);
+            
+            // Allocate destination register
+            string dest_reg = allocate_register_with_spilling();
+            
+            // MIPS negation: sub dest, $zero, src
+            emit("sub " + dest_reg + ", $zero, " + src_reg);
+            emit_comment("DEBUG: Negated " + src + " to " + dest);
+            
+            // Update descriptors
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+            
+            emit_comment("DEBUG: " + dest + " in " + dest_reg + " (dirty)");
+        }
     }
 }
 
