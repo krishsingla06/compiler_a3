@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 // go break continue test
 int main(){
@@ -23,7 +17,6 @@ int main(){
         }
         sum = sum + i;
     }
-    print_int(sum); // should print 22
-    print_newline();
+    printf("Sum: %d\n", sum); // should print 22
     return sum; // should return 22
 }

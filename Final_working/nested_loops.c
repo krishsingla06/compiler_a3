@@ -1,10 +1,5 @@
-void print_int(int n){
-    return;
-}
+void printf(char* c, ...){return;}
 
-void print_newline(){
-    return;
-}
 // nested loops test
 // while, do while and until only
 int main(){
@@ -21,7 +16,6 @@ int main(){
         }
         i = i + 1;
     }while(i<=3);
-    print_int(sum); // should print 90
-    print_newline();
+    printf("Sum: %d\n", sum); // should print 90
     return sum; // should return 90
 }

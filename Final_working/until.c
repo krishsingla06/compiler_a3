@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 int main(){
     int i;
@@ -20,7 +14,6 @@ int main(){
         }
         i = i + 1;
     }
-    print_int(sum);
-    print_newline();
+    printf("Sum: %d\n", sum);
     return sum; // should return 80
 }

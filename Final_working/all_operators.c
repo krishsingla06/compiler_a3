@@ -1,6 +1,4 @@
-void print_int(int x){return;}
-void print_float(float x){return;}
-void print_newline(){return;}
+void printf(char* c, ...){return;}
 
 int main(){
     int i = 5;
@@ -35,16 +33,11 @@ int main(){
     int type_conv2 = 5 || "hello";  
     int type_conv3 = !20.5;    
 
-    print_int(modulus);
-    print_newline();
-    print_float(f);
-    print_newline();
-    print_int(type_conv1);
-    print_newline();
-    print_int(type_conv2);
-    print_newline();
-    print_int(type_conv3);
-    print_newline();
+    printf("Modulus: %d\n", modulus);
+    printf("Float f: %f\n", f);
+    printf("Type conversion 1: %d\n", type_conv1);
+    printf("Type conversion 2: %d\n", type_conv2);
+    printf("Type conversion 3: %d\n", type_conv3);
 
     // expected output : 
     // 1

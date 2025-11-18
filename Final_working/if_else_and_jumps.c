@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 // highly complicated nested loops with jumps test
 int main(){
@@ -26,7 +20,6 @@ int main(){
     if(i<=3){
         goto I1;
     }
-    print_int(sum); // should print 90
-    print_newline();
+    printf("Sum: %d\n", sum); // should print 90
     return sum; // should return 90
 }

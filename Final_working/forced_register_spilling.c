@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 int main() {
     int a, b, c, d, e, f, g, h, i, j, k, l,m,n,o,p, q,r,s,t,u,v,w,x,y,z;
@@ -43,8 +37,7 @@ int main() {
              (m + n) + (o + p) + (q + r) + (s + t) + (u + v) + (w + x) +
                 (y + z);
                 // Should be 351
-    print_int(result);
-    print_newline();
+    printf("Result: %d\n", result);
     
     return result;
 }

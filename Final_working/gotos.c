@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 
 int main(){
@@ -20,7 +14,6 @@ I9:
     goto I10;
 I11:
     x = 40;
-    print_int(x); // should print 40
-    print_newline();
+    printf("x: %d\n", x); // should print 40
     return x;
 }

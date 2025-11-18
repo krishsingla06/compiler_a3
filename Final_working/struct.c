@@ -1,5 +1,4 @@
-void print_int(int n) { return; }
-void print_newline() { return; }
+void printf(char* c, ...){return;}
 
 //struct
 
@@ -12,10 +11,8 @@ int main() {
     struct Point p;
     p.x = 10;
     p.y = 20;
-    print_int(p.x); // should print 10
-    print_newline();
-    print_int(p.y); // should print 20
-    print_newline();
+    printf("Point x: %d\n", p.x); // should print 10
+    printf("Point y: %d\n", p.y); // should print 20
     
     return 0;
 }

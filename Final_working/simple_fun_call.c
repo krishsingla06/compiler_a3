@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 int goo(int x,int y){
     int p;
@@ -22,7 +16,6 @@ int main(){
     a=3;
     b=4;
     r=goo(a,b);
-    print_int(r);
-    print_newline();
+    printf("Result: %d\n", r);
     return r;
 }

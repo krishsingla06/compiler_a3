@@ -1,4 +1,7 @@
 
+void printf(char* c, ...){return;}
+void print_int(int n){return 0;}
+
 //ok
 // void arr_decay_test(int *ptr){
 //     ptr[0] = 10;
@@ -32,7 +35,7 @@ int main(){
     // arr[0][1] = 'B';
     // arr[1][0] = 'C';
     char c = 'Z';
-    print_int(c); // should print 'Z' i.e., 90
+    printf("Character c: %c (ASCII: %d)\n", c, c); // should print 'Z' i.e., 90
     // print_int(arr[0][0]); // should print ASCII of 'A' i.e., 65
     // print_newline();
     // print_int(arr[0][1]); // should print ASCII of 'B' i.e

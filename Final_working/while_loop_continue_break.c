@@ -1,13 +1,7 @@
 
 //#include <stdio.h>
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 // -------------------------------------
 int main(){
@@ -25,7 +19,6 @@ int main(){
         sum = sum + i;
     }
     //printf("%d\n", sum);
-    print_int(sum); // should print 23
-    print_newline();
+    printf("Sum: %d\n", sum); // should print 23
     return sum; // should return 23
 }

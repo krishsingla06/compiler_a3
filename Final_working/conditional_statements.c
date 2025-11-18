@@ -1,6 +1,4 @@
-void print_int(int x){return;}
-void print_float(float x){return;}
-void print_newline(){return;}
+void printf(char* c, ...){return;}
 
 int main(){
     // conditional statements 
@@ -79,23 +77,13 @@ int main(){
     // goto start;
     // end :
 
-    print_int(max);
-    print_newline();
-
-    print_newline();
-    print_newline();
-
-    print_int(sum_while);
-    print_newline();
-
-    print_int(sum_for);
-    print_newline();
-
-    print_int(sum_until);
-    print_newline();
-
-    print_int(okkk);
-    print_newline();
+    printf("Max value: %d\n", max);
+    printf("\n");
+    printf("\n");
+    printf("Sum while: %d\n", sum_while);
+    printf("Sum for: %d\n", sum_for);
+    printf("Sum until: %d\n", sum_until);
+    printf("Goto result: %d\n", okkk);
 
     // expected output
     // 60

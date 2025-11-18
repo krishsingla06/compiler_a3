@@ -418,6 +418,10 @@ void MIPSGenerator::generate(const vector<TACInstruction*>& tac_instructions) {
     
     // Process each basic block
     for (const BasicBlock& block : basic_blocks) {
+        // CRITICAL FIX: Flush instruction buffer before starting new basic block
+        // This prevents leftover instructions from previous block appearing in new block
+        flush_instruction_buffer();
+        
         emit_comment("======================================");
         emit_block_label(block.id, block.start_index, block.end_index);
         emit_comment("======================================");
@@ -2786,6 +2790,20 @@ string MIPSGenerator::load_operand_to_register(TACOperand* operand) {
             emit("li.s " + freg + ", " + value);
             emit_comment("DEBUG: Loaded float constant " + value + " into " + freg);
             
+            // CRITICAL FIX: Clear any old associations from this register
+            // before tracking the new constant
+            set<string> old_vars = reg_desc.get_vars_in_reg(freg);
+            for (const string& old_var : old_vars) {
+                storage_desc.remove_location(old_var, freg);
+            }
+            reg_desc.clear_reg(freg);
+            
+            // Track with a unique key so the register won't be spilled to wrong location
+            string unique_const_key = "<CONST_" + to_string(current_instruction_index) + "_" + value + ">";
+            reg_desc.add_var_to_reg(freg, unique_const_key);
+            storage_desc.set_location(unique_const_key, freg);
+            // Don't mark as dirty - constants don't need to be written back
+            
             return freg;
         } else {
             // Integer constant
@@ -3556,7 +3574,9 @@ void MIPSGenerator::spill_all_dirty() {
         
         for (const string& var : vars) {
             // Skip constants - they don't need to be spilled
-            if (var == "<CONSTANT>" || var == "<STRING_ADDR>") {
+            // Check for various constant markers: <CONSTANT>, <STRING_ADDR>, <CONST_...>
+            if (var == "<CONSTANT>" || var == "<STRING_ADDR>" || 
+                var.find("<CONST_") == 0) {
                 emit_comment("DEBUG: Skipping spill of constant in " + reg);
                 continue;
             }

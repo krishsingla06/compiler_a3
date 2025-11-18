@@ -1,0 +1,24 @@
+
++-----------------------------------------------------------------------------------------+
+|                                   FUNCTION TABLE                                       |
++-----------------------------------------------------------------------------------------+
+| Function: main (main)
+|   Return type: int
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 336 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 344 bytes
+|   Declared at line: 18
++-----------------------------------------------------------------------------------------+
+| Function: printf (printf_cp1_variadic)
+|   Return type: void
+|   Parameters: char* ...
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 3
++-----------------------------------------------------------------------------------------+

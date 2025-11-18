@@ -1,0 +1,65 @@
+
++=========================================================================================+
+|                              GLOBAL SYMBOL TABLE                                        |
++=========================================================================================+
+
+Total Symbols: 53
+
++-----------------------------------------------------------------------------------------+
+| Name                | Mangled Name                    | Type        | Location | Offset  |
++-----------------------------------------------------------------------------------------+
+| #t1                 | #t1                             | int         | LOCAL    | -16     |
+| #t10                | #t10                            | int         | LOCAL    | -80     |
+| #t11                | #t11                            | int         | LOCAL    | -88     |
+| #t12                | #t12                            | int         | LOCAL    | -96     |
+| #t13                | #t13                            | int         | LOCAL    | -104    |
+| #t14                | #t14                            | int         | LOCAL    | -112    |
+| #t15                | #t15                            | int         | LOCAL    | -120    |
+| #t16                | #t16                            | int         | LOCAL    | -128    |
+| #t17                | #t17                            | int         | LOCAL    | -136    |
+| #t18                | #t18                            | int         | LOCAL    | -144    |
+| #t19                | #t19                            | int         | LOCAL    | -152    |
+| #t2                 | #t2                             | int         | LOCAL    | -24     |
+| #t20                | #t20                            | int         | LOCAL    | -160    |
+| #t21                | #t21                            | int         | LOCAL    | -168    |
+| #t22                | #t22                            | int         | LOCAL    | -176    |
+| #t23                | #t23                            | int         | LOCAL    | -184    |
+| #t24                | #t24                            | void        | LOCAL    | -188    |
+| #t25                | #t25                            | void        | LOCAL    | -188    |
+| #t26                | #t26                            | void        | LOCAL    | -188    |
+| #t27                | #t27                            | void        | LOCAL    | -188    |
+| #t28                | #t28                            | void        | LOCAL    | -188    |
+| #t3                 | #t3                             | int         | LOCAL    | -32     |
+| #t4                 | #t4                             | int         | LOCAL    | -40     |
+| #t5                 | #t5                             | int         | LOCAL    | -48     |
+| #t6                 | #t6                             | int         | LOCAL    | -56     |
+| #t7                 | #t7                             | int         | LOCAL    | -60     |
+| #t8                 | #t8                             | int         | LOCAL    | -68     |
+| #t9                 | #t9                             | int         | LOCAL    | -72     |
+| added               | v_added_main_s2                 | int         | LOCAL    | -20     |
+| c                   | v_c_printf_cp1_s2               | char*       | PARAM#0  | 8       |
+| divided             | v_divided_main_s2               | int         | LOCAL    | -44     |
+| equal               | v_equal_main_s2                 | int         | LOCAL    | -116    |
+| f                   | v_f_main_s2                     | float       | LOCAL    | -12     |
+| greater_equal       | v_greater_equal_main_s2         | int         | LOCAL    | -108    |
+| greater_than        | v_greater_than_main_s2          | int         | LOCAL    | -92     |
+| i                   | v_i_main_s2                     | int         | LOCAL    | -4      |
+| less_equal          | v_less_equal_main_s2            | int         | LOCAL    | -100    |
+| less_than           | v_less_than_main_s2             | int         | LOCAL    | -84     |
+| logical_and         | v_logical_and_main_s2           | int         | LOCAL    | -132    |
+| logical_not         | v_logical_not_main_s2           | int         | LOCAL    | -148    |
+| logical_or          | v_logical_or_main_s2            | int         | LOCAL    | -140    |
+| modulus             | v_modulus_main_s2               | int         | LOCAL    | -52     |
+| multiplied          | v_multiplied_main_s2            | int         | LOCAL    | -36     |
+| not_equal           | v_not_equal_main_s2             | int         | LOCAL    | -124    |
+| sc1                 | v_sc1_main_s2                   | int         | LOCAL    | -156    |
+| sc2                 | v_sc2_main_s2                   | int         | LOCAL    | -164    |
+| subexpr1            | v_subexpr1_main_s2              | int         | LOCAL    | -64     |
+| subexpr2            | v_subexpr2_main_s2              | int         | LOCAL    | -76     |
+| subtracted          | v_subtracted_main_s2            | int         | LOCAL    | -28     |
+| sum                 | v_sum_main_s2                   | int         | LOCAL    | -8      |
+| type_conv1          | v_type_conv1_main_s2            | int         | LOCAL    | -172    |
+| type_conv2          | v_type_conv2_main_s2            | int         | LOCAL    | -180    |
+| type_conv3          | v_type_conv3_main_s2            | int         | LOCAL    | -188    |
++-----------------------------------------------------------------------------------------+
+

@@ -1,10 +1,4 @@
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return;}
 
 int factorial(int n){
     if(n==0){
@@ -18,7 +12,6 @@ int factorial(int n){
 int main(){
     int x;
     x = factorial(5); // should return 120
-    print_int(x);
-    print_newline();
+    printf("Factorial result: %d\n", x);
     return x;
 }

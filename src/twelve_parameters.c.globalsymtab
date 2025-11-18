@@ -1,0 +1,39 @@
+
++=========================================================================================+
+|                              GLOBAL SYMBOL TABLE                                        |
++=========================================================================================+
+
+Total Symbols: 27
+
++-----------------------------------------------------------------------------------------+
+| Name                | Mangled Name                    | Type        | Location | Offset  |
++-----------------------------------------------------------------------------------------+
+| #t1                 | #t1                             | int         | LOCAL    | -4      |
+| #t10                | #t10                            | int         | LOCAL    | -40     |
+| #t11                | #t11                            | int         | LOCAL    | -44     |
+| #t12                | #t12                            | int         | LOCAL    | -8      |
+| #t13                | #t13                            | void        | LOCAL    | -8      |
+| #t2                 | #t2                             | int         | LOCAL    | -8      |
+| #t3                 | #t3                             | int         | LOCAL    | -12     |
+| #t4                 | #t4                             | int         | LOCAL    | -16     |
+| #t5                 | #t5                             | int         | LOCAL    | -20     |
+| #t6                 | #t6                             | int         | LOCAL    | -24     |
+| #t7                 | #t7                             | int         | LOCAL    | -28     |
+| #t8                 | #t8                             | int         | LOCAL    | -32     |
+| #t9                 | #t9                             | int         | LOCAL    | -36     |
+| a                   | v_a_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#0  | 8       |
+| b                   | v_b_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#1  | 12      |
+| c                   | v_c_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#2  | 16      |
+| c                   | v_c_printf_cp1_s2               | char*       | PARAM#0  | 8       |
+| d                   | v_d_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#3  | 20      |
+| e                   | v_e_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#4  | 24      |
+| f                   | v_f_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#5  | 28      |
+| g                   | v_g_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#6  | 32      |
+| h                   | v_h_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#7  | 36      |
+| i                   | v_i_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#8  | 40      |
+| j                   | v_j_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#9  | 44      |
+| k                   | v_k_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#10 | 48      |
+| l                   | v_l_foo_i_i_i_i_i_i_i_i_i_i_... | int         | PARAM#11 | 52      |
+| x                   | v_x_main_s2                     | int         | LOCAL    | -4      |
++-----------------------------------------------------------------------------------------+
+

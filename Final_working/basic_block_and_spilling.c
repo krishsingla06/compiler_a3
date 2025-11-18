@@ -1,11 +1,5 @@
 
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
+void printf(char* c, ...){return ;}
 
 // Important: Test jumps and labels as well as basic block handling
 int main(){
@@ -19,8 +13,7 @@ L1:
     x=3;
     goto L2;
 L2:
-    print_int(x);
-    print_newline();
+    printf("x: %d\n", x);
     x=4;
     return x;
 }

@@ -1,0 +1,34 @@
+
++-----------------------------------------------------------------------------------------+
+|                                   FUNCTION TABLE                                       |
++-----------------------------------------------------------------------------------------+
+| Function: foo (foo_i_i_i_i_i_i_i_i_i_i_i_i)
+|   Return type: int
+|   Parameters: int int int int int int int int int int int int 
+|   Stack Frame:
+|     - Parameter space: 48 bytes
+|     - Local var space: 44 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 100 bytes
+|   Declared at line: 3
++-----------------------------------------------------------------------------------------+
+| Function: main (main)
+|   Return type: int
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 8 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 7
++-----------------------------------------------------------------------------------------+
+| Function: printf (printf_cp1_variadic)
+|   Return type: void
+|   Parameters: char* ...
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 1
++-----------------------------------------------------------------------------------------+
