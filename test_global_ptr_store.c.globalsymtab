@@ -10,14 +10,14 @@ Total Symbols: 11
 +-----------------------------------------------------------------------------------------+
 | #t1                 | #t1                             | int         | LOCAL    | -4      |
 | #t2                 | #t2                             | int         | LOCAL    | -12     |
-| #t3                 | #t3                             | void        | LOCAL    | 0       |
-| #t4                 | #t4                             | void        | LOCAL    | 0       |
-| #t5                 | #t5                             | void        | LOCAL    | 0       |
-| #t6                 | #t6                             | void        | LOCAL    | 0       |
+| #t3                 | #t3                             | int         | LOCAL    | -4      |
+| #t4                 | #t4                             | int         | LOCAL    | -12     |
+| #t5                 | #t5                             | int*        | LOCAL    | -16     |
+| #t6                 | #t6                             | int         | LOCAL    | -20     |
 | #t7                 | #t7                             | void        | LOCAL    | 0       |
-| another_global      | v_another_global_s1             | int         | GLOBAL   | 0       |
-| format              | v_format_printf_cp1_s2          | char*       | PARAM#0  | 8       |
-| global_val          | v_global_val_s1                 | int         | GLOBAL   | 4       |
-| p                   | v_p_store_global_through_poi... | int*        | LOCAL    | -8      |
+| #t8                 | #t8                             | void        | LOCAL    | 0       |
+| p                   | v_p_bar_s2                      | int*        | LOCAL    | -8      |
+| p                   | v_p_foo_s2                      | int*        | LOCAL    | -8      |
+| val                 | v_val_s1                        | int         | GLOBAL   | 0       |
 +-----------------------------------------------------------------------------------------+
 

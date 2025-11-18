@@ -35,6 +35,7 @@ public:
     string get_register(const string& var);  // Returns first register location
     bool is_only_in_register(const string& var);  // True if ONLY in register, not in memory
     void clear_all();
+    void remove_all_register_locations();  // Remove all register locations from all variables
 };
 
-#endif // DESCRIPTORS_H
+#endif // DESCRIPTORS_Hc

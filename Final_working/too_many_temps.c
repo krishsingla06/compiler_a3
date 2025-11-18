@@ -1,16 +1,4 @@
-
-//#include <stdio.h>
-
-void print_int(int n){
-    return;
-}
-
-void print_newline(){
-    return;
-}
-// ------------------------------------
-// Test: Force temp register spilling
-
+void printf(char* format, ...){return;}
 int main() {
     int a = 1;
     int b = 2;
@@ -23,9 +11,7 @@ int main() {
     int result = ((a + b) * (c + d)) + ((a - b) * (c - d)) + 
                  ((a * b) + (c * d)) + ((a + c) * (b + d)) +
                  (e * (a + b + c + d));
-    //printf("%d\n", result);
-    print_int(result); // should print 110
-    print_newline();
+    printf("%d\n", result); // should print 110
     
     return result;
 }

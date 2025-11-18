@@ -49,6 +49,8 @@ public:
     set<string> get_dirty_regs();
     void clear_all();
     bool is_reg_allocated(const string& reg);  // Check if register is allocated
+    void mark_allocated(const string& reg);  // Mark register as allocated
+    void unmark_allocated(const string& reg);  // Unmark register allocation (but keep variables)
 };
 
 // MIPS Code Generator (Simplified stub version)

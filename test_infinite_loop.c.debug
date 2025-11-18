@@ -1,0 +1,171 @@
+Error log initialized: ../test_infinite_loop.c.errors
+Starting parser...
+Entering scope level 1
+DEBUG: Variable val mangled as v_val_s1 (function: global, signature: , scope: 1)
+DEBUG: Variable val mangled as v_val_s1 (function: global, signature: , scope: 1)
+Variable val mangled as v_val_s1 [GLOBAL]
+Declared variable: val (int) at line 2 in scope 1
+Start rule: Global declaration has 0 TAC instructions
+TAC code written to ../test_infinite_loop.tac
+Function declarator: foo with no parameters
+Registered function: foo as foo returning void
+Function definition: foo registered
+Entering scope level 2
+Function foo parameter space: 0 bytes
+Found variable: val of type int
+Unary operation: &int -> int*
+Allocated local variable #t1 at offset -4 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (int) at line 5 in scope 2
+DEBUG: Variable p mangled as v_p_foo_s2 (function: foo, signature: , scope: 2)
+Allocated local variable p at offset -8 (size: 4 bytes)
+DEBUG: Variable p mangled as v_p_foo_s2 (function: foo, signature: , scope: 2)
+Variable p mangled as v_p_foo_s2 [LOCAL]
+Declared variable: p (int*) with initializer of type int* at line 5 in scope 2
+Found variable: p of type int*
+Unary operation: ++int* -> int*
+Allocated local variable #t2 at offset -12 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 6 in scope 2
+Found variable: val of type int
+Found variable: p of type int*
+Unary operation: *int* -> int
+Allocated local variable #t3 at offset -16 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 7 in scope 2
+Simple assignment from int to int
+Compound statement with declarations and statements
+Function foo stack frame:
+  - Local variables: 16 bytes
+  - Parameters: 0 bytes
+  - Total: 24 bytes
+TAC code appended to ../test_infinite_loop.tac
+Function declarator: bar with no parameters
+Registered function: bar as bar returning void
+Function definition: bar registered
+Entering scope level 2
+Function bar parameter space: 0 bytes
+Found variable: val of type int
+Unary operation: &int -> int*
+Allocated local variable #t4 at offset -4 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 11 in scope 2
+DEBUG: Variable p mangled as v_p_bar_s2 (function: bar, signature: , scope: 2)
+Allocated local variable p at offset -8 (size: 4 bytes)
+DEBUG: Variable p mangled as v_p_bar_s2 (function: bar, signature: , scope: 2)
+Variable p mangled as v_p_bar_s2 [LOCAL]
+Declared variable: p (int*) with initializer of type int* at line 11 in scope 2
+Found variable: p of type int*
+Integer literal: 1 (type: int)
+Binary operation: int* - int -> int* (pointer arithmetic)
+Allocated local variable #t5 at offset -12 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 12 in scope 2
+Allocated local variable #t6 at offset -16 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int*) at line 12 in scope 2
+Unary operation: *int* -> int
+Allocated local variable #t7 at offset -20 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 12 in scope 2
+Found variable: val of type int
+Krish
+Compound statement with declarations and statements
+Function bar stack frame:
+  - Local variables: 20 bytes
+  - Parameters: 0 bytes
+  - Total: 28 bytes
+TAC code appended to ../test_infinite_loop.tac
+Function declarator: main with no parameters
+Registered function: main as main returning int
+Function definition: main registered
+Entering scope level 2
+Function main parameter space: 0 bytes
+Found function name: foo
+Found exact function match: foo
+Function call: foo() -> void
+Allocated local variable #t8 at offset 0 (size: 0 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (void) at line 16 in scope 2
+Found function name: bar
+Found exact function match: bar
+Function call: bar() -> void
+Allocated local variable #t9 at offset 0 (size: 0 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (void) at line 17 in scope 2
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 0 bytes
+  - Total: 8 bytes
+TAC code appended to ../test_infinite_loop.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+
+
+=== Optimizing TAC ===
+=== Starting Goto Chain Optimization ===
+No goto chains found to optimize
+=== TAC Optimization Complete ===
+
+Rewriting optimized TAC to file...
+Optimized TAC written to ../test_infinite_loop.tac
+
+
+Generating MIPS assembly code...
+Total TAC instructions collected: 21
+hihi Variable v_val_s1 type: int
+Returning 0
+Getting offset for variable: v_val_s1
+hihi Variable v_p_foo_s2 type: int*
+Returning 0
+hihi Variable #t1 type: int
+Returning 0
+Getting offset for variable: v_p_foo_s2
+hihi Variable v_p_foo_s2 type: int*
+Returning 0
+hihi Variable #t2 type: int
+Returning 0
+Getting offset for variable: #t1
+Getting offset for variable: v_p_foo_s2
+Getting offset for variable: v_p_foo_s2
+hihi Variable v_val_s1 type: int
+Returning 0
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: v_val_s1
+hihi Variable v_p_bar_s2 type: int*
+Returning 0
+hihi Variable #t4 type: int
+Returning 0
+Getting offset for variable: v_p_bar_s2
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t7 type: int
+Returning 0
+Getting offset for variable: #t7
+hihi Variable v_val_s1 type: int
+Returning 0
+hihi Variable v_val_s1 type: int
+Returning 0
+hihi Variable #t8 type: void
+Returning 0
+Getting offset for variable: #t8
+hihi Variable #t9 type: void
+Returning 0
+Getting offset for variable: #t9
+Clean MIPS assembly code (no debug) written to ../test_infinite_loop.clean.asm
+MIPS assembly code (with debug) written to ../test_infinite_loop.asm
+Error log closed: ../test_infinite_loop.c.errors

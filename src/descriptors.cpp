@@ -84,3 +84,19 @@ bool StorageDescriptor::is_only_in_register(const string& var) {
 void StorageDescriptor::clear_all() {
     var_to_locations.clear();
 }
+
+void StorageDescriptor::remove_all_register_locations() {
+    // Remove all register locations (starting with '$') from all variables
+    // Keep memory locations intact
+    for (auto& pair : var_to_locations) {
+        set<string>& locations = pair.second;
+        // Remove all locations that start with '$' (registers)
+        for (auto it = locations.begin(); it != locations.end(); ) {
+            if ((*it)[0] == '$') {
+                it = locations.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}

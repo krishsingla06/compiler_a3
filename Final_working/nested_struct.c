@@ -16,9 +16,11 @@ struct k
 };
 
 int main(){
-
+    float num = 9.7;
+    float* pnum = &num;
     struct k var;
     struct k*ptr;
+    printf("Address of num: \n");
     ptr = &var;
     var.a = 10;
     var.b = 97.5;

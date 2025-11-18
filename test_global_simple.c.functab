@@ -10,29 +10,9 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 8 bytes
-|   Declared at line: 19
-+-----------------------------------------------------------------------------------------+
-| Function: printf (printf_cp1_variadic)
-|   Return type: void
-|   Parameters: char* ...
-|   Stack Frame:
-|     - Parameter space: 4 bytes
-|     - Local var space: 0 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 12 bytes
-|   Declared at line: 2
-+-----------------------------------------------------------------------------------------+
-| Function: set_globals (set_globals)
-|   Return type: void
-|   Parameters: 
-|   Stack Frame:
-|     - Parameter space: 0 bytes
-|     - Local var space: 0 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 8 bytes
 |   Declared at line: 9
 +-----------------------------------------------------------------------------------------+
-| Function: store_global_through_pointer (store_global_through_pointer)
+| Function: modify_through_pointer (modify_through_pointer)
 |   Return type: void
 |   Parameters: 
 |   Stack Frame:
@@ -40,5 +20,5 @@
 |     - Local var space: 12 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 20 bytes
-|   Declared at line: 14
+|   Declared at line: 4
 +-----------------------------------------------------------------------------------------+

@@ -5,61 +5,21 @@ Exiting scope level 2
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
-| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+  - val (int) declared at line 2 [mangled: v_val_s1] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - format (char*) declared at line 2 [mangled: v_format_printf_cp1_s2] [PARAM #0, offset: 8]
-+-----------------------------------------------------------------------------------------+
-Destroying symbols from scope 2:
-  - format (char*)
-
-
-
-
-
-Exiting scope level 2
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - another_global (int) declared at line 7 [mangled: v_another_global_s1] [GLOBAL]
-  - global_val (int) declared at line 6 [mangled: v_global_val_s1] [GLOBAL]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-| (empty scope)                                                                       |
-+-----------------------------------------------------------------------------------------+
-
-
-
-
-
-Exiting scope level 2
-
-+-----------------------------------------------------------------------------------------+
-|                                    SYMBOL TABLE                                        |
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 1 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - another_global (int) declared at line 7 [mangled: v_another_global_s1] [GLOBAL]
-  - global_val (int) declared at line 6 [mangled: v_global_val_s1] [GLOBAL]
-+-----------------------------------------------------------------------------------------+
-
-+- SCOPE LEVEL 2 ------------------------------------------------------+
-+-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 15 [mangled: #t1] [LOCAL, offset: -4]
-  - #t2 (int) declared at line 16 [mangled: #t2] [LOCAL, offset: -12]
-  - p (int*) declared at line 15 [mangled: v_p_store_global_through_pointer_s2] [LOCAL, offset: -8]
+  - #t1 (int) declared at line 5 [mangled: #t1] [LOCAL, offset: -4]
+  - #t2 (int) declared at line 6 [mangled: #t2] [LOCAL, offset: -12]
+  - #t3 (int) declared at line 7 [mangled: #t3] [LOCAL, offset: -16]
+  - p (int*) declared at line 5 [mangled: v_p_foo_s2] [LOCAL, offset: -8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
   - #t2 (int)
+  - #t3 (int)
   - p (int*)
 
 
@@ -74,24 +34,47 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - another_global (int) declared at line 7 [mangled: v_another_global_s1] [GLOBAL]
-  - global_val (int) declared at line 6 [mangled: v_global_val_s1] [GLOBAL]
+  - val (int) declared at line 2 [mangled: v_val_s1] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t3 (void) declared at line 20 [mangled: #t3] [LOCAL, offset: 0]
-  - #t4 (void) declared at line 22 [mangled: #t4] [LOCAL, offset: 0]
-  - #t5 (void) declared at line 23 [mangled: #t5] [LOCAL, offset: 0]
-  - #t6 (void) declared at line 25 [mangled: #t6] [LOCAL, offset: 0]
-  - #t7 (void) declared at line 26 [mangled: #t7] [LOCAL, offset: 0]
+  - #t4 (int) declared at line 11 [mangled: #t4] [LOCAL, offset: -4]
+  - #t5 (int) declared at line 12 [mangled: #t5] [LOCAL, offset: -12]
+  - #t6 (int*) declared at line 12 [mangled: #t6] [LOCAL, offset: -16]
+  - #t7 (int) declared at line 12 [mangled: #t7] [LOCAL, offset: -20]
+  - p (int*) declared at line 11 [mangled: v_p_bar_s2] [LOCAL, offset: -8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - #t3 (void)
-  - #t4 (void)
-  - #t5 (void)
-  - #t6 (void)
-  - #t7 (void)
+  - #t4 (int)
+  - #t5 (int)
+  - #t6 (int*)
+  - #t7 (int)
+  - p (int*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - val (int) declared at line 2 [mangled: v_val_s1] [GLOBAL]
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t8 (void) declared at line 16 [mangled: #t8] [LOCAL, offset: 0]
+  - #t9 (void) declared at line 17 [mangled: #t9] [LOCAL, offset: 0]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t8 (void)
+  - #t9 (void)
 
 
 
@@ -105,12 +88,10 @@ Exiting scope level 1
 
 +- SCOPE LEVEL 1 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - another_global (int) declared at line 7 [mangled: v_another_global_s1] [GLOBAL]
-  - global_val (int) declared at line 6 [mangled: v_global_val_s1] [GLOBAL]
+  - val (int) declared at line 2 [mangled: v_val_s1] [GLOBAL]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 1:
-  - another_global (int)
-  - global_val (int)
+  - val (int)
 
 
 

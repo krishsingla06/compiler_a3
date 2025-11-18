@@ -157,6 +157,31 @@ bool MIPSRegisterAllocator::is_reg_allocated(const string& reg) {
     return allocated_temp_regs.find(reg) != allocated_temp_regs.end();
 }
 
+void MIPSRegisterAllocator::mark_allocated(const string& reg) {
+    if (reg.find("$t") == 0) {
+        allocated_temp_regs.insert(reg);
+    } else if (reg.find("$s") == 0) {
+        allocated_saved_regs.insert(reg);
+    } else if (reg.find("$f") == 0) {
+        // Extract float register number
+        int reg_num = stoi(reg.substr(2));
+        allocated_float_regs.insert(reg_num);
+    }
+}
+
+void MIPSRegisterAllocator::unmark_allocated(const string& reg) {
+    // Only clear allocation flags, don't touch variable mappings or descriptors
+    if (reg.find("$t") == 0) {
+        allocated_temp_regs.erase(reg);
+    } else if (reg.find("$s") == 0) {
+        allocated_saved_regs.erase(reg);
+    } else if (reg.find("$f") == 0) {
+        // Extract float register number
+        int reg_num = stoi(reg.substr(2));
+        allocated_float_regs.erase(reg_num);
+    }
+}
+
 // MIPS Generator Implementation
 
 MIPSGenerator::MIPSGenerator(ostream& out, ostream* clean_out) 
@@ -325,8 +350,10 @@ if (instr->arg2 && (instr->arg2->type == TAC_OPERAND_IDENTIFIER ||
 
 void MIPSGenerator::clear_all_registers() {
     // Clear all temporary registers and their descriptors
+    set<string> all_temp_regs;
     for (int i = 0; i <= 9; i++) {
         string reg = "$t" + to_string(i);
+        all_temp_regs.insert(reg);
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         for (const string& var : vars) {
             storage_desc.remove_location(var, reg);
@@ -336,12 +363,19 @@ void MIPSGenerator::clear_all_registers() {
     // Clear argument registers
     for (int i = 0; i <= 3; i++) {
         string reg = "$a" + to_string(i);
+        all_temp_regs.insert(reg);
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         for (const string& var : vars) {
             storage_desc.remove_location(var, reg);
         }
         reg_desc.clear_reg(reg);
     }
+    
+    // CRITICAL FIX: Also remove all register locations from storage descriptor
+    // This handles cases where storage descriptor has stale register entries
+    // that are not in the register descriptor (due to descriptor sync issues)
+    storage_desc.remove_all_register_locations();
+    
     reg_allocator.clear_all();
 }
 
@@ -899,6 +933,14 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         reg_allocator.mark_dirty(reg);
         emit_comment("DEBUG: " + dest + " = constant " + src + " loaded in " + reg + " (dirty)");
         
+        // For global/static variables, immediately save to memory
+        if (is_global_or_static(dest)) {
+            int offset = get_global_offset(dest);
+            emit("sw " + reg + ", " + to_string(offset) + "($gp)");
+            emit_comment("DEBUG: Saved global/static " + dest + " to memory at " + to_string(offset) + "($gp)");
+            storage_desc.add_location(dest, "memory:" + to_string(offset) + "($gp)");
+        }
+        
         return;
     }
     
@@ -1087,6 +1129,9 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
         string reg1 = load_operand_to_register(instr->arg1);
         emit_comment("DEBUG: " + src1 + " in " + reg1);
         
+        // IMPORTANT: Mark reg1 as allocated to prevent it from being reused for reg2
+        reg_allocator.mark_allocated(reg1);
+        
         string reg2 = load_operand_to_register(instr->arg2);
         emit_comment("DEBUG: " + src2 + " in " + reg2);
         
@@ -1095,6 +1140,9 @@ void MIPSGenerator::translate_arithmetic(TACInstruction* instr) {
         
         // Generate operation
         emit(op_name + " " + dest_reg + ", " + reg1 + ", " + reg2);
+        
+        // Clear the allocation flag on reg1 now that operation is complete
+        reg_allocator.unmark_allocated(reg1);
         
         // Free constant registers after use (they won't be needed again)
         if (instr->arg1->type == TAC_OPERAND_CONSTANT || 
@@ -1561,16 +1609,13 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
 
 void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     // TAC: result = &arg1
-    // MIPS: Get the address of arg1 (which is at offset($fp))
+    // MIPS: Get the address of arg1
     // t1 = &x
     // ptr = t1
     string dest = instr->result->value;
     string var = instr->arg1->value;
     
     emit_comment(dest + " = &" + var);
-    
-    // Get the memory offset of the variable
-    int offset = get_offset(var);
     
     // Allocate a register for the result
     string dest_reg = reg_allocator.allocate_temp_reg();
@@ -1580,19 +1625,30 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
         spill_register(dest_reg);
     }
     
-    // Calculate address: dest_reg = $fp + offset
-    // float *ptr = f;
-    // temp = &f
-    // ptr = temp
-    if (offset == 0) {
-        emit("move " + dest_reg + ", $fp");
-        emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
-    } else if (offset > 0) {
-        emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
-        emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+    // Check if variable is global/static or local
+    if (is_global_or_static(var)) {
+        // For global/static variables, compute address as $gp + offset
+        int offset = get_global_offset(var);
+        if (offset == 0) {
+            emit("move " + dest_reg + ", $gp");
+            emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at $gp");
+        } else {
+            emit("addiu " + dest_reg + ", $gp, " + to_string(offset));
+            emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at " + to_string(offset) + "($gp)");
+        }
     } else {
-        emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
-        emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+        // For local variables, compute address as $fp + offset
+        int offset = get_offset(var);
+        if (offset == 0) {
+            emit("move " + dest_reg + ", $fp");
+            emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
+        } else if (offset > 0) {
+            emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+            emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+        } else {
+            emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+            emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+        }
     }
     
     // Update descriptors: dest is now in dest_reg and is dirty
@@ -1945,6 +2001,15 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                     continue;
                 }
                 
+                // Check if it's a global/static variable
+                if (is_global_or_static(var)) {
+                    int global_offset = get_global_offset(var);
+                    emit("sw " + reg + ", " + to_string(global_offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static " + var + " from " + reg + " to " + to_string(global_offset) + "($gp)");
+                    storage_desc.set_location(var, "memory:" + to_string(global_offset) + "($gp)");
+                    continue;
+                }
+                
                 // Get offset - if it's 0, this might be invalid or old $fp location
                 int offset = get_offset(var);
                 
@@ -1983,6 +2048,15 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
                     continue;
                 }
                 
+                // Check if it's a global/static variable
+                if (is_global_or_static(var)) {
+                    int global_offset = get_global_offset(var);
+                    emit("sw " + reg + ", " + to_string(global_offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static " + var + " from " + reg + " to " + to_string(global_offset) + "($gp)");
+                    storage_desc.set_location(var, "memory:" + to_string(global_offset) + "($gp)");
+                    continue;
+                }
+                
                 // Get offset
                 int offset = get_offset(var);
                 
@@ -2016,6 +2090,15 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             for (const string& var : vars) {
                 // Skip constants and invalid variables
                 if (var == "<CONSTANT>" || var.empty()) {
+                    continue;
+                }
+                
+                // Check if it's a global/static variable
+                if (is_global_or_static(var)) {
+                    int global_offset = get_global_offset(var);
+                    emit("swc1 " + freg + ", " + to_string(global_offset) + "($gp)");
+                    emit_comment("DEBUG: Spilled global/static float " + var + " from " + freg + " to " + to_string(global_offset) + "($gp)");
+                    storage_desc.set_location(var, "memory:" + to_string(global_offset) + "($gp)");
                     continue;
                 }
                 
@@ -2810,13 +2893,20 @@ int MIPSGenerator::get_next_use_distance(const string& var) {
 string MIPSGenerator::select_victim_by_next_use() {
     // Select the register whose variable has the farthest next use
     // Avoid registers with constants from the current instruction
+    // Avoid registers that are already allocated (in use by current operation)
     set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
     string current_const_prefix = "<CONST_" + to_string(current_instruction_index) + "_";
     
     string victim_reg;
     int farthest_next_use = -1;
     
+    // First pass: look for registers that are NOT allocated and NOT constants from current instruction
     for (const string& reg : all_temp_regs) {
+        // Skip registers that are currently allocated (being used by current operation)
+        if (reg_allocator.is_reg_allocated(reg)) {
+            continue;
+        }
+        
         set<string> vars = reg_desc.get_vars_in_reg(reg);
         if (vars.empty()) {
             // Found a free register - just return it
@@ -2847,7 +2937,22 @@ string MIPSGenerator::select_victim_by_next_use() {
         }
     }
     
-    return victim_reg;
+    // If we found a victim in first pass, return it
+    if (!victim_reg.empty()) {
+        return victim_reg;
+    }
+    
+    // Second pass: if all non-allocated registers have constants, just pick the first allocated one
+    // This is an extreme case where we MUST spill something
+    for (const string& reg : all_temp_regs) {
+        set<string> vars = reg_desc.get_vars_in_reg(reg);
+        if (!vars.empty()) {
+            return reg;  // Return first non-empty register
+        }
+    }
+    
+    // Last resort: return $t0
+    return "$t0";
 }
 
 string MIPSGenerator::allocate_register_for_constant() {
