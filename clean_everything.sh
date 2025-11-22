@@ -1,0 +1,1 @@
+cd /mnt/d/compiler_a3 && find . -type f \( -name "*.debug" -o -name "*.errors" -o -name "*.functab" -o -name "*.globalsymtab" -o -name "*.jumptab" -o -name "*.symtab" -o -name "*.tac" -o -name "*.asm" -o -name "*.asm.backup" \) -delete

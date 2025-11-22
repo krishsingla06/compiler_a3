@@ -2552,15 +2552,33 @@ if (is_scanf) {
             string arg = pending_params[i + 1];
             emit_comment("Arg " + to_string(i) + " address: " + arg);
             
-            // Get ADDRESS of the variable (not its value!)
-            string addr_reg = allocate_register_with_spilling();
+            // Check if arg is already an address (starts with #t - a temporary from &x)
+            // The temporary holds the address value, so we need to load it
+            bool is_temp = (arg.find("#t") == 0 || arg.find("#") == 0);
             
-            if (is_global_or_static(arg)) {
-                int offset = get_global_offset(arg);
-                emit("addiu " + addr_reg + ", $gp, " + to_string(offset));
+            string addr_reg;
+            
+            if (is_temp) {
+                // Argument is a temporary - load its VALUE (which is an address)
+                // Use load_operand_to_register which properly loads temporaries
+                TACOperand temp_op;
+                temp_op.type = TAC_OPERAND_TEMP_VAR;
+                temp_op.value = arg;
+                addr_reg = load_operand_to_register(&temp_op);
+                emit_comment("DEBUG: Loaded address from temporary " + arg + " into " + addr_reg);
             } else {
-                int offset = get_offset(arg);
-                emit("addiu " + addr_reg + ", $fp, " + to_string(offset));
+                // Argument is a variable name, compute its address
+                addr_reg = allocate_register_with_spilling();
+                
+                if (is_global_or_static(arg)) {
+                    int offset = get_global_offset(arg);
+                    emit("addiu " + addr_reg + ", $gp, " + to_string(offset));
+                    emit_comment("DEBUG: Computed address of global/static " + arg);
+                } else {
+                    int offset = get_offset(arg);
+                    emit("addiu " + addr_reg + ", $fp, " + to_string(offset));
+                    emit_comment("DEBUG: Computed address of local " + arg);
+                }
             }
             
             emit("sw " + addr_reg + ", " + to_string(i * 4) + "($sp)");

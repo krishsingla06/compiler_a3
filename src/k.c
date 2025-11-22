@@ -1,4 +1,4 @@
-void printf(char* c, ...){return;}
+//void printf(char* c, ...){return;}
 // // // int main(){
 // // //     // int i = 5;
 // // //     // int sum = 0;
@@ -154,23 +154,68 @@ void printf(char* c, ...){return;}
 // }
 
 
+// int main(){
+//     int i=-3;
+//     //int i=10;
+//     //printf("i before switch: %d\n", i); // should print -3
+//     switch (-3){
+//         case 1:
+//             i = 10;
+//             break;
+//         case -3:
+//             i = 20;
+//             break;
+//         case -1:
+//             i = 25;
+//             break;
+//         default:
+//             i = 30;
+//     }
+//     printf("i: %d\n", i); // should print 20
+//     return 0;
+// }
+
+// void printf(char *s, ...){
+//     return;
+// }
+
+// void scanf(char *s, ...){
+//     return;
+// }
+
+
+// int main(){
+//     int x;
+//     scanf("%d", &x);  // Wrong: should be &x
+//     printf("Value: %d\n", x);
+//     return 0;
+// }
+
+void printf(char *s, ...){
+    return;
+}
+
+void scanf(char *s, ...){
+    return;
+}
+
+// scanf and printf test
+
 int main(){
-    int i=-3;
-    //int i=10;
-    //printf("i before switch: %d\n", i); // should print -3
-    switch (-3){
-        case 1:
-            i = 10;
-            break;
-        case -3:
-            i = 20;
-            break;
-        case -1:
-            i = 25;
-            break;
-        default:
-            i = 30;
-    }
-    printf("i: %d\n", i); // should print 20
+    int x;
+    float y;
+    char z;
+    char str[5];
+    //scanf("%d %f %c", &x, &y, &z);  // Corrected to use & for all variables
+    // scanf("%d", &x);
+    // scanf("%f", &y);
+    // scanf("%c", &z);
+    scanf("%s", str);  // Added to test string input
+    z='f';
+
+    printf("Integer: %d\n", x);
+    printf("Float: %f\n", y);
+    printf("Character: %c\n", z);
+    printf("String: %s\n", str);  // Added to test string output
     return 0;
 }
