@@ -1,12 +1,112 @@
-#==============================================================================
-# RUNTIME LIBRARY FOR MIPS ASSEMBLY
-# This file contains implementations of standard library functions
-#==============================================================================
+
+
+
+
+
+.data
+str_0: .asciiz "%d"
+str_2: .asciiz "%d\n"
+str_1: .asciiz "You entered: "
+
+
+.text
+.globl main
+
+
+I1:
+printf_cp1_variadic:
+    addiu $sp, $sp, -52
+    sw $ra, 48($sp)
+    sw $fp, 44($sp)
+    addiu $fp, $sp, 44
+
+
+I2:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+
+I3:
+scanf_cp1_variadic:
+    addiu $sp, $sp, -52
+    sw $ra, 48($sp)
+    sw $fp, 44($sp)
+    addiu $fp, $sp, 44
+
+
+I4:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+
+I5:
+main:
+    addiu $sp, $sp, -56
+    sw $ra, 52($sp)
+    sw $fp, 48($sp)
+    addiu $fp, $sp, 48
+
+I6:
+    addiu $t0, $fp, -4
+
+I7:
+
+I8:
+
+I9:
+    sw $t0, -8($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -4
+    addiu $t0, $fp, -8
+    sw $t0, 0($sp)
+    jal __lib_scanf
+    addiu $sp, $sp, 4
+
+I10:
+
+I11:
+    la $a0, str_1
+    jal __lib_printf
+
+I12:
+
+I13:
+
+I14:
+    la $a0, str_2
+    addiu $sp, $sp, -4
+    lw $t0, -4($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I15:
+    li $v0, 0
+
+
+
+I16:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
 
 #==============================================================================
-# __lib_printf - Variadic printf function
-# Supports %d (int), %f (float), %c (char), %s (string)
-# NOTE: Format string is in $a0 (register-based calling convention)
+# RUNTIME LIBRARY FUNCTIONS
+# The following functions are imported from the runtime library
+#==============================================================================
+
 #==============================================================================
 __lib_printf:
     # Save registers
@@ -110,107 +210,7 @@ printf_end:
     addiu $sp, $sp, 16
     jr $ra
 
-#==============================================================================
-# __lib_print_int - Print an integer
-#==============================================================================
-__lib_print_int:
-    # Parameter is at 8($fp) (on stack)
-    addiu $sp, $sp, -8
-    sw $ra, 4($sp)
-    sw $fp, 0($sp)
-    move $fp, $sp
-    
-    lw $a0, 8($fp)
-    li $v0, 1
-    syscall
-    
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
 
-#==============================================================================
-# __lib_print_float - Print a float
-#==============================================================================
-__lib_print_float:
-    # Parameter is at 8($fp) (on stack)
-    addiu $sp, $sp, -8
-    sw $ra, 4($sp)
-    sw $fp, 0($sp)
-    move $fp, $sp
-    
-    l.s $f12, 8($fp)
-    li $v0, 2
-    syscall
-    
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-#==============================================================================
-# __lib_print_char - Print a character
-#==============================================================================
-__lib_print_char:
-    # Parameter is at 8($fp) (on stack)
-    addiu $sp, $sp, -8
-    sw $ra, 4($sp)
-    sw $fp, 0($sp)
-    move $fp, $sp
-    
-    lw $a0, 8($fp)
-    li $v0, 11
-    syscall
-    
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-#==============================================================================
-# __lib_print_string - Print a string
-#==============================================================================
-__lib_print_string:
-    # Parameter is at 8($fp) (on stack)
-    addiu $sp, $sp, -8
-    sw $ra, 4($sp)
-    sw $fp, 0($sp)
-    move $fp, $sp
-    
-    lw $a0, 8($fp)
-    li $v0, 4
-    syscall
-    
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-#==============================================================================
-# __lib_print_newline - Print a newline character
-#==============================================================================
-__lib_print_newline:
-    addiu $sp, $sp, -8
-    sw $ra, 4($sp)
-    sw $fp, 0($sp)
-    
-    li $a0, 10  # ASCII newline
-    li $v0, 11
-    syscall
-    
-    lw $ra, 4($sp)
-    lw $fp, 0($sp)
-    addiu $sp, $sp, 8
-    jr $ra
-#==============================================================================
-# __lib_scanf - Variadic scanf function
-# Reads formatted input from stdin
-# Supports %d (int), %f (float), %c (char), %s (string)
-# NOTE: Format string in $a0, variable ADDRESSES on stack
 #==============================================================================
 __lib_scanf:
     # Save registers
@@ -313,6 +313,8 @@ scanf_end:
     lw $ra, 12($sp)
     addiu $sp, $sp, 16
     jr $ra
+
 #==============================================================================
 # END OF RUNTIME LIBRARY
 #==============================================================================
+

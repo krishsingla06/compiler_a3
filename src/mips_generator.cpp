@@ -2505,7 +2505,85 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         emit_comment("=== End printf ===");
         return;  // Don't do normal function call processing
     }
+    // ===== SPECIAL HANDLING FOR SCANF =====
+bool is_scanf = (func_name.find("scanf") == 0);
+
+if (is_scanf) {
+    emit_comment("=== Call library function: scanf (variadic) ===");
+    runtime_lib.mark_function_used("scanf");
     
+    if (pending_params.empty()) {
+        emit_comment("ERROR: scanf called with no format string");
+        return;
+    }
+    
+    // Scanf calling convention:
+    // - Format string in $a0
+    // - Variadic arguments (ADDRESSES) on stack
+    int num_args = pending_params.size() - 1;
+    emit_comment("Scanf: format string + " + to_string(num_args) + " argument addresses");
+    
+    // Load format string into $a0 (first parameter)
+    string format_param = pending_params[0];
+    
+    if (!format_param.empty() && format_param[0] == '"') {
+        string str_label = add_string_literal(format_param);
+        emit("la $a0, " + str_label);
+        emit_comment("Load format string literal address");
+    } else {
+        // Variable containing string address
+        int fmt_offset = get_offset(format_param);
+        if (fmt_offset != 0) {
+            emit("lw $a0, " + to_string(fmt_offset) + "($fp)");
+        } else {
+            string fmt_reg = ensure_in_register(format_param);
+            if (fmt_reg != "$a0") {
+                emit("move $a0, " + fmt_reg);
+            }
+        }
+    }
+    
+    // Store argument ADDRESSES on stack (NOT values!)
+    if (num_args > 0) {
+        emit_comment("Store argument addresses on stack");
+        emit("addiu $sp, $sp, " + to_string(-4 * num_args));
+        
+        for (int i = 0; i < num_args; i++) {
+            string arg = pending_params[i + 1];
+            emit_comment("Arg " + to_string(i) + " address: " + arg);
+            
+            // Get ADDRESS of the variable (not its value!)
+            string addr_reg = allocate_register_with_spilling();
+            
+            if (is_global_or_static(arg)) {
+                int offset = get_global_offset(arg);
+                emit("addiu " + addr_reg + ", $gp, " + to_string(offset));
+            } else {
+                int offset = get_offset(arg);
+                emit("addiu " + addr_reg + ", $fp, " + to_string(offset));
+            }
+            
+            emit("sw " + addr_reg + ", " + to_string(i * 4) + "($sp)");
+        }
+    }
+    
+    // Call library function
+    emit("jal __lib_scanf");
+    
+    // Restore stack
+    if (num_args > 0) {
+        emit("addiu $sp, $sp, " + to_string(4 * num_args));
+    }
+    
+    // IMPORTANT: Invalidate all variable caches after scanf
+    // (since scanf writes to memory, cached register values are stale)
+    emit_comment("DEBUG: Invalidating all cached values after scanf");
+    clear_all_registers();
+    
+    emit_comment("=== End scanf ===");
+    pending_params.clear();
+    return;
+}
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0
     vector<string> params;
