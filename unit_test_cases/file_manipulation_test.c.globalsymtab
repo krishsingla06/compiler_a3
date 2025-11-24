@@ -1,0 +1,46 @@
+
++=========================================================================================+
+|                              GLOBAL SYMBOL TABLE                                        |
++=========================================================================================+
+
+Total Symbols: 34
+
++-----------------------------------------------------------------------------------------+
+| Name                | Mangled Name                    | Type        | Location | Offset  |
++-----------------------------------------------------------------------------------------+
+| #t1                 | #t1                             | int         | LOCAL    | -16     |
+| #t10                | #t10                            | int         | LOCAL    | -52     |
+| #t11                | #t11                            | int         | LOCAL    | -56     |
+| #t12                | #t12                            | int         | LOCAL    | -60     |
+| #t2                 | #t2                             | int         | LOCAL    | -20     |
+| #t3                 | #t3                             | int         | LOCAL    | -24     |
+| #t4                 | #t4                             | int         | LOCAL    | -28     |
+| #t5                 | #t5                             | int         | LOCAL    | -32     |
+| #t6                 | #t6                             | int         | LOCAL    | -36     |
+| #t7                 | #t7                             | int         | LOCAL    | -40     |
+| #t8                 | #t8                             | int         | LOCAL    | -44     |
+| #t9                 | #t9                             | int         | LOCAL    | -48     |
+| addr                | v_addr_fscanf_i_cp1_ip1_s2      | int*        | PARAM#2  | 16      |
+| arg1                | v_arg1_fprintf_i_cp1_i_s2       | int         | PARAM#2  | 16      |
+| buffer              | v_buffer_fgets_cp1_i_i_s2       | char*       | PARAM#0  | 8       |
+| ch                  | v_ch_fputc_i_i_s2               | int         | PARAM#0  | 8       |
+| ch                  | v_ch_main_s2                    | int         | LOCAL    | -8      |
+| fd                  | v_fd_fclose_i_s2                | int         | PARAM#0  | 8       |
+| fd                  | v_fd_feof_i_s2                  | int         | PARAM#0  | 8       |
+| fd                  | v_fd_ferror_i_s2                | int         | PARAM#0  | 8       |
+| fd                  | v_fd_fgetc_i_s2                 | int         | PARAM#0  | 8       |
+| fd                  | v_fd_fgets_cp1_i_i_s2           | int         | PARAM#2  | 16      |
+| fd                  | v_fd_fprintf_i_cp1_i_s2         | int         | PARAM#0  | 8       |
+| fd                  | v_fd_fputc_i_i_s2               | int         | PARAM#1  | 12      |
+| fd                  | v_fd_fputs_cp1_i_s2             | int         | PARAM#1  | 12      |
+| fd                  | v_fd_fscanf_i_cp1_ip1_s2        | int         | PARAM#0  | 8       |
+| fd                  | v_fd_main_s2                    | int         | LOCAL    | -4      |
+| filename            | v_filename_fopen_cp1_cp1_s2     | char*       | PARAM#0  | 8       |
+| format              | v_format_fprintf_i_cp1_i_s2     | char*       | PARAM#1  | 12      |
+| format              | v_format_fscanf_i_cp1_ip1_s2    | char*       | PARAM#1  | 12      |
+| mode                | v_mode_fopen_cp1_cp1_s2         | char*       | PARAM#1  | 12      |
+| result              | v_result_main_s2                | int         | LOCAL    | -12     |
+| size                | v_size_fgets_cp1_i_i_s2         | int         | PARAM#1  | 12      |
+| str                 | v_str_fputs_cp1_i_s2            | char*       | PARAM#0  | 8       |
++-----------------------------------------------------------------------------------------+
+
