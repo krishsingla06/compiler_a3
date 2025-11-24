@@ -1,0 +1,110 @@
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - s (char*) declared at line 194 [mangled: v_s_printf_cp1_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - s (char*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - s (char*) declared at line 198 [mangled: v_s_scanf_cp1_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - s (char*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 211 [mangled: #t1] [LOCAL, offset: -28]
+  - #t10 (int) declared at line 215 [mangled: #t10] [LOCAL, offset: -64]
+  - #t11 (int) declared at line 215 [mangled: #t11] [LOCAL, offset: -68]
+  - #t12 (int) declared at line 215 [mangled: #t12] [LOCAL, offset: -72]
+  - #t13 (void) declared at line 216 [mangled: #t13] [LOCAL, offset: -72]
+  - #t2 (int) declared at line 211 [mangled: #t2] [LOCAL, offset: -32]
+  - #t3 (int) declared at line 211 [mangled: #t3] [LOCAL, offset: -36]
+  - #t4 (int) declared at line 212 [mangled: #t4] [LOCAL, offset: -40]
+  - #t5 (int) declared at line 212 [mangled: #t5] [LOCAL, offset: -44]
+  - #t6 (int) declared at line 212 [mangled: #t6] [LOCAL, offset: -48]
+  - #t7 (int) declared at line 214 [mangled: #t7] [LOCAL, offset: -52]
+  - #t8 (int) declared at line 214 [mangled: #t8] [LOCAL, offset: -56]
+  - #t9 (int) declared at line 214 [mangled: #t9] [LOCAL, offset: -60]
+  - a (struct str) declared at line 209 [mangled: v_a_main_s2] [LOCAL, offset: -8]
+  - b (struct str) declared at line 209 [mangled: v_b_main_s2] [LOCAL, offset: -16]
+  - p (int) declared at line 210 [mangled: v_p_main_s2] [LOCAL, offset: -20]
+  - q (int) declared at line 210 [mangled: v_q_main_s2] [LOCAL, offset: -24]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t1 (int)
+  - #t10 (int)
+  - #t11 (int)
+  - #t12 (int)
+  - #t13 (void)
+  - #t2 (int)
+  - #t3 (int)
+  - #t4 (int)
+  - #t5 (int)
+  - #t6 (int)
+  - #t7 (int)
+  - #t8 (int)
+  - #t9 (int)
+  - a (struct str)
+  - b (struct str)
+  - p (int)
+  - q (int)
+
+
+
+
+
+Exiting scope level 1
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+  - Destroying struct str from scope 1
+
+
+
+
+

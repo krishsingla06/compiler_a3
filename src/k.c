@@ -199,23 +199,42 @@ void scanf(char *s, ...){
     return;
 }
 
-// scanf and printf test
+
+struct str{
+    int x;
+    int y;
+};
 
 int main(){
-    int x;
-    float y;
-    char z;
-    char str[5];
-    //scanf("%d %f %c", &x, &y, &z);  // Corrected to use & for all variables
-    // scanf("%d", &x);
-    // scanf("%f", &y);
-    // scanf("%c", &z);
-    scanf("%s", str);  // Added to test string input
-    z='f';
-
-    printf("Integer: %d\n", x);
-    printf("Float: %f\n", y);
-    printf("Character: %c\n", z);
-    printf("String: %s\n", str);  // Added to test string output
+    struct str a,b;
+    int p,q;
+    a.x=10;
+    a.y=20;
+    b=a;
+    p=b.x;
+    q=b.y;
+    printf("p: %d, q: %d\n", p, q);
+    // printf("a.x: %d, a.y: %d\n", a.x, a.y);
+    // printf("b.x: %d, b.y: %d\n", b.x, b.y);r
     return 0;
 }
+// scanf and printf test
+
+// int main(){
+//     int x;
+//     float y;
+//     char z;
+//     char str[5];
+//     //scanf("%d %f %c", &x, &y, &z);  // Corrected to use & for all variables
+//     // scanf("%d", &x);
+//     // scanf("%f", &y);
+//     // scanf("%c", &z);
+//     scanf("%s", str);  // Added to test string input
+//     z='f';
+
+//     printf("Integer: %d\n", x);
+//     printf("Float: %f\n", y);
+//     printf("Character: %c\n", z);
+//     printf("String: %s\n", str);  // Added to test string output
+//     return 0;
+// }
