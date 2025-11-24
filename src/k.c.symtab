@@ -52,42 +52,120 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t1 (int) declared at line 211 [mangled: #t1] [LOCAL, offset: -28]
-  - #t10 (int) declared at line 215 [mangled: #t10] [LOCAL, offset: -64]
-  - #t11 (int) declared at line 215 [mangled: #t11] [LOCAL, offset: -68]
-  - #t12 (int) declared at line 215 [mangled: #t12] [LOCAL, offset: -72]
-  - #t13 (void) declared at line 216 [mangled: #t13] [LOCAL, offset: -72]
-  - #t2 (int) declared at line 211 [mangled: #t2] [LOCAL, offset: -32]
-  - #t3 (int) declared at line 211 [mangled: #t3] [LOCAL, offset: -36]
-  - #t4 (int) declared at line 212 [mangled: #t4] [LOCAL, offset: -40]
-  - #t5 (int) declared at line 212 [mangled: #t5] [LOCAL, offset: -44]
-  - #t6 (int) declared at line 212 [mangled: #t6] [LOCAL, offset: -48]
-  - #t7 (int) declared at line 214 [mangled: #t7] [LOCAL, offset: -52]
-  - #t8 (int) declared at line 214 [mangled: #t8] [LOCAL, offset: -56]
-  - #t9 (int) declared at line 214 [mangled: #t9] [LOCAL, offset: -60]
-  - a (struct str) declared at line 209 [mangled: v_a_main_s2] [LOCAL, offset: -8]
-  - b (struct str) declared at line 209 [mangled: v_b_main_s2] [LOCAL, offset: -16]
-  - p (int) declared at line 210 [mangled: v_p_main_s2] [LOCAL, offset: -20]
-  - q (int) declared at line 210 [mangled: v_q_main_s2] [LOCAL, offset: -24]
+  - #t1 (int) declared at line 278 [mangled: #t1] [LOCAL, offset: -4]
+  - #t10 (int) declared at line 280 [mangled: #t10] [LOCAL, offset: -40]
+  - #t2 (int) declared at line 278 [mangled: #t2] [LOCAL, offset: -8]
+  - #t3 (int) declared at line 278 [mangled: #t3] [LOCAL, offset: -12]
+  - #t4 (float) declared at line 279 [mangled: #t4] [LOCAL, offset: -16]
+  - #t5 (float) declared at line 279 [mangled: #t5] [LOCAL, offset: -20]
+  - #t6 (float) declared at line 279 [mangled: #t6] [LOCAL, offset: -24]
+  - #t7 (char) declared at line 280 [mangled: #t7] [LOCAL, offset: -28]
+  - #t8 (char) declared at line 280 [mangled: #t8] [LOCAL, offset: -32]
+  - #t9 (int) declared at line 280 [mangled: #t9] [LOCAL, offset: -36]
+  - a (int&) declared at line 277 [mangled: v_a_foo_i_f_c_s2] [PARAM #0, offset: 8]
+  - b (float&) declared at line 277 [mangled: v_b_foo_i_f_c_s2] [PARAM #1, offset: 12]
+  - c (char&) declared at line 277 [mangled: v_c_foo_i_f_c_s2] [PARAM #2, offset: 16]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t1 (int)
   - #t10 (int)
-  - #t11 (int)
-  - #t12 (int)
-  - #t13 (void)
   - #t2 (int)
   - #t3 (int)
-  - #t4 (int)
-  - #t5 (int)
-  - #t6 (int)
-  - #t7 (int)
-  - #t8 (int)
+  - #t4 (float)
+  - #t5 (float)
+  - #t6 (float)
+  - #t7 (char)
+  - #t8 (char)
   - #t9 (int)
-  - a (struct str)
-  - b (struct str)
-  - p (int)
-  - q (int)
+  - a (int&)
+  - b (float&)
+  - c (char&)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t11 (int) declared at line 285 [mangled: #t11] [LOCAL, offset: -4]
+  - #t12 (int) declared at line 285 [mangled: #t12] [LOCAL, offset: -8]
+  - #t13 (int) declared at line 285 [mangled: #t13] [LOCAL, offset: -12]
+  - #t14 (float) declared at line 286 [mangled: #t14] [LOCAL, offset: -16]
+  - #t15 (float) declared at line 286 [mangled: #t15] [LOCAL, offset: -20]
+  - #t16 (float) declared at line 286 [mangled: #t16] [LOCAL, offset: -24]
+  - #t17 (char) declared at line 287 [mangled: #t17] [LOCAL, offset: -28]
+  - #t18 (char) declared at line 287 [mangled: #t18] [LOCAL, offset: -32]
+  - #t19 (int) declared at line 287 [mangled: #t19] [LOCAL, offset: -36]
+  - #t20 (int) declared at line 287 [mangled: #t20] [LOCAL, offset: -40]
+  - a (int*) declared at line 284 [mangled: v_a_goo_ip1_fp1_cp1_s2] [PARAM #0, offset: 8]
+  - b (float*) declared at line 284 [mangled: v_b_goo_ip1_fp1_cp1_s2] [PARAM #1, offset: 12]
+  - c (char*) declared at line 284 [mangled: v_c_goo_ip1_fp1_cp1_s2] [PARAM #2, offset: 16]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t11 (int)
+  - #t12 (int)
+  - #t13 (int)
+  - #t14 (float)
+  - #t15 (float)
+  - #t16 (float)
+  - #t17 (char)
+  - #t18 (char)
+  - #t19 (int)
+  - #t20 (int)
+  - a (int*)
+  - b (float*)
+  - c (char*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t21 (void) declared at line 296 [mangled: #t21] [LOCAL, offset: -12]
+  - #t22 (void) declared at line 297 [mangled: #t22] [LOCAL, offset: -12]
+  - #t23 (int) declared at line 300 [mangled: #t23] [LOCAL, offset: -16]
+  - #t24 (int) declared at line 300 [mangled: #t24] [LOCAL, offset: -20]
+  - #t25 (int) declared at line 300 [mangled: #t25] [LOCAL, offset: -24]
+  - #t26 (int) declared at line 300 [mangled: #t26] [LOCAL, offset: -28]
+  - #t27 (void) declared at line 302 [mangled: #t27] [LOCAL, offset: -28]
+  - #t28 (void) declared at line 303 [mangled: #t28] [LOCAL, offset: -28]
+  - x (int) declared at line 292 [mangled: v_x_main_s2] [LOCAL, offset: -4]
+  - y (float) declared at line 293 [mangled: v_y_main_s2] [LOCAL, offset: -8]
+  - z (char) declared at line 294 [mangled: v_z_main_s2] [LOCAL, offset: -12]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t21 (void)
+  - #t22 (void)
+  - #t23 (int)
+  - #t24 (int)
+  - #t25 (int)
+  - #t26 (int)
+  - #t27 (void)
+  - #t28 (void)
+  - x (int)
+  - y (float)
+  - z (char)
 
 
 
@@ -102,7 +180,6 @@ Exiting scope level 1
 +- SCOPE LEVEL 1 ------------------------------------------------------+
 | (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
-  - Destroying struct str from scope 1
 
 
 

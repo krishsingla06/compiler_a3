@@ -200,24 +200,56 @@ void scanf(char *s, ...){
 }
 
 
-struct str{
-    int x;
-    int y;
-};
+// struct str{
+//     int x;
+//     int y;
+// };
 
-int main(){
-    struct str a,b;
-    int p,q;
-    a.x=10;
-    a.y=20;
-    b=a;
-    p=b.x;
-    q=b.y;
-    printf("p: %d, q: %d\n", p, q);
-    // printf("a.x: %d, a.y: %d\n", a.x, a.y);
-    // printf("b.x: %d, b.y: %d\n", b.x, b.y);r
-    return 0;
-}
+// int main(){
+//     struct str a,b;
+//     int p,q;
+//     a.x=10;
+//     a.y=20;
+//     b=a;
+//     p=b.x;
+//     q=b.y;
+//     printf("p: %d, q: %d\n", p, q);
+//     // printf("a.x: %d, a.y: %d\n", a.x, a.y);
+//     // printf("b.x: %d, b.y: %d\n", b.x, b.y);r
+//     return 0;
+// }
+
+// int foo(int &xx,int &yy){
+//     printf("Inside foo before increment:\n");
+//     printf("x: %d, y: %d\n", xx, yy);
+//     xx=xx+1;
+//     yy=yy+1;
+//     printf("Inside foo after increment:\n");
+//     printf("x: %d, y: %d\n", xx, yy);
+
+//     return 0;
+// }
+
+// int main(){
+//     int x;
+//     int y;
+//     int result;
+//     // int &ref = x;
+//     // int result = -100;
+//     //ref=1;
+//     x=5;
+//     y=7;
+//     printf("Before foo call:\n");
+//     printf("x: %d, ref: %d\n", x, y);
+
+//     result = foo(x, y);
+//     printf("After foo call:\n");
+//     printf("x: %d, y: %d, result: %d\n", x, y);
+//     return 0;
+
+    
+// }
+
 // scanf and printf test
 
 // int main(){
@@ -238,3 +270,37 @@ int main(){
 //     printf("String: %s\n", str);  // Added to test string output
 //     return 0;
 // }
+
+
+// reference + float,char and int test case
+
+int foo(int &a, float &b, char &c){
+    a = a + 10;
+    b = b + 1.5;
+    c = c + 1; // Increment character
+    return 0;
+}
+
+int goo(int *a, float *b, char *c){
+    *a = *a + 20;
+    *b = *b + 2.5;
+    *c = *c + 2; // Increment character
+    return 0;
+}
+
+int main(){
+    int x = 5;
+    float y = 2.5;
+    char z = 'a';
+
+    printf("Before foo call:\n");
+    printf("x: %d, y: %f, z: %c\n", x, y, z);
+
+   // foo(x, y, z);
+    goo(&x, &y, &z);
+
+    printf("After foo call:\n");
+    printf("x: %d, y: %f, z: %c\n", x, y, z);
+
+    return 0;
+}

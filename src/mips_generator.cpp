@@ -12,6 +12,7 @@ extern "C" const char* get_variable_type(const char* var_name);
 extern "C" bool is_variable_float(const char* var_name);
 extern "C" bool is_variable_char(const char* var_name);
 extern "C" int get_variable_pointer_level(const char* var_name);
+extern "C" bool is_variable_reference(const char* var_name);
 extern "C" bool is_variable_global(const char* var_name);
 extern "C" bool is_variable_static(const char* var_name);
 extern "C" int get_global_variable_count();
@@ -715,18 +716,31 @@ void MIPSGenerator::initialize_parameter_descriptors(const string& func_name, in
         
         // For first 4 parameters, also add register location
         if (i < 4) {
-            // Check if parameter is float
-            bool is_float_param = is_variable_float(mangled_param.c_str());
+            // Check if parameter is float (for value parameters)
+            bool is_float = is_variable_float(mangled_param.c_str());
+            
+            // Check if parameter is a pointer/reference
+            // References and pointers are ALWAYS passed as addresses (integers)
+            int ptr_level = get_variable_pointer_level(mangled_param.c_str());
+            bool is_ref = is_variable_reference(mangled_param.c_str());
+            bool is_pointer_or_ref = (ptr_level > 0) || is_ref;
+            
+            // Use float register ONLY if it's a float value parameter (not pointer/reference)
+            bool use_float_reg = is_float && !is_pointer_or_ref;
             
             string arg_reg;
-            if (is_float_param) {
-                // Float parameters go in $f12-$f15
+            if (use_float_reg) {
+                // Float value parameters go in $f12-$f15
                 arg_reg = "$f" + to_string(12 + i);
                 emit_comment("DEBUG: Float parameter " + to_string(i) + " (" + mangled_param + ") in " + arg_reg);
             } else {
-                // Integer parameters go in $a0-$a3
+                // Integer parameters (including ALL pointers/references) go in $a0-$a3
                 arg_reg = "$a" + to_string(i);
-                emit_comment("DEBUG: Integer parameter " + to_string(i) + " (" + mangled_param + ") in " + arg_reg);
+                if (is_pointer_or_ref) {
+                    emit_comment("DEBUG: Pointer/Reference parameter " + to_string(i) + " (" + mangled_param + ", ptr_level=" + to_string(ptr_level) + ") in " + arg_reg);
+                } else {
+                    emit_comment("DEBUG: Integer parameter " + to_string(i) + " (" + mangled_param + ") in " + arg_reg);
+                }
             }
             
             // Add to register descriptor
@@ -857,9 +871,13 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     
     emit_comment("Assignment: " + dest + " = " + src);
     
-    // Check if this is a float assignment
-    bool dest_is_float = is_variable_float(dest.c_str()); // not float
-    bool src_is_float = is_operand_float(instr->arg1); // not float
+    // Check if either operand is a reference - references are addresses (integers)
+    bool dest_is_ref = is_variable_reference(dest.c_str());
+    bool src_is_ref = is_variable_reference(src.c_str());
+    
+    // Check if this is a float assignment (but NOT if it's a reference)
+    bool dest_is_float = !dest_is_ref && is_variable_float(dest.c_str());
+    bool src_is_float = !src_is_ref && is_operand_float(instr->arg1);
     
     if (dest_is_float || src_is_float) {
         // Float assignment
@@ -1665,6 +1683,15 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     reg_allocator.mark_dirty(dest_reg);
     
     emit_comment("DEBUG: " + dest + " (pointer) in " + dest_reg + " (dirty)");
+    
+    // CRITICAL: Also store pointer/reference to memory to ensure it has a home location
+    // This is essential for references and pointers that may be dereferenced later
+    int dest_offset = get_offset(dest);
+    if (dest_offset != 0) {
+        emit("sw " + dest_reg + ", " + to_string(dest_offset) + "($fp)");
+        emit_comment("DEBUG: Also stored " + dest + " to memory at " + to_string(dest_offset) + "($fp)");
+        storage_desc.add_location(dest, "memory:" + to_string(dest_offset) + "($fp)");
+    }
 }
 
 void MIPSGenerator::translate_dereference(TACInstruction* instr) {
@@ -1677,18 +1704,20 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
     emit_comment(dest + " = *" + ptr);
     
     // Get pointer value into a register
+    // CRITICAL: Pointers and references are ALWAYS addresses (integers), 
+    // so always use integer registers even if they point to floats
     string ptr_reg;
     if (storage_desc.is_in_register(ptr)) {
         ptr_reg = storage_desc.get_register(ptr);
         emit_comment("DEBUG: Pointer " + ptr + " already in " + ptr_reg);
     } else {
-        // Load pointer from memory
+        // Load pointer from memory - ALWAYS use lw (load word) for addresses
         ptr_reg = reg_allocator.allocate_temp_reg();
         if (reg_allocator.is_reg_allocated(ptr_reg)) {
             spill_register(ptr_reg);
         }
         int offset = get_offset(ptr);
-        emit("lw " + ptr_reg + ", " + to_string(offset) + "($fp)");
+        emit("lw " + ptr_reg + ", " + to_string(offset) + "($fp)");  // Always lw for pointers/references
         emit_comment("DEBUG: Loaded pointer " + ptr + " from memory at " + to_string(offset) + "($fp)");
         
         // Update descriptors for pointer
@@ -1696,30 +1725,46 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
         storage_desc.add_location(ptr, ptr_reg);
     }
     
-    // Allocate register for dereferenced value
-    string dest_reg = reg_allocator.allocate_temp_reg();
-    if (reg_allocator.is_reg_allocated(dest_reg)) {
-        spill_register(dest_reg);
-    }
+    // Check what type we're dereferencing to determine register type
+    bool dest_is_float = is_variable_float(dest.c_str());
+    bool dest_is_char = is_variable_char(dest.c_str());
     
-    // Check if we're dereferencing a char* (for string literals)
-    // String literals store 1-byte chars, so use lb (load byte) instead of lw (load word)
-    bool is_char_ptr = is_variable_char(dest.c_str());
+    string dest_reg;
     
-    if (is_char_ptr) {
-        // Load byte (signed) for char* dereferencing
-        emit("lb " + dest_reg + ", 0(" + ptr_reg + ")");
-        emit_comment("DEBUG: Dereferenced *" + ptr + " (char*) into " + dest_reg + " using lb");
+    if (dest_is_float) {
+        // Allocate float register for float dereference
+        dest_reg = reg_allocator.allocate_float_reg();
+        
+        // Load float value from address in ptr_reg
+        emit("l.s " + dest_reg + ", 0(" + ptr_reg + ")");
+        emit_comment("DEBUG: Dereferenced *" + ptr + " (float*) into " + dest_reg + " using l.s");
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
     } else {
-        // Load value from address in ptr_reg: dest_reg = *ptr_reg
-        emit("lw " + dest_reg + ", 0(" + ptr_reg + ")");
-        emit_comment("DEBUG: Dereferenced *" + ptr + " into " + dest_reg);
+        // Allocate integer register for int/char dereference
+        dest_reg = reg_allocator.allocate_temp_reg();
+        if (reg_allocator.is_reg_allocated(dest_reg)) {
+            spill_register(dest_reg);
+        }
+        
+        if (dest_is_char) {
+            // Load byte (signed) for char* dereferencing
+            emit("lb " + dest_reg + ", 0(" + ptr_reg + ")");
+            emit_comment("DEBUG: Dereferenced *" + ptr + " (char*) into " + dest_reg + " using lb");
+        } else {
+            // Load word for int* dereferencing
+            emit("lw " + dest_reg + ", 0(" + ptr_reg + ")");
+            emit_comment("DEBUG: Dereferenced *" + ptr + " (int*) into " + dest_reg + " using lw");
+        }
+        
+        // Update descriptors
+        reg_desc.add_var_to_reg(dest_reg, dest);
+        storage_desc.set_location(dest, dest_reg);
+        reg_allocator.mark_dirty(dest_reg);
     }
-    
-    // Update descriptors: dest is now in dest_reg and is dirty
-    reg_desc.add_var_to_reg(dest_reg, dest);
-    storage_desc.set_location(dest, dest_reg);
-    reg_allocator.mark_dirty(dest_reg);
     
     emit_comment("DEBUG: " + dest + " = *" + ptr + " in " + dest_reg + " (dirty)");
 }
@@ -3338,14 +3383,20 @@ bool MIPSGenerator::is_operand_float(TACOperand* operand) {
     // Check if it's a variable or temp with float type
     if (operand->type == TAC_OPERAND_IDENTIFIER || 
         operand->type == TAC_OPERAND_TEMP_VAR) {
-        // IMPORTANT: Pointers are NOT floats, even if they point to floats
+        // IMPORTANT: Pointers and references are NOT floats, even if they point to floats
         // Check pointer level first - if it's a pointer (level > 0), it's NOT a float
         int ptr_level = get_variable_pointer_level(operand->value.c_str());
         if (ptr_level > 0) {
             return false;  // Pointers are stored in CPU registers, not FPU registers
         }
         
-        // Only non-pointer variables can be floats
+        // Check if it's a reference - references are addresses (integers), not floats
+        bool is_ref = is_variable_reference(operand->value.c_str());
+        if (is_ref) {
+            return false;  // References are stored in CPU registers, not FPU registers
+        }
+        
+        // Only non-pointer, non-reference variables can be floats
         return is_variable_float(operand->value.c_str());
     }
     

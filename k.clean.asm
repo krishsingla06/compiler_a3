@@ -4,9 +4,10 @@
 
 
 .data
-str_2: .asciiz "After foo call:\n"
-str_0: .asciiz "Before foo call:\n"
-str_1: .asciiz "x: %d, y: %f, z: %c\n"
+str_0: .asciiz "%d %f %c"
+str_3: .asciiz "Character: %c\n"
+str_2: .asciiz "Float: %f\n"
+str_1: .asciiz "Integer: %d\n"
 
 
 .text
@@ -56,285 +57,96 @@ I6:
 
 
 I7:
-foo_i_f_c:
-    addiu $sp, $sp, -100
-    sw $ra, 96($sp)
-    sw $fp, 92($sp)
-    addiu $fp, $sp, 92
-
+main:
+    addiu $sp, $sp, -72
+    sw $ra, 68($sp)
+    sw $fp, 64($sp)
+    addiu $fp, $sp, 64
 
 I8:
-    sw $a0, -4($fp)
+    addiu $t0, $fp, -4
+    sw $t0, -16($fp)
 
 I9:
-    lw $t0, 0($a0)
+    addiu $t1, $fp, -8
+    sw $t1, -20($fp)
 
 I10:
-    li $t1, 10
-    add $t2, $t0, $t1
+    addiu $t2, $fp, -12
+    sw $t2, -24($fp)
 
 I11:
-    sw $t2, 0($a0)
 
 I12:
 
 I13:
-    l.s $f0, 0($a1)
 
 I14:
-    # Loading float constant: 1.500000
-    li.s $f1, 1.500000
-    add.s $f2, $f0, $f1
 
 I15:
-    s.s $f2, 0($a1)
-
-I16:
-    sw $a2, -28($fp)
-
-I17:
-    sw $t0, -8($fp)
-    lb $t0, 0($a2)
-
-I18:
-
-I19:
-    li $t1, 1
-    add $t3, $t0, $t1
-
-I20:
-    sw $t3, 0($a2)
-
-I21:
-    sw $a0, -4($fp)
-    sw $a0, 8($fp)
-    sw $a1, -16($fp)
-    sw $a1, 12($fp)
-    sw $a2, -28($fp)
-    sw $a2, 16($fp)
-    s.s $f0, -20($fp)
-    s.s $f2, -24($fp)
-    sw $t0, -32($fp)
-    sw $t0, -36($fp)
-    sw $t2, -12($fp)
-    sw $t3, -40($fp)
-    li $v0, 0
-
-
-
-I22:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I23:
-goo_ip1_fp1_cp1:
-    addiu $sp, $sp, -100
-    sw $ra, 96($sp)
-    sw $fp, 92($sp)
-    addiu $fp, $sp, 92
-
-
-I24:
-    sw $a0, -4($fp)
-
-I25:
-    lw $t0, 0($a0)
-
-I26:
-    li $t1, 20
-    add $t2, $t0, $t1
-
-I27:
-    sw $t2, 0($a0)
-
-I28:
-
-I29:
-    l.s $f0, 0($a1)
-
-I30:
-    # Loading float constant: 2.500000
-    li.s $f1, 2.500000
-    add.s $f2, $f0, $f1
-
-I31:
-    s.s $f2, 0($a1)
-
-I32:
-    sw $a2, -28($fp)
-
-I33:
-    sw $t0, -8($fp)
-    lb $t0, 0($a2)
-
-I34:
-
-I35:
-    li $t1, 2
-    add $t3, $t0, $t1
-
-I36:
-    sw $t3, 0($a2)
-
-I37:
-    sw $a0, -4($fp)
-    sw $a0, 8($fp)
-    sw $a1, -16($fp)
-    sw $a1, 12($fp)
-    sw $a2, -28($fp)
-    sw $a2, 16($fp)
-    s.s $f0, -20($fp)
-    s.s $f0, -20($fp)
-    s.s $f2, -24($fp)
-    s.s $f2, -24($fp)
-    sw $t0, -32($fp)
-    sw $t0, -36($fp)
-    sw $t2, -12($fp)
-    sw $t3, -40($fp)
-    li $v0, 0
-
-
-
-I38:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I39:
-main:
-    addiu $sp, $sp, -76
-    sw $ra, 72($sp)
-    sw $fp, 68($sp)
-    addiu $fp, $sp, 68
-
-I40:
-    li $t0, 5
-
-I41:
-    # Loading float constant: 2.500000
-    li.s $f0, 2.500000
-
-I42:
-    li $t1, 97
-
-I43:
-
-I44:
-    sw $t0, -4($fp)
-    sw $t1, -12($fp)
-    swc1 $f0, -8($fp)
-    swc1 $f2, -24($fp)
-    swc1 $f2, -24($fp)
+    sw $t0, -16($fp)
+    sw $t1, -20($fp)
+    sw $t2, -24($fp)
     la $a0, str_0
-    jal __lib_printf
-
-I45:
-
-I46:
-
-I47:
-
-I48:
-
-I49:
-    la $a0, str_1
-    addiu $sp, $sp, -12
-    lw $t0, -4($fp)
-    sw $t0, 0($sp)
-    l.s $f1, -8($fp)
-    swc1 $f1, 4($sp)
-    lw $t1, -12($fp)
-    sw $t1, 8($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 12
-
-I50:
-    addiu $t0, $fp, -4
-    sw $t0, -16($fp)
-
-I51:
-    addiu $t1, $fp, -8
-    sw $t1, -20($fp)
-
-I52:
-    addiu $t2, $fp, -12
-    sw $t2, -24($fp)
-
-I53:
-
-I54:
-
-I55:
-
-I56:
-    sw $t0, -16($fp)
-    sw $t1, -20($fp)
-    sw $t2, -24($fp)
-    swc1 $f1, -8($fp)
     addiu $sp, $sp, -12
     lw $t0, -16($fp)
     sw $t0, 0($sp)
-    move $a0, $t0
     lw $t1, -20($fp)
     sw $t1, 4($sp)
-    move $a1, $t1
     lw $t2, -24($fp)
     sw $t2, 8($sp)
-    move $a2, $t2
-    jal goo_ip1_fp1_cp1
+    jal __lib_scanf
     addiu $sp, $sp, 12
-    move $t3, $v0
 
-I57:
+I16:
 
-I58:
-    sw $t3, -28($fp)
-    la $a0, str_2
-    jal __lib_printf
+I17:
 
-I59:
-
-I60:
-
-I61:
-
-I62:
-
-I63:
+I18:
     la $a0, str_1
-    addiu $sp, $sp, -12
+    addiu $sp, $sp, -4
     lw $t0, -4($fp)
     sw $t0, 0($sp)
-    l.s $f2, -8($fp)
-    swc1 $f2, 4($sp)
-    lw $t1, -12($fp)
-    sw $t1, 8($sp)
     jal __lib_printf
-    addiu $sp, $sp, 12
+    addiu $sp, $sp, 4
 
-I64:
+I19:
+
+I20:
+
+I21:
+    sw $t0, -4($fp)
+    la $a0, str_2
+    addiu $sp, $sp, -4
+    l.s $f0, -8($fp)
+    swc1 $f0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I22:
+
+I23:
+
+I24:
+    swc1 $f0, -8($fp)
+    la $a0, str_3
+    addiu $sp, $sp, -4
+    lw $t0, -12($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I25:
     li $v0, 0
 
 
 
-I65:
+I26:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
-    # Exit program
-    li $v0, 10
-    syscall
 
 
 
@@ -446,6 +258,109 @@ printf_end:
     addiu $sp, $sp, 16
     jr $ra
 
+
+#==============================================================================
+__lib_scanf:
+    # Save registers
+    addiu $sp, $sp, -16
+    sw $ra, 12($sp)
+    sw $fp, 8($sp)
+    sw $a0, 4($sp)  # Save format string
+    sw $s0, 0($sp)  # Save $s0
+    move $fp, $sp
+    
+    # Format string is in $a0
+    move $s0, $a0  # $s0 = format string pointer
+    
+    # Parameter pointer - addresses of variables to store into
+    addiu $t0, $fp, 16  # Points to variadic args (addresses) on stack
+    
+scanf_loop:
+    # Load next character from format string
+    lb $t1, 0($s0)
+    beqz $t1, scanf_end
+    
+    # Check if it's a format specifier '%'
+    li $t2, 37  # ASCII '%'
+    bne $t1, $t2, scanf_continue  # Skip non-format chars
+    
+    # It's a format specifier, check next character
+    addiu $s0, $s0, 1
+    lb $t1, 0($s0)
+    beqz $t1, scanf_end
+    
+    # Check format type
+    li $t2, 100  # ASCII 'd' - integer
+    beq $t1, $t2, scanf_int
+    
+    li $t2, 102  # ASCII 'f' - float
+    beq $t1, $t2, scanf_float
+    
+    li $t2, 99   # ASCII 'c' - char
+    beq $t1, $t2, scanf_char
+    
+    li $t2, 115  # ASCII 's' - string
+    beq $t1, $t2, scanf_string
+    
+    # Unknown format, skip
+    j scanf_continue
+
+scanf_int:
+    # Read integer (syscall 5)
+    li $v0, 5
+    syscall
+    # $v0 now contains the integer
+    # Get address from stack
+    lw $t3, 0($t0)  # $t3 = address to store into
+    sw $v0, 0($t3)   # Store integer at that address
+    addiu $t0, $t0, 4  # Move to next parameter
+    j scanf_continue
+
+scanf_float:
+    # Read float (syscall 6)
+    li $v0, 6
+    syscall
+    # $f0 now contains the float
+    # Get address from stack
+    lw $t3, 0($t0)  # $t3 = address to store into
+    s.s $f0, 0($t3)  # Store float at that address
+    addiu $t0, $t0, 4  # Move to next parameter
+    j scanf_continue
+
+scanf_char:
+    # Read character (syscall 12)
+    li $v0, 12
+    syscall
+    # $v0 now contains the character
+    # Get address from stack
+    lw $t3, 0($t0)  # $t3 = address to store into
+    sb $v0, 0($t3)   # Store byte (char) at that address
+    addiu $t0, $t0, 4  # Move to next parameter
+    j scanf_continue
+
+scanf_string:
+    # Read string (syscall 8)
+    # Need buffer address and max length
+    lw $a0, 0($t0)   # $a0 = buffer address from stack
+    li $a1, 256      # Max length (you can adjust this)
+    li $v0, 8
+    syscall
+    addiu $t0, $t0, 4  # Move to next parameter
+    j scanf_continue
+
+scanf_continue:
+    # Move to next character in format string
+    addiu $s0, $s0, 1
+    j scanf_loop
+
+scanf_end:
+    # Restore registers
+    lw $s0, 0($sp)
+    lw $a0, 4($sp)
+    lw $fp, 8($sp)
+    lw $ra, 12($sp)
+    addiu $sp, $sp, 16
+    jr $ra
 
 #==============================================================================
 # END OF RUNTIME LIBRARY

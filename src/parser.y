@@ -1208,6 +1208,7 @@ declaration
                     
                     TypeInfo actualType = *declInfo->initType;
                     actualType.isReference = false;    // Compare underlying type
+        
                     
                     // Check exact type match (base type, pointer level, array, struct/union)
                     if (expectedType.baseType != actualType.baseType ||
@@ -1229,6 +1230,11 @@ declaration
                     TACOperand* ref_var = new_identifier(mangle_variable_name(declInfo->name, current_scope_level, current_function_name, current_function_signature));
                     TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, ref_var, declInfo->initType->result, new_empty_var(), 0);
                     result->code.push_back(addr_inst);
+
+                    // since address, so basically pointer level 1
+                    combinedType.isDereferenced = true;
+
+                    //combinedType.pointerLevel = 1; //newly added for reference
                     
                     combinedType.result = ref_var;
                 }
@@ -2026,6 +2032,7 @@ primary_expression
                 
                 // The type info should reflect what the reference refers to, not the reference itself
                 $$->isReference = false;  // After dereferencing, it's no longer a reference
+                $$->isDereferenced = true;
             } else {
                 $$->isLvalue = true;   // Regular variables are lvalues
                 cout << "Found variable: " << *$1 << " of type " << $$->toString() << "\n";
@@ -2957,7 +2964,10 @@ argument_expression_list
 
 
 unary_expression
-	: postfix_expression { $$ = $1; }
+	: postfix_expression { 
+        $$ = $1; 
+        cout << "Unary expression is postfix: " << $$->toString() << "\n";
+    }
 	| INCREMENT unary_expression { 
 		$$ = perform_unary_operation(*$2, "++");    
 		delete $2;
@@ -3325,6 +3335,10 @@ assignment_expression
 		// Type checking for assignment
 		TypeInfo* lhs_type = $1;
 		TypeInfo* rhs_type = $3;
+        cout<<"Printing LHS and RHS types for assignment:\n";
+        cout<<lhs_type->toString()<<"\n";
+        cout<<rhs_type->toString()<<"\n";
+
 		
 		// Check if left-hand side is a valid lvalue
         
@@ -3334,6 +3348,18 @@ assignment_expression
             $$->isLvalue = false;  // Result of assignment is not an lvalue in C
 			$$->baseType = "error";
 		} 
+        else if (lhs_type->isReference) {
+            // Reference assignment: ref = value
+            cout<<"Reference assignment from " << rhs_type->toString() << " to " << lhs_type->toString() << "\n";
+            $$ = new TypeInfo(*lhs_type);
+            $$->isLvalue = false;  // Result of assignment is not an lvalue in C
+            $$->code = lhs_type->code;
+            $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
+            pair<vector<TACInstruction*>, pair<TACOperand*, TACOperand*>> cast_result = change_type_rhs_to_lhs(*lhs_type, *rhs_type);
+            $$->code.insert($$->code.end(), cast_result.first.begin(), cast_result.first.end());
+            // special assign instruction for reference
+            TACInstruction* assign_inst = emit(TACOperator(TAC_OPERATOR_STORE_INDIRECT), lhs_type->result, cast_result.second.second, new_empty_var(),0); // ref = rhs
+        }
         else if (lhs_type->isDereferenced) {
             // This is *ptr = value (any level: *p, **p, ***p)
             cout<<"Krish\n";
@@ -7077,6 +7103,19 @@ extern "C" int get_variable_pointer_level(const char* var_name) {
     }
     
     return 0;
+}
+
+// Check if a variable is a reference type (for MIPS generation)
+extern "C" bool is_variable_reference(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        return it->second.type.isReference;
+    }
+    
+    return false;
 }
 
 //----------------------------------------------------------------------------
