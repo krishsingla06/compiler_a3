@@ -681,6 +681,7 @@ void MIPSGenerator::generate_function_epilogue(const string& func_name) {
     emit_comment("Deallocate saved $ra and $fp (8 bytes)");
     
     emit_direct("jr $ra");  // ← CHANGE HERE
+    emit_direct("nop");  // Fill delay slot for return
     emit_comment("Return to caller");
     
     emit_comment("=== End of Epilogue ===");
@@ -1419,28 +1420,34 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
                 case TAC_OPERATOR_EQ:
                     emit("c.eq.s " + freg1 + ", " + freg2);
                     emit("bc1t I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 case TAC_OPERATOR_NE:
                     emit("c.eq.s " + freg1 + ", " + freg2);
                     emit("bc1f I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 case TAC_OPERATOR_LT:
                     emit("c.lt.s " + freg1 + ", " + freg2);
                     emit("bc1t I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 case TAC_OPERATOR_LE:
                     emit("c.le.s " + freg1 + ", " + freg2);
                     emit("bc1t I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 case TAC_OPERATOR_GT:
                     // GT is !LE
                     emit("c.le.s " + freg1 + ", " + freg2);
                     emit("bc1f I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 case TAC_OPERATOR_GE:
                     // GE is !LT
                     emit("c.lt.s " + freg1 + ", " + freg2);
                     emit("bc1f I" + target_label);
+                    emit("nop");  // Fill delay slot
                     break;
                 default:
                     emit_comment("ERROR: Unknown float comparison operator");
@@ -1504,11 +1511,14 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
                 // Emit branch instruction against zero
                 if (instr->op.type == TAC_OPERATOR_NE) {
                     emit("bne " + reg1 + ", $zero, I" + target_label);
+                    emit("nop");  // Fill delay slot
                 } else if (instr->op.type == TAC_OPERATOR_EQ) {
                     emit("beq " + reg1 + ", $zero, I" + target_label);
+                    emit("nop");  // Fill delay slot
                 } else {
                     // For other comparisons, treat as not equal to zero
                     emit("bne " + reg1 + ", $zero, I" + target_label);
+                    emit("nop");  // Fill delay slot
                 }
                 emit_comment("Branch to I" + target_label + " if condition true");
                 return;
@@ -1525,6 +1535,7 @@ void MIPSGenerator::translate_comparison(TACInstruction* instr) {
             
             // Emit branch instruction
             emit(branch_instr + " " + reg1 + ", " + reg2 + ", I" + target_label);
+            emit("nop");  // Fill delay slot
             emit_comment("Branch to I" + target_label + " if condition true");
         }
         
@@ -2297,6 +2308,7 @@ void MIPSGenerator::translate_jump(TACInstruction* instr) {
         string target_label = instr->result->value;
         emit_comment("Unconditional jump to I" + target_label);
         emit("j I" + target_label);
+        emit("nop");  // Fill delay slot
     }
 }
 
@@ -2350,6 +2362,7 @@ void MIPSGenerator::translate_jump_table(TACInstruction* instr) {
         // Compare index with i
         emit("li " + cmp_reg + ", " + to_string(i));
         emit("beq " + index_reg + ", " + cmp_reg + ", I" + target_label);
+        emit("nop");  // Fill delay slot
         emit_comment("DEBUG: if index == " + to_string(i) + " goto I" + target_label);
     }
     
@@ -3141,6 +3154,7 @@ if (is_scanf) {
         // Call through register using jalr (jump and link register)
         // jalr $ra, $reg - jump to address in $reg and save return address in $ra
         emit("jalr $ra, " + func_ptr_reg);
+        emit("nop");  // Fill delay slot
         emit_comment("DEBUG: Indirect call via jalr $ra, " + func_ptr_reg);
     } else {
         // Direct function call

@@ -29,6 +29,7 @@ I3:
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
+    nop
 
 
 
@@ -55,6 +56,7 @@ I7:
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
+    nop
 
 
 
@@ -240,6 +242,7 @@ I40:
     # Exit program
     li $v0, 10
     syscall
+    nop
 
 
 

@@ -8,7 +8,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Compile with parser
-./parser "$1" > /dev/null 2>&1
+# Redirect stdout to /dev/null but keep stderr visible
+./parser "$1" > /dev/null
 COMPILE_STATUS=$?
 
 # Check if compilation failed

@@ -146,6 +146,8 @@ Exiting scope level 1
 +- SCOPE LEVEL 1 ------------------------------------------------------+
 | (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
+  - Destroying struct student from scope 1
+  - Destroying struct teacher from scope 1
 
 
 

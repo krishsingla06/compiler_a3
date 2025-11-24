@@ -18,9 +18,9 @@ Function printf stack frame:
   - Total: 12 bytes
 Start rule: Global declaration has 3 TAC instructions
 TAC code written to k.tac
-Function declarator: add with 2 parameters
-Registered function: add as add_i_i returning int
-Function definition: add registered
+Function declarator: scanf with 1 parameters
+Registered function: scanf as scanf_cp1_variadic returning void
+Function definition: scanf registered
 Entering scope level 2
 Allocated parameter x (param #0) at offset 8
 DEBUG: Variable x mangled as v_x_add_i_i_s2 (function: add, signature: i_i, scope: 2)
@@ -212,8 +212,12 @@ Allocated local variable #t11 at offset -32 (size: 0 bytes)
 Variable #t11 mangled as #t11 [LOCAL]
 Declared variable: #t11 (void) at line 23 in scope 2
 Unary expression is postfix: void
+conditional_expression: code size = 3
+assignment_expression: code size from conditional = 3
 Integer literal: 0 (type: int)
 Unary expression is postfix: int
+conditional_expression: code size = 0
+assignment_expression: code size from conditional = 0
 Compound statement with declarations and statements
 Function main stack frame:
   - Local variables: 32 bytes

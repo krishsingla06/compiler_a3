@@ -2145,6 +2145,7 @@ postfix_expression
 		} else {
 			// Result is the base type but with one dimension removed
 			$$ = new TypeInfo(*base);
+            $$->code = base->code; // Start with base code
 			
 			if (base->isArray) {
 				// Handle multidimensional arrays
@@ -2215,8 +2216,10 @@ postfix_expression
             
             // result = *address (dereference - type depends on base element type)
             $$->result = new_typed_temp_var($$->baseType, $$->pointerLevel);
-            TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, $$->result, address, new_empty_var(),0);
-           // $$->code.insert($$->code.end(), base->code.begin(), base->code.end());
+           
+           TACInstruction* i3 = emit(TAC_OPERATOR_DEREF, $$->result, address, new_empty_var(),0);
+           // below line was commented out
+           //$$->code.insert($$->code.end(), base->code.begin(), base->code.end());
             $$->code.insert($$->code.end(), index->code.begin(), index->code.end());
             $$->code.push_back(i1);
             if(i_base)
@@ -6179,7 +6182,9 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             else res->baseType = "int";
 
             res->isLvalue = false; // res is not an lvalue
-            res->code = left.code;
+            /* res->code = left.code; */
+            res->code = vector<TACInstruction*>();
+            res->code.insert(res->code.end(), left.code.begin(), left.code.end());
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
             res->code.insert(res->code.end(), promo.first.begin(), promo.first.end());
             TACOperand* resultOp = new_typed_temp_var(res->baseType); // arithmetic result
@@ -6203,6 +6208,7 @@ TypeInfo* perform_binary_operation(const TypeInfo& left, const TypeInfo& right, 
             res->isArray = false;  // res is always a pointer, not array
             res->pointerLevel = left.pointerLevel > 0 ? left.pointerLevel : 1;
             res->isLvalue = false; // res is not an lvalue
+            res->code = vector<TACInstruction*>();
             res->code.insert(res->code.end(), left.code.begin(), left.code.end());
             res->code.insert(res->code.end(), right.code.begin(), right.code.end());
             // if right is char, promote to int
