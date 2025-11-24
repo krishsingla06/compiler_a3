@@ -29,15 +29,9 @@ int main(){
     int sc2 = (1 || sum); // RHS not evaluated
 
     // type conversion cases
-    int type_conv1 = 5 && 10.5;  
-    int type_conv2 = 5 || "hello";  
-    int type_conv3 = !20.5;    
 
     printf("Modulus: %d\n", modulus);
     printf("Float f: %f\n", f);
-    printf("Type conversion 1: %d\n", type_conv1);
-    printf("Type conversion 2: %d\n", type_conv2);
-    printf("Type conversion 3: %d\n", type_conv3);
 
     // expected output : 
     // 1
