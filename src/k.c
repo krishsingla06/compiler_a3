@@ -1,27 +1,25 @@
-void printf(char* fmt, ...){}
+void printf(char* c, ...){return;}
 
-class B{
-    int yy;
-    public:
-    int b;
-    int funcB(){
-        return b;
-    }
-    B(){
-        b = 0;
-        yy = 0;
-    }
-    ~B(){}
-};
+int add(int x, int y){
+    return x + y;
+}
+
+int subtract(int x, int y){
+    return x - y;
+}
+
+int apply_operation(int (*operation)(int, int), int a, int b){
+    int x;
+    x=1;
+    return operation(a, b);
+}
 
 int main(){
-    // class A b1; // Error: 'class A' has not been declared
-    class B b1; // Correct usage of class B
-    // b1.unknown = 5; // Error: 'unknown' is not a member of class B
-    b1.b = 10; // Accessing member b of class B
-    printf("%d\n", b1.b);
-    // b1.yy = 15; // Error: 'yy' is a private member of class B
-    // b1->b = 20; // Error: 'b1' is not a pointer
-    b1.funcB(); // Calling member function funcB of class B
+    // function pointer 
+    int (*funcPtr)(int, int)=add;
+    int result1=funcPtr(5, 3); // Calls add function
+    funcPtr=subtract;
+    result1=apply_operation(subtract, 2, 4); // Calls subtract function
+    printf("Result: %d\n", result1);
     return 0;
 }

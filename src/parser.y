@@ -683,6 +683,7 @@ void close_jump_table_file(){
     TypeInfo array_to_pointer_conversion(const TypeInfo& type);
     void insert_function(const string& name, const TypeInfo& returnType, const vector<TypeInfo>& paramTypes, bool isVariadic);
     FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes);
+    FunctionEntry* get_function_by_name(const string& name);
     bool is_function_name(const string& name);
     bool are_parameters_compatible(const vector<TypeInfo>& argTypes, const vector<FunctionParam>& params, bool isVariadic);
     void display_function_table();
@@ -2968,11 +2969,67 @@ argument_expression_list
 	: assignment_expression {                                         /* e.g., x */
 		$$ = new vector<TypeInfo>();
         TypeInfo argType = *$1;
+        
+        // Handle function-to-pointer decay: if argument is a function name, convert to function pointer
+        if (argType.baseType == "function" && !argType.identifier.empty()) {
+            // Get function information
+            FunctionEntry* func = get_function_by_name(argType.identifier);
+            if (func) {
+                // Create function pointer type
+                argType.isFunctionPointer = true;
+                argType.returnType = new TypeInfo(func->returnType);
+                argType.parameterTypes = new vector<TypeInfo>();
+                for (const auto& param : func->parameters) {
+                    argType.parameterTypes->push_back(param.type);
+                }
+                argType.baseType = "function_pointer";
+                
+                // Generate address-of operation for the function
+                TACOperand* func_addr = new_typed_temp_var("function_pointer", 0);
+                TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, func_addr, 
+                                                new_identifier(func->mangledName), 
+                                                new_empty_var(), 0);
+                argType.code.push_back(addr_inst);
+                argType.result = func_addr;
+                
+                cout << "Function-to-pointer conversion: " << argType.identifier 
+                     << " -> pointer to function returning " << func->returnType.toString() << "\n";
+            }
+        }
+        
         $$->push_back(argType);
         delete $1;
 	}
 	| argument_expression_list COMMA assignment_expression {           /* e.g., x, y */
         TypeInfo argType = *$3;
+        
+        // Handle function-to-pointer decay: if argument is a function name, convert to function pointer
+        if (argType.baseType == "function" && !argType.identifier.empty()) {
+            // Get function information
+            FunctionEntry* func = get_function_by_name(argType.identifier);
+            if (func) {
+                // Create function pointer type
+                argType.isFunctionPointer = true;
+                argType.returnType = new TypeInfo(func->returnType);
+                argType.parameterTypes = new vector<TypeInfo>();
+                for (const auto& param : func->parameters) {
+                    argType.parameterTypes->push_back(param.type);
+                }
+                argType.baseType = "function_pointer";
+                
+                // Generate address-of operation for the function
+                TACOperand* func_addr = new_typed_temp_var("function_pointer", 0);
+                TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, func_addr, 
+                                                new_identifier(func->mangledName), 
+                                                new_empty_var(), 0);
+                argType.code.push_back(addr_inst);
+                argType.result = func_addr;
+                
+                cout << "Function-to-pointer conversion: " << argType.identifier 
+                     << " -> pointer to function returning " << func->returnType.toString() << "\n";
+            }
+        }
+        
         $$ = $1;
         $$->push_back(argType);
         delete $3;
@@ -6871,6 +6928,17 @@ bool is_function_name(const string& name) {
         }
     }
     return false;
+}
+
+// Get function entry by name (for function-to-pointer conversion)
+// Returns the first matching function if there are overloads
+FunctionEntry* get_function_by_name(const string& name) {
+    for (auto& entry : function_table) {
+        if (entry.second.originalName == name) {
+            return &(entry.second);
+        }
+    }
+    return nullptr;
 }
 
 FunctionEntry* lookup_function(const string& name, const vector<TypeInfo>& argTypes) {
