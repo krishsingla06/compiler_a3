@@ -4,9 +4,7 @@
 
 
 .data
-str_2: .asciiz "After foo call:\n"
-str_0: .asciiz "Before foo call:\n"
-str_1: .asciiz "x: %d, y: %f, z: %c\n"
+str_0: .asciiz "a: %d\n"
 
 
 .text
@@ -56,277 +54,89 @@ I6:
 
 
 I7:
-foo_i_f_c:
-    addiu $sp, $sp, -100
-    sw $ra, 96($sp)
-    sw $fp, 92($sp)
-    addiu $fp, $sp, 92
-
+main:
+    addiu $sp, $sp, -60
+    sw $ra, 56($sp)
+    sw $fp, 52($sp)
+    addiu $fp, $sp, 52
 
 I8:
-    sw $a0, -4($fp)
+    li $t0, 0
+
+
+    sw $t0, -4($fp)
 
 I9:
-    lw $t0, 0($a0)
+    lw $t0, -4($fp)
+    li $t1, 5
+    blt $t0, $t1, I11
+
+
 
 I10:
-    li $t1, 10
-    add $t2, $t0, $t1
+    j I13
+
+
 
 I11:
-    sw $t2, 0($a0)
+    li $t0, 1
 
 I12:
+    sw $t0, -8($fp)
+    j I14
+
+
 
 I13:
-    l.s $f0, 0($a1)
+    li $t0, 0
+
+
+    sw $t0, -8($fp)
 
 I14:
-    # Loading float constant: 1.500000
-    li.s $f1, 1.500000
-    add.s $f2, $f0, $f1
+    lw $t0, -8($fp)
+    bne $t0, $zero, I16
+
+
 
 I15:
-    s.s $f2, 0($a1)
+    j I22
+
+
 
 I16:
-    sw $a2, -28($fp)
 
 I17:
-    sw $t0, -8($fp)
-    lb $t0, 0($a2)
 
 I18:
+    la $a0, str_0
+    addiu $sp, $sp, -4
+    lw $t0, -4($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
 
 I19:
+    lw $t0, -4($fp)
     li $t1, 1
-    add $t3, $t0, $t1
+    add $t2, $t0, $t1
 
 I20:
-    sw $t3, 0($a2)
+    sw $t2, -4($fp)
 
 I21:
-    sw $a0, -4($fp)
-    sw $a0, 8($fp)
-    sw $a1, -16($fp)
-    sw $a1, 12($fp)
-    sw $a2, -28($fp)
-    sw $a2, 16($fp)
-    s.s $f0, -20($fp)
-    s.s $f2, -24($fp)
-    sw $t0, -32($fp)
-    sw $t0, -36($fp)
     sw $t2, -12($fp)
-    sw $t3, -40($fp)
-    li $v0, 0
+    sw $t2, -4($fp)
+    j I9
 
 
 
 I22:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
+    li $v0, 0
 
 
 
 I23:
-goo_ip1_fp1_cp1:
-    addiu $sp, $sp, -100
-    sw $ra, 96($sp)
-    sw $fp, 92($sp)
-    addiu $fp, $sp, 92
-
-
-I24:
-    sw $a0, -4($fp)
-
-I25:
-    lw $t0, 0($a0)
-
-I26:
-    li $t1, 20
-    add $t2, $t0, $t1
-
-I27:
-    sw $t2, 0($a0)
-
-I28:
-
-I29:
-    l.s $f0, 0($a1)
-
-I30:
-    # Loading float constant: 2.500000
-    li.s $f1, 2.500000
-    add.s $f2, $f0, $f1
-
-I31:
-    s.s $f2, 0($a1)
-
-I32:
-    sw $a2, -28($fp)
-
-I33:
-    sw $t0, -8($fp)
-    lb $t0, 0($a2)
-
-I34:
-
-I35:
-    li $t1, 2
-    add $t3, $t0, $t1
-
-I36:
-    sw $t3, 0($a2)
-
-I37:
-    sw $a0, -4($fp)
-    sw $a0, 8($fp)
-    sw $a1, -16($fp)
-    sw $a1, 12($fp)
-    sw $a2, -28($fp)
-    sw $a2, 16($fp)
-    s.s $f0, -20($fp)
-    s.s $f0, -20($fp)
-    s.s $f2, -24($fp)
-    s.s $f2, -24($fp)
-    sw $t0, -32($fp)
-    sw $t0, -36($fp)
-    sw $t2, -12($fp)
-    sw $t3, -40($fp)
-    li $v0, 0
-
-
-
-I38:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
-
-
-
-I39:
-main:
-    addiu $sp, $sp, -76
-    sw $ra, 72($sp)
-    sw $fp, 68($sp)
-    addiu $fp, $sp, 68
-
-I40:
-    li $t0, 5
-
-I41:
-    # Loading float constant: 2.500000
-    li.s $f0, 2.500000
-
-I42:
-    li $t1, 97
-
-I43:
-
-I44:
-    sw $t0, -4($fp)
-    sw $t1, -12($fp)
-    swc1 $f0, -8($fp)
-    swc1 $f2, -24($fp)
-    swc1 $f2, -24($fp)
-    la $a0, str_0
-    jal __lib_printf
-
-I45:
-
-I46:
-
-I47:
-
-I48:
-
-I49:
-    la $a0, str_1
-    addiu $sp, $sp, -12
-    lw $t0, -4($fp)
-    sw $t0, 0($sp)
-    l.s $f1, -8($fp)
-    swc1 $f1, 4($sp)
-    lw $t1, -12($fp)
-    sw $t1, 8($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 12
-
-I50:
-    addiu $t0, $fp, -4
-    sw $t0, -16($fp)
-
-I51:
-    addiu $t1, $fp, -8
-    sw $t1, -20($fp)
-
-I52:
-    addiu $t2, $fp, -12
-    sw $t2, -24($fp)
-
-I53:
-
-I54:
-
-I55:
-
-I56:
-    sw $t0, -16($fp)
-    sw $t1, -20($fp)
-    sw $t2, -24($fp)
-    swc1 $f1, -8($fp)
-    addiu $sp, $sp, -12
-    lw $t0, -16($fp)
-    sw $t0, 0($sp)
-    move $a0, $t0
-    lw $t1, -20($fp)
-    sw $t1, 4($sp)
-    move $a1, $t1
-    lw $t2, -24($fp)
-    sw $t2, 8($sp)
-    move $a2, $t2
-    jal goo_ip1_fp1_cp1
-    addiu $sp, $sp, 12
-    move $t3, $v0
-
-I57:
-
-I58:
-    sw $t3, -28($fp)
-    la $a0, str_2
-    jal __lib_printf
-
-I59:
-
-I60:
-
-I61:
-
-I62:
-
-I63:
-    la $a0, str_1
-    addiu $sp, $sp, -12
-    lw $t0, -4($fp)
-    sw $t0, 0($sp)
-    l.s $f2, -8($fp)
-    swc1 $f2, 4($sp)
-    lw $t1, -12($fp)
-    sw $t1, 8($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 12
-
-I64:
-    li $v0, 0
-
-
-
-I65:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

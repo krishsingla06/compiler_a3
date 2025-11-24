@@ -2,35 +2,15 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: foo (foo_i_f_c)
-|   Return type: int
-|   Parameters: int& float& char& 
-|   Stack Frame:
-|     - Parameter space: 12 bytes
-|     - Local var space: 40 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 60 bytes
-|   Declared at line: 277
-+-----------------------------------------------------------------------------------------+
-| Function: goo (goo_ip1_fp1_cp1)
-|   Return type: int
-|   Parameters: int* float* char* 
-|   Stack Frame:
-|     - Parameter space: 12 bytes
-|     - Local var space: 40 bytes
-|     - 8 byte for ra and fp
-|     - Total frame size: 60 bytes
-|   Declared at line: 284
-+-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 28 bytes
+|     - Local var space: 12 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 36 bytes
-|   Declared at line: 291
+|     - Total frame size: 20 bytes
+|   Declared at line: 310
 +-----------------------------------------------------------------------------------------+
 | Function: printf (printf_cp1_variadic)
 |   Return type: void

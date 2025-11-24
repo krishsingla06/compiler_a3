@@ -2477,6 +2477,11 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
             emit_comment("Deallocate variadic args space");
         }
         
+        // IMPORTANT: Invalidate all caller-saved registers after function call
+        // (since printf may clobber temporary registers)
+        emit_comment("DEBUG: Invalidating all cached values after printf");
+        clear_all_registers();
+        
         emit_comment("=== End printf ===");
         pending_params.clear();
         return;
