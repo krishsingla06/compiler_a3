@@ -1643,6 +1643,26 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     
     emit_comment(dest + " = &" + var);
     
+    // CRITICAL: Before taking the address of a variable, if it's currently in a register
+    // (and dirty), we MUST spill it to memory first. Otherwise, the memory location
+    // will be uninitialized when dereferenced through the pointer/reference.
+    string var_reg = storage_desc.get_register(var);
+    if (!var_reg.empty() && reg_allocator.is_dirty(var_reg)) {
+        emit_comment("DEBUG: Spilling " + var + " from " + var_reg + " to memory before taking address");
+        int var_offset = get_offset(var);
+        
+        // Check if it's a float register
+        if (var_reg.length() > 2 && var_reg[1] == 'f') {
+            emit("swc1 " + var_reg + ", " + to_string(var_offset) + "($fp)");
+        } else {
+            emit("sw " + var_reg + ", " + to_string(var_offset) + "($fp)");
+        }
+        
+        // Mark as clean and update storage descriptor
+        reg_allocator.clear_dirty(var_reg);
+        storage_desc.add_location(var, "memory:" + to_string(var_offset) + "($fp)");
+    }
+    
     // Allocate a register for the result
     string dest_reg = reg_allocator.allocate_temp_reg();
     
@@ -1809,7 +1829,7 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
     // to force reload from memory on next use
     emit_comment("DEBUG: Invalidating all cached values due to pointer store");
     
-    // Get all variables currently in registers
+    // Get all variables currently in integer registers
     set<string> all_temp_regs = {"$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7", "$t8", "$t9"};
     for (const string& reg : all_temp_regs) {
         set<string> vars_in_reg = reg_desc.get_vars_in_reg(reg);
@@ -1819,6 +1839,20 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
                 emit_comment("DEBUG: Invalidating cached value of " + var + " in " + reg);
                 storage_desc.remove_location(var, reg);
                 reg_desc.remove_var_from_reg(reg, var);
+            }
+        }
+    }
+    
+    // Also invalidate all float registers
+    for (int i = 0; i <= 31; i++) {
+        string freg = "$f" + to_string(i);
+        set<string> vars_in_reg = reg_desc.get_vars_in_reg(freg);
+        for (const string& var : vars_in_reg) {
+            // Only invalidate actual variables (starting with v_), not temps (#t)
+            if (var.length() > 0 && var[0] == 'v' && var[1] == '_') {
+                emit_comment("DEBUG: Invalidating cached float value of " + var + " in " + freg);
+                storage_desc.remove_location(var, freg);
+                reg_desc.remove_var_from_reg(freg, var);
             }
         }
     }

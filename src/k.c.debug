@@ -5,11 +5,11 @@ Function declarator: printf with 1 parameters
 Registered function: printf as printf_cp1_variadic returning void
 Function definition: printf registered
 Entering scope level 2
-Allocated parameter s (param #0) at offset 8
-DEBUG: Variable s mangled as v_s_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
-Variable s mangled as v_s_printf_cp1_s2 [PARAM]
-Declared variable: s (char*) at line 194 in scope 2
-Inserted function parameter: s (char*)
+Allocated parameter fmt (param #0) at offset 8
+DEBUG: Variable fmt mangled as v_fmt_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
+Variable fmt mangled as v_fmt_printf_cp1_s2 [PARAM]
+Declared variable: fmt (char*) at line 1 in scope 2
+Inserted function parameter: fmt (char*)
 Function printf_cp1_variadic parameter space: 4 bytes
 Compound statement with declarations and statements
 Function printf stack frame:
@@ -22,11 +22,11 @@ Function declarator: scanf with 1 parameters
 Registered function: scanf as scanf_cp1_variadic returning void
 Function definition: scanf registered
 Entering scope level 2
-Allocated parameter s (param #0) at offset 8
-DEBUG: Variable s mangled as v_s_scanf_cp1_s2 (function: scanf, signature: cp1, scope: 2)
-Variable s mangled as v_s_scanf_cp1_s2 [PARAM]
-Declared variable: s (char*) at line 198 in scope 2
-Inserted function parameter: s (char*)
+Allocated parameter fmt (param #0) at offset 8
+DEBUG: Variable fmt mangled as v_fmt_scanf_cp1_s2 (function: scanf, signature: cp1, scope: 2)
+Variable fmt mangled as v_fmt_scanf_cp1_s2 [PARAM]
+Declared variable: fmt (char*) at line 3 in scope 2
+Inserted function parameter: fmt (char*)
 Function scanf_cp1_variadic parameter space: 4 bytes
 Compound statement with declarations and statements
 Function scanf stack frame:
@@ -39,57 +39,159 @@ Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
-Integer literal: 0 (type: int)
-Unary expression is postfix: int
-DEBUG: Variable a mangled as v_a_main_s2 (function: main, signature: , scope: 2)
-Allocated local variable a at offset -4 (size: 4 bytes)
-DEBUG: Variable a mangled as v_a_main_s2 (function: main, signature: , scope: 2)
-Variable a mangled as v_a_main_s2 [LOCAL]
-Declared variable: a (int) with initializer of type int at line 311 in scope 2
-Found variable: a of type int
-Unary expression is postfix: int
-Integer literal: 5 (type: int)
-Unary expression is postfix: int
-Binary operation: int < int -> int (numeric comparison)
-Allocated local variable #t1 at offset -8 (size: 4 bytes)
-Variable #t1 mangled as #t1 [LOCAL]
-Declared variable: #t1 (int) at line 312 in scope 2
-Entering scope level 3
-Function main parameter space: 0 bytes
-Found function name: printf
-String literal: "a: %d\n" (type: string)
-Unary expression is postfix: char*
-Found variable: a of type int
-Unary expression is postfix: int
-Found compatible variadic function: printf_cp1_variadic
+Float literal: 5.5 (type: float)
+Unary expression is postfix: float
+DEBUG: Variable f mangled as v_f_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable f at offset -4 (size: 4 bytes)
+DEBUG: Variable f mangled as v_f_main_s2 (function: main, signature: , scope: 2)
+Variable f mangled as v_f_main_s2 [LOCAL]
+Declared variable: f (float) with initializer of type float at line 11 in scope 2
+Found variable: f of type float
+Unary expression is postfix: float
+DEBUG: Variable pf mangled as v_pf_main_s2 (function: main, signature: , scope: 2)
+DEBUG: Variable pf mangled as v_pf_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable pf at offset -8 (size: 4 bytes)
+DEBUG: Variable pf mangled as v_pf_main_s2 (function: main, signature: , scope: 2)
+Variable pf mangled as v_pf_main_s2 [LOCAL]
+Declared variable: pf (float&) with initializer of type float at line 13 in scope 2
+Char literal: 'A' (type: char)
+Unary expression is postfix: char
+DEBUG: Variable c mangled as v_c_main_s2 (function: main, signature: , scope: 2)
 Hello ji
-Allocated local variable #t2 at offset -8 (size: 0 bytes)
+Allocated local variable c at offset -12 (size: 4 bytes)
+DEBUG: Variable c mangled as v_c_main_s2 (function: main, signature: , scope: 2)
+Variable c mangled as v_c_main_s2 [LOCAL]
+Declared variable: c (char) with initializer of type char at line 15 in scope 2
+Found variable: c of type char
+Unary expression is postfix: char
+DEBUG: Variable pc mangled as v_pc_main_s2 (function: main, signature: , scope: 2)
+DEBUG: Variable pc mangled as v_pc_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable pc at offset -16 (size: 4 bytes)
+DEBUG: Variable pc mangled as v_pc_main_s2 (function: main, signature: , scope: 2)
+Variable pc mangled as v_pc_main_s2 [LOCAL]
+Declared variable: pc (char&) with initializer of type char at line 17 in scope 2
+Integer literal: 10 (type: int)
+Unary expression is postfix: int
+DEBUG: Variable I mangled as v_I_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable I at offset -20 (size: 4 bytes)
+DEBUG: Variable I mangled as v_I_main_s2 (function: main, signature: , scope: 2)
+Variable I mangled as v_I_main_s2 [LOCAL]
+Declared variable: I (int) with initializer of type int at line 19 in scope 2
+Found variable: I of type int
+Unary expression is postfix: int
+DEBUG: Variable pi mangled as v_pi_main_s2 (function: main, signature: , scope: 2)
+DEBUG: Variable pi mangled as v_pi_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable pi at offset -24 (size: 4 bytes)
+DEBUG: Variable pi mangled as v_pi_main_s2 (function: main, signature: , scope: 2)
+Variable pi mangled as v_pi_main_s2 [LOCAL]
+Declared variable: pi (int&) with initializer of type int at line 21 in scope 2
+Found reference: pf of type float& (auto-dereferencing)
+Allocated local variable #t1 at offset -28 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (float) at line 25 in scope 2
+Unary expression is postfix: float
+Found reference: pf of type float& (auto-dereferencing)
+Allocated local variable #t2 at offset -32 (size: 4 bytes)
 Variable #t2 mangled as #t2 [LOCAL]
-Declared variable: #t2 (void) at line 314 in scope 3
-Unary expression is postfix: void
-Found variable: a of type int
-Unary expression is postfix: int
-Found variable: a of type int
-Unary expression is postfix: int
-Integer literal: 1 (type: int)
-Unary expression is postfix: int
-Binary operation: int + intAllocated local variable #t3 at offset -12 (size: 4 bytes)
+Declared variable: #t2 (float) at line 25 in scope 2
+Unary expression is postfix: float
+Float literal: 2.5 (type: float)
+Unary expression is postfix: float
+Binary operation: float + floatAllocated local variable #t3 at offset -36 (size: 4 bytes)
 Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (int) at line 315 in scope 3
+Declared variable: #t3 (float) at line 25 in scope 2
+ -> float (numeric arithmetic)
+Printing LHS and RHS types for assignment:
+float
+float
+Krish
+Found reference: pi of type int& (auto-dereferencing)
+Allocated local variable #t4 at offset -40 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 27 in scope 2
+Unary expression is postfix: int
+Found reference: pi of type int& (auto-dereferencing)
+Allocated local variable #t5 at offset -44 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 27 in scope 2
+Unary expression is postfix: int
+Integer literal: 20 (type: int)
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t6 at offset -48 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 27 in scope 2
  -> int (numeric arithmetic)
 Printing LHS and RHS types for assignment:
 int
 int
-Simple assignment from int to int
-Compound statement with declarations and statements
-continue list empty
-Integer literal: 0 (type: int)
+Krish
+Found reference: pc of type char& (auto-dereferencing)
+Allocated local variable #t7 at offset -52 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (char) at line 29 in scope 2
+Unary expression is postfix: char
+Found reference: pc of type char& (auto-dereferencing)
+Allocated local variable #t8 at offset -56 (size: 4 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (char) at line 29 in scope 2
+Unary expression is postfix: char
+Integer literal: 2 (type: int)
 Unary expression is postfix: int
+Binary operation: char + intAllocated local variable #t9 at offset -60 (size: 4 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (int) at line 29 in scope 2
+Allocated local variable #t10 at offset -64 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 29 in scope 2
+ -> int (numeric arithmetic)
+Printing LHS and RHS types for assignment:
+char
+int
+Krish
+Found function name: printf
+String literal: "f: %f, c: %c, i: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: f of type float
+Unary expression is postfix: float
+Found variable: c of type char
+Unary expression is postfix: char
+Found variable: I of type int
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t11 at offset -64 (size: 0 bytes)
+Variable #t11 mangled as #t11 [LOCAL]
+Declared variable: #t11 (void) at line 33 in scope 2
+Unary expression is postfix: void
+Found function name: printf
+String literal: "pf: %f, pc: %c, pi: %d\n" (type: string)
+Unary expression is postfix: char*
+Found reference: pf of type float& (auto-dereferencing)
+Allocated local variable #t12 at offset -68 (size: 4 bytes)
+Variable #t12 mangled as #t12 [LOCAL]
+Declared variable: #t12 (float) at line 35 in scope 2
+Unary expression is postfix: float
+Found reference: pc of type char& (auto-dereferencing)
+Allocated local variable #t13 at offset -72 (size: 4 bytes)
+Variable #t13 mangled as #t13 [LOCAL]
+Declared variable: #t13 (char) at line 35 in scope 2
+Unary expression is postfix: char
+Found reference: pi of type int& (auto-dereferencing)
+Allocated local variable #t14 at offset -76 (size: 4 bytes)
+Variable #t14 mangled as #t14 [LOCAL]
+Declared variable: #t14 (int) at line 35 in scope 2
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t15 at offset -76 (size: 0 bytes)
+Variable #t15 mangled as #t15 [LOCAL]
+Declared variable: #t15 (void) at line 35 in scope 2
+Unary expression is postfix: void
 Compound statement with declarations and statements
 Function main stack frame:
-  - Local variables: 12 bytes
+  - Local variables: 76 bytes
   - Parameters: 0 bytes
-  - Total: 20 bytes
+  - Total: 84 bytes
 TAC code appended to k.tac
 yyparse() returned 0
 
@@ -106,13 +208,7 @@ No enums defined.
 
 === Optimizing TAC ===
 === Starting Goto Chain Optimization ===
-Found goto chain: L10 -> L13
-Found goto chain: L12 -> L14
-Found goto chain: L15 -> L22
-Found goto chain: L21 -> L9
-Resolving transitive chains...
-=== Goto Chain Optimization Complete ===
-Total replacements: 0
+No goto chains found to optimize
 === TAC Optimization Complete ===
 
 Rewriting optimized TAC to file...
@@ -120,39 +216,110 @@ Optimized TAC written to k.tac
 
 
 Generating MIPS assembly code...
-Total TAC instructions collected: 23
-hihi Variable v_a_main_s2 type: int
+Total TAC instructions collected: 40
+hihi Variable v_f_main_s2 type: float
+Returning 1
+Getting offset for variable: v_f_main_s2
+Getting offset for variable: v_f_main_s2
+Getting offset for variable: v_pf_main_s2
+hihi Variable v_c_main_s2 type: char
 Returning 0
-Getting offset for variable: v_a_main_s2
-hihi Variable v_a_main_s2 type: int
+Getting offset for variable: v_c_main_s2
+Getting offset for variable: v_c_main_s2
+Getting offset for variable: v_pc_main_s2
+hihi Variable v_I_main_s2 type: int
 Returning 0
-hihi Variable v_a_main_s2 type: int
+Getting offset for variable: v_I_main_s2
+Getting offset for variable: v_I_main_s2
+Getting offset for variable: v_pi_main_s2
+hihi Variable #t1 type: float
+Returning 1
+hihi Variable #t2 type: float
+Returning 1
+hihi Variable #t2 type: float
+Returning 1
+hihi Variable #t2 type: float
+Returning 1
+hihi Variable #t3 type: float
+Returning 1
+hihi Variable #t3 type: float
+Returning 1
+hihi Variable #t4 type: int
 Returning 0
-Getting offset for variable: v_a_main_s2
-hihi Variable #t1 type: int
+Getting offset for variable: v_pi_main_s2
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t7 type: char
+Returning 0
+Getting offset for variable: v_pc_main_s2
+hihi Variable #t8 type: char
+Returning 0
+Getting offset for variable: #t5
+hihi Variable #t8 type: char
+Returning 0
+hihi Variable #t8 type: char
+Returning 0
+hihi Variable #t9 type: int
+Returning 0
+hihi Variable #t9 type: int
+Returning 0
+hihi Variable #t10 type: int
+Returning 0
+hihi Variable #t10 type: int
 Returning 0
 Getting offset for variable: #t1
-hihi Variable #t1 type: int
-Returning 0
-Getting offset for variable: #t1
-hihi Variable #t1 type: int
-Returning 0
-Getting offset for variable: #t1
-hihi Variable v_a_main_s2 type: int
-Returning 0
-Getting offset for variable: v_a_main_s2
-hihi Variable v_a_main_s2 type: int
-Returning 0
-hihi Variable v_a_main_s2 type: int
-Returning 0
-Getting offset for variable: v_a_main_s2
-hihi Variable v_a_main_s2 type: int
-Returning 0
-hihi Variable #t3 type: int
-Returning 0
-Getting offset for variable: v_a_main_s2
+Getting offset for variable: #t4
+Getting offset for variable: #t7
+Getting offset for variable: #t8
+Getting offset for variable: #t9
+Getting offset for variable: #t6
+Getting offset for variable: #t10
+Getting offset for variable: <CONST_7_5.500000>
+Getting offset for variable: #t2
+Getting offset for variable: <CONST_15_2.500000>
 Getting offset for variable: #t3
-Getting offset for variable: v_a_main_s2
+hihi Variable v_f_main_s2 type: float
+Returning 1
+Getting offset for variable: v_f_main_s2
+hihi Variable v_c_main_s2 type: char
+Returning 0
+Getting offset for variable: v_c_main_s2
+hihi Variable v_I_main_s2 type: int
+Returning 0
+Getting offset for variable: v_I_main_s2
+Getting offset for variable: v_pf_main_s2
+hihi Variable #t12 type: float
+Returning 1
+Getting offset for variable: v_pc_main_s2
+hihi Variable #t13 type: char
+Returning 0
+Getting offset for variable: v_pi_main_s2
+hihi Variable #t14 type: int
+Returning 0
+Getting offset for variable: v_pf_main_s2
+Getting offset for variable: v_pc_main_s2
+Getting offset for variable: #t13
+Getting offset for variable: v_pi_main_s2
+Getting offset for variable: #t14
+Getting offset for variable: #t12
+Getting offset for variable: v_f_main_s2
+hihi Variable #t12 type: float
+Returning 1
+Getting offset for variable: #t12
+hihi Variable #t13 type: char
+Returning 0
+Getting offset for variable: #t13
+hihi Variable #t14 type: int
+Returning 0
+Getting offset for variable: #t14
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

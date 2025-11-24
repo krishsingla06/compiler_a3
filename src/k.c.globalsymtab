@@ -3,16 +3,33 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 6
+Total Symbols: 23
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
-| #t1                 | #t1                             | int         | LOCAL    | -8      |
-| #t2                 | #t2                             | void        | LOCAL    | -8      |
-| #t3                 | #t3                             | int         | LOCAL    | -12     |
-| a                   | v_a_main_s2                     | int         | LOCAL    | -4      |
-| s                   | v_s_printf_cp1_s2               | char*       | PARAM#0  | 8       |
-| s                   | v_s_scanf_cp1_s2                | char*       | PARAM#0  | 8       |
+| #t1                 | #t1                             | float       | LOCAL    | -28     |
+| #t10                | #t10                            | int         | LOCAL    | -64     |
+| #t11                | #t11                            | void        | LOCAL    | -64     |
+| #t12                | #t12                            | float       | LOCAL    | -68     |
+| #t13                | #t13                            | char        | LOCAL    | -72     |
+| #t14                | #t14                            | int         | LOCAL    | -76     |
+| #t15                | #t15                            | void        | LOCAL    | -76     |
+| #t2                 | #t2                             | float       | LOCAL    | -32     |
+| #t3                 | #t3                             | float       | LOCAL    | -36     |
+| #t4                 | #t4                             | int         | LOCAL    | -40     |
+| #t5                 | #t5                             | int         | LOCAL    | -44     |
+| #t6                 | #t6                             | int         | LOCAL    | -48     |
+| #t7                 | #t7                             | char        | LOCAL    | -52     |
+| #t8                 | #t8                             | char        | LOCAL    | -56     |
+| #t9                 | #t9                             | int         | LOCAL    | -60     |
+| I                   | v_I_main_s2                     | int         | LOCAL    | -20     |
+| c                   | v_c_main_s2                     | char        | LOCAL    | -12     |
+| f                   | v_f_main_s2                     | float       | LOCAL    | -4      |
+| fmt                 | v_fmt_printf_cp1_s2             | char*       | PARAM#0  | 8       |
+| fmt                 | v_fmt_scanf_cp1_s2              | char*       | PARAM#0  | 8       |
+| pc                  | v_pc_main_s2                    | char&       | LOCAL    | -16     |
+| pf                  | v_pf_main_s2                    | float&      | LOCAL    | -8      |
+| pi                  | v_pi_main_s2                    | int&        | LOCAL    | -24     |
 +-----------------------------------------------------------------------------------------+
 
