@@ -2,15 +2,14 @@
     #   MIPS Assembly Code Generation
     # ======================================
 
-    # Total TAC instructions: 46
+    # Total TAC instructions: 35
 
     # ======================================
     #   Collecting Data Section Items
     # ======================================
-    # Added string literal: str_0 = ""a before for loop: %d\n""
-    # Added string literal: str_1 = ""b before for loop: %d\n""
-    # Added string literal: str_2 = ""c before for loop: %d\n""
-    # Found 3 string literals
+    # Added string literal: str_0 = ""f: %f, c: %c, i: %d\n""
+    # Added string literal: str_1 = ""pf: %f, pc: %c, pi: %d\n""
+    # Found 2 string literals
 
     # ======================================
     #   Collecting Global and Static Variables
@@ -24,13 +23,12 @@
     # Block B2: i2-i2
     # Block B3: i3-i4
     # Block B4: i5-i5
-    # Block B5: i6-i45
+    # Block B5: i6-i34
 
 .data
     # String Literals
-str_0: .asciiz "a before for loop: %d\n"
-str_1: .asciiz "b before for loop: %d\n"
-str_2: .asciiz "c before for loop: %d\n"
+str_0: .asciiz "f: %f, c: %c, i: %d\n"
+str_1: .asciiz "pf: %f, pc: %c, pi: %d\n"
 
     # Global and Static Variables
     # (no global or static variables)
@@ -73,7 +71,7 @@ printf_cp1_variadic:
     # === End Parameter Initialization ===
 
 
-    # TAC 1: 2: return 0
+    # TAC 1: 2: return 
 I2:
     # --- Register Descriptor ---
     # $a0: [v_fmt_printf_cp1_variadic_s2]
@@ -84,9 +82,7 @@ I2:
     # Spilling before control flow instruction
     # DEBUG: No dirty registers to spill
     # === Spilling all dirty registers before return ===
-    # return 0
-    # DEBUG: Return constant 0 in $v0
-    li $v0, 0
+    # return (void)
 
 
     # ======================================
@@ -157,7 +153,7 @@ scanf_cp1_variadic:
     # === End Parameter Initialization ===
 
 
-    # TAC 4: 5: return 0
+    # TAC 4: 5: return 
 I5:
     # --- Register Descriptor ---
     # $a0: [v_fmt_scanf_cp1_variadic_s2]
@@ -169,9 +165,7 @@ I5:
     # Spilling before control flow instruction
     # DEBUG: No dirty registers to spill
     # === Spilling all dirty registers before return ===
-    # return 0
-    # DEBUG: Return constant 0 in $v0
-    li $v0, 0
+    # return (void)
 
 
     # ======================================
@@ -208,108 +202,80 @@ I6:
 
 
     # ======================================
-    # === B5_i6_i45 ===
+    # === B5_i6_i34 ===
     # ======================================
     # Registers cleared at block start
     # === Computing Next-Use Information for Block B5 ===
-    # Instr i45 Next-Use:
-    #   main -> N/A
-    # Instr i44 Next-Use:
-    #   #t23 -> N/A
-    #   printf_cp1_variadic -> N/A
-    # Instr i43 Next-Use:
-    #   v_c_main_s2 -> N/A
-    # Instr i42 Next-Use:
-    # Instr i41 Next-Use:
-    #   #t22 -> N/A
-    #   printf_cp1_variadic -> i44
-    # Instr i40 Next-Use:
-    #   v_b_main_s2 -> N/A
-    # Instr i39 Next-Use:
-    # Instr i38 Next-Use:
-    #   #t21 -> N/A
-    #   printf_cp1_variadic -> i41
-    # Instr i37 Next-Use:
-    #   v_a_main_s2 -> N/A
-    # Instr i36 Next-Use:
-    # Instr i35 Next-Use:
-    #   #t20 -> N/A
     # Instr i34 Next-Use:
-    #   #t19 -> N/A
-    #   #t20 -> N/A
+    #   main -> N/A
     # Instr i33 Next-Use:
-    #   #t17 -> N/A
-    #   #t18 -> N/A
-    #   #t19 -> N/A
+    #   #t11 -> N/A
+    #   printf_cp1_variadic -> N/A
     # Instr i32 Next-Use:
-    #   #t18 -> N/A
-    #   v_arr_main_s2 -> N/A
+    #   #t10 -> N/A
     # Instr i31 Next-Use:
-    #   #t17 -> N/A
+    #   #t9 -> N/A
     # Instr i30 Next-Use:
-    #   #t16 -> N/A
+    #   #t8 -> N/A
     # Instr i29 Next-Use:
-    #   #t15 -> N/A
-    #   #t16 -> N/A
     # Instr i28 Next-Use:
-    #   #t13 -> N/A
-    #   #t14 -> N/A
-    #   #t15 -> N/A
+    #   #t10 -> N/A
+    #   v_pi_main_s2 -> N/A
     # Instr i27 Next-Use:
-    #   #t14 -> N/A
-    #   v_arr_main_s2 -> i32
+    #   #t9 -> N/A
+    #   v_pc_main_s2 -> N/A
     # Instr i26 Next-Use:
-    #   #t13 -> N/A
+    #   #t8 -> N/A
+    #   v_pf_main_s2 -> N/A
     # Instr i25 Next-Use:
-    #   #t12 -> N/A
+    #   #t5 -> N/A
+    #   #t7 -> N/A
     # Instr i24 Next-Use:
-    #   #t11 -> N/A
-    #   #t12 -> N/A
+    #   #t6 -> N/A
+    #   #t7 -> N/A
     # Instr i23 Next-Use:
-    #   #t10 -> N/A
-    #   #t11 -> N/A
-    #   #t9 -> N/A
+    #   #t6 -> N/A
+    #   v_pi_main_s2 -> i28
     # Instr i22 Next-Use:
-    #   #t10 -> N/A
-    #   v_arr_main_s2 -> i27
+    #   #t5 -> N/A
+    #   v_pi_main_s2 -> i23
     # Instr i21 Next-Use:
-    #   #t9 -> N/A
+    #   #t2 -> N/A
+    #   #t4 -> N/A
     # Instr i20 Next-Use:
-    #   #t8 -> N/A
+    #   #t3 -> N/A
+    #   #t4 -> N/A
     # Instr i19 Next-Use:
-    #   #t7 -> N/A
-    #   #t8 -> N/A
+    #   #t3 -> N/A
+    #   v_pf_main_s2 -> i26
     # Instr i18 Next-Use:
-    #   #t5 -> N/A
-    #   #t6 -> N/A
-    #   #t7 -> N/A
+    #   #t2 -> N/A
+    #   v_pf_main_s2 -> i19
     # Instr i17 Next-Use:
-    #   #t6 -> N/A
-    #   v_arr_main_s2 -> i22
+    #   #t1 -> N/A
+    #   printf_cp1_variadic -> i33
     # Instr i16 Next-Use:
-    #   #t5 -> N/A
+    #   v_I_main_s2 -> N/A
     # Instr i15 Next-Use:
-    #   #t4 -> N/A
+    #   v_c_main_s2 -> N/A
     # Instr i14 Next-Use:
-    #   #t3 -> N/A
-    #   #t4 -> N/A
-    # Instr i13 Next-Use:
-    #   #t1 -> N/A
-    #   #t2 -> N/A
-    #   #t3 -> N/A
-    # Instr i12 Next-Use:
-    #   #t2 -> N/A
-    #   v_arr_main_s2 -> i17
-    # Instr i11 Next-Use:
-    #   #t1 -> N/A
-    # Instr i10 Next-Use:
     #   v_f_main_s2 -> N/A
+    # Instr i13 Next-Use:
+    # Instr i12 Next-Use:
+    #   v_I_main_s2 -> N/A
+    #   v_pi_main_s2 -> N/A
+    # Instr i11 Next-Use:
+    #   v_I_main_s2 -> N/A
+    # Instr i10 Next-Use:
+    #   v_c_main_s2 -> N/A
+    #   v_pc_main_s2 -> N/A
     # Instr i9 Next-Use:
     #   v_c_main_s2 -> N/A
     # Instr i8 Next-Use:
-    #   v_b_main_s2 -> N/A
+    #   v_f_main_s2 -> N/A
+    #   v_pf_main_s2 -> N/A
     # Instr i7 Next-Use:
-    #   v_a_main_s2 -> N/A
+    #   v_f_main_s2 -> N/A
     # Instr i6 Next-Use:
     #   main -> N/A
     # === End of Next-Use Computation for Block B5 ===
@@ -326,17 +292,17 @@ I7:
 main:
     # Function: main
     # === Function Prologue for main ===
-    # Frame size: 180 bytes
-    addiu $sp, $sp, -180
-    # Allocate 180 bytes (8 for $ra+$fp, 180 for locals/temps)
-    sw $ra, 176($sp)
-    # Save return address at 184($sp)
-    sw $fp, 172($sp)
-    # Save old frame pointer at 180($sp)
-    addiu $fp, $sp, 172
+    # Frame size: 108 bytes
+    addiu $sp, $sp, -108
+    # Allocate 108 bytes (8 for $ra+$fp, 108 for locals/temps)
+    sw $ra, 104($sp)
+    # Save return address at 112($sp)
+    sw $fp, 100($sp)
+    # Save old frame pointer at 108($sp)
+    addiu $fp, $sp, 100
     # Set new frame pointer (points to saved old $fp)
 
-    # TAC 7: 8: v_a_main_s2 = 0
+    # TAC 7: 8: v_f_main_s2 = 5.500000
 I8:
     # --- Register Descriptor ---
     # --- End Register Descriptor ---
@@ -344,1551 +310,835 @@ I8:
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_a_main_s2 = 0
-    # DEBUG: v_a_main_s2 = constant 0 loaded in $t0 (dirty)
-    # DEBUG: Saved variable v_a_main_s2 to home location -8($fp)
-    li $t0, 0
-    sw $t0, -8($fp)
+    # Assignment: v_f_main_s2 = 5.500000
+    # DEBUG: Float assignment
+    # DEBUG: Loaded float constant 5.500000 into $f0
+    # DEBUG: 5.500000 in $f0
+    # DEBUG: v_f_main_s2 = 5.500000 in $f0 (dirty, float)
+    # DEBUG: Saved float variable v_f_main_s2 to home location -4($fp)
+    # Loading float constant: 5.500000
+    li.s $f0, 5.500000
+    swc1 $f0, -4($fp)
 
-    # TAC 8: 9: v_b_main_s2 = 5
+    # TAC 8: 9: v_pf_main_s2 = & v_f_main_s2
 I9:
     # --- Register Descriptor ---
-    # $t0: [v_a_main_s2]
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0, memory:-8($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_b_main_s2 = 5
-    # DEBUG: v_b_main_s2 = constant 5 loaded in $t1 (dirty)
-    # DEBUG: Saved variable v_b_main_s2 to home location -12($fp)
-    li $t1, 5
-    sw $t1, -12($fp)
+    # v_pf_main_s2 = &v_f_main_s2
+    # DEBUG: v_pf_main_s2 = address of v_f_main_s2 at -4($fp)
+    # DEBUG: v_pf_main_s2 (pointer) in $t0 (dirty)
+    # DEBUG: Also stored v_pf_main_s2 to memory at -8($fp)
+    addiu $t0, $fp, -4
+    sw $t0, -8($fp)
 
-    # TAC 9: 10: v_c_main_s2 = 10
+    # TAC 9: 10: v_c_main_s2 = 65
 I10:
     # --- Register Descriptor ---
-    # $t0: [v_a_main_s2]
-    # $t1: [v_b_main_s2]
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0, memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_c_main_s2 = 10
-    # DEBUG: v_c_main_s2 = constant 10 loaded in $t2 (dirty)
-    # DEBUG: Saved variable v_c_main_s2 to home location -16($fp)
-    li $t2, 10
-    sw $t2, -16($fp)
+    # Assignment: v_c_main_s2 = 65
+    # DEBUG: v_c_main_s2 = constant 65 loaded in $t1 (dirty)
+    # DEBUG: Saved variable v_c_main_s2 to home location -12($fp)
+    li $t1, 65
+    sw $t1, -12($fp)
 
-    # TAC 10: 11: v_f_main_s2 = 2.500000
+    # TAC 10: 11: v_pc_main_s2 = & v_c_main_s2
 I11:
     # --- Register Descriptor ---
-    # $t0: [v_a_main_s2]
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_c_main_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # v_a_main_s2: [$t0, memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_c_main_s2: [$t1, memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: v_f_main_s2 = 2.500000
-    # DEBUG: Float assignment
-    # DEBUG: Loaded float constant 2.500000 into $f0
-    # DEBUG: 2.500000 in $f0
-    # DEBUG: v_f_main_s2 = 2.500000 in $f0 (dirty, float)
-    # DEBUG: Saved float variable v_f_main_s2 to home location -20($fp)
-    # Loading float constant: 2.500000
-    li.s $f0, 2.500000
-    swc1 $f0, -20($fp)
+    # v_pc_main_s2 = &v_c_main_s2
+    # DEBUG: v_pc_main_s2 = address of v_c_main_s2 at -12($fp)
+    # DEBUG: v_pc_main_s2 (pointer) in $t1 (dirty)
+    # DEBUG: Also stored v_pc_main_s2 to memory at -16($fp)
+    addiu $t1, $fp, -12
+    sw $t1, -16($fp)
 
-    # TAC 11: 12: #t1 = 0 * 4
+    # TAC 11: 12: v_I_main_s2 = 10
 I12:
     # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>, v_f_main_s2]
-    # $t0: [v_a_main_s2]
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [$t0, memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
-    # v_f_main_s2: [$f0, memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
     # --- End Storage Descriptor ---
-    # #t1 = 0 mul 4
-    # DEBUG: Loaded constant 0 into $t3
-    # DEBUG: 0 in $t3
-    # DEBUG: Loaded constant 4 into $t4
-    # DEBUG: 4 in $t4
-    # DEBUG: #t1 = result in $t5 (dirty)
-    li $t3, 0
-    li $t4, 4
-    mul $t5, $t3, $t4
+    # Assignment: v_I_main_s2 = 10
+    # DEBUG: v_I_main_s2 = constant 10 loaded in $t2 (dirty)
+    # DEBUG: Saved variable v_I_main_s2 to home location -20($fp)
+    li $t2, 10
+    sw $t2, -20($fp)
 
-    # TAC 12: 13: #t2 = & v_arr_main_s2
+    # TAC 12: 13: v_pi_main_s2 = & v_I_main_s2
 I13:
     # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>, v_f_main_s2]
-    # $t0: [v_a_main_s2]
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
-    # $t5: [#t1] (dirty)
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_I_main_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [$t0, memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
-    # v_f_main_s2: [$f0, memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [$t2, memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
     # --- End Storage Descriptor ---
-    # #t2 = &v_arr_main_s2
-    # DEBUG: #t2 = address of v_arr_main_s2 at -40($fp)
-    # DEBUG: #t2 (pointer) in $t0 (dirty)
-    # DEBUG: Also stored #t2 to memory at -48($fp)
-    addiu $t0, $fp, -40
-    sw $t0, -48($fp)
+    # v_pi_main_s2 = &v_I_main_s2
+    # DEBUG: v_pi_main_s2 = address of v_I_main_s2 at -20($fp)
+    # DEBUG: v_pi_main_s2 (pointer) in $t2 (dirty)
+    # DEBUG: Also stored v_pi_main_s2 to memory at -24($fp)
+    addiu $t2, $fp, -20
+    sw $t2, -24($fp)
 
-    # TAC 13: 14: #t3 = #t2 + #t1
+    # TAC 13: 14: param "f: %f, c: %c, i: %d\n"
 I14:
     # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>, v_f_main_s2]
-    # $t0: [#t2] (dirty)
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
-    # $t5: [#t1] (dirty)
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_pi_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [$t0, memory:-48($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
-    # v_f_main_s2: [$f0, memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t2, memory:-24($fp)]
     # --- End Storage Descriptor ---
-    # #t3 = #t2 add #t1
-    # DEBUG: #t2 in $t0
-    # DEBUG: #t1 in $t5
-    # DEBUG: #t3 = result in $t3 (dirty)
-    add $t3, $t0, $t5
+    # param "f: %f, c: %c, i: %d\n"
+    # DEBUG: Collected parameter #1: "f: %f, c: %c, i: %d\n"
 
-    # TAC 14: 15: #t4 = #t3
+    # TAC 14: 15: param v_f_main_s2
 I15:
     # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>, v_f_main_s2]
-    # $t0: [#t2] (dirty)
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
-    # $t3: [#t3] (dirty)
-    # $t5: [#t1] (dirty)
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_pi_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [$t0, memory:-48($fp)]
-    # #t3: [$t3]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
-    # v_f_main_s2: [$f0, memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t2, memory:-24($fp)]
     # --- End Storage Descriptor ---
-    # Assignment: #t4 = #t3
-    # DEBUG: #t3 already in $t3
-    # DEBUG: #t4 now also in $t3 (dirty)
-    # DEBUG: Saved #t4 to memory at -56($fp)
-    sw $t3, -56($fp)
+    # param v_f_main_s2
+    # DEBUG: Collected parameter #2: v_f_main_s2
 
-    # TAC 15: 16: *(#t4) = 1
+    # TAC 15: 16: param v_c_main_s2
 I16:
     # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>, v_f_main_s2]
-    # $t0: [#t2] (dirty)
-    # $t1: [v_b_main_s2]
-    # $t2: [v_c_main_s2]
-    # $t3: [#t3, #t4] (dirty)
-    # $t5: [#t1] (dirty)
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_pi_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [$t0, memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [$t1, memory:-12($fp)]
-    # v_c_main_s2: [$t2, memory:-16($fp)]
-    # v_f_main_s2: [$f0, memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # *#t4 = 1
-    # DEBUG: Pointer #t4 in $t3
-    # DEBUG: Loaded constant 1 into $t4
-    # DEBUG: Integer value 1 in $t4
-    # DEBUG: Stored integer 1 through pointer #t4
-    # DEBUG: Invalidating all cached values due to pointer store
-    # DEBUG: Invalidating cached value of v_b_main_s2 in $t1
-    # DEBUG: Invalidating cached value of v_c_main_s2 in $t2
-    # DEBUG: Invalidating cached float value of v_f_main_s2 in $f0
-    li $t4, 1
-    sw $t4, 0($t3)
-
-    # TAC 16: 17: #t5 = 1 * 4
-I17:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t2] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [$t0, memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t5 = 1 mul 4
-    # DEBUG: Loaded constant 1 into $t1
-    # DEBUG: 1 in $t1
-    # DEBUG: Loaded constant 4 into $t2
-    # DEBUG: 4 in $t2
-    # DEBUG: #t5 = result in $t6 (dirty)
-    li $t1, 1
-    li $t2, 4
-    mul $t6, $t1, $t2
-
-    # TAC 17: 18: #t6 = & v_arr_main_s2
-I18:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t2] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [$t0, memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t6 = &v_arr_main_s2
-    # DEBUG: Spilled #t2 from $t0 to home location -48($fp)
-    # DEBUG: #t6 = address of v_arr_main_s2 at -40($fp)
-    # DEBUG: #t6 (pointer) in $t0 (dirty)
-    # DEBUG: Also stored #t6 to memory at -64($fp)
-    sw $t0, -48($fp)
-    addiu $t0, $fp, -40
-    sw $t0, -64($fp)
-
-    # TAC 18: 19: #t7 = #t6 + #t5
-I19:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t6] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [$t0, memory:-64($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t7 = #t6 add #t5
-    # DEBUG: #t6 in $t0
-    # DEBUG: #t5 in $t6
-    # DEBUG: #t7 = result in $t1 (dirty)
-    add $t1, $t0, $t6
-
-    # TAC 19: 20: #t8 = #t7
-I20:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t6] (dirty)
-    # $t1: [#t7] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [$t0, memory:-64($fp)]
-    # #t7: [$t1]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: #t8 = #t7
-    # DEBUG: #t7 already in $t1
-    # DEBUG: #t8 now also in $t1 (dirty)
-    # DEBUG: Saved #t8 to memory at -72($fp)
-    sw $t1, -72($fp)
-
-    # TAC 20: 21: *(#t8) = 2
-I21:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t6] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [$t0, memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # *#t8 = 2
-    # DEBUG: Pointer #t8 in $t1
-    # DEBUG: Loaded constant 2 into $t2
-    # DEBUG: Integer value 2 in $t2
-    # DEBUG: Stored integer 2 through pointer #t8
-    # DEBUG: Invalidating all cached values due to pointer store
-    li $t2, 2
-    sw $t2, 0($t1)
-
-    # TAC 21: 22: #t9 = 2 * 4
-I22:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t6] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [$t0, memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t9 = 2 mul 4
-    # DEBUG: Loaded constant 2 into $t7
-    # DEBUG: 2 in $t7
-    # DEBUG: Loaded constant 4 into $t8
-    # DEBUG: 4 in $t8
-    # DEBUG: #t9 = result in $t9 (dirty)
-    li $t7, 2
-    li $t8, 4
-    mul $t9, $t7, $t8
-
-    # TAC 22: 23: #t10 = & v_arr_main_s2
-I23:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t6] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [$t0, memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t10 = &v_arr_main_s2
-    # DEBUG: Spilled #t6 from $t0 to home location -64($fp)
-    # DEBUG: #t10 = address of v_arr_main_s2 at -40($fp)
-    # DEBUG: #t10 (pointer) in $t0 (dirty)
-    # DEBUG: Also stored #t10 to memory at -80($fp)
-    sw $t0, -64($fp)
-    addiu $t0, $fp, -40
-    sw $t0, -80($fp)
-
-    # TAC 23: 24: #t11 = #t10 + #t9
-I24:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t10] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [$t0, memory:-80($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t11 = #t10 add #t9
-    # DEBUG: #t10 in $t0
-    # DEBUG: #t9 in $t9
-    # DEBUG: #t11 = result in $t7 (dirty)
-    add $t7, $t0, $t9
-
-    # TAC 24: 25: #t12 = #t11
-I25:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t10] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [$t0, memory:-80($fp)]
-    # #t11: [$t7]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: #t12 = #t11
-    # DEBUG: #t11 already in $t7
-    # DEBUG: #t12 now also in $t7 (dirty)
-    # DEBUG: Saved #t12 to memory at -88($fp)
-    sw $t7, -88($fp)
-
-    # TAC 25: 26: *(#t12) = 3
-I26:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t10] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [$t0, memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # *#t12 = 3
-    # DEBUG: Pointer #t12 in $t7
-    # DEBUG: Loaded constant 3 into $t8
-    # DEBUG: Integer value 3 in $t8
-    # DEBUG: Stored integer 3 through pointer #t12
-    # DEBUG: Invalidating all cached values due to pointer store
-    li $t8, 3
-    sw $t8, 0($t7)
-
-    # TAC 26: 27: #t13 = 3 * 4
-I27:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t10] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [<CONST_20_2>]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [<CONST_15_1>]
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_25_3>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [$t0, memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_15_1>: [$t4]
-    # <CONST_20_2>: [$t2]
-    # <CONST_25_3>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t13 = 3 mul 4
-    # DEBUG: Loaded constant 3 into $t2
-    # DEBUG: 3 in $t2
-    # DEBUG: Loaded constant 4 into $t4
-    # DEBUG: 4 in $t4
-    # DEBUG: Spilling register $t0 due to register pressure
-    # DEBUG: Spilled #t10 from $t0 to memory at -80($fp)
-    # DEBUG: #t13 = result in $t0 (dirty)
-    li $t2, 3
-    li $t4, 4
-    sw $t0, -80($fp)
-    mul $t0, $t2, $t4
-
-    # TAC 27: 28: #t14 = & v_arr_main_s2
-I28:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t13] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_25_3>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t0]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_25_3>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t14 = &v_arr_main_s2
-    # DEBUG: Spilled #t13 from $t0 to home location -92($fp)
-    # DEBUG: #t14 = address of v_arr_main_s2 at -40($fp)
-    # DEBUG: #t14 (pointer) in $t0 (dirty)
-    # DEBUG: Also stored #t14 to memory at -96($fp)
-    sw $t0, -92($fp)
-    addiu $t0, $fp, -40
-    sw $t0, -96($fp)
-
-    # TAC 28: 29: #t15 = #t14 + #t13
-I29:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t14] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t3: [#t3, #t4] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_25_3>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [$t0, memory:-96($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_25_3>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t15 = #t14 add #t13
-    # DEBUG: #t14 in $t0
-    # DEBUG: Loaded #t13 from memory at -92($fp)
-    # DEBUG: #t13 in $t2
-    # DEBUG: #t15 = result in $t4 (dirty)
-    lw $t2, -92($fp)
-    add $t4, $t0, $t2
-
-    # TAC 29: 30: #t16 = #t15
-I30:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t14] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_25_3>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [$t0, memory:-96($fp)]
-    # #t15: [$t4]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_25_3>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: #t16 = #t15
-    # DEBUG: #t15 already in $t4
-    # DEBUG: #t16 now also in $t4 (dirty)
-    # DEBUG: Saved #t16 to memory at -104($fp)
-    sw $t4, -104($fp)
-
-    # TAC 30: 31: *(#t16) = 4
-I31:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t14] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_25_3>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [$t0, memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_25_3>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # *#t16 = 4
-    # DEBUG: Pointer #t16 in $t4
-    # DEBUG: Loaded constant 4 into $t8
-    # DEBUG: Integer value 4 in $t8
-    # DEBUG: Stored integer 4 through pointer #t16
-    # DEBUG: Invalidating all cached values due to pointer store
-    li $t8, 4
-    sw $t8, 0($t4)
-
-    # TAC 31: 32: #t17 = 4 * 4
-I32:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t14] (dirty)
-    # $t1: [#t7, #t8] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [<CONST_30_4>]
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [$t0, memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [$t1]
-    # #t8: [$t1, memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_30_4>: [$t8]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t17 = 4 mul 4
-    # DEBUG: Loaded constant 4 into $t8
-    # DEBUG: 4 in $t8
-    # DEBUG: Spilling register $t0 due to register pressure
-    # DEBUG: Spilled #t14 from $t0 to memory at -96($fp)
-    # DEBUG: Loaded constant 4 into $t0
-    # DEBUG: 4 in $t0
-    # DEBUG: Spilling register $t1 due to register pressure
-    # DEBUG: Spilled #t7 from $t1 to memory at -68($fp)
-    # DEBUG: Spilled #t8 from $t1 to memory at -72($fp)
-    # DEBUG: #t17 = result in $t1 (dirty)
-    li $t8, 4
-    sw $t0, -96($fp)
-    li $t0, 4
-    sw $t1, -68($fp)
-    sw $t1, -72($fp)
-    mul $t1, $t8, $t0
-
-    # TAC 32: 33: #t18 = & v_arr_main_s2
-I33:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t18 = &v_arr_main_s2
-    # DEBUG: #t18 = address of v_arr_main_s2 at -40($fp)
-    # DEBUG: #t18 (pointer) in $t0 (dirty)
-    # DEBUG: Also stored #t18 to memory at -112($fp)
-    addiu $t0, $fp, -40
-    sw $t0, -112($fp)
-
-    # TAC 33: 34: #t19 = #t18 + #t17
-I34:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t18] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [$t0, memory:-112($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # #t19 = #t18 add #t17
-    # DEBUG: #t18 in $t0
-    # DEBUG: #t17 in $t1
-    # DEBUG: #t19 = result in $t8 (dirty)
-    add $t8, $t0, $t1
-
-    # TAC 34: 35: #t20 = #t19
-I35:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t18] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [#t19] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [$t0, memory:-112($fp)]
-    # #t19: [$t8]
-    # #t2: [memory:-48($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Assignment: #t20 = #t19
-    # DEBUG: #t19 already in $t8
-    # DEBUG: #t20 now also in $t8 (dirty)
-    # DEBUG: Saved #t20 to memory at -120($fp)
-    sw $t8, -120($fp)
-
-    # TAC 35: 36: *(#t20) = 5
-I36:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [#t18] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [#t19, #t20] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [$t0, memory:-112($fp)]
-    # #t19: [$t8]
-    # #t2: [memory:-48($fp)]
-    # #t20: [$t8, memory:-120($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # *#t20 = 5
-    # DEBUG: Pointer #t20 in $t8
-    # DEBUG: Spilling register $t0 due to register pressure
-    # DEBUG: Spilled #t18 from $t0 to memory at -112($fp)
-    # DEBUG: Loaded constant 5 into $t0
-    # DEBUG: Integer value 5 in $t0
-    # DEBUG: Stored integer 5 through pointer #t20
-    # DEBUG: Invalidating all cached values due to pointer store
-    sw $t0, -112($fp)
-    li $t0, 5
-    sw $t0, 0($t8)
-
-    # TAC 36: 37: param "a before for loop: %d\n"
-I37:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [<CONST_35_5>] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [#t19, #t20] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [memory:-112($fp)]
-    # #t19: [$t8]
-    # #t2: [memory:-48($fp)]
-    # #t20: [$t8, memory:-120($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_35_5>: [$t0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param "a before for loop: %d\n"
-    # DEBUG: Collected parameter #1: "a before for loop: %d\n"
-
-    # TAC 37: 38: param v_a_main_s2
-I38:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [<CONST_35_5>] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [#t19, #t20] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [memory:-112($fp)]
-    # #t19: [$t8]
-    # #t2: [memory:-48($fp)]
-    # #t20: [$t8, memory:-120($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_35_5>: [$t0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param v_a_main_s2
-    # DEBUG: Collected parameter #2: v_a_main_s2
-
-    # TAC 38: 39: #t21 = call printf_cp1_variadic, 2
-I39:
-    # --- Register Descriptor ---
-    # $f0: [<CONST_10_2.500000>]
-    # $t0: [<CONST_35_5>] (dirty)
-    # $t1: [#t17] (dirty)
-    # $t2: [#t13]
-    # $t3: [#t3, #t4] (dirty)
-    # $t4: [#t15, #t16] (dirty)
-    # $t5: [#t1] (dirty)
-    # $t6: [#t5] (dirty)
-    # $t7: [#t11, #t12] (dirty)
-    # $t8: [#t19, #t20] (dirty)
-    # $t9: [#t9] (dirty)
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [$t5]
-    # #t10: [memory:-80($fp)]
-    # #t11: [$t7]
-    # #t12: [$t7, memory:-88($fp)]
-    # #t13: [$t2, memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [$t4]
-    # #t16: [$t4, memory:-104($fp)]
-    # #t17: [$t1]
-    # #t18: [memory:-112($fp)]
-    # #t19: [$t8]
-    # #t2: [memory:-48($fp)]
-    # #t20: [$t8, memory:-120($fp)]
-    # #t3: [$t3]
-    # #t4: [$t3, memory:-56($fp)]
-    # #t5: [$t6]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [$t9]
-    # <CONST_10_2.500000>: [$f0]
-    # <CONST_35_5>: [$t0]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Call printf_cp1_variadic with 2 arguments
-    # === Caller-Save: Spill ALL registers before call ===
-    # DEBUG: Spilled #t17 from $t1 to -108($fp)
-    # DEBUG: Spilled #t13 from $t2 to -92($fp)
-    # DEBUG: Spilled #t3 from $t3 to -52($fp)
-    # DEBUG: Spilled #t4 from $t3 to -56($fp)
-    # DEBUG: Spilled #t15 from $t4 to -100($fp)
-    # DEBUG: Spilled #t16 from $t4 to -104($fp)
-    # DEBUG: Spilled #t1 from $t5 to -44($fp)
-    # DEBUG: Spilled #t5 from $t6 to -60($fp)
-    # DEBUG: Spilled #t11 from $t7 to -84($fp)
-    # DEBUG: Spilled #t12 from $t7 to -88($fp)
-    # DEBUG: Spilled #t19 from $t8 to -116($fp)
-    sw $t1, -108($fp)
-    # DEBUG: Spilled #t20 from $t8 to -120($fp)
-    sw $t2, -92($fp)
-    # DEBUG: Spilled #t9 from $t9 to -76($fp)
-    # === End Caller-Save ===
-    # === Call library function: printf (variadic) ===
-    # Printf: format string + 1 arguments
-    # DEBUG: format_param = '"a before for loop: %d\n"', first char = 34
-    sw $t3, -52($fp)
-    # Load format string literal address
-    # Store variadic arguments on stack
-    sw $t3, -56($fp)
-    # Arg 0: v_a_main_s2
-    sw $t4, -100($fp)
-    # DEBUG: Loaded v_a_main_s2 from memory at -8($fp)
-    sw $t4, -104($fp)
-    sw $t5, -44($fp)
-    sw $t6, -60($fp)
-    # Deallocate variadic args space
-    # DEBUG: Invalidating all cached values after printf
-    # === End printf ===
-    sw $t7, -84($fp)
-    sw $t7, -88($fp)
-    sw $t8, -116($fp)
-    sw $t8, -120($fp)
-    sw $t9, -76($fp)
-    la $a0, str_0
-    addiu $sp, $sp, -4
-    lw $t0, -8($fp)
-    sw $t0, 0($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 4
-
-    # TAC 39: 40: param "b before for loop: %d\n"
-I40:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param "b before for loop: %d\n"
-    # DEBUG: Collected parameter #1: "b before for loop: %d\n"
-
-    # TAC 40: 41: param v_b_main_s2
-I41:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param v_b_main_s2
-    # DEBUG: Collected parameter #2: v_b_main_s2
-
-    # TAC 41: 42: #t22 = call printf_cp1_variadic, 2
-I42:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # Call printf_cp1_variadic with 2 arguments
-    # === Caller-Save: Spill ALL registers before call ===
-    # === End Caller-Save ===
-    # === Call library function: printf (variadic) ===
-    # Printf: format string + 1 arguments
-    # DEBUG: format_param = '"b before for loop: %d\n"', first char = 34
-    # Load format string literal address
-    # Store variadic arguments on stack
-    # Arg 0: v_b_main_s2
-    # DEBUG: Loaded v_b_main_s2 from memory at -12($fp)
-    # Deallocate variadic args space
-    # DEBUG: Invalidating all cached values after printf
-    # === End printf ===
-    la $a0, str_1
-    addiu $sp, $sp, -4
-    lw $t0, -12($fp)
-    sw $t0, 0($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 4
-
-    # TAC 42: 43: param "c before for loop: %d\n"
-I43:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
-    # --- End Storage Descriptor ---
-    # param "c before for loop: %d\n"
-    # DEBUG: Collected parameter #1: "c before for loop: %d\n"
-
-    # TAC 43: 44: param v_c_main_s2
-I44:
-    # --- Register Descriptor ---
-    # --- End Register Descriptor ---
-    # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
-    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
-    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t2, memory:-24($fp)]
     # --- End Storage Descriptor ---
     # param v_c_main_s2
-    # DEBUG: Collected parameter #2: v_c_main_s2
+    # DEBUG: Collected parameter #3: v_c_main_s2
 
-    # TAC 44: 45: #t23 = call printf_cp1_variadic, 2
-I45:
+    # TAC 16: 17: param v_I_main_s2
+I17:
     # --- Register Descriptor ---
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_pi_main_s2] (dirty)
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t2, memory:-24($fp)]
     # --- End Storage Descriptor ---
-    # Call printf_cp1_variadic with 2 arguments
+    # param v_I_main_s2
+    # DEBUG: Collected parameter #4: v_I_main_s2
+
+    # TAC 17: 18: #t1 = call printf_cp1_variadic, 4
+I18:
+    # --- Register Descriptor ---
+    # $f0: [<CONST_7_5.500000>, v_f_main_s2]
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [v_pi_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # <CONST_7_5.500000>: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_f_main_s2: [$f0, memory:-4($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t2, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # Call printf_cp1_variadic with 4 arguments
     # === Caller-Save: Spill ALL registers before call ===
+    # DEBUG: Spilled v_pf_main_s2 from $t0 to -8($fp)
+    # DEBUG: Spilled v_pc_main_s2 from $t1 to -16($fp)
+    # DEBUG: Spilled v_pi_main_s2 from $t2 to -24($fp)
+    # DEBUG: Spilled float v_f_main_s2 from $f0 to -4($fp)
     # === End Caller-Save ===
     # === Call library function: printf (variadic) ===
-    # Printf: format string + 1 arguments
-    # DEBUG: format_param = '"c before for loop: %d\n"', first char = 34
+    # Printf: format string + 3 arguments
+    # DEBUG: format_param = '"f: %f, c: %c, i: %d\n"', first char = 34
     # Load format string literal address
     # Store variadic arguments on stack
-    # Arg 0: v_c_main_s2
-    # DEBUG: Loaded v_c_main_s2 from memory at -16($fp)
+    # Arg 0: v_f_main_s2
+    # DEBUG: Loaded float v_f_main_s2 from -4($fp) into $f1
+    # Arg 1: v_c_main_s2
+    # DEBUG: Loaded v_c_main_s2 from memory at -12($fp)
+    # Arg 2: v_I_main_s2
+    # DEBUG: Loaded v_I_main_s2 from memory at -20($fp)
+    sw $t0, -8($fp)
+    sw $t1, -16($fp)
+    sw $t2, -24($fp)
     # Deallocate variadic args space
     # DEBUG: Invalidating all cached values after printf
     # === End printf ===
-    la $a0, str_2
-    addiu $sp, $sp, -4
-    lw $t0, -16($fp)
-    sw $t0, 0($sp)
+    swc1 $f0, -4($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -12
+    l.s $f1, -4($fp)
+    swc1 $f1, 0($sp)
+    lw $t0, -12($fp)
+    sw $t0, 4($sp)
+    lw $t1, -20($fp)
+    sw $t1, 8($sp)
     jal __lib_printf
-    addiu $sp, $sp, 4
+    addiu $sp, $sp, 12
 
-    # TAC 45: 46: end function main
-I46:
+    # TAC 18: 19: #t2 = v_pf_main_s2
+I19:
     # --- Register Descriptor ---
+    # $f1: [v_f_main_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
-    # #t1: [memory:-44($fp)]
-    # #t10: [memory:-80($fp)]
-    # #t11: [memory:-84($fp)]
-    # #t12: [memory:-88($fp)]
-    # #t13: [memory:-92($fp)]
-    # #t14: [memory:-96($fp)]
-    # #t15: [memory:-100($fp)]
-    # #t16: [memory:-104($fp)]
-    # #t17: [memory:-108($fp)]
-    # #t18: [memory:-112($fp)]
-    # #t19: [memory:-116($fp)]
-    # #t2: [memory:-48($fp)]
-    # #t20: [memory:-120($fp)]
-    # #t3: [memory:-52($fp)]
-    # #t4: [memory:-56($fp)]
-    # #t5: [memory:-60($fp)]
-    # #t6: [memory:-64($fp)]
-    # #t7: [memory:-68($fp)]
-    # #t8: [memory:-72($fp)]
-    # #t9: [memory:-76($fp)]
-    # v_a_main_s2: [memory:-8($fp)]
-    # v_b_main_s2: [memory:-12($fp)]
-    # v_c_main_s2: [memory:-16($fp)]
-    # v_f_main_s2: [memory:-20($fp)]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
     # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
     # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: #t2 = v_pf_main_s2
+    # DEBUG: Float assignment
+    # DEBUG: Loaded v_pf_main_s2 from memory at -8($fp)
+    # DEBUG: v_pf_main_s2 in $t0
+    # DEBUG: #t2 = v_pf_main_s2 in $t0 (dirty, float)
+    lw $t0, -8($fp)
+
+    # TAC 19: 20: #t3 = * v_pf_main_s2
+I20:
+    # --- Register Descriptor ---
+    # $f1: [v_f_main_s2]
+    # $t0: [#t2, v_pf_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [$t0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t3 = *v_pf_main_s2
+    # DEBUG: Pointer v_pf_main_s2 already in $t0
+    # DEBUG: Dereferenced *v_pf_main_s2 (float*) into $f0 using l.s
+    # DEBUG: #t3 = *v_pf_main_s2 in $f0 (dirty)
+    l.s $f0, 0($t0)
+
+    # TAC 20: 21: #t4 = #t3 + 2.500000
+I21:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [v_f_main_s2]
+    # $t0: [#t2, v_pf_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [$t0]
+    # #t3: [$f0]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t4 = #t3 add.s 2.500000 (float)
+    # DEBUG: #t3 in $f0
+    # DEBUG: Loaded float constant 2.500000 into $f1
+    # DEBUG: 2.500000 in $f1
+    # DEBUG: #t4 = result in $f2 (dirty, float)
+    # Loading float constant: 2.500000
+    li.s $f1, 2.500000
+    add.s $f2, $f0, $f1
+
+    # TAC 21: 22: *(#t2) = #t4
+I22:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t2, v_pf_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [$t0]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # *#t2 = #t4
+    # DEBUG: Pointer #t2 in $t0
+    # DEBUG: Float value #t4 in $f2
+    # DEBUG: Stored float #t4 through pointer #t2
+    # DEBUG: Invalidating all cached values due to pointer store
+    # DEBUG: Invalidating cached value of v_pf_main_s2 in $t0
+    s.s $f2, 0($t0)
+
+    # TAC 22: 23: #t5 = v_pi_main_s2
+I23:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [$t0]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # Assignment: #t5 = v_pi_main_s2
+    # DEBUG: Loaded v_pi_main_s2 from memory at -24($fp)
+    # DEBUG: #t5 loaded in $t1 (dirty)
+    lw $t1, -24($fp)
+
+    # TAC 23: 24: #t6 = * v_pi_main_s2
+I24:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t2] (dirty)
+    # $t1: [#t5, v_pi_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [$t0]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [$t1]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [$t1, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t6 = *v_pi_main_s2
+    # DEBUG: Pointer v_pi_main_s2 already in $t1
+    # DEBUG: Spilled #t2 from $t0 to home location -28($fp)
+    # DEBUG: Dereferenced *v_pi_main_s2 (int*) into $t0 using lw
+    # DEBUG: #t6 = *v_pi_main_s2 in $t0 (dirty)
+    sw $t0, -28($fp)
+    lw $t0, 0($t1)
+
+    # TAC 24: 25: #t7 = #t6 + 20
+I25:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t6] (dirty)
+    # $t1: [#t5, v_pi_main_s2] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [$t1]
+    # #t6: [$t0]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [$t1, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t7 = #t6 add 20
+    # DEBUG: #t6 in $t0
+    # DEBUG: Loaded constant 20 into $t2
+    # DEBUG: 20 in $t2
+    # DEBUG: #t7 = result in $t3 (dirty)
+    li $t2, 20
+    add $t3, $t0, $t2
+
+    # TAC 25: 26: *(#t5) = #t7
+I26:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t6] (dirty)
+    # $t1: [#t5, v_pi_main_s2] (dirty)
+    # $t3: [#t7] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [$t1]
+    # #t6: [$t0]
+    # #t7: [$t3]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [$t1, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # *#t5 = #t7
+    # DEBUG: Pointer #t5 in $t1
+    # DEBUG: Integer value #t7 in $t3
+    # DEBUG: Stored integer #t7 through pointer #t5
+    # DEBUG: Invalidating all cached values due to pointer store
+    # DEBUG: Invalidating cached value of v_pi_main_s2 in $t1
+    sw $t3, 0($t1)
+
+    # TAC 26: 27: #t8 = * v_pf_main_s2
+I27:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $t0: [#t6] (dirty)
+    # $t1: [#t5] (dirty)
+    # $t3: [#t7] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [$t1]
+    # #t6: [$t0]
+    # #t7: [$t3]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t8 = *v_pf_main_s2
+    # DEBUG: Spilled #t6 from $t0 to home location -44($fp)
+    # DEBUG: Loaded pointer v_pf_main_s2 from memory at -8($fp)
+    # DEBUG: Dereferenced *v_pf_main_s2 (float*) into $f3 using l.s
+    # DEBUG: #t8 = *v_pf_main_s2 in $f3 (dirty)
+    sw $t0, -44($fp)
+    lw $t0, -8($fp)
+    l.s $f3, 0($t0)
+
+    # TAC 27: 28: #t9 = * v_pc_main_s2
+I28:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [#t5] (dirty)
+    # $t3: [#t7] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [$t1]
+    # #t6: [memory:-44($fp)]
+    # #t7: [$t3]
+    # #t8: [$f3]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t9 = *v_pc_main_s2
+    # DEBUG: Spilled #t5 from $t1 to home location -40($fp)
+    # DEBUG: Loaded pointer v_pc_main_s2 from memory at -16($fp)
+    # DEBUG: Dereferenced *v_pc_main_s2 (char*) into $t2 using lb
+    # DEBUG: #t9 = *v_pc_main_s2 in $t2 (dirty)
+    sw $t1, -40($fp)
+    lw $t1, -16($fp)
+    lb $t2, 0($t1)
+
+    # TAC 28: 29: #t10 = * v_pi_main_s2
+I29:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [#t7] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [$t3]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # #t10 = *v_pi_main_s2
+    # DEBUG: Spilled #t7 from $t3 to home location -48($fp)
+    # DEBUG: Loaded pointer v_pi_main_s2 from memory at -24($fp)
+    # DEBUG: Dereferenced *v_pi_main_s2 (int*) into $t4 using lw
+    # DEBUG: #t10 = *v_pi_main_s2 in $t4 (dirty)
+    sw $t3, -48($fp)
+    lw $t3, -24($fp)
+    lw $t4, 0($t3)
+
+    # TAC 29: 30: param "pf: %f, pc: %c, pi: %d\n"
+I30:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [v_pi_main_s2] (dirty)
+    # $t4: [#t10] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [$t4]
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t3, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # param "pf: %f, pc: %c, pi: %d\n"
+    # DEBUG: Collected parameter #1: "pf: %f, pc: %c, pi: %d\n"
+
+    # TAC 30: 31: param #t8
+I31:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [v_pi_main_s2] (dirty)
+    # $t4: [#t10] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [$t4]
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t3, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # param #t8
+    # DEBUG: Collected parameter #2: #t8
+
+    # TAC 31: 32: param #t9
+I32:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [v_pi_main_s2] (dirty)
+    # $t4: [#t10] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [$t4]
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t3, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # param #t9
+    # DEBUG: Collected parameter #3: #t9
+
+    # TAC 32: 33: param #t10
+I33:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [v_pi_main_s2] (dirty)
+    # $t4: [#t10] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [$t4]
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t3, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # param #t10
+    # DEBUG: Collected parameter #4: #t10
+
+    # TAC 33: 34: #t11 = call printf_cp1_variadic, 4
+I34:
+    # --- Register Descriptor ---
+    # $f0: [#t3] (dirty)
+    # $f1: [<CONST_20_2.500000>]
+    # $f2: [#t4] (dirty)
+    # $f3: [#t8] (dirty)
+    # $t0: [v_pf_main_s2] (dirty)
+    # $t1: [v_pc_main_s2] (dirty)
+    # $t2: [#t9] (dirty)
+    # $t3: [v_pi_main_s2] (dirty)
+    # $t4: [#t10] (dirty)
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [$t4]
+    # #t2: [memory:-28($fp)]
+    # #t3: [$f0]
+    # #t4: [$f2]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t8: [$f3]
+    # #t9: [$t2]
+    # <CONST_20_2.500000>: [$f1]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [$t1, memory:-16($fp)]
+    # v_pf_main_s2: [$t0, memory:-8($fp)]
+    # v_pi_main_s2: [$t3, memory:-24($fp)]
+    # --- End Storage Descriptor ---
+    # Call printf_cp1_variadic with 4 arguments
+    # === Caller-Save: Spill ALL registers before call ===
+    # DEBUG: Spilled v_pf_main_s2 from $t0 to -8($fp)
+    # DEBUG: Spilled v_pc_main_s2 from $t1 to -16($fp)
+    # DEBUG: Spilled #t9 from $t2 to -56($fp)
+    # DEBUG: Spilled v_pi_main_s2 from $t3 to -24($fp)
+    # DEBUG: Spilled #t10 from $t4 to -60($fp)
+    # DEBUG: Spilled float #t3 from $f0 to -32($fp)
+    # DEBUG: Spilled float #t4 from $f2 to -36($fp)
+    # DEBUG: Spilled float #t8 from $f3 to -52($fp)
+    # === End Caller-Save ===
+    # === Call library function: printf (variadic) ===
+    # Printf: format string + 3 arguments
+    # DEBUG: format_param = '"pf: %f, pc: %c, pi: %d\n"', first char = 34
+    # Load format string literal address
+    # Store variadic arguments on stack
+    # Arg 0: #t8
+    # DEBUG: Loaded float #t8 from -52($fp) into $f4
+    sw $t0, -8($fp)
+    # Arg 1: #t9
+    sw $t1, -16($fp)
+    # DEBUG: Loaded #t9 from memory at -56($fp)
+    sw $t2, -56($fp)
+    # Arg 2: #t10
+    sw $t3, -24($fp)
+    # DEBUG: Loaded #t10 from memory at -60($fp)
+    sw $t4, -60($fp)
+    swc1 $f0, -32($fp)
+    swc1 $f2, -36($fp)
+    # Deallocate variadic args space
+    # DEBUG: Invalidating all cached values after printf
+    # === End printf ===
+    swc1 $f3, -52($fp)
+    la $a0, str_1
+    addiu $sp, $sp, -12
+    l.s $f4, -52($fp)
+    swc1 $f4, 0($sp)
+    lw $t0, -56($fp)
+    sw $t0, 4($sp)
+    lw $t1, -60($fp)
+    sw $t1, 8($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 12
+
+    # TAC 34: 35: end function main
+I35:
+    # --- Register Descriptor ---
+    # $f4: [#t8]
+    # --- End Register Descriptor ---
+    # --- Storage Descriptor ---
+    # #t10: [memory:-60($fp)]
+    # #t2: [memory:-28($fp)]
+    # #t3: [memory:-32($fp)]
+    # #t4: [memory:-36($fp)]
+    # #t5: [memory:-40($fp)]
+    # #t6: [memory:-44($fp)]
+    # #t7: [memory:-48($fp)]
+    # #t9: [memory:-56($fp)]
+    # v_I_main_s2: [memory:-20($fp)]
+    # v_c_main_s2: [memory:-12($fp)]
+    # v_fmt_printf_cp1_variadic_s2: [memory:8($fp)]
+    # v_fmt_scanf_cp1_variadic_s2: [memory:8($fp)]
+    # v_pc_main_s2: [memory:-16($fp)]
+    # v_pf_main_s2: [memory:-8($fp)]
+    # v_pi_main_s2: [memory:-24($fp)]
     # --- End Storage Descriptor ---
     # === Function Epilogue for main ===
     move $sp, $fp

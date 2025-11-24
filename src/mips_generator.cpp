@@ -605,12 +605,14 @@ void MIPSGenerator::generate_data_section() {
             int offset = var_pair.second;
             bool is_float = is_variable_float(var_name.c_str());
             
-         // Emit the variable as a labeled word in data section
-         output << var_name << ": .word 0  # " << (is_float ? "float" : "int") 
-             << " (global/static) at " << offset << "($gp)\n";
-         // Also include an informative comment in the clean output so offsets are visible
-         if (clean_output) *clean_output << var_name << ": .word 0  # " << (is_float ? "float" : "int") 
-                   << " (global/static) at " << offset << "($gp)\n";
+            // CRITICAL FIX: Use .float directive for float variables, .word for integers
+            if (is_float) {
+                output << var_name << ": .float 0.0  # float (global/static) at " << offset << "($gp)\n";
+                if (clean_output) *clean_output << var_name << ": .float 0.0  # float (global/static) at " << offset << "($gp)\n";
+            } else {
+                output << var_name << ": .word 0  # int (global/static) at " << offset << "($gp)\n";
+                if (clean_output) *clean_output << var_name << ": .word 0  # int (global/static) at " << offset << "($gp)\n";
+            }
         }
     } else {
         emit_comment("(no global or static variables)");
@@ -896,10 +898,17 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         
         // CRITICAL FIX: For variables (not temps), immediately save to memory at their home location
         if (dest.length() > 2 && dest[0] == 'v' && dest[1] == '_') {
-            int offset = get_offset(dest);
-            emit("swc1 " + src_freg + ", " + to_string(offset) + "($fp)");
-            emit_comment("DEBUG: Saved float variable " + dest + " to home location " + to_string(offset) + "($fp)");
-            storage_desc.add_location(dest, "memory:" + to_string(offset) + "($fp)");
+            if (is_global_or_static(dest)) {
+                int offset = get_global_offset(dest);
+                emit("swc1 " + src_freg + ", " + to_string(offset) + "($gp)");
+                emit_comment("DEBUG: Saved global/static float " + dest + " to memory at " + to_string(offset) + "($gp)");
+                storage_desc.add_location(dest, "memory:" + to_string(offset) + "($gp)");
+            } else {
+                int offset = get_offset(dest);
+                emit("swc1 " + src_freg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Saved float variable " + dest + " to home location " + to_string(offset) + "($fp)");
+                storage_desc.add_location(dest, "memory:" + to_string(offset) + "($fp)");
+            }
             // Mark as clean since it's now in sync with memory
             reg_allocator.clear_dirty(src_freg);
         }

@@ -1,25 +1,51 @@
-int printf(char* fmt, ...){ return 0; }
-int scanf(char* fmt, ...){ return 0; }
+// int printf(char* fmt, ...){ return 0; }
+
+// void foo(){
+//     static float f = 2.5;
+//     f = f + 1.5;
+//     printf("Static float f: %f\n", f);
+// }
+
+// int main(){
+//     foo();
+//     foo();
+//     foo();
+//     return 0;
+// }
+
+
+void printf(char* fmt, ...){ return; }
+
+void scanf(char* fmt, ...){ return; }
+
+
 
 int main(){
-    int i;
-    int a = 0, b = 5;
-    int c = 10;
-    float f = 2.5;
 
-    // char* name = "Compiler";
-    // int arr[5] = {1, 2, 3, 4, 5};                  // not working
+    // refereces + float,char and int test case
 
-    // working
-    int arr[5];
-    arr[0] = 1;
-    arr[1] = 2;
-    arr[2] = 3;
-    arr[3] = 4;
-    arr[4] = 5;
+    float f = 5.5;
 
-    // if the array is not defined, it worksss good
-    printf("a before for loop: %d\n", a);
-    printf("b before for loop: %d\n", b);
-    printf("c before for loop: %d\n", c);
+    float& pf = f;
+
+    char c = 'A';
+
+    char& pc = c;
+
+    int I = 10;
+
+    int& pi = I;
+
+    printf("f: %f, c: %c, i: %d\n", f, c, I);
+
+
+    pf = pf + 2.5;
+
+    pi = pi + 20;
+
+    
+
+
+    printf("pf: %f, pc: %c, pi: %d\n", pf, pc, pi);
+
 }
