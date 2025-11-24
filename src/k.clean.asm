@@ -4,7 +4,7 @@
 
 
 .data
-str_0: .asciiz "Result: %d\n"
+str_0: .asciiz "Result1: %d, Result2: %d\n"
 
 
 .text
@@ -83,30 +83,27 @@ I11:
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
+    nop
 
 
 
 I12:
 apply_operation_fp_ri_pii_i_i:
-    addiu $sp, $sp, -72
-    sw $ra, 68($sp)
-    sw $fp, 64($sp)
-    addiu $fp, $sp, 64
+    addiu $sp, $sp, -68
+    sw $ra, 64($sp)
+    sw $fp, 60($sp)
+    addiu $fp, $sp, 60
 
 
 I13:
-    li $t0, 1
-    sw $t0, -4($fp)
 
 I14:
 
 I15:
-
-I16:
     lw $t0, 8($fp)
 
-I17:
-    sw $t0, -8($fp)
+I16:
+    sw $t0, -4($fp)
     sw $t0, 8($fp)
     addiu $sp, $sp, -8
     lw $t0, 12($fp)
@@ -115,125 +112,123 @@ I17:
     lw $t1, 16($fp)
     sw $t1, 4($sp)
     move $a1, $t1
-    lw $t2, -8($fp)
+    lw $t2, -4($fp)
     jalr $ra, $t2
+    nop
     addiu $sp, $sp, 8
     move $t3, $v0
 
-I18:
-    sw $t3, -12($fp)
+I17:
+    sw $t3, -8($fp)
     move $v0, $t3
 
 
 
-I19:
+I18:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
+    nop
 
 
+
+I19:
+main:
+    addiu $sp, $sp, -72
+    sw $ra, 68($sp)
+    sw $fp, 64($sp)
+    addiu $fp, $sp, 64
 
 I20:
-main:
-    addiu $sp, $sp, -80
-    sw $ra, 76($sp)
-    sw $fp, 72($sp)
-    addiu $fp, $sp, 72
-
-I21:
     la $t0, add_i_i
     sw $t0, -4($fp)
 
+I21:
+
 I22:
-    sw $t0, -8($fp)
 
 I23:
 
 I24:
-
-I25:
-
-I26:
     sw $t0, -4($fp)
-    sw $t0, -12($fp)
-    sw $t0, -8($fp)
-    addiu $sp, $sp, -8
-    li $t0, 5
+    addiu $sp, $sp, -12
+    lw $t0, -4($fp)
     sw $t0, 0($sp)
     move $a0, $t0
-    li $t0, 3
-    sw $t0, 4($sp)
-    move $a1, $t0
-    lw $t0, -12($fp)
-    jalr $ra, $t0
-    addiu $sp, $sp, 8
+    li $t1, 5
+    sw $t1, 4($sp)
+    move $a1, $t1
+    li $t1, 3
+    sw $t1, 8($sp)
+    move $a2, $t1
+    jal apply_operation_fp_ri_pii_i_i
+    jal apply_operation_fp_ri_pii_i_i
+    nop
+    addiu $sp, $sp, 12
     move $t1, $v0
 
+I25:
+    sw $t1, -12($fp)
+
+I26:
+    sw $t1, -8($fp)
+    sw $t1, -12($fp)
+    la $t1, subtract_i_i
+    sw $t1, -16($fp)
+
 I27:
-    sw $t1, -20($fp)
 
 I28:
-    sw $t1, -16($fp)
-    sw $t1, -20($fp)
-    la $t1, subtract_i_i
-    sw $t1, -24($fp)
 
 I29:
-    sw $t1, -8($fp)
 
 I30:
-    la $t2, subtract_i_i
-    sw $t2, -28($fp)
-
-I31:
-
-I32:
-
-I33:
-
-I34:
-    sw $t1, -24($fp)
-    sw $t1, -8($fp)
-    sw $t2, -28($fp)
+    sw $t1, -16($fp)
     addiu $sp, $sp, -12
-    lw $t0, -28($fp)
+    lw $t0, -16($fp)
     sw $t0, 0($sp)
     move $a0, $t0
-    li $t1, 2
+    li $t1, 10
     sw $t1, 4($sp)
     move $a1, $t1
     li $t1, 4
     sw $t1, 8($sp)
     move $a2, $t1
     jal apply_operation_fp_ri_pii_i_i
+    jal apply_operation_fp_ri_pii_i_i
+    nop
     addiu $sp, $sp, 12
     move $t1, $v0
 
+I31:
+    sw $t1, -24($fp)
+
+I32:
+
+I33:
+
+I34:
+
 I35:
     sw $t1, -20($fp)
+    sw $t1, -24($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -8
+    lw $t0, -12($fp)
+    sw $t0, 0($sp)
+    lw $t1, -24($fp)
+    sw $t1, 4($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 8
 
 I36:
-
-I37:
-
-I38:
-    sw $t1, -32($fp)
-    sw $t1, -20($fp)
-    la $a0, str_0
-    addiu $sp, $sp, -4
-    lw $t0, -20($fp)
-    sw $t0, 0($sp)
-    jal __lib_printf
-    addiu $sp, $sp, 4
-
-I39:
     li $v0, 0
 
 
 
-I40:
+I37:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

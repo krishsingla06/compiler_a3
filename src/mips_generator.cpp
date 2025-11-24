@@ -3173,6 +3173,8 @@ if (is_scanf) {
         }
         
         emit("jal " + sanitized_func_name);
+        emit("jal " + func_name);
+        emit("nop");  // Fill delay slot
         emit_comment("DEBUG: Called " + func_name);
     }
     

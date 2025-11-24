@@ -10,10 +10,10 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - c (char*) declared at line 1 [mangled: v_c_printf_cp1_s2] [PARAM #0, offset: 8]
+  - fmt (char*) declared at line 1 [mangled: v_fmt_printf_cp1_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - c (char*)
+  - fmt (char*)
 
 
 
@@ -81,12 +81,11 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t3 (int) declared at line 14 [mangled: #t3] [LOCAL, offset: -8]
-  - #t4 (int) declared at line 14 [mangled: #t4] [LOCAL, offset: -12]
+  - #t3 (int) declared at line 12 [mangled: #t3] [LOCAL, offset: -4]
+  - #t4 (int) declared at line 12 [mangled: #t4] [LOCAL, offset: -8]
   - a (int) declared at line 11 [mangled: v_a_apply_operation_u_i_i_s2] [PARAM #1, offset: 12]
   - b (int) declared at line 11 [mangled: v_b_apply_operation_u_i_i_s2] [PARAM #2, offset: 16]
   - operation (int (*)(int, int)) declared at line 11 [mangled: v_operation_apply_operation_u_i_i_s2] [PARAM #0, offset: 8]
-  - x (int) declared at line 12 [mangled: v_x_apply_operation_u_i_i_s2] [LOCAL, offset: -4]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - #t3 (int)
@@ -94,7 +93,6 @@ Destroying symbols from scope 2:
   - a (int)
   - b (int)
   - operation (int (*)(int, int))
-  - x (int)
 
 
 
@@ -112,26 +110,22 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
-  - #t10 (int) declared at line 22 [mangled: #t10] [LOCAL, offset: -32]
-  - #t11 (void) declared at line 23 [mangled: #t11] [LOCAL, offset: -32]
-  - #t5 (int) declared at line 19 [mangled: #t5] [LOCAL, offset: -4]
-  - #t6 (int) declared at line 20 [mangled: #t6] [LOCAL, offset: -12]
-  - #t7 (int) declared at line 20 [mangled: #t7] [LOCAL, offset: -16]
-  - #t8 (int) declared at line 21 [mangled: #t8] [LOCAL, offset: -24]
-  - #t9 (function_pointer) declared at line 22 [mangled: #t9] [LOCAL, offset: -28]
-  - funcPtr (int (*)(int, int)) declared at line 19 [mangled: v_funcPtr_main_s2] [LOCAL, offset: -8]
-  - result1 (int) declared at line 20 [mangled: v_result1_main_s2] [LOCAL, offset: -20]
+  - #t5 (function_pointer) declared at line 16 [mangled: #t5] [LOCAL, offset: -4]
+  - #t6 (int) declared at line 16 [mangled: #t6] [LOCAL, offset: -8]
+  - #t7 (function_pointer) declared at line 17 [mangled: #t7] [LOCAL, offset: -16]
+  - #t8 (int) declared at line 17 [mangled: #t8] [LOCAL, offset: -20]
+  - #t9 (void) declared at line 18 [mangled: #t9] [LOCAL, offset: -24]
+  - result1 (int) declared at line 16 [mangled: v_result1_main_s2] [LOCAL, offset: -12]
+  - result2 (int) declared at line 17 [mangled: v_result2_main_s2] [LOCAL, offset: -24]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
-  - #t10 (int)
-  - #t11 (void)
-  - #t5 (int)
+  - #t5 (function_pointer)
   - #t6 (int)
-  - #t7 (int)
+  - #t7 (function_pointer)
   - #t8 (int)
-  - #t9 (function_pointer)
-  - funcPtr (int (*)(int, int))
+  - #t9 (void)
   - result1 (int)
+  - result2 (int)
 
 
 
@@ -146,8 +140,6 @@ Exiting scope level 1
 +- SCOPE LEVEL 1 ------------------------------------------------------+
 | (empty scope)                                                                       |
 +-----------------------------------------------------------------------------------------+
-  - Destroying struct student from scope 1
-  - Destroying struct teacher from scope 1
 
 
 

@@ -3,30 +3,27 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 22
+Total Symbols: 19
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
 | #t1                 | #t1                             | int         | LOCAL    | -4      |
-| #t10                | #t10                            | int         | LOCAL    | -32     |
-| #t11                | #t11                            | void        | LOCAL    | -32     |
 | #t2                 | #t2                             | int         | LOCAL    | -4      |
-| #t3                 | #t3                             | int         | LOCAL    | -8      |
-| #t4                 | #t4                             | int         | LOCAL    | -12     |
-| #t5                 | #t5                             | int         | LOCAL    | -4      |
-| #t6                 | #t6                             | int         | LOCAL    | -12     |
-| #t7                 | #t7                             | int         | LOCAL    | -16     |
-| #t8                 | #t8                             | int         | LOCAL    | -24     |
-| #t9                 | #t9                             | function... | LOCAL    | -28     |
+| #t3                 | #t3                             | int         | LOCAL    | -4      |
+| #t4                 | #t4                             | int         | LOCAL    | -8      |
+| #t5                 | #t5                             | function... | LOCAL    | -4      |
+| #t6                 | #t6                             | int         | LOCAL    | -8      |
+| #t7                 | #t7                             | function... | LOCAL    | -16     |
+| #t8                 | #t8                             | int         | LOCAL    | -20     |
+| #t9                 | #t9                             | void        | LOCAL    | -24     |
 | a                   | v_a_apply_operation_u_i_i_s2    | int         | PARAM#1  | 12      |
 | b                   | v_b_apply_operation_u_i_i_s2    | int         | PARAM#2  | 16      |
-| c                   | v_c_printf_cp1_s2               | char*       | PARAM#0  | 8       |
-| funcPtr             | v_funcPtr_main_s2               | int (*)(... | LOCAL    | -8      |
+| fmt                 | v_fmt_printf_cp1_s2             | char*       | PARAM#0  | 8       |
 | operation           | v_operation_apply_operation_... | int (*)(... | PARAM#0  | 8       |
-| result1             | v_result1_main_s2               | int         | LOCAL    | -20     |
+| result1             | v_result1_main_s2               | int         | LOCAL    | -12     |
+| result2             | v_result2_main_s2               | int         | LOCAL    | -24     |
 | x                   | v_x_add_i_i_s2                  | int         | PARAM#0  | 8       |
-| x                   | v_x_apply_operation_u_i_i_s2    | int         | LOCAL    | -4      |
 | x                   | v_x_subtract_i_i_s2             | int         | PARAM#0  | 8       |
 | y                   | v_y_add_i_i_s2                  | int         | PARAM#1  | 12      |
 | y                   | v_y_subtract_i_i_s2             | int         | PARAM#1  | 12      |
