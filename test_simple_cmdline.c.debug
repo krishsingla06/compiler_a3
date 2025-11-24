@@ -1,0 +1,85 @@
+Error log initialized: test_simple_cmdline.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: printf with 1 parameters
+Registered function: printf as printf_cp1_variadic returning void
+Function definition: printf registered
+Entering scope level 2
+Allocated parameter c (param #0) at offset 8
+DEBUG: Variable c mangled as v_c_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
+Variable c mangled as v_c_printf_cp1_s2 [PARAM]
+Declared variable: c (char*) at line 1 in scope 2
+Inserted function parameter: c (char*)
+Function printf_cp1_variadic parameter space: 4 bytes
+Compound statement with declarations and statements
+Function printf stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+Start rule: Global declaration has 3 TAC instructions
+TAC code written to test_simple_cmdline.tac
+Function declarator: main with 2 parameters
+Registered function: main as main_i_cp2 returning int
+Function definition: main registered
+Entering scope level 2
+Allocated parameter argc (param #0) at offset 8
+DEBUG: Variable argc mangled as v_argc_main_i_cp2_s2 (function: main, signature: i_cp2, scope: 2)
+Variable argc mangled as v_argc_main_i_cp2_s2 [PARAM]
+Declared variable: argc (int) at line 3 in scope 2
+Inserted function parameter: argc (int)
+Allocated parameter argv (param #1) at offset 12
+DEBUG: Variable argv mangled as v_argv_main_i_cp2_s2 (function: main, signature: i_cp2, scope: 2)
+Variable argv mangled as v_argv_main_i_cp2_s2 [PARAM]
+Declared variable: argv (char**) at line 3 in scope 2
+Inserted function parameter: argv (char**)
+Function main_i_cp2 parameter space: 8 bytes
+Found function name: printf
+String literal: "Hello\n" (type: string)
+Unary expression is postfix: char*
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t1 at offset 0 (size: 0 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (void) at line 4 in scope 2
+Unary expression is postfix: void
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 8 bytes
+  - Total: 16 bytes
+TAC code appended to test_simple_cmdline.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+
+
+=== Optimizing TAC ===
+=== Starting Goto Chain Optimization ===
+No goto chains found to optimize
+=== TAC Optimization Complete ===
+
+Rewriting optimized TAC to file...
+Optimized TAC written to test_simple_cmdline.tac
+
+
+Generating MIPS assembly code...
+Total TAC instructions collected: 8
+hihi Variable v_argc_main_i_cp2_s2 type: int
+Returning 0
+hihi Variable v_argv_main_i_cp2_s2 type: char**
+Returning 0
+Getting offset for variable: v_argc_main_i_cp2_s2
+Getting offset for variable: v_argv_main_i_cp2_s2
+Clean MIPS assembly code (no debug) written to test_simple_cmdline.clean.asm
+MIPS assembly code (with debug) written to test_simple_cmdline.asm
+Error log closed: test_simple_cmdline.c.errors

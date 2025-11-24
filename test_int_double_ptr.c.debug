@@ -1,0 +1,253 @@
+Error log initialized: test_int_double_ptr.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: printf with 1 parameters
+Registered function: printf as printf_cp1_variadic returning void
+Function definition: printf registered
+Entering scope level 2
+Allocated parameter c (param #0) at offset 8
+DEBUG: Variable c mangled as v_c_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
+Variable c mangled as v_c_printf_cp1_s2 [PARAM]
+Declared variable: c (char*) at line 2 in scope 2
+Inserted function parameter: c (char*)
+Function printf_cp1_variadic parameter space: 4 bytes
+Compound statement with declarations and statements
+Function printf stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+Start rule: Global declaration has 3 TAC instructions
+TAC code written to test_int_double_ptr.tac
+Function declarator: main with 2 parameters
+Registered function: main as main_i_ip2 returning int
+Function definition: main registered
+Entering scope level 2
+Allocated parameter argc (param #0) at offset 8
+DEBUG: Variable argc mangled as v_argc_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Variable argc mangled as v_argc_main_i_ip2_s2 [PARAM]
+Declared variable: argc (int) at line 4 in scope 2
+Inserted function parameter: argc (int)
+Allocated parameter matrix (param #1) at offset 12
+DEBUG: Variable matrix mangled as v_matrix_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Variable matrix mangled as v_matrix_main_i_ip2_s2 [PARAM]
+Declared variable: matrix (int**) at line 4 in scope 2
+Inserted function parameter: matrix (int**)
+Function main_i_ip2 parameter space: 8 bytes
+DEBUG: Variable i mangled as v_i_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Allocated local variable i at offset -4 (size: 4 bytes)
+DEBUG: Variable i mangled as v_i_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Variable i mangled as v_i_main_i_ip2_s2 [LOCAL]
+Declared variable: i (int) at line 5 in scope 2
+DEBUG: Variable val mangled as v_val_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Allocated local variable val at offset -8 (size: 4 bytes)
+DEBUG: Variable val mangled as v_val_main_i_ip2_s2 (function: main, signature: i_ip2, scope: 2)
+Variable val mangled as v_val_main_i_ip2_s2 [LOCAL]
+Declared variable: val (int) at line 6 in scope 2
+Found function name: printf
+String literal: "Testing int** parameter\n" (type: string)
+Unary expression is postfix: char*
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t1 at offset -8 (size: 0 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (void) at line 8 in scope 2
+Unary expression is postfix: void
+Found variable: i of type int
+Unary expression is postfix: int
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Printing LHS and RHS types for assignment:
+int
+int
+Simple assignment from int to int
+Found variable: i of type int
+Unary expression is postfix: int
+Found variable: argc of type int
+Unary expression is postfix: int
+Binary operation: int < int -> int (numeric comparison)
+Allocated local variable #t2 at offset -12 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 11 in scope 2
+Entering scope level 3
+Function main_i_ip2 parameter space: 0 bytes
+Found variable: val of type int
+Unary expression is postfix: int
+Found variable: matrix of type int**
+Found variable: i of type int
+Unary expression is postfix: int
+Handling pointer subscript for base type: int**
+Resulting type after subscript: int*
+Array subscript: base type = int, size = 4
+Allocated local variable #t3 at offset -16 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 12 in scope 3
+Allocated local variable #t4 at offset -20 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 12 in scope 3
+Allocated local variable #t5 at offset -24 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int*) at line 12 in scope 3
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Handling pointer subscript for base type: int*
+Resulting type after subscript: int
+Array subscript: base type = int, size = 4
+Allocated local variable #t6 at offset -28 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 12 in scope 3
+Allocated local variable #t7 at offset -32 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 12 in scope 3
+Allocated local variable #t8 at offset -36 (size: 4 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (int) at line 12 in scope 3
+Unary expression is postfix: int
+Printing LHS and RHS types for assignment:
+int
+int
+Simple assignment from int to int
+Found function name: printf
+String literal: "Value: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: val of type int
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t9 at offset -36 (size: 0 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (void) at line 13 in scope 3
+Unary expression is postfix: void
+Found variable: i of type int
+Unary expression is postfix: int
+Found variable: i of type int
+Unary expression is postfix: int
+Integer literal: 1 (type: int)
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t10 at offset -40 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 14 in scope 3
+ -> int (numeric arithmetic)
+Printing LHS and RHS types for assignment:
+int
+int
+Simple assignment from int to int
+Compound statement with declarations and statements
+continue list empty
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 40 bytes
+  - Parameters: 0 bytes
+  - Total: 48 bytes
+TAC code appended to test_int_double_ptr.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+
+
+=== Optimizing TAC ===
+=== Starting Goto Chain Optimization ===
+Found goto chain: L9 -> L12
+Found goto chain: L11 -> L13
+Found goto chain: L14 -> L28
+Found goto chain: L27 -> L8
+Resolving transitive chains...
+=== Goto Chain Optimization Complete ===
+Total replacements: 0
+=== TAC Optimization Complete ===
+
+Rewriting optimized TAC to file...
+Optimized TAC written to test_int_double_ptr.tac
+
+
+Generating MIPS assembly code...
+Total TAC instructions collected: 29
+Getting offset for variable: v_i_main_i_ip2_s2
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_i_main_i_ip2_s2
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable v_argc_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_i_main_i_ip2_s2
+hihi Variable v_argc_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_argc_main_i_ip2_s2
+Getting offset for variable: #t2
+hihi Variable #t2 type: int
+Returning 0
+Getting offset for variable: #t2
+Getting offset for variable: #t2
+hihi Variable #t2 type: int
+Returning 0
+Getting offset for variable: #t2
+hihi Variable #t2 type: int
+Returning 0
+Getting offset for variable: #t2
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_i_main_i_ip2_s2
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: v_matrix_main_i_ip2_s2
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t5
+hihi Variable #t5 type: int*
+Returning 0
+hihi Variable #t4 type: int
+Returning 0
+Getting offset for variable: #t5
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t6 type: int
+Returning 0
+hihi Variable #t8 type: int
+Returning 0
+Getting offset for variable: v_val_main_i_ip2_s2
+hihi Variable v_val_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable #t8 type: int
+Returning 0
+Getting offset for variable: v_val_main_i_ip2_s2
+Getting offset for variable: #t8
+Getting offset for variable: v_val_main_i_ip2_s2
+Getting offset for variable: v_matrix_main_i_ip2_s2
+Getting offset for variable: #t3
+Getting offset for variable: #t4
+Getting offset for variable: #t5
+Getting offset for variable: #t7
+Getting offset for variable: #t6
+hihi Variable v_val_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_val_main_i_ip2_s2
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+Getting offset for variable: v_i_main_i_ip2_s2
+Getting offset for variable: v_i_main_i_ip2_s2
+hihi Variable v_i_main_i_ip2_s2 type: int
+Returning 0
+hihi Variable #t10 type: int
+Returning 0
+Getting offset for variable: v_i_main_i_ip2_s2
+Getting offset for variable: #t10
+Getting offset for variable: v_i_main_i_ip2_s2
+Clean MIPS assembly code (no debug) written to test_int_double_ptr.clean.asm
+MIPS assembly code (with debug) written to test_int_double_ptr.asm
+Error log closed: test_int_double_ptr.c.errors

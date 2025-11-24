@@ -1,0 +1,82 @@
+Error log initialized: test_cmdline2.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: printf with 1 parameters
+Registered function: printf as printf_cp1_variadic returning void
+Function definition: printf registered
+Entering scope level 2
+Allocated parameter c (param #0) at offset 8
+DEBUG: Variable c mangled as v_c_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
+Variable c mangled as v_c_printf_cp1_s2 [PARAM]
+Declared variable: c (char*) at line 1 in scope 2
+Inserted function parameter: c (char*)
+Function printf_cp1_variadic parameter space: 4 bytes
+Compound statement with declarations and statements
+Function printf stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+Start rule: Global declaration has 3 TAC instructions
+TAC code written to test_cmdline2.tac
+Function declarator: main with 2 parameters
+Registered function: main as main_i_cp2 returning int
+Function definition: main registered
+Entering scope level 2
+Allocated parameter argc (param #0) at offset 8
+DEBUG: Variable argc mangled as v_argc_main_i_cp2_s2 (function: main, signature: i_cp2, scope: 2)
+Variable argc mangled as v_argc_main_i_cp2_s2 [PARAM]
+Declared variable: argc (int) at line 3 in scope 2
+Inserted function parameter: argc (int)
+Allocated parameter argv (param #1) at offset 12
+DEBUG: Variable argv mangled as v_argv_main_i_cp2_s2 (function: main, signature: i_cp2, scope: 2)
+Variable argv mangled as v_argv_main_i_cp2_s2 [PARAM]
+Declared variable: argv (char**) at line 3 in scope 2
+Inserted function parameter: argv (char**)
+Function main_i_cp2 parameter space: 8 bytes
+Found function name: printf
+String literal: "Number of arguments: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: argc of type int
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t1 at offset 0 (size: 0 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (void) at line 4 in scope 2
+Unary expression is postfix: void
+Found variable: argc of type int
+Unary expression is postfix: int
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Binary operation: int > int -> int (numeric comparison)
+Allocated local variable #t2 at offset -4 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 6 in scope 2
+Entering scope level 3
+Function main_i_cp2 parameter space: 0 bytes
+Found function name: printf
+String literal: "Program name: %s\n" (type: string)
+Unary expression is postfix: char*
+Found variable: argv of type char**
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Handling pointer subscript for base type: char**
+Resulting type after subscript: char*
+Array subscript: base type = char, size = 4
+Allocated local variable #t3 at offset -8 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 7 in scope 3
+Allocated local variable #t4 at offset -12 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 7 in scope 3
+Allocated local variable #t5 at offset -16 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (char*) at line 7 in scope 3
+Unary expression is postfix: char*
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t6 at offset -16 (size: 0 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (void) at line 7 in scope 3
+Unary expression is postfix: void
+Compound statement with declarations and statements

@@ -2159,18 +2159,13 @@ postfix_expression
 				}
                 //print base now
                 cout<<"Resulting type after subscript: " << $$->toString() << "\n";
-			} else {
-				// Handle pointers - only allow one level pointers for subscript
+			} else { // initially it was handled for only 1 *.
+				// Handle pointers - support multi-level pointers (e.g., char** argv)
                 cout<<"Handling pointer subscript for base type: " << base->toString() << "\n";
-				if (base->pointerLevel > 1) {
-					type_error("Subscript operator [] can only be applied to single-level pointers, not multi-level pointers like " + base->toString());
-					$$->baseType = "error";
-				} else {
-					// For single-level pointers, decrement pointer level
-					$$->pointerLevel = base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
-					$$->isArray = false;
-					$$->arrayDimensions.clear();
-				}
+				// For any pointer level, decrement by one (e.g., char** becomes char*)
+				$$->pointerLevel = base->pointerLevel > 0 ? base->pointerLevel - 1 : 0;
+				$$->isArray = false;
+				$$->arrayDimensions.clear();
                 cout<<"Resulting type after subscript: " << $$->toString() << "\n";
 			}
 
