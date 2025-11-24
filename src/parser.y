@@ -2191,17 +2191,10 @@ postfix_expression
             $$->isLvalue = base->isLvalue;
             $$->isDereferenced = true; // Result is dereferenced value
 
-            // Special handling for char* (string literals)
-            // String literals store chars as 1 byte, not 4 bytes
-            int size_of_base;
-            if (base->baseType == "char" && base->pointerLevel == 1 && !base->isArray) {
-                // char* (pointer to string literal) - use 1 byte per char
-                size_of_base = 1;
-                cout << "Using size 1 for char* (string literal access)\n";
-            } else {
-                // Normal array or other pointer - use actual type size
-                size_of_base = getSize(*$$);
-            }
+            // Calculate size for array indexing
+            // In this language, all types (int, char, float) are 4 bytes
+            int size_of_base = getSize(*$$);
+            cout << "Array subscript: base type = " << base->baseType << ", size = " << size_of_base << "\n";
             
             // offset = index * size (integer arithmetic)
             TACOperand* offset = new_typed_temp_var("int");

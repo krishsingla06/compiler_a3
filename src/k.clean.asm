@@ -21,10 +21,6 @@ printf_cp1_variadic:
 
 
 I2:
-
-
-
-I3:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
@@ -33,7 +29,7 @@ I3:
 
 
 
-I4:
+I3:
 scanf_cp1_variadic:
     addiu $sp, $sp, -52
     sw $ra, 48($sp)
@@ -41,8 +37,21 @@ scanf_cp1_variadic:
     addiu $fp, $sp, 44
 
 
-I5:
+I4:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
 
+
+
+I5:
+malloc_i:
+    addiu $sp, $sp, -52
+    sw $ra, 48($sp)
+    sw $fp, 44($sp)
+    addiu $fp, $sp, 44
 
 
 I6:
@@ -187,9 +196,6 @@ I35:
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
-    # Exit program
-    li $v0, 10
-    syscall
 
 
 
@@ -197,6 +203,69 @@ I35:
 # RUNTIME LIBRARY FUNCTIONS
 # The following functions are imported from the runtime library
 #==============================================================================
+
+#==============================================================================
+__lib_free:
+    # Save registers
+    addiu $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $fp, 0($sp)
+    move $fp, $sp
+    
+    # Load pointer parameter from stack
+    lw $a0, 8($fp)  # Pointer to free
+    
+    # In a real implementation, we would:
+    # 1. Check if pointer is valid
+    # 2. Mark memory as free in a free list
+    # 3. Coalesce adjacent free blocks
+    #
+    # For now, this is a no-op since MIPS doesn't provide
+    # a syscall to return memory to the system.
+    # The memory remains allocated but could be tracked
+    # in a more sophisticated implementation.
+    
+    # Restore registers
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+#==============================================================================
+__lib_malloc:
+    # Save registers
+    addiu $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $fp, 0($sp)
+    move $fp, $sp
+    
+    # Load size parameter from stack
+    lw $a0, 8($fp)  # Size in bytes
+    
+    # Check if size is valid (> 0)
+    blez $a0, malloc_error
+    
+    # Syscall 9: sbrk (allocate heap memory)
+    li $v0, 9
+    syscall
+    # $v0 now contains pointer to allocated memory
+    
+    j malloc_end
+
+malloc_error:
+    # Return NULL (0) on error
+    li $v0, 0
+
+malloc_end:
+    # Restore registers
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
 
 #==============================================================================
 __lib_printf:

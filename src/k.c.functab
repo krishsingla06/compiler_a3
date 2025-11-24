@@ -2,15 +2,42 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
+| Function: free (free_vp1)
+|   Return type: void
+|   Parameters: void* 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 5
++-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
+<<<<<<< HEAD
 |     - Local var space: 60 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 68 bytes
 |   Declared at line: 23
+=======
+|     - Local var space: 72 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 80 bytes
+|   Declared at line: 7
++-----------------------------------------------------------------------------------------+
+| Function: malloc (malloc_i)
+|   Return type: void*
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 4
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 +-----------------------------------------------------------------------------------------+
 | Function: printf (printf_cp1_variadic)
 |   Return type: void
@@ -20,7 +47,11 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
+<<<<<<< HEAD
 |   Declared at line: 17
+=======
+|   Declared at line: 2
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 +-----------------------------------------------------------------------------------------+
 | Function: scanf (scanf_cp1_variadic)
 |   Return type: void
@@ -30,5 +61,9 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
+<<<<<<< HEAD
 |   Declared at line: 19
+=======
+|   Declared at line: 3
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 +-----------------------------------------------------------------------------------------+

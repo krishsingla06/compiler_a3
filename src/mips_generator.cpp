@@ -1844,13 +1844,13 @@ void MIPSGenerator::translate_store_indirect(TACInstruction* instr) {
         emit("s.s " + value_freg + ", 0(" + ptr_reg + ")");
         emit_comment("DEBUG: Stored float " + value + " through pointer " + ptr);
     } else {
-        // Store integer value through pointer
+        // Store integer/char value through pointer (both are 4 bytes in this language)
         string value_reg = load_operand_to_register(instr->arg1);
-        emit_comment("DEBUG: Integer value " + value + " in " + value_reg);
+        emit_comment("DEBUG: Integer/char value " + value + " in " + value_reg);
         
-        // Use sw (store word) for integers: sw $tX, 0($tY)
+        // Use sw (store word) for integers and chars: sw $tX, 0($tY)
         emit("sw " + value_reg + ", 0(" + ptr_reg + ")");
-        emit_comment("DEBUG: Stored integer " + value + " through pointer " + ptr);
+        emit_comment("DEBUG: Stored value " + value + " through pointer " + ptr);
     }
     
     // CRITICAL FIX: When storing through a pointer, we don't know which variable
@@ -2325,6 +2325,8 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
     bool is_print_string = (func_name.find("print_string") == 0);
     bool is_print_newline = (func_name.find("print_newline") == 0);
     bool is_printf = (func_name.find("printf") == 0);
+    bool is_malloc = (func_name.find("malloc") == 0);  // Matches malloc_i, malloc_*, etc.
+    bool is_free = (func_name.find("free") == 0);      // Matches free_vp1, free_*, etc.
     
     if (is_print_int) {
         emit_comment("=== Call library function: print_int ===");
@@ -2549,6 +2551,98 @@ void MIPSGenerator::translate_call(TACInstruction* instr) {
         pending_params.clear();
         return;
     }
+    
+    // ===== SPECIAL HANDLING FOR MALLOC =====
+    if (is_malloc) {
+        emit_comment("=== Call library function: malloc ===");
+        runtime_lib.mark_function_used("malloc");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: malloc called with no size argument");
+            return;
+        }
+        
+        // Get the size parameter (single argument)
+        string size_param = pending_params[0];
+        pending_params.clear();
+        
+        emit_comment("Malloc: allocate " + size_param + " bytes");
+        
+        // Push size onto stack (malloc expects it at 8($fp))
+        // Allocate stack space for parameter
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !size_param.empty() && (isdigit(size_param[0]) || size_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + size_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string size_reg = ensure_in_register(size_param);
+            emit("sw " + size_reg + ", 0($sp)");
+        }
+        
+        // Call library function
+        emit("jal __lib_malloc");
+        
+        // Deallocate parameter space
+        emit("addiu $sp, $sp, 4");
+        
+        // Return value (pointer) is in $v0
+        emit_comment("Pointer to allocated memory in $v0");
+        
+        // Store result in the destination if specified
+        if (instr->result) {
+            string result_var = instr->result->value;
+            int result_offset = get_offset(result_var);
+            emit("sw $v0, " + to_string(result_offset) + "($fp)");
+            emit_comment("Store malloc result to " + result_var);
+            
+            // Update storage descriptor
+            storage_desc.add_location(result_var, to_string(result_offset) + "($fp)");
+        }
+        
+        emit_comment("=== End malloc ===");
+        return;
+    }
+    
+    // ===== SPECIAL HANDLING FOR FREE =====
+    if (is_free) {
+        emit_comment("=== Call library function: free ===");
+        runtime_lib.mark_function_used("free");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: free called with no pointer argument");
+            return;
+        }
+        
+        // Get the pointer parameter (single argument)
+        string ptr_param = pending_params[0];
+        pending_params.clear();
+        
+        emit_comment("Free: deallocate memory at " + ptr_param);
+        
+        // Push pointer onto stack (free expects it at 8($fp))
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !ptr_param.empty() && (isdigit(ptr_param[0]) || ptr_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + ptr_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string ptr_reg = ensure_in_register(ptr_param);
+            emit("sw " + ptr_reg + ", 0($sp)");
+        }
+        
+        // Call library function
+        emit("jal __lib_free");
+        
+        // Deallocate parameter space
+        emit("addiu $sp, $sp, 4");
+        
+        emit_comment("=== End free ===");
+        return;
+    }
+    
     if (func_name == "printf") {
         emit_comment("=== Built-in printf function ===");
         

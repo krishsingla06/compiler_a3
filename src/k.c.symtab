@@ -10,7 +10,11 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
   - fmt (char*) declared at line 17 [mangled: v_fmt_printf_cp1_s2] [PARAM #0, offset: 8]
+=======
+  - s (char*) declared at line 2 [mangled: v_s_printf_cp1_s2] [PARAM #0, offset: 8]
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - fmt (char*)
@@ -31,10 +35,17 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
   - fmt (char*) declared at line 19 [mangled: v_fmt_scanf_cp1_s2] [PARAM #0, offset: 8]
 +-----------------------------------------------------------------------------------------+
 Destroying symbols from scope 2:
   - fmt (char*)
+=======
+  - s (char*) declared at line 3 [mangled: v_s_scanf_cp1_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - s (char*)
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 
 
 
@@ -52,6 +63,7 @@ Exiting scope level 2
 
 +- SCOPE LEVEL 2 ------------------------------------------------------+
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
   - #t1 (void) declared at line 39 [mangled: #t1] [LOCAL, offset: -24]
   - #t10 (int) declared at line 49 [mangled: #t10] [LOCAL, offset: -60]
   - #t11 (void) declared at line 49 [mangled: #t11] [LOCAL, offset: -60]
@@ -88,6 +100,92 @@ Destroying symbols from scope 2:
   - pc (char&)
   - pf (float&)
   - pi (int&)
+=======
+  - size (int) declared at line 4 [mangled: v_size_malloc_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - size (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - ptr (void*) declared at line 5 [mangled: v_ptr_free_vp1_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - ptr (void*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 8 [mangled: #t1] [LOCAL, offset: -4]
+  - #t10 (char) declared at line 10 [mangled: #t10] [LOCAL, offset: -44]
+  - #t11 (int) declared at line 11 [mangled: #t11] [LOCAL, offset: -48]
+  - #t12 (int) declared at line 11 [mangled: #t12] [LOCAL, offset: -52]
+  - #t13 (char) declared at line 11 [mangled: #t13] [LOCAL, offset: -56]
+  - #t14 (int) declared at line 11 [mangled: #t14] [LOCAL, offset: -60]
+  - #t15 (int) declared at line 11 [mangled: #t15] [LOCAL, offset: -64]
+  - #t16 (char) declared at line 11 [mangled: #t16] [LOCAL, offset: -68]
+  - #t17 (void) declared at line 11 [mangled: #t17] [LOCAL, offset: -68]
+  - #t18 (void*) declared at line 13 [mangled: #t18] [LOCAL, offset: -72]
+  - #t19 (void) declared at line 13 [mangled: #t19] [LOCAL, offset: -72]
+  - #t2 (int) declared at line 8 [mangled: #t2] [LOCAL, offset: -8]
+  - #t3 (void*) declared at line 8 [mangled: #t3] [LOCAL, offset: -12]
+  - #t4 (char*) declared at line 8 [mangled: #t4] [LOCAL, offset: -16]
+  - #t5 (int) declared at line 9 [mangled: #t5] [LOCAL, offset: -24]
+  - #t6 (int) declared at line 9 [mangled: #t6] [LOCAL, offset: -28]
+  - #t7 (char) declared at line 9 [mangled: #t7] [LOCAL, offset: -32]
+  - #t8 (int) declared at line 10 [mangled: #t8] [LOCAL, offset: -36]
+  - #t9 (int) declared at line 10 [mangled: #t9] [LOCAL, offset: -40]
+  - a (char*) declared at line 8 [mangled: v_a_main_s2] [LOCAL, offset: -20]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t1 (int)
+  - #t10 (char)
+  - #t11 (int)
+  - #t12 (int)
+  - #t13 (char)
+  - #t14 (int)
+  - #t15 (int)
+  - #t16 (char)
+  - #t17 (void)
+  - #t18 (void*)
+  - #t19 (void)
+  - #t2 (int)
+  - #t3 (void*)
+  - #t4 (char*)
+  - #t5 (int)
+  - #t6 (int)
+  - #t7 (char)
+  - #t8 (int)
+  - #t9 (int)
+  - a (char*)
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 
 
 

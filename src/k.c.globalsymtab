@@ -3,11 +3,16 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
+<<<<<<< HEAD
 Total Symbols: 19
+=======
+Total Symbols: 24
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
+<<<<<<< HEAD
 | #t1                 | #t1                             | void        | LOCAL    | -24     |
 | #t10                | #t10                            | int         | LOCAL    | -60     |
 | #t11                | #t11                            | void        | LOCAL    | -60     |
@@ -27,5 +32,31 @@ Total Symbols: 19
 | pc                  | v_pc_main_s2                    | char&       | LOCAL    | -16     |
 | pf                  | v_pf_main_s2                    | float&      | LOCAL    | -8      |
 | pi                  | v_pi_main_s2                    | int&        | LOCAL    | -24     |
+=======
+| #t1                 | #t1                             | int         | LOCAL    | -4      |
+| #t10                | #t10                            | char        | LOCAL    | -44     |
+| #t11                | #t11                            | int         | LOCAL    | -48     |
+| #t12                | #t12                            | int         | LOCAL    | -52     |
+| #t13                | #t13                            | char        | LOCAL    | -56     |
+| #t14                | #t14                            | int         | LOCAL    | -60     |
+| #t15                | #t15                            | int         | LOCAL    | -64     |
+| #t16                | #t16                            | char        | LOCAL    | -68     |
+| #t17                | #t17                            | void        | LOCAL    | -68     |
+| #t18                | #t18                            | void*       | LOCAL    | -72     |
+| #t19                | #t19                            | void        | LOCAL    | -72     |
+| #t2                 | #t2                             | int         | LOCAL    | -8      |
+| #t3                 | #t3                             | void*       | LOCAL    | -12     |
+| #t4                 | #t4                             | char*       | LOCAL    | -16     |
+| #t5                 | #t5                             | int         | LOCAL    | -24     |
+| #t6                 | #t6                             | int         | LOCAL    | -28     |
+| #t7                 | #t7                             | char        | LOCAL    | -32     |
+| #t8                 | #t8                             | int         | LOCAL    | -36     |
+| #t9                 | #t9                             | int         | LOCAL    | -40     |
+| a                   | v_a_main_s2                     | char*       | LOCAL    | -20     |
+| ptr                 | v_ptr_free_vp1_s2               | void*       | PARAM#0  | 8       |
+| s                   | v_s_printf_cp1_s2               | char*       | PARAM#0  | 8       |
+| s                   | v_s_scanf_cp1_s2                | char*       | PARAM#0  | 8       |
+| size                | v_size_malloc_i_s2              | int         | PARAM#0  | 8       |
+>>>>>>> 6b761ed (Dynamic memory allocation done)
 +-----------------------------------------------------------------------------------------+
 

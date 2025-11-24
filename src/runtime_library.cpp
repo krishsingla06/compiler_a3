@@ -31,8 +31,8 @@ set<string> RuntimeLibrary::get_supported_functions() {
     functions.insert("print_newline");
     // Future functions can be added here:
     functions.insert("scanf");
-    // functions.insert("malloc");
-    // functions.insert("free");
+    functions.insert("malloc");
+    functions.insert("free");
     return functions;
 }
 

@@ -314,5 +314,77 @@ scanf_end:
     addiu $sp, $sp, 16
     jr $ra
 #==============================================================================
+# __lib_malloc - Allocate dynamic memory
+# Parameter: size in bytes (at 8($fp))
+# Returns: pointer to allocated memory in $v0
+# Uses syscall 9 (sbrk) to allocate heap memory
+#==============================================================================
+__lib_malloc:
+    # Save registers
+    addiu $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $fp, 0($sp)
+    move $fp, $sp
+    
+    # Load size parameter from stack
+    lw $a0, 8($fp)  # Size in bytes
+    
+    # Check if size is valid (> 0)
+    blez $a0, malloc_error
+    
+    # Syscall 9: sbrk (allocate heap memory)
+    li $v0, 9
+    syscall
+    # $v0 now contains pointer to allocated memory
+    
+    j malloc_end
+
+malloc_error:
+    # Return NULL (0) on error
+    li $v0, 0
+
+malloc_end:
+    # Restore registers
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+#==============================================================================
+# __lib_free - Free dynamically allocated memory
+# Parameter: pointer to memory (at 8($fp))
+# NOTE: MIPS syscalls don't provide a way to free memory back to the system.
+# In a real implementation, you would maintain a free list.
+# For simplicity, this is a no-op that validates the pointer.
+#==============================================================================
+__lib_free:
+    # Save registers
+    addiu $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $fp, 0($sp)
+    move $fp, $sp
+    
+    # Load pointer parameter from stack
+    lw $a0, 8($fp)  # Pointer to free
+    
+    # In a real implementation, we would:
+    # 1. Check if pointer is valid
+    # 2. Mark memory as free in a free list
+    # 3. Coalesce adjacent free blocks
+    #
+    # For now, this is a no-op since MIPS doesn't provide
+    # a syscall to return memory to the system.
+    # The memory remains allocated but could be tracked
+    # in a more sophisticated implementation.
+    
+    # Restore registers
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+#==============================================================================
 # END OF RUNTIME LIBRARY
 #==============================================================================
