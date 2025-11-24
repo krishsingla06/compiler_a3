@@ -4,7 +4,14 @@
 
 
 .data
+<<<<<<< HEAD
 str_0: .asciiz "Result: %d\n"
+=======
+str_0: .asciiz "Pointer value: %d\n"
+str_2: .asciiz "arr[0] value: %d\n"
+str_3: .asciiz "arr[2] value: %d\n"
+str_1: .asciiz "x value: %d\n"
+>>>>>>> d57e7c7 (Array and pointers fixed)
 
 
 .text
@@ -55,6 +62,7 @@ I6:
 
 
 I7:
+<<<<<<< HEAD
 main:
     addiu $sp, $sp, -56
     sw $ra, 52($sp)
@@ -83,6 +91,55 @@ I11:
 I12:
 
 I13:
+=======
+print_int_i:
+    addiu $sp, $sp, -52
+    sw $ra, 48($sp)
+    sw $fp, 44($sp)
+    addiu $fp, $sp, 44
+
+
+I8:
+
+
+
+I9:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+
+I10:
+print_newline:
+    addiu $sp, $sp, -48
+    sw $ra, 44($sp)
+    sw $fp, 40($sp)
+    addiu $fp, $sp, 40
+
+I11:
+
+
+
+I12:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+
+I13:
+print_float_f:
+    addiu $sp, $sp, -52
+    sw $ra, 48($sp)
+    sw $fp, 44($sp)
+    addiu $fp, $sp, 44
+
+>>>>>>> d57e7c7 (Array and pointers fixed)
 
 I14:
     sw $t0, -8($fp)
@@ -94,12 +151,322 @@ I14:
     jal __lib_printf
     addiu $sp, $sp, 4
 
+
+
 I15:
+<<<<<<< HEAD
     li $v0, 0
+=======
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+>>>>>>> d57e7c7 (Array and pointers fixed)
 
 
 
 I16:
+<<<<<<< HEAD
+=======
+main:
+    addiu $sp, $sp, -252
+    sw $ra, 248($sp)
+    sw $fp, 244($sp)
+    addiu $fp, $sp, 244
+
+I17:
+    addiu $t0, $fp, -4
+    sw $t0, -16($fp)
+
+I18:
+    sw $t0, -20($fp)
+
+I19:
+    sw $t0, -36($fp)
+
+I20:
+    li $t1, 10
+    sw $t1, 0($t0)
+
+I21:
+    lw $t1, -20($fp)
+    lw $t2, 0($t1)
+
+I22:
+
+I23:
+
+I24:
+    sw $t0, -16($fp)
+    sw $t0, -36($fp)
+    sw $t1, -20($fp)
+    sw $t2, -40($fp)
+    la $a0, str_0
+    addiu $sp, $sp, -4
+    lw $t0, -40($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I25:
+    lw $t0, -20($fp)
+    lw $t1, 0($t0)
+
+I26:
+    li $t2, 100
+    add $t3, $t1, $t2
+
+I27:
+    sw $t3, -4($fp)
+
+I28:
+
+I29:
+
+I30:
+    sw $t0, -20($fp)
+    sw $t1, -44($fp)
+    sw $t3, -48($fp)
+    sw $t3, -4($fp)
+    la $a0, str_1
+    addiu $sp, $sp, -4
+    lw $t0, -4($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I31:
+    li $t0, 0
+    li $t1, 4
+    mul $t2, $t0, $t1
+
+I32:
+    addiu $t0, $fp, -32
+    sw $t0, -56($fp)
+
+I33:
+    add $t1, $t0, $t2
+
+I34:
+    sw $t1, -64($fp)
+
+I35:
+    lw $t3, -4($fp)
+    sw $t3, 0($t1)
+
+I36:
+    li $t3, 0
+    li $t4, 4
+    mul $t5, $t3, $t4
+
+I37:
+    sw $t0, -56($fp)
+    addiu $t0, $fp, -32
+    sw $t0, -72($fp)
+
+I38:
+    add $t3, $t0, $t5
+
+I39:
+    sw $t0, -72($fp)
+    lw $t0, 0($t3)
+
+I40:
+
+I41:
+
+I42:
+    sw $t0, -80($fp)
+    sw $t1, -60($fp)
+    sw $t1, -64($fp)
+    sw $t2, -52($fp)
+    sw $t3, -76($fp)
+    sw $t5, -68($fp)
+    la $a0, str_2
+    addiu $sp, $sp, -4
+    lw $t0, -80($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I43:
+    li $t0, 1
+    li $t1, 4
+    mul $t2, $t0, $t1
+
+I44:
+    addiu $t0, $fp, -32
+    sw $t0, -88($fp)
+
+I45:
+    add $t1, $t0, $t2
+
+I46:
+    sw $t1, -96($fp)
+
+I47:
+    lw $t3, -4($fp)
+    li $t4, 10
+    add $t5, $t3, $t4
+
+I48:
+    sw $t5, 0($t1)
+
+I49:
+    li $t3, 2
+    li $t4, 4
+    mul $t6, $t3, $t4
+
+I50:
+    sw $t0, -88($fp)
+    addiu $t0, $fp, -32
+    sw $t0, -108($fp)
+
+I51:
+    add $t3, $t0, $t6
+
+I52:
+    sw $t3, -116($fp)
+
+I53:
+    lw $t4, -4($fp)
+    li $t7, 20
+    add $t8, $t4, $t7
+
+I54:
+    sw $t8, 0($t3)
+
+I55:
+    li $t4, 2
+    li $t7, 4
+    mul $t9, $t4, $t7
+
+I56:
+    sw $t0, -108($fp)
+    addiu $t0, $fp, -32
+    sw $t0, -128($fp)
+
+I57:
+    add $t4, $t0, $t9
+
+I58:
+    sw $t4, -136($fp)
+
+I59:
+    li $t7, 0
+    sw $t0, -128($fp)
+    li $t0, 4
+    sw $t1, -92($fp)
+    sw $t1, -96($fp)
+    mul $t1, $t7, $t0
+
+I60:
+    addiu $t0, $fp, -32
+    sw $t0, -144($fp)
+
+I61:
+    add $t7, $t0, $t1
+
+I62:
+    sw $t0, -144($fp)
+    lw $t0, 0($t7)
+
+I63:
+    sw $t1, -140($fp)
+    li $t1, 1
+    sw $t2, -84($fp)
+    li $t2, 4
+    sw $t3, -112($fp)
+    sw $t3, -116($fp)
+    mul $t3, $t1, $t2
+
+I64:
+    addiu $t1, $fp, -32
+    sw $t1, -160($fp)
+
+I65:
+    add $t2, $t1, $t3
+
+I66:
+    sw $t1, -160($fp)
+    lw $t1, 0($t2)
+
+I67:
+    sw $t2, -164($fp)
+    add $t2, $t0, $t1
+
+I68:
+    sw $t2, 0($t4)
+
+I69:
+    sw $t0, -152($fp)
+    li $t0, 2
+    sw $t2, -172($fp)
+    li $t2, 4
+    sw $t3, -156($fp)
+    mul $t3, $t0, $t2
+
+I70:
+    addiu $t0, $fp, -32
+    sw $t0, -180($fp)
+
+I71:
+    add $t2, $t0, $t3
+
+I72:
+    sw $t0, -180($fp)
+    lw $t0, 0($t2)
+
+I73:
+
+I74:
+
+I75:
+    sw $t0, -188($fp)
+    sw $t1, -168($fp)
+    sw $t2, -184($fp)
+    sw $t3, -176($fp)
+    sw $t4, -132($fp)
+    sw $t4, -136($fp)
+    sw $t5, -100($fp)
+    sw $t6, -104($fp)
+    sw $t7, -148($fp)
+    sw $t8, -120($fp)
+    sw $t9, -124($fp)
+    la $a0, str_3
+    addiu $sp, $sp, -4
+    lw $t0, -188($fp)
+    sw $t0, 0($sp)
+    jal __lib_printf
+    addiu $sp, $sp, 4
+
+I76:
+    li $t0, 2
+    li $t1, 4
+    mul $t2, $t0, $t1
+
+I77:
+    addiu $t0, $fp, -32
+    sw $t0, -196($fp)
+
+I78:
+    add $t1, $t0, $t2
+
+I79:
+    sw $t0, -196($fp)
+    lw $t0, 0($t1)
+
+I80:
+    sw $t0, -204($fp)
+    sw $t1, -200($fp)
+    sw $t2, -192($fp)
+    move $v0, $t0
+
+
+
+I81:
+>>>>>>> d57e7c7 (Array and pointers fixed)
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)

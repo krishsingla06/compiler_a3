@@ -8,7 +8,11 @@ Entering scope level 2
 Allocated parameter fmt (param #0) at offset 8
 DEBUG: Variable fmt mangled as v_fmt_printf_cp1_s2 (function: printf, signature: cp1, scope: 2)
 Variable fmt mangled as v_fmt_printf_cp1_s2 [PARAM]
+<<<<<<< HEAD
 Declared variable: fmt (char*) at line 2 in scope 2
+=======
+Declared variable: fmt (char*) at line 1 in scope 2
+>>>>>>> d57e7c7 (Array and pointers fixed)
 Inserted function parameter: fmt (char*)
 Function printf_cp1_variadic parameter space: 4 bytes
 Compound statement with declarations and statements
@@ -22,6 +26,7 @@ Function declarator: add with 2 parameters
 Registered function: add as add_i_i returning int
 Function definition: add registered
 Entering scope level 2
+<<<<<<< HEAD
 Allocated parameter a (param #0) at offset 8
 DEBUG: Variable a mangled as v_a_add_i_i_s2 (function: add, signature: i_i, scope: 2)
 Variable a mangled as v_a_add_i_i_s2 [PARAM]
@@ -41,17 +46,69 @@ Binary operation: int + intAllocated local variable #t1 at offset -4 (size: 4 by
 Variable #t1 mangled as #t1 [LOCAL]
 Declared variable: #t1 (int) at line 5 in scope 2
  -> int (numeric arithmetic)
+=======
+Allocated parameter fmt (param #0) at offset 8
+DEBUG: Variable fmt mangled as v_fmt_scanf_cp1_s2 (function: scanf, signature: cp1, scope: 2)
+Variable fmt mangled as v_fmt_scanf_cp1_s2 [PARAM]
+Declared variable: fmt (char*) at line 2 in scope 2
+Inserted function parameter: fmt (char*)
+Function scanf_cp1_variadic parameter space: 4 bytes
+>>>>>>> d57e7c7 (Array and pointers fixed)
 Compound statement with declarations and statements
 Function add stack frame:
   - Local variables: 4 bytes
   - Parameters: 8 bytes
   - Total: 20 bytes
 TAC code appended to k.tac
+Function declarator: print_int with 1 parameters
+Registered function: print_int as print_int_i returning void
+Function definition: print_int registered
+Entering scope level 2
+Allocated parameter n (param #0) at offset 8
+DEBUG: Variable n mangled as v_n_print_int_i_s2 (function: print_int, signature: i, scope: 2)
+Variable n mangled as v_n_print_int_i_s2 [PARAM]
+Declared variable: n (int) at line 83 in scope 2
+Inserted function parameter: n (int)
+Function print_int_i parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_int stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
+Function declarator: print_newline with no parameters
+Registered function: print_newline as print_newline returning void
+Function definition: print_newline registered
+Entering scope level 2
+Function print_newline parameter space: 0 bytes
+Compound statement with declarations and statements
+Function print_newline stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 0 bytes
+  - Total: 8 bytes
+TAC code appended to k.tac
+Function declarator: print_float with 1 parameters
+Registered function: print_float as print_float_f returning void
+Function definition: print_float registered
+Entering scope level 2
+Allocated parameter f (param #0) at offset 8
+DEBUG: Variable f mangled as v_f_print_float_f_s2 (function: print_float, signature: f, scope: 2)
+Variable f mangled as v_f_print_float_f_s2 [PARAM]
+Declared variable: f (float) at line 91 in scope 2
+Inserted function parameter: f (float)
+Function print_float_f parameter space: 4 bytes
+Compound statement with declarations and statements
+Function print_float stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to k.tac
 Function declarator: main with no parameters
 Registered function: main as main returning int
 Function definition: main registered
 Entering scope level 2
 Function main parameter space: 0 bytes
+<<<<<<< HEAD
 DEBUG: Variable result mangled as v_result_main_s2 (function: main, signature: , scope: 2)
 Allocated local variable result at offset -4 (size: 4 bytes)
 DEBUG: Variable result mangled as v_result_main_s2 (function: main, signature: , scope: 2)
@@ -69,11 +126,270 @@ Allocated local variable #t2 at offset -8 (size: 4 bytes)
 Variable #t2 mangled as #t2 [LOCAL]
 Declared variable: #t2 (int) at line 11 in scope 2
 Unary expression is postfix: int
+=======
+DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable x at offset -4 (size: 4 bytes)
+DEBUG: Variable x mangled as v_x_main_s2 (function: main, signature: , scope: 2)
+Variable x mangled as v_x_main_s2 [LOCAL]
+Declared variable: x (int) at line 300 in scope 2
+DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable y at offset -8 (size: 4 bytes)
+DEBUG: Variable y mangled as v_y_main_s2 (function: main, signature: , scope: 2)
+Variable y mangled as v_y_main_s2 [LOCAL]
+Declared variable: y (int) at line 300 in scope 2
+DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable z at offset -12 (size: 4 bytes)
+DEBUG: Variable z mangled as v_z_main_s2 (function: main, signature: , scope: 2)
+Variable z mangled as v_z_main_s2 [LOCAL]
+Declared variable: z (int) at line 300 in scope 2
+Found variable: x of type int
+Unary expression is postfix: int
+Unary operation: &int -> int*
+Allocated local variable #t1 at offset -16 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (int) at line 301 in scope 2
+DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable ptr at offset -20 (size: 4 bytes)
+DEBUG: Variable ptr mangled as v_ptr_main_s2 (function: main, signature: , scope: 2)
+Variable ptr mangled as v_ptr_main_s2 [LOCAL]
+Declared variable: ptr (int*) with initializer of type int* at line 301 in scope 2
+DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable arr at offset -32 (size: 12 bytes)
+DEBUG: Variable arr mangled as v_arr_main_s2 (function: main, signature: , scope: 2)
+Variable arr mangled as v_arr_main_s2 [LOCAL]
+Declared variable: arr (int[3]) at line 302 in scope 2
+Found variable: ptr of type int*
+Unary expression is postfix: int*
+Unary operation: *int* -> int
+Allocated local variable #t2 at offset -36 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 303 in scope 2
+Integer literal: 10 (type: int)
+Unary expression is postfix: int
+Printing LHS and RHS types for assignment:
+int
+int
+Krish
+Found function name: printf
+String literal: "Pointer value: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: ptr of type int*
+Unary expression is postfix: int*
+Unary operation: *int* -> int
+Allocated local variable #t3 at offset -40 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 304 in scope 2
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t4 at offset -40 (size: 0 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (void) at line 304 in scope 2
+Unary expression is postfix: void
+Found variable: x of type int
+Unary expression is postfix: int
+Found variable: ptr of type int*
+Unary expression is postfix: int*
+Unary operation: *int* -> int
+Allocated local variable #t5 at offset -44 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 305 in scope 2
+Integer literal: 100 (type: int)
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t6 at offset -48 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 305 in scope 2
+ -> int (numeric arithmetic)
 Printing LHS and RHS types for assignment:
 int
 int
 Simple assignment from int to int
 Found function name: printf
+String literal: "x value: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: x of type int
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t7 at offset -48 (size: 0 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (void) at line 306 in scope 2
+Unary expression is postfix: void
+Found variable: arr of type int[3]
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t8 at offset -52 (size: 4 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (int) at line 308 in scope 2
+Allocated local variable #t9 at offset -56 (size: 4 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (int) at line 308 in scope 2
+Allocated local variable #t10 at offset -60 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 308 in scope 2
+Allocated local variable #t11 at offset -64 (size: 4 bytes)
+Variable #t11 mangled as #t11 [LOCAL]
+Declared variable: #t11 (int) at line 308 in scope 2
+Unary expression is postfix: int
+Found variable: x of type int
+Unary expression is postfix: int
+Printing LHS and RHS types for assignment:
+int
+int
+Krish
+Found function name: printf
+String literal: "arr[0] value: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: arr of type int[3]
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t12 at offset -68 (size: 4 bytes)
+Variable #t12 mangled as #t12 [LOCAL]
+Declared variable: #t12 (int) at line 309 in scope 2
+Allocated local variable #t13 at offset -72 (size: 4 bytes)
+Variable #t13 mangled as #t13 [LOCAL]
+Declared variable: #t13 (int) at line 309 in scope 2
+Allocated local variable #t14 at offset -76 (size: 4 bytes)
+Variable #t14 mangled as #t14 [LOCAL]
+Declared variable: #t14 (int) at line 309 in scope 2
+Allocated local variable #t15 at offset -80 (size: 4 bytes)
+Variable #t15 mangled as #t15 [LOCAL]
+Declared variable: #t15 (int) at line 309 in scope 2
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t16 at offset -80 (size: 0 bytes)
+Variable #t16 mangled as #t16 [LOCAL]
+Declared variable: #t16 (void) at line 309 in scope 2
+Unary expression is postfix: void
+Found variable: arr of type int[3]
+Integer literal: 1 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t17 at offset -84 (size: 4 bytes)
+Variable #t17 mangled as #t17 [LOCAL]
+Declared variable: #t17 (int) at line 310 in scope 2
+Allocated local variable #t18 at offset -88 (size: 4 bytes)
+Variable #t18 mangled as #t18 [LOCAL]
+Declared variable: #t18 (int) at line 310 in scope 2
+Allocated local variable #t19 at offset -92 (size: 4 bytes)
+Variable #t19 mangled as #t19 [LOCAL]
+Declared variable: #t19 (int) at line 310 in scope 2
+Allocated local variable #t20 at offset -96 (size: 4 bytes)
+Variable #t20 mangled as #t20 [LOCAL]
+Declared variable: #t20 (int) at line 310 in scope 2
+Unary expression is postfix: int
+Found variable: x of type int
+Unary expression is postfix: int
+Integer literal: 10 (type: int)
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t21 at offset -100 (size: 4 bytes)
+Variable #t21 mangled as #t21 [LOCAL]
+Declared variable: #t21 (int) at line 310 in scope 2
+ -> int (numeric arithmetic)
+Printing LHS and RHS types for assignment:
+int
+int
+Krish
+Found variable: arr of type int[3]
+Integer literal: 2 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t22 at offset -104 (size: 4 bytes)
+Variable #t22 mangled as #t22 [LOCAL]
+Declared variable: #t22 (int) at line 311 in scope 2
+Allocated local variable #t23 at offset -108 (size: 4 bytes)
+Variable #t23 mangled as #t23 [LOCAL]
+Declared variable: #t23 (int) at line 311 in scope 2
+Allocated local variable #t24 at offset -112 (size: 4 bytes)
+Variable #t24 mangled as #t24 [LOCAL]
+Declared variable: #t24 (int) at line 311 in scope 2
+Allocated local variable #t25 at offset -116 (size: 4 bytes)
+Variable #t25 mangled as #t25 [LOCAL]
+Declared variable: #t25 (int) at line 311 in scope 2
+Unary expression is postfix: int
+Found variable: x of type int
+Unary expression is postfix: int
+Integer literal: 20 (type: int)
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t26 at offset -120 (size: 4 bytes)
+Variable #t26 mangled as #t26 [LOCAL]
+Declared variable: #t26 (int) at line 311 in scope 2
+ -> int (numeric arithmetic)
+Printing LHS and RHS types for assignment:
+int
+int
+Krish
+Found variable: arr of type int[3]
+Integer literal: 2 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t27 at offset -124 (size: 4 bytes)
+Variable #t27 mangled as #t27 [LOCAL]
+Declared variable: #t27 (int) at line 312 in scope 2
+Allocated local variable #t28 at offset -128 (size: 4 bytes)
+Variable #t28 mangled as #t28 [LOCAL]
+Declared variable: #t28 (int) at line 312 in scope 2
+Allocated local variable #t29 at offset -132 (size: 4 bytes)
+Variable #t29 mangled as #t29 [LOCAL]
+Declared variable: #t29 (int) at line 312 in scope 2
+Allocated local variable #t30 at offset -136 (size: 4 bytes)
+Variable #t30 mangled as #t30 [LOCAL]
+Declared variable: #t30 (int) at line 312 in scope 2
+Unary expression is postfix: int
+Found variable: arr of type int[3]
+Integer literal: 0 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t31 at offset -140 (size: 4 bytes)
+Variable #t31 mangled as #t31 [LOCAL]
+Declared variable: #t31 (int) at line 312 in scope 2
+Allocated local variable #t32 at offset -144 (size: 4 bytes)
+Variable #t32 mangled as #t32 [LOCAL]
+Declared variable: #t32 (int) at line 312 in scope 2
+Allocated local variable #t33 at offset -148 (size: 4 bytes)
+Variable #t33 mangled as #t33 [LOCAL]
+Declared variable: #t33 (int) at line 312 in scope 2
+Allocated local variable #t34 at offset -152 (size: 4 bytes)
+Variable #t34 mangled as #t34 [LOCAL]
+Declared variable: #t34 (int) at line 312 in scope 2
+Unary expression is postfix: int
+Found variable: arr of type int[3]
+Integer literal: 1 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t35 at offset -156 (size: 4 bytes)
+Variable #t35 mangled as #t35 [LOCAL]
+Declared variable: #t35 (int) at line 312 in scope 2
+Allocated local variable #t36 at offset -160 (size: 4 bytes)
+Variable #t36 mangled as #t36 [LOCAL]
+Declared variable: #t36 (int) at line 312 in scope 2
+Allocated local variable #t37 at offset -164 (size: 4 bytes)
+Variable #t37 mangled as #t37 [LOCAL]
+Declared variable: #t37 (int) at line 312 in scope 2
+Allocated local variable #t38 at offset -168 (size: 4 bytes)
+Variable #t38 mangled as #t38 [LOCAL]
+Declared variable: #t38 (int) at line 312 in scope 2
+Unary expression is postfix: int
+Binary operation: int + intAllocated local variable #t39 at offset -172 (size: 4 bytes)
+Variable #t39 mangled as #t39 [LOCAL]
+Declared variable: #t39 (int) at line 312 in scope 2
+ -> int (numeric arithmetic)
+>>>>>>> d57e7c7 (Array and pointers fixed)
+Printing LHS and RHS types for assignment:
+int
+int
+Simple assignment from int to int
+Found function name: printf
+<<<<<<< HEAD
 String literal: "Result: %d\n" (type: string)
 Unary expression is postfix: char*
 Found variable: result of type int
@@ -91,6 +407,57 @@ Function main stack frame:
   - Local variables: 8 bytes
   - Parameters: 0 bytes
   - Total: 16 bytes
+=======
+String literal: "arr[2] value: %d\n" (type: string)
+Unary expression is postfix: char*
+Found variable: arr of type int[3]
+Integer literal: 2 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t40 at offset -176 (size: 4 bytes)
+Variable #t40 mangled as #t40 [LOCAL]
+Declared variable: #t40 (int) at line 314 in scope 2
+Allocated local variable #t41 at offset -180 (size: 4 bytes)
+Variable #t41 mangled as #t41 [LOCAL]
+Declared variable: #t41 (int) at line 314 in scope 2
+Allocated local variable #t42 at offset -184 (size: 4 bytes)
+Variable #t42 mangled as #t42 [LOCAL]
+Declared variable: #t42 (int) at line 314 in scope 2
+Allocated local variable #t43 at offset -188 (size: 4 bytes)
+Variable #t43 mangled as #t43 [LOCAL]
+Declared variable: #t43 (int) at line 314 in scope 2
+Unary expression is postfix: int
+Found compatible variadic function: printf_cp1_variadic
+Hello ji
+Allocated local variable #t44 at offset -188 (size: 0 bytes)
+Variable #t44 mangled as #t44 [LOCAL]
+Declared variable: #t44 (void) at line 314 in scope 2
+Unary expression is postfix: void
+Found variable: arr of type int[3]
+Integer literal: 2 (type: int)
+Unary expression is postfix: int
+Handling array subscript for base type: int[3]
+Resulting type after subscript: int
+Allocated local variable #t45 at offset -192 (size: 4 bytes)
+Variable #t45 mangled as #t45 [LOCAL]
+Declared variable: #t45 (int) at line 316 in scope 2
+Allocated local variable #t46 at offset -196 (size: 4 bytes)
+Variable #t46 mangled as #t46 [LOCAL]
+Declared variable: #t46 (int) at line 316 in scope 2
+Allocated local variable #t47 at offset -200 (size: 4 bytes)
+Variable #t47 mangled as #t47 [LOCAL]
+Declared variable: #t47 (int) at line 316 in scope 2
+Allocated local variable #t48 at offset -204 (size: 4 bytes)
+Variable #t48 mangled as #t48 [LOCAL]
+Declared variable: #t48 (int) at line 316 in scope 2
+Unary expression is postfix: int
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 204 bytes
+  - Parameters: 0 bytes
+  - Total: 212 bytes
+>>>>>>> d57e7c7 (Array and pointers fixed)
 TAC code appended to k.tac
 yyparse() returned 0
 
@@ -115,6 +482,7 @@ Optimized TAC written to k.tac
 
 
 Generating MIPS assembly code...
+<<<<<<< HEAD
 Total TAC instructions collected: 16
 hihi Variable v_a_add_i_i_s2 type: int
 Returning 0
@@ -127,6 +495,21 @@ Returning 0
 hihi Variable v_a_add_i_i_s2 type: int
 Returning 0
 hihi Variable v_b_add_i_i_s2 type: int
+=======
+Total TAC instructions collected: 81
+hihi Variable v_n_print_int_i_s2 type: int
+Returning 0
+hihi Variable v_f_print_float_f_s2 type: float
+Returning 1
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: #t1
+hihi Variable v_ptr_main_s2 type: int*
+Returning 0
+hihi Variable #t1 type: int
+Returning 0
+Getting offset for variable: v_ptr_main_s2
+hihi Variable #t2 type: int
+>>>>>>> d57e7c7 (Array and pointers fixed)
 Returning 0
 Getting offset for variable: #t1
 hihi Variable #t1 type: int
@@ -139,10 +522,244 @@ hihi Variable #t2 type: int
 Returning 0
 Getting offset for variable: v_result_main_s2
 Getting offset for variable: #t2
+<<<<<<< HEAD
 Getting offset for variable: v_result_main_s2
 hihi Variable v_result_main_s2 type: int
 Returning 0
 Getting offset for variable: v_result_main_s2
+=======
+Getting offset for variable: v_ptr_main_s2
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t1
+Getting offset for variable: #t2
+Getting offset for variable: v_ptr_main_s2
+Getting offset for variable: #t3
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t3
+Getting offset for variable: v_ptr_main_s2
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable #t5 type: int
+Returning 0
+hihi Variable v_x_main_s2 type: int
+Returning 0
+hihi Variable #t6 type: int
+Returning 0
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: v_ptr_main_s2
+Getting offset for variable: #t5
+Getting offset for variable: #t6
+Getting offset for variable: v_x_main_s2
+hihi Variable v_x_main_s2 type: int
+Returning 0
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t9
+hihi Variable #t9 type: int
+Returning 0
+hihi Variable #t8 type: int
+Returning 0
+hihi Variable #t9 type: int
+Returning 0
+hihi Variable #t8 type: int
+Returning 0
+hihi Variable #t11 type: int
+Returning 0
+hihi Variable #t10 type: int
+Returning 0
+Getting offset for variable: #t11
+hihi Variable v_x_main_s2 type: int
+Returning 0
+hihi Variable v_x_main_s2 type: int
+Returning 0
+Getting offset for variable: v_x_main_s2
+Getting offset for variable: #t9
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t13
+hihi Variable #t13 type: int
+Returning 0
+hihi Variable #t12 type: int
+Returning 0
+hihi Variable #t13 type: int
+Returning 0
+hihi Variable #t12 type: int
+Returning 0
+hihi Variable #t15 type: int
+Returning 0
+Getting offset for variable: #t13
+Getting offset for variable: #t15
+Getting offset for variable: #t10
+Getting offset for variable: #t11
+Getting offset for variable: #t8
+Getting offset for variable: #t14
+Getting offset for variable: #t12
+hihi Variable #t15 type: int
+Returning 0
+Getting offset for variable: #t15
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t18
+hihi Variable #t18 type: int
+Returning 0
+hihi Variable #t17 type: int
+Returning 0
+hihi Variable #t18 type: int
+Returning 0
+hihi Variable #t17 type: int
+Returning 0
+hihi Variable #t20 type: int
+Returning 0
+hihi Variable #t19 type: int
+Returning 0
+Getting offset for variable: #t20
+hihi Variable v_x_main_s2 type: int
+Returning 0
+hihi Variable v_x_main_s2 type: int
+Returning 0
+Getting offset for variable: v_x_main_s2
+hihi Variable #t21 type: int
+Returning 0
+hihi Variable #t21 type: int
+Returning 0
+Getting offset for variable: #t18
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t23
+hihi Variable #t23 type: int
+Returning 0
+hihi Variable #t22 type: int
+Returning 0
+hihi Variable #t23 type: int
+Returning 0
+hihi Variable #t22 type: int
+Returning 0
+hihi Variable #t25 type: int
+Returning 0
+hihi Variable #t24 type: int
+Returning 0
+Getting offset for variable: #t25
+hihi Variable v_x_main_s2 type: int
+Returning 0
+hihi Variable v_x_main_s2 type: int
+Returning 0
+Getting offset for variable: v_x_main_s2
+hihi Variable #t26 type: int
+Returning 0
+hihi Variable #t26 type: int
+Returning 0
+Getting offset for variable: #t23
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t28
+hihi Variable #t28 type: int
+Returning 0
+hihi Variable #t27 type: int
+Returning 0
+hihi Variable #t28 type: int
+Returning 0
+hihi Variable #t27 type: int
+Returning 0
+hihi Variable #t30 type: int
+Returning 0
+hihi Variable #t29 type: int
+Returning 0
+Getting offset for variable: #t30
+Getting offset for variable: #t28
+Getting offset for variable: #t19
+Getting offset for variable: #t20
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t32
+hihi Variable #t32 type: int
+Returning 0
+hihi Variable #t31 type: int
+Returning 0
+hihi Variable #t32 type: int
+Returning 0
+hihi Variable #t31 type: int
+Returning 0
+hihi Variable #t34 type: int
+Returning 0
+Getting offset for variable: #t32
+Getting offset for variable: #t31
+Getting offset for variable: #t17
+Getting offset for variable: #t24
+Getting offset for variable: #t25
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t36
+hihi Variable #t36 type: int
+Returning 0
+hihi Variable #t35 type: int
+Returning 0
+hihi Variable #t36 type: int
+Returning 0
+hihi Variable #t35 type: int
+Returning 0
+hihi Variable #t38 type: int
+Returning 0
+Getting offset for variable: #t36
+hihi Variable #t34 type: int
+Returning 0
+hihi Variable #t38 type: int
+Returning 0
+hihi Variable #t34 type: int
+Returning 0
+hihi Variable #t38 type: int
+Returning 0
+Getting offset for variable: #t37
+hihi Variable #t39 type: int
+Returning 0
+hihi Variable #t39 type: int
+Returning 0
+Getting offset for variable: #t34
+Getting offset for variable: #t39
+Getting offset for variable: #t35
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t41
+hihi Variable #t41 type: int
+Returning 0
+hihi Variable #t40 type: int
+Returning 0
+hihi Variable #t41 type: int
+Returning 0
+hihi Variable #t40 type: int
+Returning 0
+hihi Variable #t43 type: int
+Returning 0
+Getting offset for variable: #t41
+Getting offset for variable: #t43
+Getting offset for variable: #t38
+Getting offset for variable: #t42
+Getting offset for variable: #t40
+Getting offset for variable: #t29
+Getting offset for variable: #t30
+Getting offset for variable: #t21
+Getting offset for variable: #t22
+Getting offset for variable: #t33
+Getting offset for variable: #t26
+Getting offset for variable: #t27
+hihi Variable #t43 type: int
+Returning 0
+Getting offset for variable: #t43
+Getting offset for variable: v_arr_main_s2
+Getting offset for variable: #t46
+hihi Variable #t46 type: int
+Returning 0
+hihi Variable #t45 type: int
+Returning 0
+hihi Variable #t46 type: int
+Returning 0
+hihi Variable #t45 type: int
+Returning 0
+hihi Variable #t48 type: int
+Returning 0
+Getting offset for variable: #t46
+Getting offset for variable: #t48
+Getting offset for variable: #t47
+Getting offset for variable: #t45
+hihi Variable #t48 type: int
+Returning 0
+>>>>>>> d57e7c7 (Array and pointers fixed)
 Clean MIPS assembly code (no debug) written to k.clean.asm
 MIPS assembly code (with debug) written to k.asm
 Error log closed: k.c.errors

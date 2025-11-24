@@ -1479,6 +1479,7 @@ declaration
 	}                                 /* e.g., typedef int Integer; */
 	;
 
+
 //------------------------------------------- Return types --------------------------------------------------
 
 return_types 
@@ -2596,23 +2597,51 @@ postfix_expression
                                                         new_empty_var(), 0);
                             $$->code.push_back(argInstr);
                         } else {
-                            // For non-reference parameters, do type conversion
-                            pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
-                                change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
-                            $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                            // Check if argument is an array - arrays decay to pointers when passed
+                            if (!(*argTypes)[i].arrayDimensions.empty()) {
+                                // Array-to-pointer decay: pass address of array
+                                TACOperand* addr = new_typed_temp_var((*argTypes)[i].baseType, (*argTypes)[i].pointerLevel + 1);
+                                TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
+                                $$->code.push_back(addr_inst);
+                                
+                                TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                            addr, 
+                                                            new_empty_var(), 
+                                                            new_empty_var(), 0);
+                                $$->code.push_back(argInstr);
+                            } else {
+                                // For non-reference parameters, do type conversion
+                                pair<vector<TACInstruction*>,pair<TACOperand*,TACOperand*>> promo = 
+                                    change_type_rhs_to_lhs(func->parameters[i].type, (*argTypes)[i]);
+                                $$->code.insert($$->code.end(), promo.first.begin(), promo.first.end());
+                                TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                            promo.second.second, 
+                                                            new_empty_var(), 
+                                                            new_empty_var(), 0);
+                                $$->code.push_back(argInstr);
+                            }
+                        }
+                    } else {
+                        // For variadic arguments - check for array-to-pointer decay
+                        if (!(*argTypes)[i].arrayDimensions.empty()) {
+                            // Array-to-pointer decay for variadic args
+                            TACOperand* addr = new_typed_temp_var((*argTypes)[i].baseType, (*argTypes)[i].pointerLevel + 1);
+                            TACInstruction* addr_inst = emit(TAC_OPERATOR_ADDR_OF, addr, (*argTypes)[i].result, new_empty_var(), 0);
+                            $$->code.push_back(addr_inst);
+                            
                             TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-                                                        promo.second.second, 
+                                                        addr, 
+                                                        new_empty_var(), 
+                                                        new_empty_var(), 0);
+                            $$->code.push_back(argInstr);
+                        } else {
+                            // For variadic arguments, pass as-is (no type checking/conversion)
+                            TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
+                                                        (*argTypes)[i].result, 
                                                         new_empty_var(), 
                                                         new_empty_var(), 0);
                             $$->code.push_back(argInstr);
                         }
-                    } else {
-                        // For variadic arguments, pass as-is (no type checking/conversion)
-                        TACInstruction* argInstr = emit(TACOperator(TAC_OPERATOR_PARAM), 
-                                                    (*argTypes)[i].result, 
-                                                    new_empty_var(), 
-                                                    new_empty_var(), 0);
-                        $$->code.push_back(argInstr);
                     }
                 }
 

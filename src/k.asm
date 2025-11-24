@@ -237,9 +237,10 @@ I6:
     # === End of Next-Use Computation for Block B4 ===
 
     # Next-use information computed
-    # TAC 6: 7: function begin : main
-I7:
+    # TAC 15: 16: function begin : main
+I16:
     # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [memory:-4($fp)]
@@ -263,6 +264,7 @@ main:
     # TAC 7: 8: param 3
 I8:
     # --- Register Descriptor ---
+    # $f12: [v_f_print_float_f_s2]
     # --- End Register Descriptor ---
     # --- Storage Descriptor ---
     # #t1: [memory:-4($fp)]

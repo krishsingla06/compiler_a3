@@ -1,4 +1,5 @@
-
+void printf(char* fmt, ...){ return; }
+void scanf(char* fmt, ...){ return; }
 // // float main(){
 // //     float a = 3.5;
 // //     float b = 2.8;
@@ -294,39 +295,29 @@ void print_float(float f){
 
 
 // ok
-// int main(){
-//     // ------------------------------------
-//     int x,y,z;
-//     int *ptr = &x;
-//     int arr[3];
-//     *ptr = 10;
-//     print_int(*ptr); // should print 10
-//     print_newline();
+int main(){
+    // ------------------------------------
+    int x,y,z;
+    int *ptr = &x;
+    int arr[3];
+    *ptr = 10;
+    printf("Pointer value: %d\n", *ptr); // should print 10
+    x = *ptr+100;
+    printf("x value: %d\n", x); // should print 110
 
-//     x = *ptr+100;
-//     print_int(x); // should print 110
-//     print_newline();
+    arr[0] = x;
+   printf("arr[0] value: %d\n", arr[0]); // should print 110
+    print_newline();
+    print_int(arr[0]); // should print 110
+    print_newline();
+    arr[1] = x + 10;
+    arr[2] = x + 20;
+    arr[2] = arr[0] + arr[1]; // expected 230
 
-//     arr[0] = x;
-//     print_int(x);
-//     print_newline();
-//     print_int(arr[0]); // should print 110
-//     print_newline();
-//     arr[1] = x + 10;
-//     arr[2] = x + 20;
-//     arr[2] = arr[0] + arr[1]; // expected 230
+    printf("arr[2] value: %d\n", arr[2]); // should print 230
 
-//     print_int(arr[0]);
-//     print_newline();
-
-//     print_int(arr[1]);
-//     print_newline();
-
-//     print_int(arr[2]);
-//     print_newline();
-
-//     return arr[2];
-// }
+    return arr[2];
+}
 
 
 // ------------------------------------
