@@ -1,0 +1,94 @@
+
++-----------------------------------------------------------------------------------------+
+|                                   FUNCTION TABLE                                       |
++-----------------------------------------------------------------------------------------+
+| Function: fclose (fclose_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 5
++-----------------------------------------------------------------------------------------+
+| Function: feof (feof_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 9
++-----------------------------------------------------------------------------------------+
+| Function: fgetc (fgetc_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 6
++-----------------------------------------------------------------------------------------+
+| Function: fopen (fopen_cp1_cp1)
+|   Return type: int
+|   Parameters: char* char* 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 4
++-----------------------------------------------------------------------------------------+
+| Function: fputc (fputc_i_i)
+|   Return type: int
+|   Parameters: int int 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 7
++-----------------------------------------------------------------------------------------+
+| Function: fputs (fputs_cp1_i)
+|   Return type: int
+|   Parameters: char* int 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 8
++-----------------------------------------------------------------------------------------+
+| Function: main (main)
+|   Return type: int
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 144 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 152 bytes
+|   Declared at line: 15
++-----------------------------------------------------------------------------------------+
+| Function: print_int (print_int_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 12
++-----------------------------------------------------------------------------------------+
+| Function: print_string (print_string_cp1)
+|   Return type: int
+|   Parameters: char* 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 13
++-----------------------------------------------------------------------------------------+

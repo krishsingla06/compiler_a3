@@ -1,0 +1,627 @@
+Error log initialized: ../unit_test_cases/file_io_comprehensive.c.errors
+Starting parser...
+Entering scope level 1
+Function declarator: fopen with 2 parameters
+Registered function: fopen as fopen_cp1_cp1 returning int
+Function definition: fopen registered
+Entering scope level 2
+Allocated parameter filename (param #0) at offset 8
+DEBUG: Variable filename mangled as v_filename_fopen_cp1_cp1_s2 (function: fopen, signature: cp1_cp1, scope: 2)
+Variable filename mangled as v_filename_fopen_cp1_cp1_s2 [PARAM]
+Declared variable: filename (char*) at line 4 in scope 2
+Inserted function parameter: filename (char*)
+Allocated parameter mode (param #1) at offset 12
+DEBUG: Variable mode mangled as v_mode_fopen_cp1_cp1_s2 (function: fopen, signature: cp1_cp1, scope: 2)
+Variable mode mangled as v_mode_fopen_cp1_cp1_s2 [PARAM]
+Declared variable: mode (char*) at line 4 in scope 2
+Inserted function parameter: mode (char*)
+Function fopen_cp1_cp1 parameter space: 8 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function fopen stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 8 bytes
+  - Total: 16 bytes
+Start rule: Global declaration has 3 TAC instructions
+TAC code written to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: fclose with 1 parameters
+Registered function: fclose as fclose_i returning int
+Function definition: fclose registered
+Entering scope level 2
+Allocated parameter fd (param #0) at offset 8
+DEBUG: Variable fd mangled as v_fd_fclose_i_s2 (function: fclose, signature: i, scope: 2)
+Variable fd mangled as v_fd_fclose_i_s2 [PARAM]
+Declared variable: fd (int) at line 5 in scope 2
+Inserted function parameter: fd (int)
+Function fclose_i parameter space: 4 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function fclose stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: fgetc with 1 parameters
+Registered function: fgetc as fgetc_i returning int
+Function definition: fgetc registered
+Entering scope level 2
+Allocated parameter fd (param #0) at offset 8
+DEBUG: Variable fd mangled as v_fd_fgetc_i_s2 (function: fgetc, signature: i, scope: 2)
+Variable fd mangled as v_fd_fgetc_i_s2 [PARAM]
+Declared variable: fd (int) at line 6 in scope 2
+Inserted function parameter: fd (int)
+Function fgetc_i parameter space: 4 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function fgetc stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: fputc with 2 parameters
+Registered function: fputc as fputc_i_i returning int
+Function definition: fputc registered
+Entering scope level 2
+Allocated parameter ch (param #0) at offset 8
+DEBUG: Variable ch mangled as v_ch_fputc_i_i_s2 (function: fputc, signature: i_i, scope: 2)
+Variable ch mangled as v_ch_fputc_i_i_s2 [PARAM]
+Declared variable: ch (int) at line 7 in scope 2
+Inserted function parameter: ch (int)
+Allocated parameter fd (param #1) at offset 12
+DEBUG: Variable fd mangled as v_fd_fputc_i_i_s2 (function: fputc, signature: i_i, scope: 2)
+Variable fd mangled as v_fd_fputc_i_i_s2 [PARAM]
+Declared variable: fd (int) at line 7 in scope 2
+Inserted function parameter: fd (int)
+Function fputc_i_i parameter space: 8 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function fputc stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 8 bytes
+  - Total: 16 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: fputs with 2 parameters
+Registered function: fputs as fputs_cp1_i returning int
+Function definition: fputs registered
+Entering scope level 2
+Allocated parameter str (param #0) at offset 8
+DEBUG: Variable str mangled as v_str_fputs_cp1_i_s2 (function: fputs, signature: cp1_i, scope: 2)
+Variable str mangled as v_str_fputs_cp1_i_s2 [PARAM]
+Declared variable: str (char*) at line 8 in scope 2
+Inserted function parameter: str (char*)
+Allocated parameter fd (param #1) at offset 12
+DEBUG: Variable fd mangled as v_fd_fputs_cp1_i_s2 (function: fputs, signature: cp1_i, scope: 2)
+Variable fd mangled as v_fd_fputs_cp1_i_s2 [PARAM]
+Declared variable: fd (int) at line 8 in scope 2
+Inserted function parameter: fd (int)
+Function fputs_cp1_i parameter space: 8 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function fputs stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 8 bytes
+  - Total: 16 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: feof with 1 parameters
+Registered function: feof as feof_i returning int
+Function definition: feof registered
+Entering scope level 2
+Allocated parameter fd (param #0) at offset 8
+DEBUG: Variable fd mangled as v_fd_feof_i_s2 (function: feof, signature: i, scope: 2)
+Variable fd mangled as v_fd_feof_i_s2 [PARAM]
+Declared variable: fd (int) at line 9 in scope 2
+Inserted function parameter: fd (int)
+Function feof_i parameter space: 4 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function feof stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: print_int with 1 parameters
+Registered function: print_int as print_int_i returning int
+Function definition: print_int registered
+Entering scope level 2
+Allocated parameter x (param #0) at offset 8
+DEBUG: Variable x mangled as v_x_print_int_i_s2 (function: print_int, signature: i, scope: 2)
+Variable x mangled as v_x_print_int_i_s2 [PARAM]
+Declared variable: x (int) at line 12 in scope 2
+Inserted function parameter: x (int)
+Function print_int_i parameter space: 4 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function print_int stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: print_string with 1 parameters
+Registered function: print_string as print_string_cp1 returning int
+Function definition: print_string registered
+Entering scope level 2
+Allocated parameter s (param #0) at offset 8
+DEBUG: Variable s mangled as v_s_print_string_cp1_s2 (function: print_string, signature: cp1, scope: 2)
+Variable s mangled as v_s_print_string_cp1_s2 [PARAM]
+Declared variable: s (char*) at line 13 in scope 2
+Inserted function parameter: s (char*)
+Function print_string_cp1 parameter space: 4 bytes
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function print_string stack frame:
+  - Local variables: 0 bytes
+  - Parameters: 4 bytes
+  - Total: 12 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+Function declarator: main with no parameters
+Registered function: main as main returning int
+Function definition: main registered
+Entering scope level 2
+Function main parameter space: 0 bytes
+DEBUG: Variable file_write mangled as v_file_write_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable file_write at offset -4 (size: 4 bytes)
+DEBUG: Variable file_write mangled as v_file_write_main_s2 (function: main, signature: , scope: 2)
+Variable file_write mangled as v_file_write_main_s2 [LOCAL]
+Declared variable: file_write (int) at line 16 in scope 2
+DEBUG: Variable file_read mangled as v_file_read_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable file_read at offset -8 (size: 4 bytes)
+DEBUG: Variable file_read mangled as v_file_read_main_s2 (function: main, signature: , scope: 2)
+Variable file_read mangled as v_file_read_main_s2 [LOCAL]
+Declared variable: file_read (int) at line 17 in scope 2
+DEBUG: Variable status mangled as v_status_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable status at offset -12 (size: 4 bytes)
+DEBUG: Variable status mangled as v_status_main_s2 (function: main, signature: , scope: 2)
+Variable status mangled as v_status_main_s2 [LOCAL]
+Declared variable: status (int) at line 18 in scope 2
+DEBUG: Variable character mangled as v_character_main_s2 (function: main, signature: , scope: 2)
+Allocated local variable character at offset -16 (size: 4 bytes)
+DEBUG: Variable character mangled as v_character_main_s2 (function: main, signature: , scope: 2)
+Variable character mangled as v_character_main_s2 [LOCAL]
+Declared variable: character (int) at line 19 in scope 2
+Found function name: print_string
+String literal: "Opening file for writing..." (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t1 at offset -20 (size: 4 bytes)
+Variable #t1 mangled as #t1 [LOCAL]
+Declared variable: #t1 (int) at line 22 in scope 2
+Found variable: file_write of type int
+Found function name: fopen
+String literal: "output.txt", "w" (type: string)
+Found variable: file_write of type int
+Integer literal: 1 (type: int)
+Unary operation: -intAllocated local variable #t2 at offset -24 (size: 4 bytes)
+Variable #t2 mangled as #t2 [LOCAL]
+Declared variable: #t2 (int) at line 25 in scope 2
+ -> int
+Binary operation: int != int -> int (numeric comparison)
+Allocated local variable #t3 at offset -28 (size: 4 bytes)
+Variable #t3 mangled as #t3 [LOCAL]
+Declared variable: #t3 (int) at line 25 in scope 2
+Entering scope level 3
+Function main parameter space: 0 bytes
+Found function name: print_string
+String literal: "File opened successfully" (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t4 at offset -32 (size: 4 bytes)
+Variable #t4 mangled as #t4 [LOCAL]
+Declared variable: #t4 (int) at line 26 in scope 3
+Found function name: fputc
+Integer literal: 72 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t5 at offset -36 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 29 in scope 3
+Found function name: fputc
+Integer literal: 101 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t6 at offset -40 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 30 in scope 3
+Found function name: fputc
+Integer literal: 108 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t7 at offset -44 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 31 in scope 3
+Found function name: fputc
+Integer literal: 108 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t8 at offset -48 (size: 4 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (int) at line 32 in scope 3
+Found function name: fputc
+Integer literal: 111 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t9 at offset -52 (size: 4 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (int) at line 33 in scope 3
+Found function name: fputc
+Integer literal: 10 (type: int)
+Found variable: file_write of type int
+Found exact function match: fputc_i_i
+Allocated local variable #t10 at offset -56 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 34 in scope 3
+Found function name: fputs
+String literal: "This is a test string" (type: string)
+Found variable: file_write of type int
+Found exact function match: fputs_cp1_i
+Hello ji
+Allocated local variable #t11 at offset -60 (size: 4 bytes)
+Variable #t11 mangled as #t11 [LOCAL]
+Declared variable: #t11 (int) at line 37 in scope 3
+Found variable: status of type int
+Found function name: fclose
+Found variable: file_write of type int
+Found exact function match: fclose_i
+Allocated local variable #t12 at offset -64 (size: 4 bytes)
+Variable #t12 mangled as #t12 [LOCAL]
+Declared variable: #t12 (int) at line 39 in scope 3
+Simple assignment from int to int
+Found function name: print_string
+String literal: "File closed" (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t13 at offset -68 (size: 4 bytes)
+Variable #t13 mangled as #t13 [LOCAL]
+Declared variable: #t13 (int) at line 40 in scope 3
+Compound statement with declarations and statements
+Found function name: print_string
+String literal: "Opening file for reading..." (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t14 at offset -72 (size: 4 bytes)
+Variable #t14 mangled as #t14 [LOCAL]
+Declared variable: #t14 (int) at line 44 in scope 2
+Found variable: file_read of type int
+Found function name: fopen
+String literal: "output.txt", "r" (type: string)
+Found variable: file_read of type int
+Integer literal: 1 (type: int)
+Unary operation: -intAllocated local variable #t15 at offset -76 (size: 4 bytes)
+Variable #t15 mangled as #t15 [LOCAL]
+Declared variable: #t15 (int) at line 47 in scope 2
+ -> int
+Binary operation: int != int -> int (numeric comparison)
+Allocated local variable #t16 at offset -80 (size: 4 bytes)
+Variable #t16 mangled as #t16 [LOCAL]
+Declared variable: #t16 (int) at line 47 in scope 2
+Entering scope level 3
+Function main parameter space: 0 bytes
+Found function name: print_string
+String literal: "Reading characters:" (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t17 at offset -84 (size: 4 bytes)
+Variable #t17 mangled as #t17 [LOCAL]
+Declared variable: #t17 (int) at line 48 in scope 3
+Found variable: character of type int
+Found function name: fgetc
+Found variable: file_read of type int
+Found exact function match: fgetc_i
+Allocated local variable #t18 at offset -88 (size: 4 bytes)
+Variable #t18 mangled as #t18 [LOCAL]
+Declared variable: #t18 (int) at line 51 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: character of type int
+Found exact function match: print_int_i
+Allocated local variable #t19 at offset -92 (size: 4 bytes)
+Variable #t19 mangled as #t19 [LOCAL]
+Declared variable: #t19 (int) at line 52 in scope 3
+Found variable: character of type int
+Found function name: fgetc
+Found variable: file_read of type int
+Found exact function match: fgetc_i
+Allocated local variable #t20 at offset -96 (size: 4 bytes)
+Variable #t20 mangled as #t20 [LOCAL]
+Declared variable: #t20 (int) at line 54 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: character of type int
+Found exact function match: print_int_i
+Allocated local variable #t21 at offset -100 (size: 4 bytes)
+Variable #t21 mangled as #t21 [LOCAL]
+Declared variable: #t21 (int) at line 55 in scope 3
+Found variable: character of type int
+Found function name: fgetc
+Found variable: file_read of type int
+Found exact function match: fgetc_i
+Allocated local variable #t22 at offset -104 (size: 4 bytes)
+Variable #t22 mangled as #t22 [LOCAL]
+Declared variable: #t22 (int) at line 57 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: character of type int
+Found exact function match: print_int_i
+Allocated local variable #t23 at offset -108 (size: 4 bytes)
+Variable #t23 mangled as #t23 [LOCAL]
+Declared variable: #t23 (int) at line 58 in scope 3
+Found variable: character of type int
+Found function name: fgetc
+Found variable: file_read of type int
+Found exact function match: fgetc_i
+Allocated local variable #t24 at offset -112 (size: 4 bytes)
+Variable #t24 mangled as #t24 [LOCAL]
+Declared variable: #t24 (int) at line 60 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: character of type int
+Found exact function match: print_int_i
+Allocated local variable #t25 at offset -116 (size: 4 bytes)
+Variable #t25 mangled as #t25 [LOCAL]
+Declared variable: #t25 (int) at line 61 in scope 3
+Found variable: character of type int
+Found function name: fgetc
+Found variable: file_read of type int
+Found exact function match: fgetc_i
+Allocated local variable #t26 at offset -120 (size: 4 bytes)
+Variable #t26 mangled as #t26 [LOCAL]
+Declared variable: #t26 (int) at line 63 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: character of type int
+Found exact function match: print_int_i
+Allocated local variable #t27 at offset -124 (size: 4 bytes)
+Variable #t27 mangled as #t27 [LOCAL]
+Declared variable: #t27 (int) at line 64 in scope 3
+Found variable: status of type int
+Found function name: feof
+Found variable: file_read of type int
+Found exact function match: feof_i
+Allocated local variable #t28 at offset -128 (size: 4 bytes)
+Variable #t28 mangled as #t28 [LOCAL]
+Declared variable: #t28 (int) at line 67 in scope 3
+Simple assignment from int to int
+Found function name: print_int
+Found variable: status of type int
+Found exact function match: print_int_i
+Allocated local variable #t29 at offset -132 (size: 4 bytes)
+Variable #t29 mangled as #t29 [LOCAL]
+Declared variable: #t29 (int) at line 68 in scope 3
+Found variable: status of type int
+Found function name: fclose
+Found variable: file_read of type int
+Found exact function match: fclose_i
+Allocated local variable #t30 at offset -136 (size: 4 bytes)
+Variable #t30 mangled as #t30 [LOCAL]
+Declared variable: #t30 (int) at line 70 in scope 3
+Simple assignment from int to int
+Found function name: print_string
+String literal: "File closed after reading" (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t31 at offset -140 (size: 4 bytes)
+Variable #t31 mangled as #t31 [LOCAL]
+Declared variable: #t31 (int) at line 71 in scope 3
+Compound statement with declarations and statements
+Found function name: print_string
+String literal: "File I/O test completed" (type: string)
+Found exact function match: print_string_cp1
+Hello ji
+Allocated local variable #t32 at offset -144 (size: 4 bytes)
+Variable #t32 mangled as #t32 [LOCAL]
+Declared variable: #t32 (int) at line 74 in scope 2
+Integer literal: 0 (type: int)
+Compound statement with declarations and statements
+Function main stack frame:
+  - Local variables: 144 bytes
+  - Parameters: 0 bytes
+  - Total: 152 bytes
+TAC code appended to ../unit_test_cases/file_io_comprehensive.tac
+yyparse() returned 0
+
++-----------------------------------------------------------------------------------------+
+|                                    TYPEDEF TABLE                                       |
++-----------------------------------------------------------------------------------------+
+No typedefs defined.
+
++-----------------------------------------------------------------------------------------+
+|                                    ENUM TABLE                                          |
++-----------------------------------------------------------------------------------------+
+No enums defined.
+
+
+=== Optimizing TAC ===
+=== Starting Goto Chain Optimization ===
+Found goto chain: L30 -> L33
+Found goto chain: L32 -> L34
+Found goto chain: L35 -> L64
+Found goto chain: L68 -> L71
+Found goto chain: L70 -> L72
+Found goto chain: L73 -> L111
+Resolving transitive chains...
+=== Goto Chain Optimization Complete ===
+Total replacements: 0
+=== TAC Optimization Complete ===
+
+Rewriting optimized TAC to file...
+Optimized TAC written to ../unit_test_cases/file_io_comprehensive.tac
+
+
+Generating MIPS assembly code...
+Total TAC instructions collected: 114
+hihi Variable v_filename_fopen_cp1_cp1_s2 type: char*
+Returning 0
+hihi Variable v_mode_fopen_cp1_cp1_s2 type: char*
+Returning 0
+hihi Variable v_fd_fclose_i_s2 type: int
+Returning 0
+hihi Variable v_fd_fgetc_i_s2 type: int
+Returning 0
+hihi Variable v_ch_fputc_i_i_s2 type: int
+Returning 0
+hihi Variable v_fd_fputc_i_i_s2 type: int
+Returning 0
+hihi Variable v_str_fputs_cp1_i_s2 type: char*
+Returning 0
+hihi Variable v_fd_fputs_cp1_i_s2 type: int
+Returning 0
+hihi Variable v_fd_feof_i_s2 type: int
+Returning 0
+hihi Variable v_x_print_int_i_s2 type: int
+Returning 0
+hihi Variable v_s_print_string_cp1_s2 type: char*
+Returning 0
+Getting offset for variable: "Opening file for writing..."
+Getting offset for variable: #t2
+hihi Variable v_file_write_main_s2 type: int
+Returning 0
+hihi Variable #t2 type: int
+Returning 0
+hihi Variable v_file_write_main_s2 type: int
+Returning 0
+Getting offset for variable: v_file_write_main_s2
+hihi Variable #t2 type: int
+Returning 0
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t3
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t3
+hihi Variable #t3 type: int
+Returning 0
+Getting offset for variable: #t3
+Getting offset for variable: "File opened successfully"
+Getting offset for variable: "File opened successfully"
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t5
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t6
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t7
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t8
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t9
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t10
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t11
+Getting offset for variable: v_file_write_main_s2
+hihi Variable v_status_main_s2 type: int
+Returning 0
+hihi Variable #t12 type: int
+Returning 0
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_file_write_main_s2
+Getting offset for variable: #t12
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: "File closed"
+Getting offset for variable: "Opening file for reading..."
+Getting offset for variable: #t15
+hihi Variable v_file_read_main_s2 type: int
+Returning 0
+hihi Variable #t15 type: int
+Returning 0
+hihi Variable v_file_read_main_s2 type: int
+Returning 0
+Getting offset for variable: v_file_read_main_s2
+hihi Variable #t15 type: int
+Returning 0
+hihi Variable #t16 type: int
+Returning 0
+Getting offset for variable: #t16
+hihi Variable #t16 type: int
+Returning 0
+Getting offset for variable: #t16
+hihi Variable #t16 type: int
+Returning 0
+Getting offset for variable: #t16
+Getting offset for variable: "Reading characters:"
+Getting offset for variable: "Reading characters:"
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_character_main_s2 type: int
+Returning 0
+hihi Variable #t18 type: int
+Returning 0
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t18
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_character_main_s2 type: int
+Returning 0
+hihi Variable #t20 type: int
+Returning 0
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t20
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_character_main_s2 type: int
+Returning 0
+hihi Variable #t22 type: int
+Returning 0
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t22
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_character_main_s2 type: int
+Returning 0
+hihi Variable #t24 type: int
+Returning 0
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t24
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_character_main_s2 type: int
+Returning 0
+hihi Variable #t26 type: int
+Returning 0
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t26
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_character_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_status_main_s2 type: int
+Returning 0
+hihi Variable #t28 type: int
+Returning 0
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t28
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_file_read_main_s2
+hihi Variable v_status_main_s2 type: int
+Returning 0
+hihi Variable #t30 type: int
+Returning 0
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: v_file_read_main_s2
+Getting offset for variable: #t30
+Getting offset for variable: v_status_main_s2
+Getting offset for variable: "File closed after reading"
+Getting offset for variable: "File I/O test completed"
+Clean MIPS assembly code (no debug) written to ../unit_test_cases/file_io_comprehensive.clean.asm
+MIPS assembly code (with debug) written to ../unit_test_cases/file_io_comprehensive.asm
+Error log closed: ../unit_test_cases/file_io_comprehensive.c.errors

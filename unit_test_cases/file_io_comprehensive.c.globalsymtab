@@ -1,0 +1,59 @@
+
++=========================================================================================+
+|                              GLOBAL SYMBOL TABLE                                        |
++=========================================================================================+
+
+Total Symbols: 47
+
++-----------------------------------------------------------------------------------------+
+| Name                | Mangled Name                    | Type        | Location | Offset  |
++-----------------------------------------------------------------------------------------+
+| #t1                 | #t1                             | int         | LOCAL    | -20     |
+| #t10                | #t10                            | int         | LOCAL    | -56     |
+| #t11                | #t11                            | int         | LOCAL    | -60     |
+| #t12                | #t12                            | int         | LOCAL    | -64     |
+| #t13                | #t13                            | int         | LOCAL    | -68     |
+| #t14                | #t14                            | int         | LOCAL    | -72     |
+| #t15                | #t15                            | int         | LOCAL    | -76     |
+| #t16                | #t16                            | int         | LOCAL    | -80     |
+| #t17                | #t17                            | int         | LOCAL    | -84     |
+| #t18                | #t18                            | int         | LOCAL    | -88     |
+| #t19                | #t19                            | int         | LOCAL    | -92     |
+| #t2                 | #t2                             | int         | LOCAL    | -24     |
+| #t20                | #t20                            | int         | LOCAL    | -96     |
+| #t21                | #t21                            | int         | LOCAL    | -100    |
+| #t22                | #t22                            | int         | LOCAL    | -104    |
+| #t23                | #t23                            | int         | LOCAL    | -108    |
+| #t24                | #t24                            | int         | LOCAL    | -112    |
+| #t25                | #t25                            | int         | LOCAL    | -116    |
+| #t26                | #t26                            | int         | LOCAL    | -120    |
+| #t27                | #t27                            | int         | LOCAL    | -124    |
+| #t28                | #t28                            | int         | LOCAL    | -128    |
+| #t29                | #t29                            | int         | LOCAL    | -132    |
+| #t3                 | #t3                             | int         | LOCAL    | -28     |
+| #t30                | #t30                            | int         | LOCAL    | -136    |
+| #t31                | #t31                            | int         | LOCAL    | -140    |
+| #t32                | #t32                            | int         | LOCAL    | -144    |
+| #t4                 | #t4                             | int         | LOCAL    | -32     |
+| #t5                 | #t5                             | int         | LOCAL    | -36     |
+| #t6                 | #t6                             | int         | LOCAL    | -40     |
+| #t7                 | #t7                             | int         | LOCAL    | -44     |
+| #t8                 | #t8                             | int         | LOCAL    | -48     |
+| #t9                 | #t9                             | int         | LOCAL    | -52     |
+| ch                  | v_ch_fputc_i_i_s2               | int         | PARAM#0  | 8       |
+| character           | v_character_main_s2             | int         | LOCAL    | -16     |
+| fd                  | v_fd_fclose_i_s2                | int         | PARAM#0  | 8       |
+| fd                  | v_fd_feof_i_s2                  | int         | PARAM#0  | 8       |
+| fd                  | v_fd_fgetc_i_s2                 | int         | PARAM#0  | 8       |
+| fd                  | v_fd_fputc_i_i_s2               | int         | PARAM#1  | 12      |
+| fd                  | v_fd_fputs_cp1_i_s2             | int         | PARAM#1  | 12      |
+| file_read           | v_file_read_main_s2             | int         | LOCAL    | -8      |
+| file_write          | v_file_write_main_s2            | int         | LOCAL    | -4      |
+| filename            | v_filename_fopen_cp1_cp1_s2     | char*       | PARAM#0  | 8       |
+| mode                | v_mode_fopen_cp1_cp1_s2         | char*       | PARAM#1  | 12      |
+| s                   | v_s_print_string_cp1_s2         | char*       | PARAM#0  | 8       |
+| status              | v_status_main_s2                | int         | LOCAL    | -12     |
+| str                 | v_str_fputs_cp1_i_s2            | char*       | PARAM#0  | 8       |
+| x                   | v_x_print_int_i_s2              | int         | PARAM#0  | 8       |
++-----------------------------------------------------------------------------------------+
+

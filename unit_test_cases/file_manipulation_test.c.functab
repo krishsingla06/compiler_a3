@@ -1,0 +1,114 @@
+
++-----------------------------------------------------------------------------------------+
+|                                   FUNCTION TABLE                                       |
++-----------------------------------------------------------------------------------------+
+| Function: fclose (fclose_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 5
++-----------------------------------------------------------------------------------------+
+| Function: feof (feof_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 12
++-----------------------------------------------------------------------------------------+
+| Function: ferror (ferror_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 13
++-----------------------------------------------------------------------------------------+
+| Function: fgetc (fgetc_i)
+|   Return type: int
+|   Parameters: int 
+|   Stack Frame:
+|     - Parameter space: 4 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 12 bytes
+|   Declared at line: 6
++-----------------------------------------------------------------------------------------+
+| Function: fgets (fgets_cp1_i_i)
+|   Return type: int
+|   Parameters: char* int int 
+|   Stack Frame:
+|     - Parameter space: 12 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 20 bytes
+|   Declared at line: 8
++-----------------------------------------------------------------------------------------+
+| Function: fopen (fopen_cp1_cp1)
+|   Return type: int
+|   Parameters: char* char* 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 4
++-----------------------------------------------------------------------------------------+
+| Function: fprintf (fprintf_i_cp1_i)
+|   Return type: int
+|   Parameters: int char* int 
+|   Stack Frame:
+|     - Parameter space: 12 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 20 bytes
+|   Declared at line: 10
++-----------------------------------------------------------------------------------------+
+| Function: fputc (fputc_i_i)
+|   Return type: int
+|   Parameters: int int 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 7
++-----------------------------------------------------------------------------------------+
+| Function: fputs (fputs_cp1_i)
+|   Return type: int
+|   Parameters: char* int 
+|   Stack Frame:
+|     - Parameter space: 8 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 16 bytes
+|   Declared at line: 9
++-----------------------------------------------------------------------------------------+
+| Function: fscanf (fscanf_i_cp1_ip1)
+|   Return type: int
+|   Parameters: int char* int* 
+|   Stack Frame:
+|     - Parameter space: 12 bytes
+|     - Local var space: 0 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 20 bytes
+|   Declared at line: 11
++-----------------------------------------------------------------------------------------+
+| Function: main (main)
+|   Return type: int
+|   Parameters: 
+|   Stack Frame:
+|     - Parameter space: 0 bytes
+|     - Local var space: 60 bytes
+|     - 8 byte for ra and fp
+|     - Total frame size: 68 bytes
+|   Declared at line: 15
++-----------------------------------------------------------------------------------------+

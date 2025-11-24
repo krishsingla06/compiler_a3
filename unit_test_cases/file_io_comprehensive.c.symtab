@@ -1,0 +1,342 @@
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - filename (char*) declared at line 4 [mangled: v_filename_fopen_cp1_cp1_s2] [PARAM #0, offset: 8]
+  - mode (char*) declared at line 4 [mangled: v_mode_fopen_cp1_cp1_s2] [PARAM #1, offset: 12]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - filename (char*)
+  - mode (char*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - fd (int) declared at line 5 [mangled: v_fd_fclose_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - fd (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - fd (int) declared at line 6 [mangled: v_fd_fgetc_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - fd (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - ch (int) declared at line 7 [mangled: v_ch_fputc_i_i_s2] [PARAM #0, offset: 8]
+  - fd (int) declared at line 7 [mangled: v_fd_fputc_i_i_s2] [PARAM #1, offset: 12]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - ch (int)
+  - fd (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - fd (int) declared at line 8 [mangled: v_fd_fputs_cp1_i_s2] [PARAM #1, offset: 12]
+  - str (char*) declared at line 8 [mangled: v_str_fputs_cp1_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - fd (int)
+  - str (char*)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - fd (int) declared at line 9 [mangled: v_fd_feof_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - fd (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - x (int) declared at line 12 [mangled: v_x_print_int_i_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - x (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - s (char*) declared at line 13 [mangled: v_s_print_string_cp1_s2] [PARAM #0, offset: 8]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - s (char*)
+
+
+
+
+
+Exiting scope level 3
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 22 [mangled: #t1] [LOCAL, offset: -20]
+  - #t2 (int) declared at line 25 [mangled: #t2] [LOCAL, offset: -24]
+  - #t3 (int) declared at line 25 [mangled: #t3] [LOCAL, offset: -28]
+  - character (int) declared at line 19 [mangled: v_character_main_s2] [LOCAL, offset: -16]
+  - file_read (int) declared at line 17 [mangled: v_file_read_main_s2] [LOCAL, offset: -8]
+  - file_write (int) declared at line 16 [mangled: v_file_write_main_s2] [LOCAL, offset: -4]
+  - status (int) declared at line 18 [mangled: v_status_main_s2] [LOCAL, offset: -12]
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 3 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t10 (int) declared at line 34 [mangled: #t10] [LOCAL, offset: -56]
+  - #t11 (int) declared at line 37 [mangled: #t11] [LOCAL, offset: -60]
+  - #t12 (int) declared at line 39 [mangled: #t12] [LOCAL, offset: -64]
+  - #t13 (int) declared at line 40 [mangled: #t13] [LOCAL, offset: -68]
+  - #t4 (int) declared at line 26 [mangled: #t4] [LOCAL, offset: -32]
+  - #t5 (int) declared at line 29 [mangled: #t5] [LOCAL, offset: -36]
+  - #t6 (int) declared at line 30 [mangled: #t6] [LOCAL, offset: -40]
+  - #t7 (int) declared at line 31 [mangled: #t7] [LOCAL, offset: -44]
+  - #t8 (int) declared at line 32 [mangled: #t8] [LOCAL, offset: -48]
+  - #t9 (int) declared at line 33 [mangled: #t9] [LOCAL, offset: -52]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 3:
+  - #t10 (int)
+  - #t11 (int)
+  - #t12 (int)
+  - #t13 (int)
+  - #t4 (int)
+  - #t5 (int)
+  - #t6 (int)
+  - #t7 (int)
+  - #t8 (int)
+  - #t9 (int)
+
+
+
+
+
+Exiting scope level 3
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 22 [mangled: #t1] [LOCAL, offset: -20]
+  - #t14 (int) declared at line 44 [mangled: #t14] [LOCAL, offset: -72]
+  - #t15 (int) declared at line 47 [mangled: #t15] [LOCAL, offset: -76]
+  - #t16 (int) declared at line 47 [mangled: #t16] [LOCAL, offset: -80]
+  - #t2 (int) declared at line 25 [mangled: #t2] [LOCAL, offset: -24]
+  - #t3 (int) declared at line 25 [mangled: #t3] [LOCAL, offset: -28]
+  - character (int) declared at line 19 [mangled: v_character_main_s2] [LOCAL, offset: -16]
+  - file_read (int) declared at line 17 [mangled: v_file_read_main_s2] [LOCAL, offset: -8]
+  - file_write (int) declared at line 16 [mangled: v_file_write_main_s2] [LOCAL, offset: -4]
+  - status (int) declared at line 18 [mangled: v_status_main_s2] [LOCAL, offset: -12]
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 3 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t17 (int) declared at line 48 [mangled: #t17] [LOCAL, offset: -84]
+  - #t18 (int) declared at line 51 [mangled: #t18] [LOCAL, offset: -88]
+  - #t19 (int) declared at line 52 [mangled: #t19] [LOCAL, offset: -92]
+  - #t20 (int) declared at line 54 [mangled: #t20] [LOCAL, offset: -96]
+  - #t21 (int) declared at line 55 [mangled: #t21] [LOCAL, offset: -100]
+  - #t22 (int) declared at line 57 [mangled: #t22] [LOCAL, offset: -104]
+  - #t23 (int) declared at line 58 [mangled: #t23] [LOCAL, offset: -108]
+  - #t24 (int) declared at line 60 [mangled: #t24] [LOCAL, offset: -112]
+  - #t25 (int) declared at line 61 [mangled: #t25] [LOCAL, offset: -116]
+  - #t26 (int) declared at line 63 [mangled: #t26] [LOCAL, offset: -120]
+  - #t27 (int) declared at line 64 [mangled: #t27] [LOCAL, offset: -124]
+  - #t28 (int) declared at line 67 [mangled: #t28] [LOCAL, offset: -128]
+  - #t29 (int) declared at line 68 [mangled: #t29] [LOCAL, offset: -132]
+  - #t30 (int) declared at line 70 [mangled: #t30] [LOCAL, offset: -136]
+  - #t31 (int) declared at line 71 [mangled: #t31] [LOCAL, offset: -140]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 3:
+  - #t17 (int)
+  - #t18 (int)
+  - #t19 (int)
+  - #t20 (int)
+  - #t21 (int)
+  - #t22 (int)
+  - #t23 (int)
+  - #t24 (int)
+  - #t25 (int)
+  - #t26 (int)
+  - #t27 (int)
+  - #t28 (int)
+  - #t29 (int)
+  - #t30 (int)
+  - #t31 (int)
+
+
+
+
+
+Exiting scope level 2
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 2 ------------------------------------------------------+
++-----------------------------------------------------------------------------------------+
+  - #t1 (int) declared at line 22 [mangled: #t1] [LOCAL, offset: -20]
+  - #t14 (int) declared at line 44 [mangled: #t14] [LOCAL, offset: -72]
+  - #t15 (int) declared at line 47 [mangled: #t15] [LOCAL, offset: -76]
+  - #t16 (int) declared at line 47 [mangled: #t16] [LOCAL, offset: -80]
+  - #t2 (int) declared at line 25 [mangled: #t2] [LOCAL, offset: -24]
+  - #t3 (int) declared at line 25 [mangled: #t3] [LOCAL, offset: -28]
+  - #t32 (int) declared at line 74 [mangled: #t32] [LOCAL, offset: -144]
+  - character (int) declared at line 19 [mangled: v_character_main_s2] [LOCAL, offset: -16]
+  - file_read (int) declared at line 17 [mangled: v_file_read_main_s2] [LOCAL, offset: -8]
+  - file_write (int) declared at line 16 [mangled: v_file_write_main_s2] [LOCAL, offset: -4]
+  - status (int) declared at line 18 [mangled: v_status_main_s2] [LOCAL, offset: -12]
++-----------------------------------------------------------------------------------------+
+Destroying symbols from scope 2:
+  - #t1 (int)
+  - #t14 (int)
+  - #t15 (int)
+  - #t16 (int)
+  - #t2 (int)
+  - #t3 (int)
+  - #t32 (int)
+  - character (int)
+  - file_read (int)
+  - file_write (int)
+  - status (int)
+
+
+
+
+
+Exiting scope level 1
+
++-----------------------------------------------------------------------------------------+
+|                                    SYMBOL TABLE                                        |
++-----------------------------------------------------------------------------------------+
+
++- SCOPE LEVEL 1 ------------------------------------------------------+
+| (empty scope)                                                                       |
++-----------------------------------------------------------------------------------------+
+
+
+
+
+

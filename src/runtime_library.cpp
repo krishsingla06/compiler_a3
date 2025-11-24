@@ -33,6 +33,19 @@ set<string> RuntimeLibrary::get_supported_functions() {
     functions.insert("scanf");
     // functions.insert("malloc");
     // functions.insert("free");
+    
+    // File manipulation functions
+    functions.insert("fopen");
+    functions.insert("fclose");
+    functions.insert("fgetc");
+    functions.insert("fputc");
+    functions.insert("fgets");
+    functions.insert("fputs");
+    functions.insert("fprintf");
+    functions.insert("fscanf");
+    functions.insert("feof");
+    functions.insert("ferror");
+    
     return functions;
 }
 

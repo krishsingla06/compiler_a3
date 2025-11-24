@@ -2602,6 +2602,538 @@ if (is_scanf) {
     pending_params.clear();
     return;
 }
+    
+    // ===== SPECIAL HANDLING FOR FILE MANIPULATION FUNCTIONS =====
+    bool is_fopen = (func_name.find("fopen") == 0);
+    bool is_fclose = (func_name.find("fclose") == 0);
+    bool is_fgetc = (func_name.find("fgetc") == 0);
+    bool is_fputc = (func_name.find("fputc") == 0);
+    bool is_fgets = (func_name.find("fgets") == 0);
+    bool is_fputs = (func_name.find("fputs") == 0);
+    bool is_fprintf = (func_name.find("fprintf") == 0);
+    bool is_fscanf = (func_name.find("fscanf") == 0);
+    bool is_feof = (func_name.find("feof") == 0);
+    bool is_ferror = (func_name.find("ferror") == 0);
+    
+    if (is_fopen) {
+        emit_comment("=== Call library function: fopen ===");
+        runtime_lib.mark_function_used("fopen");
+        
+        if (pending_params.size() < 2) {
+            emit_comment("ERROR: fopen requires 2 parameters (filename, mode)");
+            pending_params.clear();
+            return;
+        }
+        
+        // Parameters: filename (string), mode (string)
+        string filename_param = pending_params[0];
+        string mode_param = pending_params[1];
+        
+        // Allocate space for parameters on stack
+        emit("addiu $sp, $sp, -8");
+        
+        // Store filename
+        if (!filename_param.empty() && filename_param[0] == '"') {
+            string str_label = add_string_literal(filename_param);
+            emit("la $t0, " + str_label);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(filename_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        // Store mode
+        if (!mode_param.empty() && mode_param[0] == '"') {
+            string str_label = add_string_literal(mode_param);
+            emit("la $t0, " + str_label);
+            emit("sw $t0, 4($sp)");
+        } else {
+            string param_reg = ensure_in_register(mode_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        emit("jal __lib_fopen");
+        emit("addiu $sp, $sp, 8");
+        
+        // Store return value (file descriptor) if needed
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            emit_comment("DEBUG: fopen return value from $v0 to " + dest_reg);
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fopen ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fclose) {
+        emit_comment("=== Call library function: fclose ===");
+        runtime_lib.mark_function_used("fclose");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: fclose requires 1 parameter (file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        
+        // Allocate space for parameter on stack
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        emit("jal __lib_fclose");
+        emit("addiu $sp, $sp, 4");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fclose ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fgetc) {
+        emit_comment("=== Call library function: fgetc ===");
+        runtime_lib.mark_function_used("fgetc");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: fgetc requires 1 parameter (file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        emit("jal __lib_fgetc");
+        emit("addiu $sp, $sp, 4");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fgetc ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fputc) {
+        emit_comment("=== Call library function: fputc ===");
+        runtime_lib.mark_function_used("fputc");
+        
+        if (pending_params.size() < 2) {
+            emit_comment("ERROR: fputc requires 2 parameters (char, file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string char_param = pending_params[0];
+        string fd_param = pending_params[1];
+        
+        emit("addiu $sp, $sp, -8");
+        
+        // Store character
+        bool is_constant = !char_param.empty() && (isdigit(char_param[0]) || char_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + char_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(char_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        // Store file descriptor
+        is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 4($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        emit("jal __lib_fputc");
+        emit("addiu $sp, $sp, 8");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fputc ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fgets) {
+        emit_comment("=== Call library function: fgets ===");
+        runtime_lib.mark_function_used("fgets");
+        
+        if (pending_params.size() < 3) {
+            emit_comment("ERROR: fgets requires 3 parameters (buffer, size, file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string buffer_param = pending_params[0];
+        string size_param = pending_params[1];
+        string fd_param = pending_params[2];
+        
+        emit("addiu $sp, $sp, -12");
+        
+        // Store buffer address
+        string param_reg = ensure_in_register(buffer_param);
+        emit("sw " + param_reg + ", 0($sp)");
+        
+        // Store size
+        bool is_constant = !size_param.empty() && (isdigit(size_param[0]) || size_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + size_param);
+            emit("sw $t0, 4($sp)");
+        } else {
+            param_reg = ensure_in_register(size_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        // Store file descriptor
+        is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 8($sp)");
+        } else {
+            param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 8($sp)");
+        }
+        
+        emit("jal __lib_fgets");
+        emit("addiu $sp, $sp, 12");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fgets ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fputs) {
+        emit_comment("=== Call library function: fputs ===");
+        runtime_lib.mark_function_used("fputs");
+        
+        if (pending_params.size() < 2) {
+            emit_comment("ERROR: fputs requires 2 parameters (string, file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string str_param = pending_params[0];
+        string fd_param = pending_params[1];
+        
+        emit("addiu $sp, $sp, -8");
+        
+        // Store string address
+        if (!str_param.empty() && str_param[0] == '"') {
+            string str_label = add_string_literal(str_param);
+            emit("la $t0, " + str_label);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(str_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        // Store file descriptor
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 4($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        emit("jal __lib_fputs");
+        emit("addiu $sp, $sp, 8");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fputs ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fprintf) {
+        emit_comment("=== Call library function: fprintf (variadic) ===");
+        runtime_lib.mark_function_used("fprintf");
+        
+        if (pending_params.size() < 2) {
+            emit_comment("ERROR: fprintf requires at least 2 parameters (file descriptor, format string)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        string format_param = pending_params[1];
+        int num_args = pending_params.size() - 2;
+        
+        // Allocate space for all parameters
+        int total_space = (pending_params.size()) * 4;
+        emit("addiu $sp, $sp, -" + to_string(total_space));
+        
+        // Store file descriptor
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        // Store format string
+        if (!format_param.empty() && format_param[0] == '"') {
+            string str_label = add_string_literal(format_param);
+            emit("la $t0, " + str_label);
+            emit("sw $t0, 4($sp)");
+        } else {
+            string param_reg = ensure_in_register(format_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        // Store additional arguments
+        for (int i = 0; i < num_args; i++) {
+            string arg = pending_params[i + 2];
+            is_constant = !arg.empty() && (isdigit(arg[0]) || arg[0] == '-');
+            if (is_constant) {
+                emit("li $t0, " + arg);
+                emit("sw $t0, " + to_string((i + 2) * 4) + "($sp)");
+            } else {
+                string arg_reg = ensure_in_register(arg);
+                emit("sw " + arg_reg + ", " + to_string((i + 2) * 4) + "($sp)");
+            }
+        }
+        
+        emit("jal __lib_fprintf");
+        emit("addiu $sp, $sp, " + to_string(total_space));
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fprintf ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_fscanf) {
+        emit_comment("=== Call library function: fscanf (variadic) ===");
+        runtime_lib.mark_function_used("fscanf");
+        
+        if (pending_params.size() < 2) {
+            emit_comment("ERROR: fscanf requires at least 2 parameters (file descriptor, format string)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        string format_param = pending_params[1];
+        int num_args = pending_params.size() - 2;
+        
+        // Allocate space for all parameters
+        int total_space = (pending_params.size()) * 4;
+        emit("addiu $sp, $sp, -" + to_string(total_space));
+        
+        // Store file descriptor
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        // Store format string
+        if (!format_param.empty() && format_param[0] == '"') {
+            string str_label = add_string_literal(format_param);
+            emit("la $t0, " + str_label);
+            emit("sw $t0, 4($sp)");
+        } else {
+            string param_reg = ensure_in_register(format_param);
+            emit("sw " + param_reg + ", 4($sp)");
+        }
+        
+        // Store addresses of arguments (not values!)
+        for (int i = 0; i < num_args; i++) {
+            string arg = pending_params[i + 2];
+            
+            // Get address of the variable
+            int offset = get_offset(arg);
+            if (offset != 0) {
+                emit("addiu $t0, $fp, " + to_string(offset));
+                emit("sw $t0, " + to_string((i + 2) * 4) + "($sp)");
+            } else {
+                string addr_reg = ensure_in_register(arg);
+                emit("sw " + addr_reg + ", " + to_string((i + 2) * 4) + "($sp)");
+            }
+        }
+        
+        emit("jal __lib_fscanf");
+        emit("addiu $sp, $sp, " + to_string(total_space));
+        
+        // Invalidate register caches after fscanf
+        clear_all_registers();
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End fscanf ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_feof) {
+        emit_comment("=== Call library function: feof ===");
+        runtime_lib.mark_function_used("feof");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: feof requires 1 parameter (file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        emit("jal __lib_feof");
+        emit("addiu $sp, $sp, 4");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End feof ===");
+        pending_params.clear();
+        return;
+    }
+    
+    if (is_ferror) {
+        emit_comment("=== Call library function: ferror ===");
+        runtime_lib.mark_function_used("ferror");
+        
+        if (pending_params.empty()) {
+            emit_comment("ERROR: ferror requires 1 parameter (file descriptor)");
+            pending_params.clear();
+            return;
+        }
+        
+        string fd_param = pending_params[0];
+        
+        emit("addiu $sp, $sp, -4");
+        
+        bool is_constant = !fd_param.empty() && (isdigit(fd_param[0]) || fd_param[0] == '-');
+        if (is_constant) {
+            emit("li $t0, " + fd_param);
+            emit("sw $t0, 0($sp)");
+        } else {
+            string param_reg = ensure_in_register(fd_param);
+            emit("sw " + param_reg + ", 0($sp)");
+        }
+        
+        emit("jal __lib_ferror");
+        emit("addiu $sp, $sp, 4");
+        
+        if (instr->result && instr->result->type != TAC_OPERAND_EMPTY) {
+            string dest = instr->result->value;
+            string dest_reg = allocate_register_with_spilling();
+            emit("move " + dest_reg + ", $v0");
+            reg_desc.add_var_to_reg(dest_reg, dest);
+            storage_desc.set_location(dest, dest_reg);
+            reg_allocator.mark_dirty(dest_reg);
+        }
+        
+        emit_comment("=== End ferror ===");
+        pending_params.clear();
+        return;
+    }
+    
     // Process parameters (they're in pending_params in reverse order)
     // Reverse them to get correct order: first param at index 0
     vector<string> params;
