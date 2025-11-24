@@ -7,13 +7,13 @@
 |   Parameters: 
 |   Stack Frame:
 |     - Parameter space: 0 bytes
-|     - Local var space: 76 bytes
+|     - Local var space: 132 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 84 bytes
-|   Declared at line: 7
+|     - Total frame size: 140 bytes
+|   Declared at line: 4
 +-----------------------------------------------------------------------------------------+
 | Function: printf (printf_cp1_variadic)
-|   Return type: void
+|   Return type: int
 |   Parameters: char* ...
 |   Stack Frame:
 |     - Parameter space: 4 bytes
@@ -23,12 +23,12 @@
 |   Declared at line: 1
 +-----------------------------------------------------------------------------------------+
 | Function: scanf (scanf_cp1_variadic)
-|   Return type: void
+|   Return type: int
 |   Parameters: char* ...
 |   Stack Frame:
 |     - Parameter space: 4 bytes
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 3
+|   Declared at line: 2
 +-----------------------------------------------------------------------------------------+

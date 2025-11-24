@@ -1,8 +1,27 @@
 #!/bin/bash
 # Quick compile and run - works from src directory
 
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
 # Compile with parser
-./parser "$1" > /dev/null 2>&1 || exit 1
+./parser "$1" > /dev/null 2>&1
+COMPILE_STATUS=$?
+
+# Check if compilation failed
+if [ $COMPILE_STATUS -ne 0 ]; then
+    ERROR_FILE="${1}.errors"
+    if [ -f "$ERROR_FILE" ]; then
+        echo -e "${RED}Compilation failed with errors:${NC}"
+        cat "$ERROR_FILE"
+    else
+        echo -e "${RED}Compilation failed!${NC}"
+    fi
+    exit 1
+fi
 
 # Get the clean asm filename
 ASM_FILE="${1%.c}.clean.asm"

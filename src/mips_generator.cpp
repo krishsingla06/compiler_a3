@@ -887,13 +887,23 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         string src_freg = load_operand_to_register(instr->arg1);
         emit_comment("DEBUG: " + src + " in " + src_freg);
         
-        // If destination is already in a register, update it
-        // Otherwise just update descriptors
+        // Update descriptors
         reg_desc.add_var_to_reg(src_freg, dest);
         storage_desc.set_location(dest, src_freg);
         reg_allocator.mark_dirty(src_freg);
         
         emit_comment("DEBUG: " + dest + " = " + src + " in " + src_freg + " (dirty, float)");
+        
+        // CRITICAL FIX: For variables (not temps), immediately save to memory at their home location
+        if (dest.length() > 2 && dest[0] == 'v' && dest[1] == '_') {
+            int offset = get_offset(dest);
+            emit("swc1 " + src_freg + ", " + to_string(offset) + "($fp)");
+            emit_comment("DEBUG: Saved float variable " + dest + " to home location " + to_string(offset) + "($fp)");
+            storage_desc.add_location(dest, "memory:" + to_string(offset) + "($fp)");
+            // Mark as clean since it's now in sync with memory
+            reg_allocator.clear_dirty(src_freg);
+        }
+        
         return;
     }
     
@@ -950,7 +960,7 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
             }
         }
         
-        // Update descriptors - keep in register ONLY (not in memory yet)
+        // Update descriptors
         reg_desc.clear_reg(reg);
         reg_desc.add_var_to_reg(reg, dest);
         storage_desc.set_location(dest, reg);
@@ -959,12 +969,22 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
         reg_allocator.mark_dirty(reg);
         emit_comment("DEBUG: " + dest + " = constant " + src + " loaded in " + reg + " (dirty)");
         
-        // For global/static variables, immediately save to memory
-        if (is_global_or_static(dest)) {
-            int offset = get_global_offset(dest);
-            emit("sw " + reg + ", " + to_string(offset) + "($gp)");
-            emit_comment("DEBUG: Saved global/static " + dest + " to memory at " + to_string(offset) + "($gp)");
-            storage_desc.add_location(dest, "memory:" + to_string(offset) + "($gp)");
+        // CRITICAL FIX: For variables (not temps), immediately save to memory at their home location
+        // This ensures the variable always has a valid value in memory even if register is reused
+        if (dest.length() > 2 && dest[0] == 'v' && dest[1] == '_') {
+            if (is_global_or_static(dest)) {
+                int offset = get_global_offset(dest);
+                emit("sw " + reg + ", " + to_string(offset) + "($gp)");
+                emit_comment("DEBUG: Saved global/static " + dest + " to memory at " + to_string(offset) + "($gp)");
+                storage_desc.add_location(dest, "memory:" + to_string(offset) + "($gp)");
+            } else {
+                int offset = get_offset(dest);
+                emit("sw " + reg + ", " + to_string(offset) + "($fp)");
+                emit_comment("DEBUG: Saved variable " + dest + " to home location " + to_string(offset) + "($fp)");
+                storage_desc.add_location(dest, "memory:" + to_string(offset) + "($fp)");
+            }
+            // Mark as clean since it's now in sync with memory
+            reg_allocator.clear_dirty(reg);
         }
         
         return;
@@ -3336,8 +3356,8 @@ void MIPSGenerator::spill_register(const string& reg) {
             continue;
         }
         
-        // Only spill if not already in memory
-        if (storage_desc.is_only_in_register(var)) {
+        // Only spill if not already in memory or if it's dirty
+        if (storage_desc.is_only_in_register(var) || reg_allocator.is_dirty(reg)) {
             // Check if variable is global/static
             if (is_global_or_static(var)) {
                 int offset = get_global_offset(var);
@@ -3352,14 +3372,15 @@ void MIPSGenerator::spill_register(const string& reg) {
             } else {
                 int offset = get_offset(var);
                 
+                // CRITICAL FIX: Always use the variable's home location from get_offset()
                 if (is_float_reg) {
-                    emit("s.s " + reg + ", " + to_string(offset) + "($fp)");
-                    emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to memory");
+                    emit("swc1 " + reg + ", " + to_string(offset) + "($fp)");
+                    emit_comment("DEBUG: Spilled float " + var + " from " + reg + " to home location " + to_string(offset) + "($fp)");
                 } else {
                     emit("sw " + reg + ", " + to_string(offset) + "($fp)");
-                    emit_comment("DEBUG: Spilled " + var + " from " + reg + " to memory");
+                    emit_comment("DEBUG: Spilled " + var + " from " + reg + " to home location " + to_string(offset) + "($fp)");
                 }
-                storage_desc.add_location(var, "memory:" + var);
+                storage_desc.add_location(var, "memory:" + to_string(offset) + "($fp)");
             }
         }
         reg_desc.remove_var_from_reg(reg, var);
