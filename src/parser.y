@@ -7182,6 +7182,159 @@ extern "C" bool is_variable_reference(const char* var_name) {
     return false;
 }
 
+// Check if a variable is a class type (for MIPS generation)
+extern "C" bool is_variable_class(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end()) {
+        return it->second.type.isClass;
+    }
+    
+    return false;
+}
+
+// Get class name for a class variable (for MIPS generation)
+extern "C" const char* get_variable_class_name(const char* var_name) {
+    string name(var_name);
+    
+    // Check in global symbol table
+    auto it = global_symbol_table.find(name);
+    if (it != global_symbol_table.end() && it->second.type.isClass) {
+        static string class_name;
+        class_name = it->second.type.className;
+        return class_name.c_str();
+    }
+    
+    return nullptr;
+}
+
+// Check if a function name is a constructor (format: ClassName::ClassName)
+extern "C" bool is_constructor(const char* func_name) {
+    string name(func_name);
+    
+    // Check if it contains "::"
+    size_t pos = name.find("::");
+    if (pos == string::npos) {
+        return false;
+    }
+    
+    // Extract class name and method name
+    string class_name = name.substr(0, pos);
+    string method_name = name.substr(pos + 2);
+    
+    // Constructor if class name equals method name
+    return class_name == method_name;
+}
+
+// Check if a function name is a destructor (format: ClassName::~ClassName)
+extern "C" bool is_destructor(const char* func_name) {
+    string name(func_name);
+    
+    // Check if it contains "::" and "~"
+    size_t pos = name.find("::");
+    if (pos == string::npos) {
+        return false;
+    }
+    
+    // Extract class name and method name
+    string class_name = name.substr(0, pos);
+    string method_name = name.substr(pos + 2);
+    
+    // Destructor if method name starts with "~" and matches class name
+    return method_name.length() > 1 && method_name[0] == '~' && 
+           method_name.substr(1) == class_name;
+}
+
+// Check if a function is a member function (format: ClassName::functionName)
+extern "C" bool is_member_function(const char* func_name) {
+    string name(func_name);
+    
+    // Member function if it contains "::"
+    return name.find("::") != string::npos;
+}
+
+// Get class name from a member function name (format: ClassName::functionName)
+extern "C" const char* get_member_function_class(const char* func_name) {
+    string name(func_name);
+    
+    size_t pos = name.find("::");
+    if (pos == string::npos) {
+        return nullptr;
+    }
+    
+    static string class_name;
+    class_name = name.substr(0, pos);
+    return class_name.c_str();
+}
+
+// Get member offset within a class
+extern "C" int get_class_member_offset(const char* class_name, const char* member_name) {
+    string class_key = string("class ") + class_name;
+    
+    // Look up the class definition
+    if (class_table.find(class_key) == class_table.end() || class_table[class_key].empty()) {
+        return -1; // Class not found
+    }
+    
+    ClassDef* classDef = &class_table[class_key].back();
+    
+    // Find the member
+    for (const auto& member : classDef->members) {
+        if (member.name == member_name && !member.isMemberFunction) {
+            return member.offset;
+        }
+    }
+    
+    return -1; // Member not found or is a function
+}
+
+// Get total size of a class
+extern "C" int get_class_size(const char* class_name) {
+    string class_key = string("class ") + class_name;
+    
+    // Look up the class definition
+    if (class_table.find(class_key) == class_table.end() || class_table[class_key].empty()) {
+        return 0; // Class not found
+    }
+    
+    ClassDef* classDef = &class_table[class_key].back();
+    return classDef->totalSize;
+}
+
+// Check if a variable name refers to a member variable access in the current context
+// This helps identify "b" and "yy" inside "B::B" constructor
+extern "C" bool is_member_variable_in_context(const char* var_name, const char* func_name) {
+    string varStr(var_name);
+    string funcStr(func_name);
+    
+    // Check if func_name is a member function (contains ::)
+    if (funcStr.find("::") == string::npos) {
+        return false;
+    }
+    
+    // Extract class name from function name
+    string class_name = funcStr.substr(0, funcStr.find("::"));
+    string class_key = string("class ") + class_name;
+    
+    // Look up the class definition
+    if (class_table.find(class_key) == class_table.end() || class_table[class_key].empty()) {
+        return false;
+    }
+    
+    ClassDef* classDef = &class_table[class_key].back();
+    
+    // Check if varStr is a data member of this class
+    for (const auto& member : classDef->members) {
+        if (member.name == varStr && !member.isMemberFunction) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 //----------------------------------------------------------------------------
 
 // Error logging functions implementation

@@ -24,6 +24,7 @@ public:
 class StorageDescriptor {
 private:
     map<string, set<string>> var_to_locations;  // variable -> set of locations (registers/memory)
+    map<string, string> dereference_markers;     // temporary -> pointer source (for store-indirect detection)
     
 public:
     void add_location(const string& var, const string& location);
@@ -36,6 +37,12 @@ public:
     bool is_only_in_register(const string& var);  // True if ONLY in register, not in memory
     void clear_all();
     void remove_all_register_locations();  // Remove all register locations from all variables
+    
+    // Dereference marker support for detecting store-indirect patterns
+    void set_dereference_marker(const string& temp, const string& ptr_source);
+    bool has_dereference_marker(const string& temp);
+    string get_dereference_source(const string& temp);
+    void clear_dereference_marker(const string& temp);
 };
 
 #endif // DESCRIPTORS_Hc

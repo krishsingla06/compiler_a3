@@ -100,3 +100,23 @@ void StorageDescriptor::remove_all_register_locations() {
         }
     }
 }
+
+// Dereference marker methods (for detecting store-indirect patterns)
+void StorageDescriptor::set_dereference_marker(const string& temp, const string& ptr_source) {
+    dereference_markers[temp] = ptr_source;
+}
+
+bool StorageDescriptor::has_dereference_marker(const string& temp) {
+    return dereference_markers.find(temp) != dereference_markers.end();
+}
+
+string StorageDescriptor::get_dereference_source(const string& temp) {
+    if (dereference_markers.find(temp) != dereference_markers.end()) {
+        return dereference_markers[temp];
+    }
+    return "";
+}
+
+void StorageDescriptor::clear_dereference_marker(const string& temp) {
+    dereference_markers.erase(temp);
+}

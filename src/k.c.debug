@@ -22,9 +22,9 @@ Function printf stack frame:
   - Total: 12 bytes
 Start rule: Global declaration has 2 TAC instructions
 TAC code written to k.tac
-Function declarator: add with 2 parameters
-Registered function: add as add_i_i returning int
-Function definition: add registered
+Class data member: yy of type int with access private at offset 0
+Access specifier changed to public
+Class data member: b of type int with access public at offset 4
 Entering scope level 2
 <<<<<<< HEAD
 Allocated parameter a (param #0) at offset 8
@@ -40,6 +40,9 @@ Inserted function parameter: b (int)
 Function add_i_i parameter space: 8 bytes
 Found variable: a of type int
 Unary expression is postfix: int
+Compound statement with declarations and statements
+Class member function (inline): int funcB() with access public
+Entering scope level 2
 Found variable: b of type int
 Unary expression is postfix: int
 Binary operation: int + intAllocated local variable #t1 at offset -4 (size: 4 bytes)
@@ -392,19 +395,43 @@ Found function name: printf
 <<<<<<< HEAD
 String literal: "Result: %d\n" (type: string)
 Unary expression is postfix: char*
-Found variable: result of type int
+Found variable: b1 of type class B
+Allocated local variable #t5 at offset -28 (size: 4 bytes)
+Variable #t5 mangled as #t5 [LOCAL]
+Declared variable: #t5 (int) at line 22 in scope 2
+Allocated local variable #t6 at offset -32 (size: 4 bytes)
+Variable #t6 mangled as #t6 [LOCAL]
+Declared variable: #t6 (int) at line 22 in scope 2
+Allocated local variable #t7 at offset -36 (size: 4 bytes)
+Variable #t7 mangled as #t7 [LOCAL]
+Declared variable: #t7 (int) at line 22 in scope 2
+Class data member access: class B.b -> int at offset 4
 Unary expression is postfix: int
 Found compatible variadic function: printf_cp1_variadic
 Hello ji
-Allocated local variable #t3 at offset -8 (size: 0 bytes)
-Variable #t3 mangled as #t3 [LOCAL]
-Declared variable: #t3 (void) at line 12 in scope 2
+Allocated local variable #t8 at offset -36 (size: 0 bytes)
+Variable #t8 mangled as #t8 [LOCAL]
+Declared variable: #t8 (void) at line 22 in scope 2
 Unary expression is postfix: void
+Found variable: b1 of type class B
+Allocated local variable #t9 at offset -40 (size: 4 bytes)
+Variable #t9 mangled as #t9 [LOCAL]
+Declared variable: #t9 (int) at line 25 in scope 2
+Class member function access: class B.funcB
+Member function call: B::funcB() -> int
+Allocated local variable #t10 at offset -44 (size: 4 bytes)
+Variable #t10 mangled as #t10 [LOCAL]
+Declared variable: #t10 (int) at line 25 in scope 2
+Unary expression is postfix: int
 Integer literal: 0 (type: int)
 Unary expression is postfix: int
 Compound statement with declarations and statements
+Allocated local variable #t11 at offset -48 (size: 4 bytes)
+Variable #t11 mangled as #t11 [LOCAL]
+Declared variable: #t11 (int) at line 27 in scope 2
+Generated destructor call for object: b1
 Function main stack frame:
-  - Local variables: 8 bytes
+  - Local variables: 48 bytes
   - Parameters: 0 bytes
   - Total: 16 bytes
 =======
@@ -514,13 +541,17 @@ Returning 0
 Getting offset for variable: #t1
 hihi Variable #t1 type: int
 Returning 0
+Getting offset for variable: #t1
+Getting offset for variable: v_b1_main_s2
+Getting offset for variable: 
+Getting offset for variable: v_b1_main_s2
+Getting offset for variable: #t2
 hihi Variable #t2 type: int
 Returning 0
-hihi Variable v_result_main_s2 type: int
-Returning 0
 hihi Variable #t2 type: int
 Returning 0
-Getting offset for variable: v_result_main_s2
+hihi Variable #t4 type: int
+Returning 0
 Getting offset for variable: #t2
 <<<<<<< HEAD
 Getting offset for variable: v_result_main_s2

@@ -36,23 +36,21 @@ I2:
 
 
 I3:
-add_i_i:
-    addiu $sp, $sp, -60
-    sw $ra, 56($sp)
-    sw $fp, 52($sp)
-    addiu $fp, $sp, 52
-
+B__funcB:
+    addiu $sp, $sp, -40
+    sw $ra, 36($sp)
+    sw $fp, 32($sp)
+    addiu $fp, $sp, 32
 
 I4:
-    add $t0, $a0, $a1
-
-I5:
-    sw $t0, -4($fp)
+    lw $t0, 8($fp)
+    addiu $t0, $t0, 4
+    lw $t0, 0($t0)
     move $v0, $t0
 
 
 
-I6:
+I5:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
@@ -83,10 +81,37 @@ I10:
     move $a1, $t0
     jal add_i_i
     addiu $sp, $sp, 8
-    move $t0, $v0
+    jr $ra
 
-I11:
-    sw $t0, -4($fp)
+
+
+I12:
+main:
+    addiu $sp, $sp, -96
+    sw $ra, 92($sp)
+    sw $fp, 88($sp)
+    addiu $fp, $sp, 88
+
+I13:
+    addiu $t0, $fp, -8
+    sw $t0, -12($fp)
+
+I14:
+
+I15:
+    sw $t0, -12($fp)
+    addiu $sp, $sp, -4
+    lw $t0, -12($fp)
+    sw $t0, 0($sp)
+    move $a0, $t0
+    jal B__B
+    addiu $sp, $sp, 4
+    move $t1, $v0
+
+I16:
+    sw $t1, 0($fp)
+    addiu $t1, $fp, -8
+    sw $t1, -16($fp)
 
 I12:
 
@@ -146,7 +171,7 @@ I14:
     sw $t0, -4($fp)
     la $a0, str_0
     addiu $sp, $sp, -4
-    lw $t0, -4($fp)
+    lw $t0, -36($fp)
     sw $t0, 0($sp)
     jal __lib_printf
     addiu $sp, $sp, 4

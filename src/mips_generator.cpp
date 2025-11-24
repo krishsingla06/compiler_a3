@@ -21,6 +21,17 @@ int get_function_stack_frame_size(const string& mangledName);
 int get_function_param_count(const string& mangledName);
 string get_function_param_name(const string& mangledName, int param_index);
 
+// Class-related helper functions
+extern "C" bool is_variable_class(const char* var_name);
+extern "C" const char* get_variable_class_name(const char* var_name);
+extern "C" bool is_constructor(const char* func_name);
+extern "C" bool is_destructor(const char* func_name);
+extern "C" bool is_member_function(const char* func_name);
+extern "C" const char* get_member_function_class(const char* func_name);
+extern "C" int get_class_member_offset(const char* class_name, const char* member_name);
+extern "C" int get_class_size(const char* class_name);
+extern "C" bool is_member_variable_in_context(const char* var_name, const char* func_name);
+
 // Extern declaration to access jump tables from parser.y
 extern map<int, vector<TACOperand*>> overall_jump_tables;
 /*
@@ -629,6 +640,9 @@ void MIPSGenerator::generate_text_section(const vector<TACInstruction*>& tac_ins
 void MIPSGenerator::generate_function_prologue(const string& func_name) {
     emit_comment("=== Function Prologue for " + func_name + " ===");
     
+    // Track current function context for member variable access
+    current_function = func_name;
+    
     int frame_size = calculate_stack_frame_size(func_name);
     emit_comment("Frame size: " + to_string(frame_size) + " bytes");
     
@@ -872,6 +886,137 @@ void MIPSGenerator::translate_assignment(TACInstruction* instr) {
     string src = instr->arg1->value;
     
     emit_comment("Assignment: " + dest + " = " + src);
+    
+    // CRITICAL: Check if this is a store-indirect pattern from DOT/ARROW operator
+    // Pattern: #tX = *ptr, followed by #tX = value
+    // This means: *ptr = value (store through pointer)
+    // We detect this by checking if dest is a dereferenced temporary that was just loaded
+    if (dest.find("#t") == 0 && storage_desc.has_dereference_marker(dest)) {
+        // This temporary was the result of a dereference - this is a store indirect!
+        emit_comment("DEBUG: Detected store-indirect pattern: *ptr = " + src);
+        
+        // Get the pointer that was dereferenced (stored in storage descriptor)
+        string ptr_addr = storage_desc.get_dereference_source(dest);
+        
+        if (!ptr_addr.empty()) {
+            // Load the pointer address into a register
+            string ptr_reg = ensure_in_register(ptr_addr);
+            emit_comment("DEBUG: Pointer " + ptr_addr + " in " + ptr_reg);
+            
+            // Check if source is float
+            bool src_is_float = is_operand_float(instr->arg1);
+            
+            if (src_is_float) {
+                string src_freg = load_operand_to_register(instr->arg1);
+                emit("swc1 " + src_freg + ", 0(" + ptr_reg + ")");
+                emit_comment("DEBUG: Stored float through pointer");
+            } else {
+                // Check if source is constant
+                bool is_constant = (instr->arg1->type == TAC_OPERAND_CONSTANT) || 
+                                  (!src.empty() && (isdigit(src[0]) || (src[0] == '-' && src.length() > 1 && isdigit(src[1]))));
+                
+                string src_reg;
+                if (is_constant) {
+                    src_reg = allocate_register_with_spilling();
+                    emit("li " + src_reg + ", " + src);
+                } else {
+                    src_reg = load_operand_to_register(instr->arg1);
+                }
+                
+                emit("sw " + src_reg + ", 0(" + ptr_reg + ")");
+                emit_comment("DEBUG: Stored " + src + " through pointer to member");
+            }
+            
+            // Clear the dereference marker
+            storage_desc.clear_dereference_marker(dest);
+            return;
+        }
+    }
+    
+    // Check if destination is a class member variable (within a member function)
+    int dest_offset = get_offset(dest);
+    if (dest_offset == -999) {
+        // This is a member variable assignment (e.g., b = 0 inside B::B constructor)
+        emit_comment("DEBUG: Member variable assignment: " + dest + " = " + src);
+        
+        // Get the class name from the current function
+        const char* class_name_ptr = get_member_function_class(current_function.c_str());
+        if (!class_name_ptr) {
+            emit_comment("ERROR: Could not determine class for member function " + current_function);
+            return;
+        }
+        string class_name(class_name_ptr);
+        
+        // Get member offset within the class
+        int member_offset = get_class_member_offset(class_name.c_str(), dest.c_str());
+        if (member_offset < 0) {
+            emit_comment("ERROR: Could not find member " + dest + " in class " + class_name);
+            return;
+        }
+        
+        emit_comment("DEBUG: Member '" + dest + "' at offset " + to_string(member_offset) + " in class " + class_name);
+        
+        // Load source value into register FIRST (before loading this pointer)
+        bool src_is_float = is_variable_float(src.c_str()) || (src.find('.') != string::npos);
+        string src_reg;
+        string this_reg;
+        
+        if (src_is_float) {
+            // Handle float assignment
+            string src_freg = load_operand_to_register(instr->arg1);
+            
+            // Now load 'this' pointer from first parameter (at +8($fp))
+            this_reg = allocate_register_with_spilling();
+            emit("lw " + this_reg + ", 8($fp)");
+            emit_comment("DEBUG: Loaded 'this' pointer from 8($fp) into " + this_reg);
+            
+            // Calculate member address
+            if (member_offset != 0) {
+                emit("addiu " + this_reg + ", " + this_reg + ", " + to_string(member_offset));
+                emit_comment("DEBUG: Calculated member address in " + this_reg);
+            }
+            
+            emit("swc1 " + src_freg + ", 0(" + this_reg + ")");
+            emit_comment("DEBUG: Stored float value to member via pointer");
+        } else {
+            // Load 'this' pointer FIRST, then load source value
+            this_reg = allocate_register_with_spilling();
+            reg_desc.add_var_to_reg(this_reg, "__this_temp__");  // Mark as in use
+            reg_allocator.mark_allocated(this_reg);              // Mark as allocated
+            
+            emit("lw " + this_reg + ", 8($fp)");
+            emit_comment("DEBUG: Loaded 'this' pointer from 8($fp) into " + this_reg);
+            
+            // Calculate member address
+            if (member_offset != 0) {
+                emit("addiu " + this_reg + ", " + this_reg + ", " + to_string(member_offset));
+                emit_comment("DEBUG: Calculated member address in " + this_reg);
+            }
+            
+            // Check if source is a constant
+            bool is_constant = (instr->arg1->type == TAC_OPERAND_CONSTANT) || 
+                              (!src.empty() && (isdigit(src[0]) || (src[0] == '-' && src.length() > 1 && isdigit(src[1]))));
+            
+            if (is_constant) {
+                src_reg = allocate_register_with_spilling();
+                emit("li " + src_reg + ", " + src);
+                emit_comment("DEBUG: Loaded constant " + src + " into " + src_reg);
+            } else {
+                src_reg = load_operand_to_register(instr->arg1);
+                emit_comment("DEBUG: Loaded " + src + " into " + src_reg);
+            }
+            
+            // Store value to member through pointer
+            emit("sw " + src_reg + ", 0(" + this_reg + ")");
+            emit_comment("DEBUG: Stored value to member '" + dest + "' via pointer");
+            
+            // Clean up: clear the temporary this register marker
+            reg_desc.remove_var_from_reg(this_reg, "__this_temp__");
+            reg_allocator.unmark_allocated(this_reg);
+        }
+        
+        return; // Done with member variable assignment
+    }
     
     // Check if either operand is a reference - references are addresses (integers)
     bool dest_is_ref = is_variable_reference(dest.c_str());
@@ -1774,20 +1919,13 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
     
     // Look ahead to see if dest is used as the function in the next call instruction
     // This is indicated by the dest being a temporary that will be called
-    if (dest.find("#t") == 0) {
-        // Check if the dereference result is immediately used in a call
-        // (This is a simplified check - in practice, function pointer dereferences 
-        // immediately precede calls in the TAC we generate)
-        is_function_ptr_deref = true;  // Assume function pointer for now
-        
-        // Additional heuristic: function pointers usually have _fp_ in variable name
-        // or the pointer variable ends with operation/callback/func/etc
-        if (ptr.find("_fp_") != string::npos || 
-            ptr.find("operation") != string::npos ||
-            ptr.find("callback") != string::npos ||
-            ptr.find("func") != string::npos) {
-            is_function_ptr_deref = true;
-        }
+    // IMPORTANT: Only treat as function pointer if the SOURCE has function-related naming
+    if (ptr.find("_fp_") != string::npos || 
+        ptr.find("operation") != string::npos ||
+        ptr.find("callback") != string::npos ||
+        ptr.find("func") != string::npos ||
+        ptr.find("function") != string::npos) {
+        is_function_ptr_deref = true;
     }
     
     if (is_function_ptr_deref) {
@@ -1821,6 +1959,11 @@ void MIPSGenerator::translate_dereference(TACInstruction* instr) {
     }
     
     // Normal pointer dereference (not a function pointer)
+    // IMPORTANT: Set a dereference marker so that if the next instruction
+    // assigns to this result, we know it's a store-indirect pattern
+    storage_desc.set_dereference_marker(dest, ptr);
+    emit_comment("DEBUG: Set dereference marker for " + dest + " from pointer " + ptr);
+    
     // Get pointer value into a register
     // CRITICAL: Pointers and references are ALWAYS addresses (integers), 
     // so always use integer registers even if they point to floats
@@ -2889,6 +3032,18 @@ if (is_scanf) {
     }
     pending_params.clear();
     
+    // ===== SPECIAL HANDLING FOR CLASS MEMBER FUNCTIONS, CONSTRUCTORS, AND DESTRUCTORS =====
+    bool is_ctor = is_constructor(func_name.c_str());
+    bool is_dtor = is_destructor(func_name.c_str());
+    bool is_member_func = is_member_function(func_name.c_str());
+    
+    if (is_ctor || is_dtor || is_member_func) {
+        emit_comment("=== Class member function call: " + func_name + " ===");
+        emit_comment("Constructor: " + string(is_ctor ? "yes" : "no") + 
+                     ", Destructor: " + string(is_dtor ? "yes" : "no") +
+                     ", Member function: " + string(is_member_func ? "yes" : "no"));
+    }
+    
     // Calculate space needed for parameters
     // We need space for ALL parameters (even first 4 that go in registers)
     // Each param needs 4 bytes, plus 8 bytes for $ra and old $fp of callee
@@ -2989,7 +3144,21 @@ if (is_scanf) {
         emit_comment("DEBUG: Indirect call via jalr $ra, " + func_ptr_reg);
     } else {
         // Direct function call
-        emit("jal " + func_name);
+        // Sanitize function name for MIPS - replace :: with __ and ~ with _dtor_
+        string sanitized_func_name = func_name;
+        size_t pos = sanitized_func_name.find("::");
+        while (pos != string::npos) {
+            sanitized_func_name.replace(pos, 2, "__");
+            pos = sanitized_func_name.find("::", pos + 2);
+        }
+        
+        pos = sanitized_func_name.find("~");
+        while (pos != string::npos) {
+            sanitized_func_name.replace(pos, 1, "_dtor_");
+            pos = sanitized_func_name.find("~", pos + 6);
+        }
+        
+        emit("jal " + sanitized_func_name);
         emit_comment("DEBUG: Called " + func_name);
     }
     
@@ -3172,8 +3341,50 @@ string MIPSGenerator::ensure_in_register(const string& var) {
     } else {
         // Load from stack frame using $fp
         int offset = get_offset(var);
-        emit("lw " + reg + ", " + to_string(offset) + "($fp)");
-        emit_comment("DEBUG: Loaded " + var + " from memory at " + to_string(offset) + "($fp)");
+        
+        // Check if this is a member variable (offset == -999)
+        if (offset == -999) {
+            // This is a member variable access (e.g., return b in B::funcB)
+            emit_comment("DEBUG: Loading member variable: " + var);
+            
+            // Get the class name from the current function
+            const char* class_name_ptr = get_member_function_class(current_function.c_str());
+            if (!class_name_ptr) {
+                emit_comment("ERROR: Could not determine class for member function " + current_function);
+                emit("li " + reg + ", 0");  // Default to 0
+                return reg;
+            }
+            string class_name(class_name_ptr);
+            
+            // Get member offset within the class
+            int member_offset = get_class_member_offset(class_name.c_str(), var.c_str());
+            if (member_offset < 0) {
+                emit_comment("ERROR: Could not find member " + var + " in class " + class_name);
+                emit("li " + reg + ", 0");  // Default to 0
+                return reg;
+            }
+            
+            emit_comment("DEBUG: Member '" + var + "' at offset " + to_string(member_offset) + " in class " + class_name);
+            
+            // Load 'this' pointer from first parameter (at +8($fp))
+            string this_reg = allocate_register_with_spilling();
+            emit("lw " + this_reg + ", 8($fp)");
+            emit_comment("DEBUG: Loaded 'this' pointer from 8($fp) into " + this_reg);
+            
+            // Load member value: *(this + member_offset)
+            if (member_offset == 0) {
+                emit("lw " + reg + ", 0(" + this_reg + ")");
+            } else {
+                // Calculate member address first
+                string member_addr_reg = allocate_register_with_spilling();
+                emit("addiu " + member_addr_reg + ", " + this_reg + ", " + to_string(member_offset));
+                emit("lw " + reg + ", 0(" + member_addr_reg + ")");
+            }
+            emit_comment("DEBUG: Loaded member '" + var + "' value into " + reg);
+        } else {
+            emit("lw " + reg + ", " + to_string(offset) + "($fp)");
+            emit_comment("DEBUG: Loaded " + var + " from memory at " + to_string(offset) + "($fp)");
+        }
     }
     
     reg_desc.add_var_to_reg(reg, var);
@@ -3605,6 +3816,17 @@ void MIPSGenerator::store_to_memory(const string& reg, TACOperand* dest) {
 }
 
 int MIPSGenerator::get_offset(const string& var_name) {
+    // First, check if this is a member variable access within a member function
+    // Member variables like "b" and "yy" in "B::B" constructor need special handling
+    if (!current_function.empty() && is_member_variable_in_context(var_name.c_str(), current_function.c_str())) {
+        // This is a class member variable being accessed within a member function
+        // It should NOT have a stack offset - it's accessed via 'this' pointer
+        // Return a special marker (negative value) to indicate member access
+        // The actual access will be handled in the assignment/load logic
+        emit_comment("DEBUG: '" + var_name + "' is a member variable in " + current_function);
+        return -999; // Special marker for member variable
+    }
+    
     // Use the helper function from parser.y to get variable offset
     return get_variable_offset(var_name.c_str());
 }
@@ -4021,10 +4243,25 @@ void MIPSGenerator::emit_comment(const string& comment) {
 }
 
 void MIPSGenerator::emit_label(const string& label) {
-    output << label << ":\n";
+    // Sanitize label for MIPS - replace :: with __ for class member functions
+    string sanitized_label = label;
+    size_t pos = sanitized_label.find("::");
+    while (pos != string::npos) {
+        sanitized_label.replace(pos, 2, "__");
+        pos = sanitized_label.find("::", pos + 2);
+    }
+    
+    // Replace ~ with _dtor_ for destructors (MIPS doesn't allow ~ in labels)
+    pos = sanitized_label.find("~");
+    while (pos != string::npos) {
+        sanitized_label.replace(pos, 1, "_dtor_");
+        pos = sanitized_label.find("~", pos + 6);
+    }
+    
+    output << sanitized_label << ":\n";
     // Also emit to clean output if available
     if (clean_output) {
-        *clean_output << label << ":\n";
+        *clean_output << sanitized_label << ":\n";
     }
 }
 

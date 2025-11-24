@@ -65,7 +65,7 @@ private:
     RegisterDescriptor reg_desc;
     StorageDescriptor storage_desc;
     map<int,map<string,int>>next_use_table; // next use table: instr index -> (var name -> next use index)
-    string current_function;
+    string current_function;  // Current function name (including class scope like "B::B")
     int current_stack_size;
     
     // For tracking parameters during function calls
