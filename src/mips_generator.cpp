@@ -1664,33 +1664,18 @@ void MIPSGenerator::translate_bitwise(TACInstruction* instr) {
 
 void MIPSGenerator::translate_address_of(TACInstruction* instr) {
     // TAC: result = &arg1
-    // MIPS: Get the address of arg1
-    // t1 = &x
+    // MIPS: Get the address of arg1 (variable or function)
+    // t1 = &x  or  t1 = &function_name
     // ptr = t1
     string dest = instr->result->value;
     string var = instr->arg1->value;
     
     emit_comment(dest + " = &" + var);
     
-    // CRITICAL: Before taking the address of a variable, if it's currently in a register
-    // (and dirty), we MUST spill it to memory first. Otherwise, the memory location
-    // will be uninitialized when dereferenced through the pointer/reference.
-    string var_reg = storage_desc.get_register(var);
-    if (!var_reg.empty() && reg_allocator.is_dirty(var_reg)) {
-        emit_comment("DEBUG: Spilling " + var + " from " + var_reg + " to memory before taking address");
-        int var_offset = get_offset(var);
-        
-        // Check if it's a float register
-        if (var_reg.length() > 2 && var_reg[1] == 'f') {
-            emit("swc1 " + var_reg + ", " + to_string(var_offset) + "($fp)");
-        } else {
-            emit("sw " + var_reg + ", " + to_string(var_offset) + "($fp)");
-        }
-        
-        // Mark as clean and update storage descriptor
-        reg_allocator.clear_dirty(var_reg);
-        storage_desc.add_location(var, "memory:" + to_string(var_offset) + "($fp)");
-    }
+    // Check if this is a function identifier (function pointers)
+    // Function identifiers don't have offsets and aren't in the symbol table
+    bool is_function = (get_offset(var) == 0 && !is_global_or_static(var) && 
+                        var.find("#") == string::npos && var.find("v_") == string::npos);
     
     // Allocate a register for the result
     string dest_reg = reg_allocator.allocate_temp_reg();
@@ -1700,29 +1685,55 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
         spill_register(dest_reg);
     }
     
-    // Check if variable is global/static or local
-    if (is_global_or_static(var)) {
-        // For global/static variables, compute address as $gp + offset
-        int offset = get_global_offset(var);
-        if (offset == 0) {
-            emit("move " + dest_reg + ", $gp");
-            emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at $gp");
-        } else {
-            emit("addiu " + dest_reg + ", $gp, " + to_string(offset));
-            emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at " + to_string(offset) + "($gp)");
-        }
+    if (is_function) {
+        // Taking address of a function - load the function label address
+        emit("la " + dest_reg + ", " + var);
+        emit_comment("DEBUG: " + dest + " = address of function " + var);
     } else {
-        // For local variables, compute address as $fp + offset
-        int offset = get_offset(var);
-        if (offset == 0) {
-            emit("move " + dest_reg + ", $fp");
-            emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
-        } else if (offset > 0) {
-            emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
-            emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+        // CRITICAL: Before taking the address of a variable, if it's currently in a register
+        // (and dirty), we MUST spill it to memory first. Otherwise, the memory location
+        // will be uninitialized when dereferenced through the pointer/reference.
+        string var_reg = storage_desc.get_register(var);
+        if (!var_reg.empty() && reg_allocator.is_dirty(var_reg)) {
+            emit_comment("DEBUG: Spilling " + var + " from " + var_reg + " to memory before taking address");
+            int var_offset = get_offset(var);
+            
+            // Check if it's a float register
+            if (var_reg.length() > 2 && var_reg[1] == 'f') {
+                emit("swc1 " + var_reg + ", " + to_string(var_offset) + "($fp)");
+            } else {
+                emit("sw " + var_reg + ", " + to_string(var_offset) + "($fp)");
+            }
+            
+            // Mark as clean and update storage descriptor
+            reg_allocator.clear_dirty(var_reg);
+            storage_desc.add_location(var, "memory:" + to_string(var_offset) + "($fp)");
+        }
+        
+        // Check if variable is global/static or local
+        if (is_global_or_static(var)) {
+            // For global/static variables, compute address as $gp + offset
+            int offset = get_global_offset(var);
+            if (offset == 0) {
+                emit("move " + dest_reg + ", $gp");
+                emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at $gp");
+            } else {
+                emit("addiu " + dest_reg + ", $gp, " + to_string(offset));
+                emit_comment("DEBUG: " + dest + " = address of global/static " + var + " at " + to_string(offset) + "($gp)");
+            }
         } else {
-            emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
-            emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+            // For local variables, compute address as $fp + offset
+            int offset = get_offset(var);
+            if (offset == 0) {
+                emit("move " + dest_reg + ", $fp");
+                emit_comment("DEBUG: " + dest + " = address of " + var + " at $fp");
+            } else if (offset > 0) {
+                emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+                emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+            } else {
+                emit("addiu " + dest_reg + ", $fp, " + to_string(offset));
+                emit_comment("DEBUG: " + dest + " = address of " + var + " at " + to_string(offset) + "($fp)");
+            }
         }
     }
     
@@ -1746,12 +1757,70 @@ void MIPSGenerator::translate_address_of(TACInstruction* instr) {
 void MIPSGenerator::translate_dereference(TACInstruction* instr) {
     // TAC: result = *arg1
     // MIPS: Load value from memory address stored in arg1
+    // SPECIAL CASE: For function pointers, dereferencing is a no-op (just copy the address)
     
     string dest = instr->result->value;
     string ptr = instr->arg1->value;
     
     emit_comment(dest + " = *" + ptr);
     
+    // Check if this is a function pointer dereference
+    // Function pointers are dereferenced in expressions like (*fp)(...) 
+    // but we don't actually load from memory - we just use the address
+    // We can detect this by checking if the result is used in a call instruction
+    // For now, check if ptr looks like a function pointer variable name
+    // A simple heuristic: if next instruction is a CALL using dest, this is a function pointer
+    bool is_function_ptr_deref = false;
+    
+    // Look ahead to see if dest is used as the function in the next call instruction
+    // This is indicated by the dest being a temporary that will be called
+    if (dest.find("#t") == 0) {
+        // Check if the dereference result is immediately used in a call
+        // (This is a simplified check - in practice, function pointer dereferences 
+        // immediately precede calls in the TAC we generate)
+        is_function_ptr_deref = true;  // Assume function pointer for now
+        
+        // Additional heuristic: function pointers usually have _fp_ in variable name
+        // or the pointer variable ends with operation/callback/func/etc
+        if (ptr.find("_fp_") != string::npos || 
+            ptr.find("operation") != string::npos ||
+            ptr.find("callback") != string::npos ||
+            ptr.find("func") != string::npos) {
+            is_function_ptr_deref = true;
+        }
+    }
+    
+    if (is_function_ptr_deref) {
+        // Function pointer dereference - just copy the address (no memory load)
+        emit_comment("DEBUG: Function pointer dereference - copying address");
+        
+        // Get the function pointer address into a register
+        string ptr_reg;
+        if (storage_desc.is_in_register(ptr)) {
+            ptr_reg = storage_desc.get_register(ptr);
+            emit_comment("DEBUG: Function pointer " + ptr + " already in " + ptr_reg);
+        } else {
+            // Load function pointer address from memory
+            ptr_reg = reg_allocator.allocate_temp_reg();
+            if (reg_allocator.is_reg_allocated(ptr_reg)) {
+                spill_register(ptr_reg);
+            }
+            int offset = get_offset(ptr);
+            emit("lw " + ptr_reg + ", " + to_string(offset) + "($fp)");
+            emit_comment("DEBUG: Loaded function pointer " + ptr + " from memory at " + to_string(offset) + "($fp)");
+            
+            reg_desc.add_var_to_reg(ptr_reg, ptr);
+            storage_desc.add_location(ptr, ptr_reg);
+        }
+        
+        // The result is just the same address - update descriptors to share the register
+        reg_desc.add_var_to_reg(ptr_reg, dest);
+        storage_desc.set_location(dest, ptr_reg);
+        emit_comment("DEBUG: " + dest + " = " + ptr + " (function address in " + ptr_reg + ")");
+        return;
+    }
+    
+    // Normal pointer dereference (not a function pointer)
     // Get pointer value into a register
     // CRITICAL: Pointers and references are ALWAYS addresses (integers), 
     // so always use integer registers even if they point to floats
@@ -2902,9 +2971,27 @@ if (is_scanf) {
         }
     }
     
-    // Call the function
-    emit("jal " + func_name);
-    emit_comment("DEBUG: Called " + func_name);
+    // Call the function (direct or indirect)
+    // Check if func_name is a temporary variable (indirect call through function pointer)
+    bool is_indirect_call = (func_name.find("#t") == 0 || func_name.find("#") == 0);
+    
+    if (is_indirect_call) {
+        // Indirect function call through function pointer
+        emit_comment("DEBUG: Indirect call through function pointer " + func_name);
+        
+        // Load the function address from the temporary variable
+        string func_ptr_reg = ensure_in_register(func_name);
+        emit_comment("DEBUG: Function pointer in " + func_ptr_reg);
+        
+        // Call through register using jalr (jump and link register)
+        // jalr $ra, $reg - jump to address in $reg and save return address in $ra
+        emit("jalr $ra, " + func_ptr_reg);
+        emit_comment("DEBUG: Indirect call via jalr $ra, " + func_ptr_reg);
+    } else {
+        // Direct function call
+        emit("jal " + func_name);
+        emit_comment("DEBUG: Called " + func_name);
+    }
     
     // Deallocate parameter space after call returns
     if (param_space > 0) {

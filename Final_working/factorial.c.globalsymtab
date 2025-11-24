@@ -3,17 +3,19 @@
 |                              GLOBAL SYMBOL TABLE                                        |
 +=========================================================================================+
 
-Total Symbols: 7
+Total Symbols: 9
 
 +-----------------------------------------------------------------------------------------+
 | Name                | Mangled Name                    | Type        | Location | Offset  |
 +-----------------------------------------------------------------------------------------+
 | #t1                 | #t1                             | int         | LOCAL    | -4      |
 | #t2                 | #t2                             | int         | LOCAL    | -8      |
-| #t3                 | #t3                             | void        | LOCAL    | -8      |
-| a                   | v_a_add_i_i_s2                  | int         | PARAM#0  | 8       |
-| b                   | v_b_add_i_i_s2                  | int         | PARAM#1  | 12      |
-| fmt                 | v_fmt_printf_cp1_s2             | char*       | PARAM#0  | 8       |
-| result              | v_result_main_s2                | int         | LOCAL    | -4      |
+| #t3                 | #t3                             | int         | LOCAL    | -12     |
+| #t4                 | #t4                             | int         | LOCAL    | -16     |
+| #t5                 | #t5                             | int         | LOCAL    | -8      |
+| #t6                 | #t6                             | void        | LOCAL    | -8      |
+| c                   | v_c_printf_cp1_s2               | char*       | PARAM#0  | 8       |
+| n                   | v_n_factorial_i_s2              | int         | PARAM#0  | 8       |
+| x                   | v_x_main_s2                     | int         | LOCAL    | -4      |
 +-----------------------------------------------------------------------------------------+
 

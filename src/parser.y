@@ -3401,8 +3401,50 @@ assignment_expression
             //$$->code = lhs_type->code; //seems redundant
             $$->code.insert($$->code.end(), rhs_type->code.begin(), rhs_type->code.end());
             TACOperand* func_ptr_var = lhs_type->result;
+            
+            // If RHS is a function name, resolve to mangled name
+            TACOperand* func_identifier = rhs_type->result;
+            if (rhs_type->baseType == "function" && !rhs_type->identifier.empty()) {
+                // Look up the function to get its mangled name
+                string funcName = rhs_type->identifier;
+                TypeInfo expectedReturnType = *lhs_type->returnType;
+                vector<TypeInfo> expectedParamTypes;
+                if (lhs_type->parameterTypes != nullptr) {
+                    expectedParamTypes = *lhs_type->parameterTypes;
+                }
+                
+                FunctionEntry* matchingFunc = nullptr;
+                int matchCount = 0;
+                
+                for (auto& pair : function_table) {
+                    FunctionEntry& func = pair.second;
+                    if (func.originalName != funcName) continue;
+                    if (!types_compatible(func.returnType, expectedReturnType)) continue;
+                    if (func.parameters.size() != expectedParamTypes.size()) continue;
+                    
+                    bool paramsMatch = true;
+                    for (size_t i = 0; i < func.parameters.size(); i++) {
+                        if (!types_compatible(func.parameters[i].type, expectedParamTypes[i])) {
+                            paramsMatch = false;
+                            break;
+                        }
+                    }
+                    
+                    if (paramsMatch) {
+                        matchingFunc = &func;
+                        matchCount++;
+                    }
+                }
+                
+                if (matchCount == 1) {
+                    // Use the mangled function name
+                    func_identifier = new_identifier(matchingFunc->mangledName);
+                    cout << "Resolved function '" << funcName << "' to '" << matchingFunc->mangledName << "' for function pointer assignment\n";
+                }
+            }
+            
             TACOperand* func_address = new_typed_temp_var("int", 0, true); // address operation
-            TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, rhs_type->result, new_empty_var(), 0);
+            TACInstruction* addr_of_instr = emit(TAC_OPERATOR_ADDR_OF, func_address, func_identifier, new_empty_var(), 0);
             $$->code.push_back(addr_of_instr);
             TACInstruction* assignInstr = emit(TACOperator(), func_ptr_var, func_address, new_empty_var(), 0);
             $$->code.push_back(assignInstr);

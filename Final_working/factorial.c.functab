@@ -2,15 +2,15 @@
 +-----------------------------------------------------------------------------------------+
 |                                   FUNCTION TABLE                                       |
 +-----------------------------------------------------------------------------------------+
-| Function: add (add_i_i)
+| Function: factorial (factorial_i)
 |   Return type: int
-|   Parameters: int int 
+|   Parameters: 
 |   Stack Frame:
-|     - Parameter space: 8 bytes
-|     - Local var space: 4 bytes
+|     - Parameter space: 0 bytes
+|     - Local var space: 16 bytes
 |     - 8 byte for ra and fp
-|     - Total frame size: 20 bytes
-|   Declared at line: 4
+|     - Total frame size: 24 bytes
+|   Declared at line: 3
 +-----------------------------------------------------------------------------------------+
 | Function: main (main)
 |   Return type: int
@@ -20,7 +20,7 @@
 |     - Local var space: 8 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 16 bytes
-|   Declared at line: 8
+|   Declared at line: 12
 +-----------------------------------------------------------------------------------------+
 | Function: printf (printf_cp1_variadic)
 |   Return type: void
@@ -30,5 +30,5 @@
 |     - Local var space: 0 bytes
 |     - 8 byte for ra and fp
 |     - Total frame size: 12 bytes
-|   Declared at line: 2
+|   Declared at line: 1
 +-----------------------------------------------------------------------------------------+

@@ -4,7 +4,7 @@
 
 
 .data
-str_0: .asciiz "Result: %d\n"
+str_0: .asciiz "Factorial result: %d\n"
 
 
 .text
@@ -20,32 +20,10 @@ printf_cp1_variadic:
 
 
 I2:
-    move $sp, $fp
-    lw $ra, 4($fp)
-    lw $fp, 0($fp)
-    addiu $sp, $sp, 8
-    jr $ra
 
 
 
 I3:
-add_i_i:
-    addiu $sp, $sp, -60
-    sw $ra, 56($sp)
-    sw $fp, 52($sp)
-    addiu $fp, $sp, 52
-
-
-I4:
-    add $t0, $a0, $a1
-
-I5:
-    sw $t0, -4($fp)
-    move $v0, $t0
-
-
-
-I6:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
@@ -54,37 +32,125 @@ I6:
 
 
 
+I4:
+factorial_i:
+    addiu $sp, $sp, -64
+    sw $ra, 60($sp)
+    sw $fp, 56($sp)
+    addiu $fp, $sp, 56
+
+I5:
+    lw $t0, 8($fp)
+    li $t1, 0
+    beq $t0, $t1, I7
+
+
+
+I6:
+    j I9
+
+
+
 I7:
+    li $t0, 1
+
+I8:
+    sw $t0, -4($fp)
+    j I10
+
+
+
+I9:
+    li $t0, 0
+
+
+    sw $t0, -4($fp)
+
+I10:
+    lw $t0, -4($fp)
+    bne $t0, $zero, I12
+
+
+
+I11:
+    j I14
+
+
+
+I12:
+    li $v0, 1
+
+
+
+I13:
+    j I19
+
+
+
+I14:
+    lw $t0, 8($fp)
+    li $t1, 1
+    sub $t2, $t0, $t1
+
+I15:
+
+I16:
+    sw $t0, 8($fp)
+    sw $t2, -8($fp)
+    addiu $sp, $sp, -4
+    lw $t0, -8($fp)
+    sw $t0, 0($sp)
+    move $a0, $t0
+    jal factorial_i
+    addiu $sp, $sp, 4
+    move $t1, $v0
+
+I17:
+    lw $t0, 8($fp)
+    mul $t2, $t0, $t1
+
+I18:
+    sw $t1, -12($fp)
+    sw $t2, -16($fp)
+    move $v0, $t2
+
+
+
+I19:
+    move $sp, $fp
+    lw $ra, 4($fp)
+    lw $fp, 0($fp)
+    addiu $sp, $sp, 8
+    jr $ra
+
+
+
+I20:
 main:
     addiu $sp, $sp, -56
     sw $ra, 52($sp)
     sw $fp, 48($sp)
     addiu $fp, $sp, 48
 
-I8:
+I21:
 
-I9:
-
-I10:
-    addiu $sp, $sp, -8
-    li $t0, 3
+I22:
+    addiu $sp, $sp, -4
+    li $t0, 5
     sw $t0, 0($sp)
     move $a0, $t0
-    li $t0, 4
-    sw $t0, 4($sp)
-    move $a1, $t0
-    jal add_i_i
-    addiu $sp, $sp, 8
+    jal factorial_i
+    addiu $sp, $sp, 4
     move $t0, $v0
 
-I11:
+I23:
     sw $t0, -4($fp)
 
-I12:
+I24:
 
-I13:
+I25:
 
-I14:
+I26:
     sw $t0, -8($fp)
     sw $t0, -4($fp)
     la $a0, str_0
@@ -94,20 +160,18 @@ I14:
     jal __lib_printf
     addiu $sp, $sp, 4
 
-I15:
-    li $v0, 0
+I27:
+    lw $t0, -4($fp)
+    move $v0, $t0
 
 
 
-I16:
+I28:
     move $sp, $fp
     lw $ra, 4($fp)
     lw $fp, 0($fp)
     addiu $sp, $sp, 8
     jr $ra
-    # Exit program
-    li $v0, 10
-    syscall
 
 
 
