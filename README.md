@@ -1,0 +1,435 @@
+# Fanta-C : Finally, A Non-Terrible Attempt – C!
+
+# **SPIM Installation & Usage (Required for Running Fanta-C Output)**
+
+## **Installation (Linux / WSL Ubuntu)**
+
+To install **SPIM** (terminal version):
+
+```bash
+sudo apt update
+sudo apt install spim -y
+```
+
+## **How SPIM Is Used in Our Project**
+
+SPIM simulator takes MIPS assembly as input and runs it directly.
+
+- **Three Address Code (TAC)** → `filename.tac`
+- **MIPS Assembly** → `filename.asm`
+
+### **To run the compiled program**
+
+1. Compile your `.src` file using our compiler:
+
+    ```bash
+    ./parser input.src
+    ```
+
+2. Run the generated MIPS assembly using SPIM:
+
+    ```bash
+    spim -file input.asm
+    ```
+
+---
+
+
+# Build & run
+
+## Prerequisites
+
+* `bison` (GNU Bison)
+* `flex` (or your lexer; any lexer that feeds tokens to Bison works)
+* `g++` (C++ compiler supporting C++11/C++17)
+* SPIM simulator (for running generated MIPS assembly)
+* Standard build tools (`make`) 
+
+## Build (example)
+
+```bash
+make
+```
+
+## Run
+
+```bash
+./run.sh input_file.src
+```
+
+
+TAC code will be generated in `input_file.tac`, MIPS assembly in `input_file.clean.asm` for each `input_file.src` and errors/warnings will be generated in `input_file.src.errors` file.
+---
+
+
+
+# Features
+## Basic Features
+- All arithmetic and logical operators
+- Control flow statements: 
+   - `if-else` statements
+   - `for` loop
+   - `while` loop
+   - `do-while` loop
+   - `switch-case` with `default` and `break`
+   - `goto`, `break` and `continue` statements
+- Function call with arguments and return statements
+- Pointers
+- Structures
+- printf and scanf
+- function call with arguments
+- goto, break and continue
+- static keywords
+
+## Advanced Features
+- Recursive function call
+- Class and object
+- Function call with variable arguments
+- Dynamic memory allocation
+- Function pointer
+- Command line input
+- public, private and protected keywords
+- typedef
+- Reference
+- enum, union
+- until loop
+- Multi-level pointers
+- Multi-dimensional arrays
+
+# Important notes
+
+## Peephole Optimization
+We have implemented peephole optimization for the generated three address code (TAC). The optimizations we have implemented include:
+- **Addition/Subtraction by Zero**: We eliminate redundant addition or subtraction operations involving zero. For example, `x = y + 0` is optimized to `x = y`.
+- **Multiplication/Division by One**: We remove unnecessary multiplication or division operations involving one. For example, `x = y * 1` is optimized to `x = y`.
+Goto statements are also optimized, like:
+```c
+I1: goto I2
+I2: x = y + z
+```
+is optimized to 
+```c
+I2: x = y + z
+```
+
+## Register Spilling
+We have implemented register spilling in our code generation phase. When the number of live variables exceeds the available registers, we spill some variables to memory (stack) to free up registers for other variables. We use a simple heuristic to decide which variables to spill based on their usage frequency and lifetime.
+
+## Next-use Analysis
+We have implemented next-use analysis to optimize register allocation and instruction scheduling. For each variable, we track its next use in the program, which helps us make informed decisions about which variables to keep in registers and which ones to spill to memory. This analysis is performed during the code generation phase, allowing us to generate more efficient TAC.
+
+## Basic Block Formation
+We have implemented basic block formation in our code generation phase. A basic block is a sequence of consecutive instructions with no branches except into the entry and out of the exit. We identify basic blocks by analyzing the control flow of the program, and we group instructions accordingly. This allows us to perform optimizations at the basic block level, improving the overall efficiency of the generated TAC.
+
+<!-- // Here , mention that structs are being passed only through pointers because struct can have a large size and the first 4 arguments are stored in registers and the struct may not fit in those registers. -->
+
+
+
+## Backpatching
+
+We have implemented backpatching for control flow statements like if-else, loops, switch-case etc. We maintained :
+
+```c
+        unordered_set<TACInstruction*> true_list; 
+        unordered_set<TACInstruction*> false_list; 
+        unordered_set<TACInstruction*> next_list; 
+        vector<TACInstruction*> code; 
+        unordered_set<TACInstruction*> break_list; 
+        unordered_set<TACInstruction*> continue_list;
+```
+
+## Short-circuit evaluation
+
+We have implemented short-circuit evaluation for logical operators && and ||, for this we have used backpatching technique. For example in expression `A && B` is present in control flow statement, then if A is false then we don't evaluate B, similarly for `A || B`, if A is true then we don't evaluate B. Like :
+```c
+if( a > 0 && b < 5 && c!=0 ){ // If a > 0 is false, then rest code - ```b<5 and c!=0``` won't be evaluated.
+    //...
+  }
+```
+
+## Jump tables
+
+We implemented it by standard algo for jump tables : made jump table of (Max_value - Min_value + 1), then  
+
+``` c
+9: #t1 = 1
+10: #t2 = 2
+11: if v_x_main_s2 < #t1 goto I22 // If it is out of range [Max_value,Min_value] then goto default
+12: if v_x_main_s2 > #t2 goto I22 
+13: #t3 = v_x_main_s2 - #t1 // Subtract min value, to convert to zero based.
+14: goto_jump_table(0,#t3) // Special instruction for jump table
+```
+
+- We have implemented jump tables for switch-case statements for better efficiency. For this for every switch-case statement we maintain a map of case label value to the corresponding TAC instruction address, and while generating TAC for switch-case statement, we generate jump table for that switch-case statement. Like :
+```c
+  int main()
+{
+    int x = 1;
+    int y = 0;
+    int z = 10;
+    int a, b = 5, c = 3;
+    int p, q = 20, r = 4;
+    switch (x)
+    {
+    case 1:
+        a = b + c;
+        break;
+    case 2:
+        a = b - c;
+        break;
+    default:
+        a = 0;
+    }
+
+    y = y + 1;
+
+    switch (z)
+    {
+    case 10:
+        p = q * r;
+        break;
+    case 20:
+        p = q / r;
+        break;
+    default:
+        p = 0;
+    }
+    return 0;
+}
+```
+THE TAC - 
+```c
+1: function begin : main
+2: v_x_main_s2 = 1
+3: v_y_main_s2 = 0
+4: v_z_main_s2 = 10
+5: v_b_main_s2 = 5
+6: v_c_main_s2 = 3
+7: v_q_main_s2 = 20
+8: v_r_main_s2 = 4
+9: #t1 = 1
+10: #t2 = 2
+11: if v_x_main_s2 < #t1 goto I22
+12: if v_x_main_s2 > #t2 goto I22
+13: #t3 = v_x_main_s2 - #t1
+14: goto_jump_table(0,#t3)
+15: #t4 = v_b_main_s2 + v_c_main_s2
+16: v_a_main_s2 = #t4
+17: goto I22
+18: #t5 = v_b_main_s2 - v_c_main_s2
+19: v_a_main_s2 = #t5
+20: goto I22
+21: v_a_main_s2 = 0
+22: #t6 = v_y_main_s2 + 1
+23: v_y_main_s2 = #t6
+24: #t7 = 10
+25: #t8 = 20
+26: if v_z_main_s2 < #t7 goto I37
+27: if v_z_main_s2 > #t8 goto I37
+28: #t9 = v_z_main_s2 - #t7
+29: goto_jump_table(1,#t9)
+30: #t10 = v_q_main_s2 * v_r_main_s2
+31: v_p_main_s2 = #t10
+32: goto I37
+33: #t11 = v_q_main_s2 / v_r_main_s2
+34: v_p_main_s2 = #t11
+35: goto I37
+36: v_p_main_s2 = 0
+37: return 0
+38: end function main
+```
+
+```c
+JUMP TABLE
+Jump ID: 0
+  Label 0: I15
+  Label 1: I18
+Jump ID: 1
+  Label 0: I30
+  Label 1: I37
+  Label 2: I37
+  Label 3: I37
+  Label 4: I37
+  Label 5: I37
+  Label 6: I37
+  Label 7: I37
+  Label 8: I37
+  Label 9: I37
+  Label 10: I33
+```
+
+
+## Name mangling for variables
+
+While defining variable, we mangle the variable name with its scope and function name within which it is defined (or global scope), which will be beneficial during variable lookup to identify which variable to use in case of variable shadowing. For example:
+```c
+int x; // v_x_s1
+void foo(int a,char **b){ // v_a_foo_i_cp2_s2, v_b_foo_i_cp2_s2
+   int x; // v_x_foo_i_cp2_s2
+   {
+      int x; // v_x_foo_i_cp2_s3
+   }
+}
+
+int main(){
+   int x; // v_x_main_s2
+}
+```
+
+## Name mangling for functions
+
+While defining function, we mangle the function name with its parameter types which will be beneficial during function call to identify which function to call in case of function overloading and also it is beneficial in variables' scope management and name mangling. For example:
+```c
+int foo(int a, char b){ // foo_i_c
+   return a;
+}
+float foo(float x){ // foo_f
+   return x;
+}
+```
+
+## Function overloading
+
+Supported, for this we have mangled the function names, and while calling we first check for exact match of function signature, if not found then we check for each function with same name, if number of parameters match, then we check for type compatibility (like int to float conversion), if compatible we call that function after mangling the name accordingly, but if multiple functions are compatible, we throw error of ambiguous call.
+
+## Ellipsis and function overloading
+
+Even after two steps in above point, if we don't find any match, then we check for functions with ellipsis, if found we call that function after mangling the name accordingly, but if multiple functions with ellipsis are found, we throw error of ambiguous call. Eg:
+```c
+void log(int a, int b, ...){ // log_i_i_e
+   //...
+}
+```
+
+- Struct declaration is allowed without definition
+
+```c
+// Perfectly fine
+struct Node; // perfectly valid, but compiler throw warnings,which we can ignore
+
+int foo(int x){
+    //...
+    return x;
+}
+struct Node {
+   int data;
+   float value;
+};
+```
+- Also inside struct, you can't make object of same struct type or some other struct type which is not yet defined.
+
+```c
+struct Point; // forward declaration
+struct Node {
+   int data;
+   struct Node n2; // invalid, because size of Node is not known yet
+   struct Point p; // invalid, because Point is not yet defined
+};
+```
+
+- But yes you can make pointer of any struct type, because its size is known (4 or 8 bytes depending on architecture)
+```c
+struct Point; // forward declaration
+struct Node {
+   int data;
+   struct Node* n2; // valid
+   struct Point* p; // valid
+};
+```
+
+## Classes and Objects
+- The default access specifier for class members is private.
+
+- The 3AC generated for calling class member functions includes the class name as a prefix (scope resolution) to the function name to ensure uniqueness. Also, the object pointer (this pointer) is passed as the first argument in the 3AC.
+
+
+# Variations from basic C/C++
+
+- Our majority of the features are similar to standard C++ except few variations, listed below:
+
+- In any compound statement `{ ... }`, all declarations must appear at the start of the block, similar to old-style C. e.g.
+```c
+{
+   int a;
+   int b;
+   // declarations end here
+   a = 5; // valid
+   int c; // invalid
+}
+```
+
+- We remove initializer lists for arrays and structs/unions/classes, because anyways those things can be done in other way also, which we are supporing. e.g.
+```c
+int arr[3] = {1, 2, 3}; // not allowed
+int arr[3];
+arr[0] = 1;
+arr[1] = 2;
+arr[2] = 3;
+```
+```c
+struct Point {
+   int x;
+   int y;
+};
+Point p = {10, 20}; // not allowed
+Point p;
+p.x = 10;
+p.y = 20;
+``` 
+
+
+- We didn't allowed += -= |=, basically [bitwise_opertor][assignment_operator], to unnecessarily complicate the grammar, and make it lengthy, although it can be added with minimal efforts, but it didn't make sense to add them for this assignment, because ```a += b;``` is equivalent to ```a = a + b;```
+
+- We didn't allowed function prototypes (declarations without body) to reduce grammar complexity. Like :
+```
+int func(int a, int b); // prototype - not allowed
+int func(int a, int b){ // definition should be present
+    return a + b;
+  }
+```
+
+- But we have allowed struct/union prior declarations without definition (which is also present in standard C/C++).
+
+- For switch-case labels - We only allowed positive integer literals and char literals, because in standard C/C++, case labels must be compile time constants, so we thought users rather than writing ``` case 2+3: ``` should write ``` case 5: ``` which also makes more sense.
+
+- Similar to C and unlike C++, static variables are not allowed inside structs/unions/classes.
+
+- For ellipsis - We allowed defining function with ellipsis, we also allowed calling the function with ellipsis, but inside the function body if we want to use the parameters beyond `...`, those things are not present in *Standard C* also, but implemented in the library `<cstdarg>`, so we didn't implemented that part *varargs* handling. Anyways the grammar supports ellipsis in function definition and function call, and while function call params are pushed onto stack via `PARAM` instruction.
+
+- Removed `const`, because it was not required for the assignment, although it can be added with some efforts - by maintaining a flag in `TypeInfo` class.
+
+- In function calls, we removed syntax `int arr[]` or `int arr[10]`, because in standard C/C++, while passing array to function, it decays to pointer, so `int arr[]` is anyways equivalent to `int* arr`, and also passing `int arr[10]` seems to be of very less use.
+
+- We have kept function pointer assignment in one way only that is:
+```
+int (*fcnptr) (int, int) = foo; // valid in both C and our language
+```
+The below way of function pointer assignment is not allowed in our language:
+```
+int (*fcnptr) (int, int) = &foo; // not allowed in our language, although valid in C
+```
+
+- Write class keyword before the object when initializing an object of a class.
+Eg. If you have 
+class A{...}
+then for initializing an object 'a' of class A, write:
+class A a;
+
+- Classes can only be defined in global scope, not inside any function or block scope.
+
+- You cannot make member functions with the same name inside the same class as function overloading is not supported for member functions (to avoid complications).
+
+- Copy constructor is not supported. 
+
+- Initialisation list in constructor is not supported since we have not supported initializer lists in general.
+
+- Default constructor is also not present. But if the user does not call the constructor while creating an object of class, the object is created and we don't throw any error.
+
+- `this` keyword is not supported inside classes.
+
+- Structs passed by address - We have implemented passing structs by address in function calls. When a struct is passed to a function, we pass a pointer to the struct instead of copying the entire struct. As the first 4 arguments of a function are stored in registers and on the other hand, structs can be arbitrarily large in size and may not fit in registers. Thus we have are passing structs through address only to mantain the integrity of our compiler.
+
+
+
+
+
